@@ -25,36 +25,34 @@ export default function LeadCapture({ service, title, text }: Props) {
   const [message, setMessage] = useState('')
   const [status, setStatus] = useState<'idle' | 'sent'>('idle')
   const [error, setError] = useState('')
+  const [submitting, setSubmitting] = useState(false)
 
   const accentSolid = service?.accent.solid ?? '#d8ff3f'
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!name.trim() || !contact.trim()) {
       setError('Заполните имя и контакт для связи')
       return
     }
     setError('')
+    setSubmitting(true)
 
-    const serviceLabel = services.find((s) => s.slug === interest)?.navLabel ?? 'Не выбрано'
-    const body = [
-      `Имя: ${name}`,
-      `Контакт: ${contact}`,
-      `Интересует: ${serviceLabel}`,
-      message ? `Сообщение: ${message}` : '',
-    ]
-      .filter(Boolean)
-      .join('%0D%0A')
+    const serviceLabel = services.find((s) => s.slug === interest)?.navLabel ?? ''
 
-    const mailtoLink = `mailto:${CONTACTS.email}?subject=${encodeURIComponent(
-      'Заявка с сайта ST96',
-    )}&body=${body}`
-
-    const link = document.createElement('a')
-    link.href = mailtoLink
-    link.click()
-
-    setStatus('sent')
+    try {
+      const res = await fetch('/api/lead', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, contact, interest: serviceLabel, message }),
+      })
+      if (!res.ok) throw new Error('request failed')
+      setStatus('sent')
+    } catch {
+      setError('Не удалось отправить заявку. Напишите нам напрямую в Telegram или по телефону ниже.')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -175,10 +173,11 @@ export default function LeadCapture({ service, title, text }: Props) {
                     <MagneticButton
                       as="button"
                       type="submit"
-                      className="mt-2 inline-flex items-center justify-center gap-2 rounded-full py-4 font-display text-sm font-semibold text-ink"
+                      disabled={submitting}
+                      className="mt-2 inline-flex items-center justify-center gap-2 rounded-full py-4 font-display text-sm font-semibold text-ink disabled:opacity-60"
                       style={{ background: accentSolid }}
                     >
-                      Отправить заявку
+                      {submitting ? 'Отправляем…' : 'Отправить заявку'}
                       <ArrowUpRight className="h-4 w-4" />
                     </MagneticButton>
                     <p className="text-center text-xs text-paper-dim">
@@ -201,10 +200,10 @@ export default function LeadCapture({ service, title, text }: Props) {
                     >
                       <Check className="h-8 w-8 text-ink" />
                     </motion.div>
-                    <h3 className="font-display text-2xl font-semibold">Заявка сформирована</h3>
+                    <h3 className="font-display text-2xl font-semibold">Заявка отправлена</h3>
                     <p className="max-w-xs text-paper-dim">
-                      Мы открыли почтовый клиент с готовым письмом на {CONTACTS.email} — отправьте его, и мы
-                      свяжемся с вами в течение 2 часов. Также можно написать нам в Telegram.
+                      Мы уже получили уведомление и свяжемся с вами в течение 2 часов. Также можно
+                      написать нам в Telegram.
                     </p>
                     <a
                       href={CONTACTS.telegramHref}
