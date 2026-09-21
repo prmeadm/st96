@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://st96.by/sitemap.xml

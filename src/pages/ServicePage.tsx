@@ -1,6 +1,6 @@
-import { useEffect } from 'react'
 import { Navigate, useParams } from 'react-router-dom'
 import { getService } from '../data/services'
+import { useSeo } from '../hooks/useSeo'
 import ServiceHero from '../components/sections/ServiceHero'
 import Advantages from '../components/sections/Advantages'
 import ProcessTabs from '../components/sections/ProcessTabs'
@@ -11,9 +11,11 @@ export default function ServicePage() {
   const { slug } = useParams()
   const service = getService(slug ?? '')
 
-  useEffect(() => {
-    if (service) document.title = `${service.navLabel} — ST96`
-  }, [service])
+  useSeo({
+    title: service ? `${service.navLabel} — ST96` : 'ST96',
+    description: service?.tagline ?? '',
+    path: `/${slug ?? ''}`,
+  })
 
   if (!service) return <Navigate to="/" replace />
 

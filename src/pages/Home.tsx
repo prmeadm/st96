@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useSeo } from '../hooks/useSeo'
 import HomeHero from '../components/sections/HomeHero'
 import ServicesGrid from '../components/sections/ServicesGrid'
 import Advantages from '../components/sections/Advantages'
@@ -16,9 +16,12 @@ import {
 } from '../data/home'
 
 export default function Home() {
-  useEffect(() => {
-    document.title = 'ST96 — креативная студия полного цикла'
-  }, [])
+  useSeo({
+    title: 'ST96 — креативная студия полного цикла',
+    description:
+      'ST96 — креативная студия полного цикла: продюсирование, коммерческий промоушн, продакшн и разработка программных решений на базе AI.',
+    path: '/',
+  })
 
   return (
     <>
