@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Maximize2, X } from 'lucide-react'
 import type { Accent } from '../../data/services'
@@ -7,9 +8,11 @@ type Props = {
   src: string
   poster: string
   accent: Accent
+  portrait?: boolean
+  audio?: boolean
 }
 
-export default function HeroVideo({ src, poster, accent }: Props) {
+export default function HeroVideo({ src, poster, accent, portrait = false, audio = false }: Props) {
   const inlineRef = useRef<HTMLVideoElement>(null)
   const closeRef = useRef<HTMLButtonElement>(null)
   const startAt = useRef(0)
@@ -46,7 +49,7 @@ export default function HeroVideo({ src, poster, accent }: Props) {
   }, [open])
 
   return (
-    <div className="relative mx-auto w-full">
+    <div className={`relative mx-auto w-full ${portrait ? 'max-w-[19rem] sm:max-w-[21rem]' : ''}`}>
       <div
         className="pointer-events-none absolute -inset-6 rounded-[2rem] opacity-60 blur-3xl"
         style={{ background: `linear-gradient(135deg, ${accent.from}33, ${accent.to}33)` }}
@@ -58,7 +61,7 @@ export default function HeroVideo({ src, poster, accent }: Props) {
       >
         <video
           ref={inlineRef}
-          className="block aspect-video w-full object-cover"
+          className={`block w-full object-cover ${portrait ? 'aspect-[9/16]' : 'aspect-video'}`}
           src={src}
           poster={poster}
           autoPlay
@@ -80,13 +83,14 @@ export default function HeroVideo({ src, poster, accent }: Props) {
         </button>
       </div>
 
-      <AnimatePresence>
+      {createPortal(
+        <AnimatePresence>
         {open && (
           <motion.div
             role="dialog"
             aria-modal="true"
             aria-label="Видео"
-            className="fixed inset-0 z-[65] grid place-items-center bg-ink/90 p-4 backdrop-blur-md sm:p-8"
+            className="fixed inset-0 z-[65] grid grid-cols-[minmax(0,1fr)] place-items-center bg-ink/90 p-4 backdrop-blur-md sm:p-8"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -94,7 +98,11 @@ export default function HeroVideo({ src, poster, accent }: Props) {
             onClick={closeModal}
           >
             <motion.div
-              className="relative w-full max-w-[min(1280px,calc((100svh-4rem)*16/9))] overflow-hidden rounded-2xl border border-ink-line bg-ink-soft"
+              className={`relative overflow-hidden rounded-2xl border border-ink-line bg-ink-soft ${
+                portrait
+                  ? 'aspect-[9/16] w-[min(100%,calc((100svh-4rem)*9/16))]'
+                  : 'w-full max-w-[min(1280px,calc((100svh-4rem)*16/9))]'
+              }`}
               style={{ boxShadow: `0 0 120px ${accent.soft}` }}
               initial={{ opacity: 0, scale: 0.94, y: 16 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -103,10 +111,11 @@ export default function HeroVideo({ src, poster, accent }: Props) {
               onClick={(e) => e.stopPropagation()}
             >
               <video
-                className="block aspect-video w-full"
+                className={`block w-full ${portrait ? 'aspect-[9/16]' : 'aspect-video'}`}
                 src={src}
                 poster={poster}
                 autoPlay
+                muted={!audio}
                 loop
                 playsInline
                 controls
@@ -128,7 +137,9 @@ export default function HeroVideo({ src, poster, accent }: Props) {
             </button>
           </motion.div>
         )}
-      </AnimatePresence>
+        </AnimatePresence>,
+        document.body,
+      )}
     </div>
   )
 }

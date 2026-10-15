@@ -32,7 +32,7 @@ export type Service = {
   tagline: string
   heroNote: string
   keywords: string[]
-  heroVideo?: { src: string; poster: string }
+  heroVideo?: { src: string; poster: string; portrait?: boolean; audio?: boolean }
   accent: Accent
   advantagesLead: string
   advantages: Advantage[]
@@ -222,6 +222,7 @@ export const services: Service[] = [
       'Видео, фото и контент полного цикла: сценарий, съёмка, монтаж, графика. Одна команда — от брифа до финального файла.',
     heroNote: 'Полный цикл производства контента',
     keywords: ['Сценарий', 'Свет', 'Монтаж', 'Графика', 'Звук', 'Цветокоррекция'],
+    heroVideo: { src: '/video/production-hero.mp4', poster: '/video/production-hero-poster.jpg', portrait: true, audio: true },
     accent: accents.production,
     advantagesLead:
       'Продакшн — это не только камера. Это сценарий, свет, монтаж и дисциплина сроков в одном месте.',
