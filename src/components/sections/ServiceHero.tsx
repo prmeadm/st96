@@ -4,14 +4,16 @@ import type { Service } from '../../data/services'
 import Aurora from '../ui/Aurora'
 import RevealText from '../ui/RevealText'
 import KeywordOrbit from '../ui/KeywordOrbit'
+import HeroVideo from '../ui/HeroVideo'
 import MagneticButton from '../ui/MagneticButton'
 
 export default function ServiceHero({ service }: { service: Service }) {
+  const video = service.heroVideo
   return (
     <section className="relative flex min-h-[100svh] items-center overflow-hidden pt-28 pb-16 sm:pt-32">
       <Aurora accent={service.accent} />
 
-      <div className="relative mx-auto grid max-w-7xl grid-cols-1 items-center gap-14 px-5 sm:px-8 lg:grid-cols-[1.15fr_0.85fr] lg:gap-8">
+      <div className={`relative mx-auto grid max-w-7xl grid-cols-1 items-center gap-14 px-5 sm:px-8 ${video ? 'lg:grid-cols-[1fr_1fr] lg:gap-12' : 'lg:grid-cols-[1.15fr_0.85fr] lg:gap-8'}`}>
         <div>
           <motion.div
             initial={{ opacity: 0, y: 12 }}
@@ -29,7 +31,9 @@ export default function ServiceHero({ service }: { service: Service }) {
           <RevealText
             lines={service.title}
             as="h1"
-            className="font-display text-[clamp(2.1rem,7vw,4.2rem)] leading-[1.05] font-semibold text-balance"
+            className={`font-display leading-[1.05] font-semibold text-balance ${
+              video ? 'text-[clamp(2.1rem,5.4vw,3.7rem)]' : 'text-[clamp(2.1rem,7vw,4.2rem)]'
+            }`}
           />
 
           <motion.p
@@ -71,7 +75,11 @@ export default function ServiceHero({ service }: { service: Service }) {
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.8, delay: 0.3 }}
         >
-          <KeywordOrbit keywords={service.keywords} accent={service.accent} />
+          {video ? (
+            <HeroVideo src={video.src} poster={video.poster} accent={service.accent} />
+          ) : (
+            <KeywordOrbit keywords={service.keywords} accent={service.accent} />
+          )}
         </motion.div>
       </div>
 

@@ -32,6 +32,7 @@ export type Service = {
   tagline: string
   heroNote: string
   keywords: string[]
+  heroVideo?: { src: string; poster: string }
   accent: Accent
   advantagesLead: string
   advantages: Advantage[]
@@ -291,6 +292,7 @@ export const services: Service[] = [
       'Проектируем и разрабатываем программные решения на базе искусственного интеллекта: от автоматизации процессов до собственных AI-продуктов.',
     heroNote: 'AI-решения от прототипа до продакшна',
     keywords: ['Данные', 'Модель', 'Автоматизация', 'Интеграция', 'Прототип', 'Масштабирование'],
+    heroVideo: { src: '/video/ai-hero.mp4', poster: '/video/ai-hero-poster.jpg' },
     accent: accents.ai,
     advantagesLead:
       'AI — это инструмент, а не хайп. Мы внедряем его там, где он реально меняет юнит-экономику.',
