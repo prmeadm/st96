@@ -82,7 +82,7 @@ export default function LeadCapture({ service, title, text }: Props) {
               <span className="h-1.5 w-1.5 rounded-full" style={{ background: accentSolid }} />
               Начать проект
             </span>
-            <h2 className="text-balance font-display text-3xl leading-[1.1] font-semibold sm:text-4xl md:text-5xl">
+            <h2 className="text-balance font-display text-[clamp(1.4rem,7vw,1.875rem)] leading-[1.1] font-semibold sm:text-4xl md:text-5xl">
               {title ?? service?.ctaTitle ?? 'Готовы обсудить ваш проект?'}
             </h2>
             <p className="mt-5 max-w-md text-lg text-paper-dim">
