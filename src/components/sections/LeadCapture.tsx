@@ -5,7 +5,7 @@ import { ArrowUpRight, Check, Mail, Phone, Send, ShieldCheck, Timer } from 'luci
 import type { Service } from '../../data/services'
 import { services } from '../../data/services'
 import { CONTACTS } from '../layout/Footer'
-import { reachGoal } from '../../lib/analytics'
+import { trackLead } from '../../lib/analytics'
 import { POLICY_PATH, POLICY_VERSION } from '../../data/privacy'
 import Reveal from '../ui/Reveal'
 import MagneticButton from '../ui/MagneticButton'
@@ -62,7 +62,7 @@ export default function LeadCapture({ service, title, text }: Props) {
         }),
       })
       if (!res.ok) throw new Error('request failed')
-      reachGoal('lead_submit')
+      trackLead()
       setStatus('sent')
     } catch {
       setError('Не удалось отправить заявку. Напишите нам напрямую в Telegram или по телефону ниже.')

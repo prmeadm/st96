@@ -1,3 +1,5 @@
+import { readConsent } from './consent'
+
 const COUNTER_ID = 113661362
 
 declare global {
@@ -17,4 +19,12 @@ export function trackClicks(e: MouseEvent) {
   if (href.startsWith('tel:')) reachGoal('click_phone')
   else if (href.startsWith('mailto:')) reachGoal('click_email')
   else if (/^https?:\/\/t\.me\//.test(href)) reachGoal('click_telegram')
+}
+
+export function trackLead() {
+  reachGoal('lead_submit')
+  if (readConsent()?.analytics) {
+    window.dataLayer = window.dataLayer || []
+    window.dataLayer.push({ event: 'generate_lead' })
+  }
 }
