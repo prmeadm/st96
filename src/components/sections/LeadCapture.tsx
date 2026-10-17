@@ -26,6 +26,7 @@ export default function LeadCapture({ service, title, text }: Props) {
   const [interest, setInterest] = useState(service?.slug ?? '')
   const [message, setMessage] = useState('')
   const [consent, setConsent] = useState(false)
+  const [marketing, setMarketing] = useState(false)
   const [status, setStatus] = useState<'idle' | 'sent'>('idle')
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -57,6 +58,7 @@ export default function LeadCapture({ service, title, text }: Props) {
           interest: serviceLabel,
           message,
           consent: true,
+          marketingConsent: marketing,
           policyVersion: POLICY_VERSION,
         }),
       })
@@ -196,8 +198,9 @@ export default function LeadCapture({ service, title, text }: Props) {
                       />
                       <span className="text-xs leading-relaxed text-paper-dim">
                         Я даю согласие {OPERATOR.name} на обработку моих персональных данных (имя,
-                        телефон или email, текст сообщения) для связи по заявке, в том числе на их
-                        передачу в Telegram и хостинг-провайдеру за пределами Республики Беларусь, где
+                        телефон или email, текст сообщения) для связи по заявке и подготовки мне
+                        предложения, в том числе на их передачу третьим лицам для этих целей, в Telegram и
+                        техническим сервисам, часть которых находится за пределами Республики Беларусь, где
                         может не обеспечиваться надлежащий уровень защиты данных, и принимаю{' '}
                         <Link
                           to={POLICY_PATH}
@@ -209,6 +212,21 @@ export default function LeadCapture({ service, title, text }: Props) {
                           Политику обработки персональных данных
                         </Link>
                         .
+                      </span>
+                    </label>
+
+                    <label className="flex cursor-pointer items-start gap-3" data-cursor-hover>
+                      <input
+                        type="checkbox"
+                        checked={marketing}
+                        onChange={(e) => setMarketing(e.target.checked)}
+                        className="mt-0.5 h-5 w-5 shrink-0 cursor-pointer"
+                        style={{ accentColor: accentSolid }}
+                      />
+                      <span className="text-xs leading-relaxed text-paper-dim">
+                        Согласен(на) на получение рекламы (рассылки, таргетированная и иная реклама) о
+                        выгодных предложениях, новых услугах, акциях и скидках и на передачу данных третьим
+                        лицам в этих целях. Необязательно.
                       </span>
                     </label>
 
