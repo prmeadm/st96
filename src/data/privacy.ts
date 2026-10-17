@@ -4,6 +4,7 @@ export const POLICY_PATH = '/privacy'
 
 export const OPERATOR = {
   name: 'Общество с ограниченной ответственностью «КИНГСГАРДЕН»',
+  short: 'ООО «КИНГСГАРДЕН»',
   brand: 'ST96',
   unp: '193999293',
   okpo: '511800215000',

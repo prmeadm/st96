@@ -28,7 +28,7 @@ function List({ items }: { items: string[] }) {
 export default function Privacy() {
   useSeo({
     title: 'Политика обработки персональных данных — ST96',
-    description: `Политика ${OPERATOR.name} в отношении обработки персональных данных на сайте ${OPERATOR.site}.`,
+    description: `Политика ${OPERATOR.short} в отношении обработки персональных данных на сайте ${OPERATOR.site}.`,
     path: '/privacy',
   })
 
