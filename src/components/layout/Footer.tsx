@@ -137,7 +137,12 @@ export default function Footer() {
 
         <div className="flex flex-col items-start justify-between gap-4 pt-8 text-sm text-paper-dim sm:flex-row sm:items-center">
           <p>© {new Date().getFullYear()} ST96. Все права защищены.</p>
-          <p>Креативная студия — Беларусь</p>
+          <div className="flex flex-col gap-1 sm:items-end">
+            <Link to="/privacy" className="transition-colors hover:text-paper" data-cursor-hover>
+              Политика обработки персональных данных
+            </Link>
+            <p>ООО «КИНГСГАРДЕН», УНП 193999293</p>
+          </div>
         </div>
       </div>
     </footer>

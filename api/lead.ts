@@ -5,6 +5,8 @@ type LeadPayload = {
   contact?: string
   interest?: string
   message?: string
+  consent?: boolean
+  policyVersion?: string
 }
 
 export default async function handler(req: Request) {
@@ -25,6 +27,10 @@ export default async function handler(req: Request) {
     return json({ error: 'Missing fields' }, 400)
   }
 
+  if (body.consent !== true) {
+    return json({ error: 'Consent required' }, 400)
+  }
+
   const token = process.env.TELEGRAM_BOT_TOKEN
   const chatId = process.env.TELEGRAM_CHAT_ID
   if (!token || !chatId) {
@@ -37,6 +43,7 @@ export default async function handler(req: Request) {
     `Контакт: ${contact}`,
     body.interest?.trim() && `Интересует: ${body.interest.trim()}`,
     body.message?.trim() && `Сообщение: ${body.message.trim()}`,
+    `Согласие на обработку ПД: да (политика от ${(body.policyVersion ?? 'н/д').slice(0, 20)}, ${new Date().toLocaleString('ru-RU', { timeZone: 'Europe/Minsk' })} МСК)`,
   ]
     .filter(Boolean)
     .join('\n')

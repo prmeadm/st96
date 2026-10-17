@@ -3,6 +3,7 @@ import Layout from './components/layout/Layout'
 import CustomCursor from './components/ui/CustomCursor'
 import Home from './pages/Home'
 import ServicePage from './pages/ServicePage'
+import Privacy from './pages/Privacy'
 
 function App() {
   return (
@@ -11,6 +12,7 @@ function App() {
       <Layout>
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/privacy" element={<Privacy />} />
           <Route path="/:slug" element={<ServicePage />} />
         </Routes>
       </Layout>

@@ -1,9 +1,11 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { ArrowUpRight, Check, Mail, Phone, Send, ShieldCheck, Timer } from 'lucide-react'
 import type { Service } from '../../data/services'
 import { services } from '../../data/services'
 import { CONTACTS } from '../layout/Footer'
+import { OPERATOR, POLICY_PATH, POLICY_VERSION } from '../../data/privacy'
 import Reveal from '../ui/Reveal'
 import MagneticButton from '../ui/MagneticButton'
 
@@ -23,6 +25,7 @@ export default function LeadCapture({ service, title, text }: Props) {
   const [contact, setContact] = useState('')
   const [interest, setInterest] = useState(service?.slug ?? '')
   const [message, setMessage] = useState('')
+  const [consent, setConsent] = useState(false)
   const [status, setStatus] = useState<'idle' | 'sent'>('idle')
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -35,6 +38,10 @@ export default function LeadCapture({ service, title, text }: Props) {
       setError('Заполните имя и контакт для связи')
       return
     }
+    if (!consent) {
+      setError('Необходимо согласие на обработку персональных данных')
+      return
+    }
     setError('')
     setSubmitting(true)
 
@@ -44,7 +51,14 @@ export default function LeadCapture({ service, title, text }: Props) {
       const res = await fetch('/api/lead', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, contact, interest: serviceLabel, message }),
+        body: JSON.stringify({
+          name,
+          contact,
+          interest: serviceLabel,
+          message,
+          consent: true,
+          policyVersion: POLICY_VERSION,
+        }),
       })
       if (!res.ok) throw new Error('request failed')
       setStatus('sent')
@@ -168,6 +182,36 @@ export default function LeadCapture({ service, title, text }: Props) {
                       />
                     </label>
 
+                    <label className="flex cursor-pointer items-start gap-3" data-cursor-hover>
+                      <input
+                        type="checkbox"
+                        checked={consent}
+                        onChange={(e) => {
+                          setConsent(e.target.checked)
+                          if (e.target.checked) setError('')
+                        }}
+                        className="mt-0.5 h-5 w-5 shrink-0 cursor-pointer"
+                        style={{ accentColor: accentSolid }}
+                        aria-required="true"
+                      />
+                      <span className="text-xs leading-relaxed text-paper-dim">
+                        Я даю согласие {OPERATOR.name} на обработку моих персональных данных (имя,
+                        телефон или email, текст сообщения) для связи по заявке, в том числе на их
+                        передачу в Telegram и хостинг-провайдеру за пределами Республики Беларусь, где
+                        может не обеспечиваться надлежащий уровень защиты данных, и принимаю{' '}
+                        <Link
+                          to={POLICY_PATH}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="underline underline-offset-2 transition-colors hover:text-paper"
+                          style={{ color: accentSolid }}
+                        >
+                          Политику обработки персональных данных
+                        </Link>
+                        .
+                      </span>
+                    </label>
+
                     {error && <p className="text-sm text-pink">{error}</p>}
 
                     <MagneticButton
@@ -180,9 +224,6 @@ export default function LeadCapture({ service, title, text }: Props) {
                       {submitting ? 'Отправляем…' : 'Отправить заявку'}
                       <ArrowUpRight className="h-4 w-4" />
                     </MagneticButton>
-                    <p className="text-center text-xs text-paper-dim">
-                      Нажимая кнопку, вы соглашаетесь на обработку данных
-                    </p>
                   </motion.form>
                 ) : (
                   <motion.div
