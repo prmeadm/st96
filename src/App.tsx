@@ -1,4 +1,6 @@
+import { useEffect } from 'react'
 import { Route, Routes } from 'react-router-dom'
+import { trackClicks } from './lib/analytics'
 import Layout from './components/layout/Layout'
 import CustomCursor from './components/ui/CustomCursor'
 import Home from './pages/Home'
@@ -7,6 +9,11 @@ import Privacy from './pages/Privacy'
 import CookieBanner from './components/ui/CookieBanner'
 
 function App() {
+  useEffect(() => {
+    document.addEventListener('click', trackClicks)
+    return () => document.removeEventListener('click', trackClicks)
+  }, [])
+
   return (
     <>
       <CustomCursor />

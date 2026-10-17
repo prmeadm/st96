@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Maximize2, X } from 'lucide-react'
+import { reachGoal } from '../../lib/analytics'
 import type { Accent } from '../../data/services'
 
 type Props = {
@@ -20,6 +21,7 @@ export default function HeroVideo({ src, poster, accent, portrait = false, audio
 
   const openModal = () => {
     const v = inlineRef.current
+    reachGoal('video_expand')
     startAt.current = v?.currentTime ?? 0
     v?.pause()
     setOpen(true)
