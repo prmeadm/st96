@@ -3,9 +3,9 @@ import { useSeo } from '../hooks/useSeo'
 import Reveal from '../components/ui/Reveal'
 import { OPERATOR, POLICY_DATE_LABEL } from '../data/privacy'
 
-function Section({ n, title, children }: { n: number; title: string; children: ReactNode }) {
+function Section({ n, title, children, id }: { n: number; title: string; children: ReactNode; id?: string }) {
   return (
-    <section className="border-t border-ink-line py-8">
+    <section id={id} className="border-t border-ink-line py-8">
       <h2 className="font-display text-xl font-semibold sm:text-2xl">
         <span className="mr-3 text-acid">{n}.</span>
         {title}
@@ -170,17 +170,25 @@ export default function Privacy() {
           </p>
         </Section>
 
-        <Section n={10} title="Файлы cookie и аналитика">
+        <Section n={10} id="cookies" title="Файлы cookie и аналитика">
           <p>
             Сайт использует файлы cookie и сервисы веб-аналитики «Яндекс.Метрика» (ООО «Яндекс», Россия)
             и Google Analytics (Google LLC, США) для анализа посещаемости, поведения пользователей на
             сайте и улучшения его работы. Эти сервисы могут собирать технические данные: IP-адрес,
             сведения о браузере и устройстве, посещённые страницы, источник перехода.
           </p>
+          <p>Cookie делятся на две категории:</p>
+          <List
+            items={[
+              'необходимые — обеспечивают работу сайта и сохраняют ваш выбор по cookie; всегда включены;',
+              'аналитические — Google Analytics и Яндекс.Метрика; включаются только если вы дали согласие в баннере cookie. До этого момента аналитические сервисы не запускаются.',
+            ]}
+          />
           <p>
-            Пользователь может отключить или удалить cookie в настройках браузера; при этом отдельные
-            функции сайта могут работать некорректно. Данные аналитики обрабатываются в
-            обезличенном виде и не связываются с заявками из формы.
+            Выбор можно изменить в любой момент через ссылку «Настройки cookie» внизу сайта. При отзыве
+            согласия аналитические cookie удаляются. Также cookie можно отключить или удалить в настройках
+            браузера; при этом отдельные функции сайта могут работать некорректно. Данные аналитики
+            обрабатываются в обезличенном виде и не связываются с заявками из формы.
           </p>
         </Section>
 

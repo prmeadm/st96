@@ -1,4 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { OPEN_EVENT } from '../../lib/consent'
 import { ArrowUpRight, Mail, Phone, Send } from 'lucide-react'
 import { services } from '../../data/services'
 import Reveal from '../ui/Reveal'
@@ -141,6 +142,14 @@ export default function Footer() {
             <Link to="/privacy" className="transition-colors hover:text-paper" data-cursor-hover>
               Политика обработки персональных данных
             </Link>
+            <button
+              type="button"
+              onClick={() => window.dispatchEvent(new Event(OPEN_EVENT))}
+              className="transition-colors hover:text-paper"
+              data-cursor-hover
+            >
+              Настройки cookie
+            </button>
             <p>ООО «КИНГСГАРДЕН», УНП 193999293</p>
           </div>
         </div>

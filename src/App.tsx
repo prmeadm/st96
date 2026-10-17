@@ -4,11 +4,13 @@ import CustomCursor from './components/ui/CustomCursor'
 import Home from './pages/Home'
 import ServicePage from './pages/ServicePage'
 import Privacy from './pages/Privacy'
+import CookieBanner from './components/ui/CookieBanner'
 
 function App() {
   return (
     <>
       <CustomCursor />
+      <CookieBanner />
       <Layout>
         <Routes>
           <Route path="/" element={<Home />} />
