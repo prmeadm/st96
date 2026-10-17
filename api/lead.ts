@@ -6,7 +6,6 @@ type LeadPayload = {
   interest?: string
   message?: string
   consent?: boolean
-  marketingConsent?: boolean
   policyVersion?: string
 }
 
@@ -45,7 +44,7 @@ export default async function handler(req: Request) {
     body.interest?.trim() && `Интересует: ${body.interest.trim()}`,
     body.message?.trim() && `Сообщение: ${body.message.trim()}`,
     `Согласие на обработку ПД: да (политика от ${(body.policyVersion ?? 'н/д').slice(0, 20)}, ${new Date().toLocaleString('ru-RU', { timeZone: 'Europe/Minsk' })} МСК)`,
-    `Согласие на рекламу и передачу данных в рекламных целях: ${body.marketingConsent === true ? 'да' : 'нет'}`,
+    `Согласие на рекламу и передачу данных в рекламных целях: да`,
   ]
     .filter(Boolean)
     .join('\n')
