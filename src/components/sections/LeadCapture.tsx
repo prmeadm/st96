@@ -5,7 +5,7 @@ import { ArrowUpRight, Check, Mail, Phone, Send, ShieldCheck, Timer } from 'luci
 import type { Service } from '../../data/services'
 import { services } from '../../data/services'
 import { CONTACTS } from '../layout/Footer'
-import { OPERATOR, POLICY_PATH, POLICY_VERSION } from '../../data/privacy'
+import { POLICY_PATH, POLICY_VERSION } from '../../data/privacy'
 import Reveal from '../ui/Reveal'
 import MagneticButton from '../ui/MagneticButton'
 
@@ -25,7 +25,7 @@ export default function LeadCapture({ service, title, text }: Props) {
   const [contact, setContact] = useState('')
   const [interest, setInterest] = useState(service?.slug ?? '')
   const [message, setMessage] = useState('')
-  const [consent, setConsent] = useState(false)
+  const [consent, setConsent] = useState(true)
   const [status, setStatus] = useState<'idle' | 'sent'>('idle')
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -195,13 +195,7 @@ export default function LeadCapture({ service, title, text }: Props) {
                         aria-required="true"
                       />
                       <span className="text-xs leading-relaxed text-paper-dim">
-                        Я даю согласие {OPERATOR.name} на обработку моих персональных данных (имя,
-                        телефон или email, текст сообщения) для связи по заявке и подготовки мне
-                        предложения, на получение рекламы (рассылки, таргетированная и иная реклама о
-                        выгодных предложениях, новых услугах, акциях и скидках), в том числе на передачу
-                        данных третьим лицам для этих целей, в Telegram и
-                        техническим сервисам, часть которых находится за пределами Республики Беларусь, где
-                        может не обеспечиваться надлежащий уровень защиты данных, и принимаю{' '}
+                        Я даю согласие ООО «Кингсгарден» на обработку моих персональных данных и принимаю{' '}
                         <Link
                           to={POLICY_PATH}
                           target="_blank"
