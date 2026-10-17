@@ -19,6 +19,7 @@ type LeadPayload = {
   policyVersion?: string
   attribution?: Attribution
   eventId?: string
+  internal?: boolean
   pageUrl?: string
   ads?: { fbp?: string; fbc?: string; ttp?: string; ttclid?: string }
 }
@@ -62,7 +63,7 @@ export default async function handler(req: Request) {
     `Контакт: ${contact}`,
     body.interest?.trim() && `Интересует: ${body.interest.trim()}`,
     body.message?.trim() && `Сообщение: ${body.message.trim()}`,
-    `Источник: ${source}`,
+    `Источник: ${body.internal === true ? 'внутренний тест (не в рекламные события)' : source}`,
     t(a.landing) && `Страница входа: ${t(a.landing)}`,
     `Согласие на обработку ПД: да (политика от ${(body.policyVersion ?? 'н/д').slice(0, 20)}, ${new Date().toLocaleString('ru-RU', { timeZone: 'Europe/Minsk' })} МСК)`,
     `Согласие на рекламу и передачу данных в рекламных целях: да`,
@@ -80,7 +81,7 @@ export default async function handler(req: Request) {
     return json({ error: 'Telegram delivery failed' }, 502)
   }
 
-  await sendAdEvents(req, body, contact)
+  if (body.internal !== true) await sendAdEvents(req, body, contact)
 
   return json({ ok: true }, 200)
 }

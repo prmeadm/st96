@@ -1,3 +1,5 @@
+import { isInternal } from './internal'
+
 const KEY = 'st96-cookie-consent'
 export const OPEN_EVENT = 'st96:cookie-settings'
 
@@ -33,7 +35,7 @@ function clearAnalyticsCookies() {
 }
 
 export function pushConsentEvent(consent: Consent | null) {
-  if (consent?.analytics) {
+  if (consent?.analytics && !isInternal()) {
     window.dataLayer = window.dataLayer || []
     window.dataLayer.push({ event: 'analytics_consent' })
   }

@@ -6,6 +6,7 @@ import type { Service } from '../../data/services'
 import { services } from '../../data/services'
 import { CONTACTS } from '../layout/Footer'
 import { trackLead } from '../../lib/analytics'
+import { isInternal } from '../../lib/internal'
 import { readAdIdentifiers, readAttribution } from '../../lib/attribution'
 import { POLICY_PATH, POLICY_VERSION } from '../../data/privacy'
 import Reveal from '../ui/Reveal'
@@ -65,6 +66,7 @@ export default function LeadCapture({ service, title, text }: Props) {
           eventId,
           ads: readAdIdentifiers(),
           pageUrl: location.href,
+          internal: isInternal(),
         }),
       })
       if (!res.ok) throw new Error('request failed')
@@ -148,7 +150,7 @@ export default function LeadCapture({ service, title, text }: Props) {
                           onChange={(e) => setName(e.target.value)}
                           type="text"
                           placeholder="Как к вам обращаться"
-                          className="rounded-xl border border-ink-line bg-ink px-4 py-3.5 text-paper outline-none transition-colors focus:border-paper-dim"
+                          className="ym-disable-keys rounded-xl border border-ink-line bg-ink px-4 py-3.5 text-paper outline-none transition-colors focus:border-paper-dim"
                         />
                       </label>
                       <label className="flex flex-col gap-2">
@@ -158,7 +160,7 @@ export default function LeadCapture({ service, title, text }: Props) {
                           onChange={(e) => setContact(e.target.value)}
                           type="text"
                           placeholder="+375 29 000-00-00"
-                          className="rounded-xl border border-ink-line bg-ink px-4 py-3.5 text-paper outline-none transition-colors focus:border-paper-dim"
+                          className="ym-disable-keys rounded-xl border border-ink-line bg-ink px-4 py-3.5 text-paper outline-none transition-colors focus:border-paper-dim"
                         />
                       </label>
                     </div>
@@ -168,7 +170,7 @@ export default function LeadCapture({ service, title, text }: Props) {
                       <select
                         value={interest}
                         onChange={(e) => setInterest(e.target.value)}
-                        className="rounded-xl border border-ink-line bg-ink px-4 py-3.5 text-paper outline-none transition-colors focus:border-paper-dim"
+                        className="ym-disable-keys rounded-xl border border-ink-line bg-ink px-4 py-3.5 text-paper outline-none transition-colors focus:border-paper-dim"
                       >
                         <option value="">Не знаю, нужна консультация</option>
                         {services.map((s) => (
@@ -186,7 +188,7 @@ export default function LeadCapture({ service, title, text }: Props) {
                         onChange={(e) => setMessage(e.target.value)}
                         rows={3}
                         placeholder="Кратко о задаче, сроках, бюджете"
-                        className="resize-none rounded-xl border border-ink-line bg-ink px-4 py-3.5 text-paper outline-none transition-colors focus:border-paper-dim"
+                        className="ym-disable-keys resize-none rounded-xl border border-ink-line bg-ink px-4 py-3.5 text-paper outline-none transition-colors focus:border-paper-dim"
                       />
                     </label>
 
