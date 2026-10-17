@@ -6,7 +6,7 @@ import type { Service } from '../../data/services'
 import { services } from '../../data/services'
 import { CONTACTS } from '../layout/Footer'
 import { trackLead } from '../../lib/analytics'
-import { readAttribution } from '../../lib/attribution'
+import { readAdIdentifiers, readAttribution } from '../../lib/attribution'
 import { POLICY_PATH, POLICY_VERSION } from '../../data/privacy'
 import Reveal from '../ui/Reveal'
 import MagneticButton from '../ui/MagneticButton'
@@ -47,6 +47,7 @@ export default function LeadCapture({ service, title, text }: Props) {
     setError('')
     setSubmitting(true)
 
+    const eventId = crypto.randomUUID()
     const serviceLabel = services.find((s) => s.slug === interest)?.navLabel ?? ''
 
     try {
@@ -61,10 +62,13 @@ export default function LeadCapture({ service, title, text }: Props) {
           consent: true,
           policyVersion: POLICY_VERSION,
           attribution: readAttribution(),
+          eventId,
+          ads: readAdIdentifiers(),
+          pageUrl: location.href,
         }),
       })
       if (!res.ok) throw new Error('request failed')
-      trackLead()
+      trackLead(eventId)
       setStatus('sent')
     } catch {
       setError('Не удалось отправить заявку. Напишите нам напрямую в Telegram или по телефону ниже.')

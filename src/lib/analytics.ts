@@ -21,10 +21,10 @@ export function trackClicks(e: MouseEvent) {
   else if (/^https?:\/\/t\.me\//.test(href)) reachGoal('click_telegram')
 }
 
-export function trackLead() {
+export function trackLead(eventId: string) {
   reachGoal('lead_submit')
   if (readConsent()?.analytics) {
     window.dataLayer = window.dataLayer || []
-    window.dataLayer.push({ event: 'generate_lead' })
+    window.dataLayer.push({ event: 'generate_lead', event_id: eventId })
   }
 }
