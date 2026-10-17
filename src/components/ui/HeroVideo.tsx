@@ -33,6 +33,23 @@ export default function HeroVideo({ src, poster, accent, portrait = false, audio
   }
 
   useEffect(() => {
+    const v = inlineRef.current
+    if (!v) return
+    const nav = navigator as Navigator & { connection?: { saveData?: boolean } }
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    if (reduced || nav.connection?.saveData) return
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) v.play().catch(() => {})
+        else v.pause()
+      },
+      { threshold: 0.25 },
+    )
+    io.observe(v)
+    return () => io.disconnect()
+  }, [])
+
+  useEffect(() => {
     if (!open) return
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -66,11 +83,10 @@ export default function HeroVideo({ src, poster, accent, portrait = false, audio
           className={`block w-full object-cover ${portrait ? 'aspect-[9/16]' : 'aspect-video'}`}
           src={src}
           poster={poster}
-          autoPlay
           muted
           loop
           playsInline
-          preload="auto"
+          preload="metadata"
           aria-hidden="true"
         />
         <button
