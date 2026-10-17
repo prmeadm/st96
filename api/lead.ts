@@ -1,5 +1,15 @@
 export const config = { runtime: 'edge' }
 
+type Attribution = {
+  utm_source?: string
+  utm_medium?: string
+  utm_campaign?: string
+  utm_content?: string
+  utm_term?: string
+  landing?: string
+  referrer?: string
+}
+
 type LeadPayload = {
   name?: string
   contact?: string
@@ -7,6 +17,7 @@ type LeadPayload = {
   message?: string
   consent?: boolean
   policyVersion?: string
+  attribution?: Attribution
 }
 
 export default async function handler(req: Request) {
@@ -37,12 +48,19 @@ export default async function handler(req: Request) {
     return json({ error: 'Server not configured' }, 500)
   }
 
+  const a = body.attribution ?? {}
+  const t = (v?: string) => (typeof v === 'string' ? v.trim().slice(0, 100) : '')
+  const utm = [a.utm_source, a.utm_medium, a.utm_campaign, a.utm_content, a.utm_term].map(t).filter(Boolean)
+  const source = utm.length ? utm.join(' / ') : t(a.referrer) ? `переход с ${t(a.referrer)}` : 'прямой заход'
+
   const text = [
     '\u{1F195} Новая заявка с сайта ST96',
     `Имя: ${name}`,
     `Контакт: ${contact}`,
     body.interest?.trim() && `Интересует: ${body.interest.trim()}`,
     body.message?.trim() && `Сообщение: ${body.message.trim()}`,
+    `Источник: ${source}`,
+    t(a.landing) && `Страница входа: ${t(a.landing)}`,
     `Согласие на обработку ПД: да (политика от ${(body.policyVersion ?? 'н/д').slice(0, 20)}, ${new Date().toLocaleString('ru-RU', { timeZone: 'Europe/Minsk' })} МСК)`,
     `Согласие на рекламу и передачу данных в рекламных целях: да`,
   ]

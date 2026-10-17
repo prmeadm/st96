@@ -6,6 +6,7 @@ import type { Service } from '../../data/services'
 import { services } from '../../data/services'
 import { CONTACTS } from '../layout/Footer'
 import { trackLead } from '../../lib/analytics'
+import { readAttribution } from '../../lib/attribution'
 import { POLICY_PATH, POLICY_VERSION } from '../../data/privacy'
 import Reveal from '../ui/Reveal'
 import MagneticButton from '../ui/MagneticButton'
@@ -59,6 +60,7 @@ export default function LeadCapture({ service, title, text }: Props) {
           message,
           consent: true,
           policyVersion: POLICY_VERSION,
+          attribution: readAttribution(),
         }),
       })
       if (!res.ok) throw new Error('request failed')

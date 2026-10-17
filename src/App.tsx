@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { Route, Routes } from 'react-router-dom'
 import { trackClicks } from './lib/analytics'
+import { captureAttribution } from './lib/attribution'
 import Layout from './components/layout/Layout'
 import CustomCursor from './components/ui/CustomCursor'
 import Home from './pages/Home'
@@ -10,6 +11,7 @@ import CookieBanner from './components/ui/CookieBanner'
 
 function App() {
   useEffect(() => {
+    captureAttribution()
     document.addEventListener('click', trackClicks)
     return () => document.removeEventListener('click', trackClicks)
   }, [])
