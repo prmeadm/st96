@@ -27,12 +27,12 @@ export default function CookieBanner() {
   const c = useUi().cookie
   const [open, setOpen] = useState(() => readConsent() === null)
   const [details, setDetails] = useState(false)
-  const [analytics, setAnalytics] = useState(() => readConsent()?.analytics ?? false)
+  const [analytics, setAnalytics] = useState(() => readConsent()?.analytics ?? true)
 
   useEffect(() => {
     pushConsentEvent(readConsent())
     const reopen = () => {
-      setAnalytics(readConsent()?.analytics ?? false)
+      setAnalytics(readConsent()?.analytics ?? true)
       setDetails(true)
       setOpen(true)
     }
