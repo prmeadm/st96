@@ -3,7 +3,9 @@ import { Link } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { ArrowUpRight, Check, Mail, Phone, Send, ShieldCheck, Timer } from 'lucide-react'
 import type { Service } from '../../data/services'
-import { services } from '../../data/services'
+import { services as servicesRu } from '../../data/services'
+import { getServices } from '../../data/content'
+import { localePath, useLang, useUi } from '../../lib/i18n'
 import { CONTACTS } from '../layout/Footer'
 import { trackLead } from '../../lib/analytics'
 import { isInternal } from '../../lib/internal'
@@ -18,12 +20,13 @@ type Props = {
   text?: string
 }
 
-const trust = [
-  { icon: Timer, text: 'Отвечаем в течение 2 часов в рабочее время' },
-  { icon: ShieldCheck, text: 'Обсудим проект без обязательств' },
-]
+const trustIcons = [Timer, ShieldCheck]
 
 export default function LeadCapture({ service, title, text }: Props) {
+  const lang = useLang()
+  const l = useUi().lead
+  const services = getServices(lang)
+  const trust = l.trust.map((text, i) => ({ icon: trustIcons[i], text }))
   const [name, setName] = useState('')
   const [contact, setContact] = useState('')
   const [interest, setInterest] = useState(service?.slug ?? '')
@@ -38,18 +41,18 @@ export default function LeadCapture({ service, title, text }: Props) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!name.trim() || !contact.trim()) {
-      setError('Заполните имя и контакт для связи')
+      setError(l.errFill)
       return
     }
     if (!consent) {
-      setError('Необходимо согласие на обработку персональных данных')
+      setError(l.errConsent)
       return
     }
     setError('')
     setSubmitting(true)
 
     const eventId = crypto.randomUUID()
-    const serviceLabel = services.find((s) => s.slug === interest)?.navLabel ?? ''
+    const serviceLabel = servicesRu.find((s) => s.slug === interest)?.navLabel ?? ''
 
     try {
       const res = await fetch('/api/lead', {
@@ -61,6 +64,7 @@ export default function LeadCapture({ service, title, text }: Props) {
           interest: serviceLabel,
           message,
           consent: true,
+          lang,
           policyVersion: POLICY_VERSION,
           attribution: readAttribution(),
           eventId,
@@ -70,10 +74,10 @@ export default function LeadCapture({ service, title, text }: Props) {
         }),
       })
       if (!res.ok) throw new Error('request failed')
-      trackLead(eventId)
+      trackLead(eventId, lang)
       setStatus('sent')
     } catch {
-      setError('Не удалось отправить заявку. Напишите нам напрямую в Telegram или по телефону ниже.')
+      setError(l.errSend)
     } finally {
       setSubmitting(false)
     }
@@ -88,13 +92,13 @@ export default function LeadCapture({ service, title, text }: Props) {
               className="mb-4 inline-flex items-center gap-2 font-display text-xs font-semibold tracking-[0.2em] text-paper-dim uppercase"
             >
               <span className="h-1.5 w-1.5 rounded-full" style={{ background: accentSolid }} />
-              Начать проект
+              {l.kicker}
             </span>
             <h2 className="text-balance font-display text-[clamp(1.4rem,7vw,1.875rem)] leading-[1.1] font-semibold sm:text-4xl md:text-5xl">
-              {title ?? service?.ctaTitle ?? 'Готовы обсудить ваш проект?'}
+              {title ?? service?.ctaTitle ?? l.defaultTitle}
             </h2>
             <p className="mt-5 max-w-md text-lg text-paper-dim">
-              {text ?? service?.ctaText ?? 'Расскажите о задаче — вернёмся с идеями и планом в течение дня.'}
+              {text ?? service?.ctaText ?? l.defaultText}
             </p>
 
             <ul className="mt-8 space-y-3">
@@ -144,35 +148,35 @@ export default function LeadCapture({ service, title, text }: Props) {
                   >
                     <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                       <label className="flex flex-col gap-2">
-                        <span className="text-xs font-medium text-paper-dim">Имя *</span>
+                        <span className="text-xs font-medium text-paper-dim">{l.name}</span>
                         <input
                           value={name}
                           onChange={(e) => setName(e.target.value)}
                           type="text"
-                          placeholder="Как к вам обращаться"
+                          placeholder={l.namePh}
                           className="ym-disable-keys rounded-xl border border-ink-line bg-ink px-4 py-3.5 text-paper outline-none transition-colors focus:border-paper-dim"
                         />
                       </label>
                       <label className="flex flex-col gap-2">
-                        <span className="text-xs font-medium text-paper-dim">Телефон или email *</span>
+                        <span className="text-xs font-medium text-paper-dim">{l.contact}</span>
                         <input
                           value={contact}
                           onChange={(e) => setContact(e.target.value)}
                           type="text"
-                          placeholder="+375 29 000-00-00"
+                          placeholder={l.contactPh}
                           className="ym-disable-keys rounded-xl border border-ink-line bg-ink px-4 py-3.5 text-paper outline-none transition-colors focus:border-paper-dim"
                         />
                       </label>
                     </div>
 
                     <label className="flex flex-col gap-2">
-                      <span className="text-xs font-medium text-paper-dim">Интересует</span>
+                      <span className="text-xs font-medium text-paper-dim">{l.interest}</span>
                       <select
                         value={interest}
                         onChange={(e) => setInterest(e.target.value)}
                         className="ym-disable-keys rounded-xl border border-ink-line bg-ink px-4 py-3.5 text-paper outline-none transition-colors focus:border-paper-dim"
                       >
-                        <option value="">Не знаю, нужна консультация</option>
+                        <option value="">{l.interestNone}</option>
                         {services.map((s) => (
                           <option key={s.slug} value={s.slug}>
                             {s.navLabel}
@@ -182,12 +186,12 @@ export default function LeadCapture({ service, title, text }: Props) {
                     </label>
 
                     <label className="flex flex-col gap-2">
-                      <span className="text-xs font-medium text-paper-dim">Сообщение</span>
+                      <span className="text-xs font-medium text-paper-dim">{l.message}</span>
                       <textarea
                         value={message}
                         onChange={(e) => setMessage(e.target.value)}
                         rows={3}
-                        placeholder="Кратко о задаче, сроках, бюджете"
+                        placeholder={l.messagePh}
                         className="ym-disable-keys resize-none rounded-xl border border-ink-line bg-ink px-4 py-3.5 text-paper outline-none transition-colors focus:border-paper-dim"
                       />
                     </label>
@@ -205,15 +209,15 @@ export default function LeadCapture({ service, title, text }: Props) {
                         aria-required="true"
                       />
                       <span className="text-xs leading-relaxed text-paper-dim">
-                        Я даю согласие ООО «Кингсгарден» на обработку моих персональных данных и принимаю{' '}
+                        {l.consentPre}{' '}
                         <Link
-                          to={POLICY_PATH}
+                          to={localePath(lang, POLICY_PATH)}
                           target="_blank"
                           rel="noreferrer"
                           className="underline underline-offset-2 transition-colors hover:text-paper"
                           style={{ color: accentSolid }}
                         >
-                          Политику обработки персональных данных
+                          {l.consentLink}
                         </Link>
                         .
                       </span>
@@ -228,7 +232,7 @@ export default function LeadCapture({ service, title, text }: Props) {
                       className="mt-2 inline-flex items-center justify-center gap-2 rounded-full py-4 font-display text-sm font-semibold text-ink disabled:opacity-60"
                       style={{ background: accentSolid }}
                     >
-                      {submitting ? 'Отправляем…' : 'Отправить заявку'}
+                      {submitting ? l.sending : l.send}
                       <ArrowUpRight className="h-4 w-4" />
                     </MagneticButton>
                   </motion.form>
@@ -248,10 +252,9 @@ export default function LeadCapture({ service, title, text }: Props) {
                     >
                       <Check className="h-8 w-8 text-ink" />
                     </motion.div>
-                    <h3 className="font-display text-2xl font-semibold">Заявка отправлена</h3>
+                    <h3 className="font-display text-2xl font-semibold">{l.sentTitle}</h3>
                     <p className="max-w-xs text-paper-dim">
-                      Мы уже получили уведомление и свяжемся с вами в течение 2 часов. Также можно
-                      написать нам в Telegram.
+                      {l.sentText}
                     </p>
                     <a
                       href={CONTACTS.telegramHref}
@@ -261,13 +264,13 @@ export default function LeadCapture({ service, title, text }: Props) {
                       className="mt-2 inline-flex items-center gap-2 rounded-full border border-ink-line px-5 py-3 text-sm font-medium"
                     >
                       <Send className="h-4 w-4" />
-                      Написать в Telegram
+                      {l.writeTg}
                     </a>
                     <button
                       onClick={() => setStatus('idle')}
                       className="text-xs text-paper-dim underline underline-offset-4"
                     >
-                      Заполнить ещё раз
+                      {l.again}
                     </button>
                   </motion.div>
                 )}
@@ -275,7 +278,7 @@ export default function LeadCapture({ service, title, text }: Props) {
             </div>
             <p className="mt-4 flex items-center gap-2 text-xs text-paper-dim">
               <Mail className="h-3.5 w-3.5" />
-              Или напишите напрямую на {CONTACTS.email}
+              {l.orEmail} {CONTACTS.email}
             </p>
           </Reveal>
         </div>

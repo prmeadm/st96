@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion'
 import type { Accent, Advantage } from '../../data/services'
+import { useUi } from '../../lib/i18n'
 import SectionHeading from '../ui/SectionHeading'
 import { StaggerGroup, StaggerItem } from '../ui/Reveal'
 
@@ -10,11 +11,12 @@ type AdvantagesData = {
 }
 
 export default function Advantages({ service }: { service: AdvantagesData }) {
+  const t = useUi()
   return (
     <section className="relative border-t border-ink-line py-20 sm:py-28">
       <div className="mx-auto max-w-7xl px-5 sm:px-8">
         <div className="mb-14 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
-          <SectionHeading kicker="Преимущества" title="Почему выбирают нас" accent={service.accent.solid} />
+          <SectionHeading kicker={t.advKicker} title={t.advTitle} accent={service.accent.solid} />
           <p className="max-w-sm text-paper-dim">{service.advantagesLead}</p>
         </div>
 

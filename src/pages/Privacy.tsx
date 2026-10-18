@@ -3,7 +3,7 @@ import { useSeo } from '../hooks/useSeo'
 import Reveal from '../components/ui/Reveal'
 import { OPERATOR, POLICY_DATE_LABEL } from '../data/privacy'
 
-function Section({ n, title, children, id }: { n: number; title: string; children: ReactNode; id?: string }) {
+export function Section({ n, title, children, id }: { n: number; title: string; children: ReactNode; id?: string }) {
   return (
     <section id={id} className="border-t border-ink-line py-8">
       <h2 className="font-display text-xl font-semibold sm:text-2xl">
@@ -15,7 +15,7 @@ function Section({ n, title, children, id }: { n: number; title: string; childre
   )
 }
 
-function List({ items }: { items: string[] }) {
+export function List({ items }: { items: string[] }) {
   return (
     <ul className="list-disc space-y-1.5 pl-5 marker:text-acid">
       {items.map((i) => (
@@ -25,7 +25,7 @@ function List({ items }: { items: string[] }) {
   )
 }
 
-export default function Privacy() {
+export default function PrivacyRu() {
   useSeo({
     title: 'Политика обработки персональных данных — ST96',
     description: `Политика ${OPERATOR.short} в отношении обработки персональных данных на сайте ${OPERATOR.site}.`,

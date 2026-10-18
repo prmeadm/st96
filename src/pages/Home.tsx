@@ -5,37 +5,24 @@ import Advantages from '../components/sections/Advantages'
 import ProcessTabs from '../components/sections/ProcessTabs'
 import Results from '../components/sections/Results'
 import LeadCapture from '../components/sections/LeadCapture'
-import {
-  studioAccent,
-  studioAdvantages,
-  studioAdvantagesLead,
-  studioProcess,
-  studioProcessLead,
-  studioQuote,
-  studioStats,
-} from '../data/home'
+import { getHomeContent } from '../data/content'
+import { useLang, useUi } from '../lib/i18n'
 
 export default function Home() {
-  useSeo({
-    title: 'ST96 — креативная студия полного цикла',
-    description:
-      'ST96 — креативная студия полного цикла: продюсирование, коммерческий промоушн, продакшн и разработка программных решений на базе AI.',
-    path: '/',
-  })
+  const lang = useLang()
+  const t = useUi()
+  const home = getHomeContent(lang)
+
+  useSeo({ title: t.seoTitle, description: t.seoDescription, path: '/' })
 
   return (
     <>
       <HomeHero />
       <ServicesGrid />
-      <Advantages
-        service={{ accent: studioAccent, advantagesLead: studioAdvantagesLead, advantages: studioAdvantages }}
-      />
-      <ProcessTabs service={{ accent: studioAccent, processLead: studioProcessLead, process: studioProcess }} />
-      <Results service={{ accent: studioAccent, stats: studioStats, quote: studioQuote }} />
-      <LeadCapture
-        title="Готовы обсудить ваш проект?"
-        text="Расскажите о задаче — подберём нужные направления и вернёмся с планом в течение дня."
-      />
+      <Advantages service={{ accent: home.accent, advantagesLead: home.advantagesLead, advantages: home.advantages }} />
+      <ProcessTabs service={{ accent: home.accent, processLead: home.processLead, process: home.process }} />
+      <Results service={{ accent: home.accent, stats: home.stats, quote: home.quote }} />
+      <LeadCapture title={t.leadTitle} text={t.leadText} />
     </>
   )
 }

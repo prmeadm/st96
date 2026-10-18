@@ -4,9 +4,12 @@ import { ArrowUpRight } from 'lucide-react'
 import RevealText from '../ui/RevealText'
 import Marquee from '../ui/Marquee'
 import MagneticButton from '../ui/MagneticButton'
-import { services } from '../../data/services'
+import { getServices } from '../../data/content'
+import { useLang, useUi } from '../../lib/i18n'
 
 export default function HomeHero() {
+  const lang = useLang()
+  const t = useUi()
   const ref = useRef<HTMLDivElement>(null)
   const mx = useMotionValue(50)
   const my = useMotionValue(50)
@@ -49,11 +52,11 @@ export default function HomeHero() {
           className="mb-6 inline-flex items-center gap-2 rounded-full border border-ink-line px-4 py-1.5 text-xs font-semibold tracking-[0.15em] text-paper-dim uppercase"
         >
           <span className="h-1.5 w-1.5 rounded-full bg-acid" />
-          Креативная студия полного цикла
+          {t.studioKicker}
         </motion.div>
 
         <RevealText
-          lines={['Продюсируем.', 'Продвигаем.', 'Создаём с AI.']}
+          lines={[...t.heroLines]}
           as="h1"
           className="font-display text-[clamp(2.1rem,8vw,6rem)] leading-[1.02] font-semibold text-balance"
         />
@@ -64,8 +67,7 @@ export default function HomeHero() {
           transition={{ duration: 0.6, delay: 0.55 }}
           className="mt-7 max-w-xl text-balance text-lg text-paper-dim sm:text-xl"
         >
-          ST96 — студия полного цикла: продюсирование, коммерческий промоушн, продакшн и разработка
-          программных решений на базе AI. Идея, упаковка и технология — в одних руках.
+          {t.heroText}
         </motion.p>
 
         <motion.div
@@ -79,7 +81,7 @@ export default function HomeHero() {
             href="#lead"
             className="inline-flex items-center gap-2 rounded-full bg-acid px-7 py-4 font-display text-sm font-semibold text-ink"
           >
-            Начать проект
+            {t.startProject}
             <ArrowUpRight className="h-4 w-4" />
           </MagneticButton>
           <a
@@ -87,14 +89,14 @@ export default function HomeHero() {
             data-cursor-hover
             className="inline-flex items-center gap-2 rounded-full border border-ink-line px-7 py-4 text-sm font-semibold transition-colors hover:border-paper-dim"
           >
-            Что мы делаем
+            {t.whatWeDo}
           </a>
         </motion.div>
       </div>
 
       <div className="relative mt-16 border-y border-ink-line py-4">
         <Marquee
-          items={services
+          items={getServices(lang)
             .flatMap((s) => s.keywords)
             .map((k) => (
               <span key={k} className="font-display text-sm font-medium text-paper-dim sm:text-base">

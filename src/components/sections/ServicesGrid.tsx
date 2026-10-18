@@ -1,19 +1,23 @@
 import { Link } from 'react-router-dom'
 import { ArrowUpRight } from 'lucide-react'
-import { services } from '../../data/services'
+import { getServices } from '../../data/content'
+import { localePath, useLang, useUi } from '../../lib/i18n'
 import SectionHeading from '../ui/SectionHeading'
 import { StaggerGroup, StaggerItem } from '../ui/Reveal'
 
 export default function ServicesGrid() {
+  const lang = useLang()
+  const t = useUi()
+  const services = getServices(lang)
   return (
     <section id="services" className="relative border-t border-ink-line py-20 sm:py-28">
       <div className="mx-auto max-w-7xl px-5 sm:px-8">
-        <SectionHeading kicker="Услуги" title="Что мы делаем" className="mb-14" />
+        <SectionHeading kicker={t.servicesKicker} title={t.whatWeDo} className="mb-14" />
 
         <StaggerGroup className="grid grid-cols-1 gap-px overflow-hidden rounded-2xl border border-ink-line bg-ink-line sm:grid-cols-2">
           {services.map((s) => (
             <StaggerItem key={s.slug}>
-              <Link to={`/${s.slug}`} data-cursor-hover className="group relative block h-full bg-ink p-8 sm:p-10">
+              <Link to={localePath(lang, `/${s.slug}`)} data-cursor-hover className="group relative block h-full bg-ink p-8 sm:p-10">
                 <div
                   className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-500 group-hover:opacity-100"
                   style={{

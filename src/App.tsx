@@ -6,7 +6,7 @@ import Layout from './components/layout/Layout'
 import CustomCursor from './components/ui/CustomCursor'
 import Home from './pages/Home'
 import ServicePage from './pages/ServicePage'
-import Privacy from './pages/Privacy'
+import PrivacyRoute from './pages/PrivacyRoute'
 import CookieBanner from './components/ui/CookieBanner'
 
 function App() {
@@ -23,7 +23,10 @@ function App() {
       <Layout>
         <Routes>
           <Route path="/" element={<Home />} />
-          <Route path="/privacy" element={<Privacy />} />
+          <Route path="/privacy" element={<PrivacyRoute />} />
+          <Route path="/en" element={<Home />} />
+          <Route path="/en/privacy" element={<PrivacyRoute />} />
+          <Route path="/en/:slug" element={<ServicePage />} />
           <Route path="/:slug" element={<ServicePage />} />
         </Routes>
       </Layout>

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
+import { localePath, useLang, useUi } from '../../lib/i18n'
 import { OPEN_EVENT, pushConsentEvent, readConsent, saveConsent } from '../../lib/consent'
 
 function Toggle({ checked, disabled, onChange, label }: { checked: boolean; disabled?: boolean; onChange?: (v: boolean) => void; label: string }) {
@@ -22,6 +23,8 @@ function Toggle({ checked, disabled, onChange, label }: { checked: boolean; disa
 }
 
 export default function CookieBanner() {
+  const lang = useLang()
+  const c = useUi().cookie
   const [open, setOpen] = useState(() => readConsent() === null)
   const [details, setDetails] = useState(false)
   const [analytics, setAnalytics] = useState(() => readConsent()?.analytics ?? false)
@@ -47,19 +50,18 @@ export default function CookieBanner() {
       {open && (
         <motion.div
           role="dialog"
-          aria-label="Настройки файлов cookie"
+          aria-label={c.aria}
           className="fixed inset-x-3 bottom-3 z-[64] mx-auto max-w-3xl rounded-2xl border border-ink-line bg-ink-soft/95 p-5 shadow-2xl backdrop-blur-md sm:bottom-5 sm:p-6"
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 24 }}
           transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
         >
-          <p className="font-display text-base font-semibold">Мы используем файлы cookie</p>
+          <p className="font-display text-base font-semibold">{c.title}</p>
           <p className="mt-2 text-sm leading-relaxed text-paper-dim">
-            Необходимые cookie обеспечивают работу сайта. Аналитические помогают понять, как посетители
-            пользуются сайтом (Google Analytics, Яндекс.Метрика). Вы можете выбрать, какие разрешить.{' '}
-            <Link to="/privacy#cookies" className="underline underline-offset-2 hover:text-paper">
-              Подробнее
+            {c.text}{' '}
+            <Link to={localePath(lang, '/privacy#cookies')} className="underline underline-offset-2 hover:text-paper">
+              {c.more}
             </Link>
           </p>
 
@@ -67,17 +69,17 @@ export default function CookieBanner() {
             <div className="mt-4 space-y-3 border-t border-ink-line pt-4">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <p className="text-sm font-medium">Необходимые</p>
-                  <p className="text-xs text-paper-dim">Работа сайта и сохранение вашего выбора. Всегда включены.</p>
+                  <p className="text-sm font-medium">{c.necessary}</p>
+                  <p className="text-xs text-paper-dim">{c.necessaryText}</p>
                 </div>
-                <Toggle checked disabled label="Необходимые cookie" />
+                <Toggle checked disabled label={c.necessaryLabel} />
               </div>
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <p className="text-sm font-medium">Аналитические</p>
-                  <p className="text-xs text-paper-dim">Статистика посещений и поведения на сайте: Google Analytics, Яндекс.Метрика.</p>
+                  <p className="text-sm font-medium">{c.analytics}</p>
+                  <p className="text-xs text-paper-dim">{c.analyticsText}</p>
                 </div>
-                <Toggle checked={analytics} onChange={setAnalytics} label="Аналитические cookie" />
+                <Toggle checked={analytics} onChange={setAnalytics} label={c.analyticsLabel} />
               </div>
             </div>
           )}
@@ -89,7 +91,7 @@ export default function CookieBanner() {
               data-cursor-hover
               className="rounded-full bg-acid px-5 py-2.5 text-sm font-semibold text-ink"
             >
-              Принять все
+              {c.acceptAll}
             </button>
             {details ? (
               <button
@@ -98,7 +100,7 @@ export default function CookieBanner() {
                 data-cursor-hover
                 className="rounded-full border border-paper-dim/40 px-5 py-2.5 text-sm font-semibold hover:border-paper"
               >
-                Сохранить выбор
+                {c.save}
               </button>
             ) : (
               <button
@@ -107,7 +109,7 @@ export default function CookieBanner() {
                 data-cursor-hover
                 className="rounded-full border border-paper-dim/40 px-5 py-2.5 text-sm font-semibold hover:border-paper"
               >
-                Настроить
+                {c.customize}
               </button>
             )}
             <button
@@ -116,7 +118,7 @@ export default function CookieBanner() {
               data-cursor-hover
               className="rounded-full px-5 py-2.5 text-sm font-semibold text-paper-dim hover:text-paper"
             >
-              Только необходимые
+              {c.onlyNecessary}
             </button>
           </div>
         </motion.div>

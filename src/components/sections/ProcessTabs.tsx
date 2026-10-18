@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Check } from 'lucide-react'
 import type { Accent, ProcessStep } from '../../data/services'
+import { useUi } from '../../lib/i18n'
 import SectionHeading from '../ui/SectionHeading'
 
 const AUTO_MS = 6000
@@ -13,6 +14,7 @@ type ProcessData = {
 }
 
 export default function ProcessTabs({ service }: { service: ProcessData }) {
+  const t = useUi()
   const [active, setActive] = useState(0)
   const [auto, setAuto] = useState(true)
 
@@ -34,7 +36,7 @@ export default function ProcessTabs({ service }: { service: ProcessData }) {
   return (
     <section id="process" className="relative border-t border-ink-line py-20 sm:py-28">
       <div className="mx-auto max-w-7xl px-5 sm:px-8">
-        <SectionHeading kicker="Как мы работаем" title={service.processLead} accent={service.accent.solid} className="mb-14" />
+        <SectionHeading kicker={t.processKicker} title={service.processLead} accent={service.accent.solid} className="mb-14" />
 
         <div className="grid grid-cols-1 gap-3 lg:grid-cols-[0.9fr_1.1fr] lg:gap-16">
           <div className="flex flex-col gap-2">

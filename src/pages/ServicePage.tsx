@@ -1,5 +1,6 @@
 import { Navigate, useParams } from 'react-router-dom'
-import { getService } from '../data/services'
+import { getServiceBySlug } from '../data/content'
+import { localePath, useLang } from '../lib/i18n'
 import { useSeo } from '../hooks/useSeo'
 import ServiceHero from '../components/sections/ServiceHero'
 import Advantages from '../components/sections/Advantages'
@@ -9,7 +10,8 @@ import LeadCapture from '../components/sections/LeadCapture'
 
 export default function ServicePage() {
   const { slug } = useParams()
-  const service = getService(slug ?? '')
+  const lang = useLang()
+  const service = getServiceBySlug(lang, slug ?? '')
 
   useSeo({
     title: service ? `${service.navLabel} — ST96` : 'ST96',
@@ -17,7 +19,7 @@ export default function ServicePage() {
     path: `/${slug ?? ''}`,
   })
 
-  if (!service) return <Navigate to="/" replace />
+  if (!service) return <Navigate to={localePath(lang, '/')} replace />
 
   return (
     <>

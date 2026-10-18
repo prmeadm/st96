@@ -3,10 +3,18 @@ import { useLocation } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import Header from './Header'
 import Footer from './Footer'
+import { setPageLanguage } from '../../lib/analytics'
+import { useLang } from '../../lib/i18n'
 import type { ReactNode } from 'react'
 
 export default function Layout({ children }: { children: ReactNode }) {
   const location = useLocation()
+  const lang = useLang()
+
+  useEffect(() => {
+    document.documentElement.lang = lang
+    setPageLanguage(lang)
+  }, [lang])
 
   useEffect(() => {
     if (location.hash) {

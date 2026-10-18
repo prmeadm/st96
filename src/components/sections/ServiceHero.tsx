@@ -6,8 +6,10 @@ import RevealText from '../ui/RevealText'
 import KeywordOrbit from '../ui/KeywordOrbit'
 import HeroVideo from '../ui/HeroVideo'
 import MagneticButton from '../ui/MagneticButton'
+import { useUi } from '../../lib/i18n'
 
 export default function ServiceHero({ service }: { service: Service }) {
+  const t = useUi()
   const video = service.heroVideo
   const wide = Boolean(video && !video.portrait)
   return (
@@ -58,7 +60,7 @@ export default function ServiceHero({ service }: { service: Service }) {
               className="inline-flex items-center gap-2 rounded-full px-7 py-4 font-display text-sm font-semibold text-ink"
               style={{ background: service.accent.solid }}
             >
-              {service.ctaTitle.includes('?') ? 'Обсудить проект' : service.ctaTitle}
+              {service.ctaTitle.includes('?') ? t.discuss : service.ctaTitle}
               <ArrowUpRight className="h-4 w-4" />
             </MagneticButton>
             <a

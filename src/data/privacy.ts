@@ -1,5 +1,6 @@
 export const POLICY_VERSION = '2026-10-17'
 export const POLICY_DATE_LABEL = '17 октября 2026 г.'
+export const POLICY_DATE_LABEL_EN = 'October 17, 2026'
 export const POLICY_PATH = '/privacy'
 
 export const OPERATOR = {

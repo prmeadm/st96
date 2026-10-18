@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { Maximize2, X } from 'lucide-react'
 import { reachGoal } from '../../lib/analytics'
 import type { Accent } from '../../data/services'
+import { useUi } from '../../lib/i18n'
 
 type Props = {
   src: string
@@ -14,6 +15,7 @@ type Props = {
 }
 
 export default function HeroVideo({ src, poster, accent, portrait = false, audio = false }: Props) {
+  const t = useUi()
   const inlineRef = useRef<HTMLVideoElement>(null)
   const closeRef = useRef<HTMLButtonElement>(null)
   const startAt = useRef(0)
@@ -93,11 +95,11 @@ export default function HeroVideo({ src, poster, accent, portrait = false, audio
           type="button"
           onClick={openModal}
           data-cursor-hover
-          aria-label="Увеличить видео"
+          aria-label={t.videoExpandLabel}
           className="absolute right-3 bottom-3 inline-flex items-center gap-2 rounded-full border border-paper/20 bg-ink/70 px-3.5 py-2 text-xs font-semibold text-paper backdrop-blur-md transition-colors hover:border-paper/50 hover:bg-ink/90"
         >
           <Maximize2 className="h-3.5 w-3.5" />
-          Увеличить
+          {t.videoExpand}
         </button>
       </div>
 
@@ -107,7 +109,7 @@ export default function HeroVideo({ src, poster, accent, portrait = false, audio
           <motion.div
             role="dialog"
             aria-modal="true"
-            aria-label="Видео"
+            aria-label={t.video}
             className="fixed inset-0 z-[65] grid grid-cols-[minmax(0,1fr)] place-items-center bg-ink/90 p-4 backdrop-blur-md sm:p-8"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -148,7 +150,7 @@ export default function HeroVideo({ src, poster, accent, portrait = false, audio
               type="button"
               onClick={closeModal}
               data-cursor-hover
-              aria-label="Закрыть"
+              aria-label={t.close}
               className="absolute top-4 right-4 grid h-11 w-11 place-items-center rounded-full border border-ink-line bg-ink-soft text-paper transition-colors hover:border-paper-dim sm:top-6 sm:right-6"
             >
               <X className="h-5 w-5" />

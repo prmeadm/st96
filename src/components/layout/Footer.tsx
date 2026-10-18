@@ -1,7 +1,8 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { OPEN_EVENT } from '../../lib/consent'
 import { ArrowUpRight, Mail, Phone, Send } from 'lucide-react'
-import { services } from '../../data/services'
+import { getServices } from '../../data/content'
+import { localePath, stripLang, useLang, useUi } from '../../lib/i18n'
 import Reveal from '../ui/Reveal'
 import MagneticButton from '../ui/MagneticButton'
 
@@ -16,13 +17,16 @@ const CONTACTS = {
 export default function Footer() {
   const location = useLocation()
   const navigate = useNavigate()
+  const lang = useLang()
+  const t = useUi()
+  const isHome = stripLang(location.pathname) === '/'
 
   const goToLead = (e: React.MouseEvent) => {
     e.preventDefault()
-    if (location.pathname === '/') {
+    if (isHome) {
       document.getElementById('lead')?.scrollIntoView({ behavior: 'smooth' })
     } else {
-      navigate('/#lead')
+      navigate(`${localePath(lang, '/')}#lead`)
     }
   }
 
@@ -35,10 +39,7 @@ export default function Footer() {
               <span className="font-display text-4xl font-bold tracking-tight sm:text-6xl">
                 ST<span className="text-acid">96</span>
               </span>
-              <p className="mt-4 max-w-md text-paper-dim">
-                Креативная студия полного цикла: продюсирование, промоушн, продакшн и AI-разработка —
-                под одной крышей.
-              </p>
+              <p className="mt-4 max-w-md text-paper-dim">{t.footerText}</p>
             </div>
             <MagneticButton
               as="a"
@@ -46,7 +47,7 @@ export default function Footer() {
               onClick={goToLead}
               className="inline-flex w-fit items-center gap-2 rounded-full bg-acid px-7 py-4 font-display text-sm font-semibold text-ink"
             >
-              Начать проект
+              {t.startProject}
               <ArrowUpRight className="h-4 w-4" />
             </MagneticButton>
           </div>
@@ -55,11 +56,11 @@ export default function Footer() {
         <div className="grid grid-cols-2 gap-10 py-14 sm:grid-cols-4">
           <Reveal delay={0.05}>
             <div>
-              <p className="mb-4 text-xs font-semibold tracking-[0.2em] text-paper-dim uppercase">Навигация</p>
+              <p className="mb-4 text-xs font-semibold tracking-[0.2em] text-paper-dim uppercase">{t.nav}</p>
               <ul className="space-y-3">
                 <li>
-                  <Link to="/" className="text-paper-dim transition-colors hover:text-paper" data-cursor-hover>
-                    Главная
+                  <Link to={localePath(lang, '/')} className="text-paper-dim transition-colors hover:text-paper" data-cursor-hover>
+                    {t.home}
                   </Link>
                 </li>
                 <li>
@@ -69,7 +70,7 @@ export default function Footer() {
                     className="text-paper-dim transition-colors hover:text-paper"
                     data-cursor-hover
                   >
-                    Контакты
+                    {t.contacts}
                   </a>
                 </li>
               </ul>
@@ -78,12 +79,12 @@ export default function Footer() {
 
           <Reveal delay={0.1}>
             <div>
-              <p className="mb-4 text-xs font-semibold tracking-[0.2em] text-paper-dim uppercase">Услуги</p>
+              <p className="mb-4 text-xs font-semibold tracking-[0.2em] text-paper-dim uppercase">{t.servicesTitle}</p>
               <ul className="space-y-3">
-                {services.map((s) => (
+                {getServices(lang).map((s) => (
                   <li key={s.slug}>
                     <Link
-                      to={`/${s.slug}`}
+                      to={localePath(lang, `/${s.slug}`)}
                       className="text-paper-dim transition-colors hover:text-paper"
                       data-cursor-hover
                     >
@@ -97,7 +98,7 @@ export default function Footer() {
 
           <Reveal delay={0.15} className="col-span-2 sm:col-span-2">
             <div>
-              <p className="mb-4 text-xs font-semibold tracking-[0.2em] text-paper-dim uppercase">Контакты</p>
+              <p className="mb-4 text-xs font-semibold tracking-[0.2em] text-paper-dim uppercase">{t.contactsTitle}</p>
               <ul className="space-y-3">
                 <li>
                   <a
@@ -137,10 +138,10 @@ export default function Footer() {
         </div>
 
         <div className="flex flex-col items-start justify-between gap-4 pt-8 text-sm text-paper-dim sm:flex-row sm:items-center">
-          <p>© {new Date().getFullYear()} ST96. Все права защищены.</p>
+          <p>© {new Date().getFullYear()} ST96. {t.rights}</p>
           <div className="flex flex-col gap-1 sm:items-end">
-            <Link to="/privacy" className="transition-colors hover:text-paper" data-cursor-hover>
-              Политика обработки персональных данных
+            <Link to={localePath(lang, '/privacy')} className="transition-colors hover:text-paper" data-cursor-hover>
+              {t.privacyLink}
             </Link>
             <button
               type="button"
@@ -148,9 +149,9 @@ export default function Footer() {
               className="transition-colors hover:text-paper"
               data-cursor-hover
             >
-              Настройки cookie
+              {t.cookieSettings}
             </button>
-            <p>ООО «КИНГСГАРДЕН», УНП 193999293</p>
+            <p>{t.operatorLine}</p>
           </div>
         </div>
       </div>
