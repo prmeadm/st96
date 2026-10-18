@@ -97,7 +97,7 @@ export default function Header() {
             data-cursor-hover
             className="inline-flex h-10 items-center gap-1 rounded-full border border-ink-line px-3 font-display text-xs font-semibold tracking-wider transition-colors hover:border-paper-dim"
           >
-            <span className="text-paper">{t.langShort}</span>
+            <span className="text-acid">{t.langShort}</span>
             <span className="text-paper-dim">/</span>
             <span className="text-paper-dim">{t.langOtherShort}</span>
           </Link>
