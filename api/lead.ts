@@ -83,14 +83,17 @@ export default async function handler(req: Request) {
     body: JSON.stringify({ chat_id: chatId, text }),
   })
 
-  if (!tgRes.ok) {
-    return json({ error: 'Telegram delivery failed' }, 502)
+  // Если группа недоступна (бота убрали, сменился чат), заявка не должна пропасть: сохраняем её в базу
+  let messageId: number | null = null
+  if (tgRes.ok) {
+    messageId = ((await tgRes.json()) as { result?: { message_id?: number } }).result?.message_id ?? null
+  } else {
+    console.error('telegram delivery failed', tgRes.status, (await tgRes.text().catch(() => '')).slice(0, 200))
   }
 
-  // Копия заявки в базу. Ошибка базы не должна ломать отправку формы: заявка уже в группе.
+  let saved = false
   if (body.internal !== true) {
     try {
-      const sent = (await tgRes.json()) as { result?: { message_id?: number } }
       const url = process.env.SUPABASE_URL
       const key = process.env.SUPABASE_SERVICE_ROLE_KEY
       if (url && key) {
@@ -101,16 +104,18 @@ export default async function handler(req: Request) {
         )
         await ingestLead(supabaseRepo(url, key), parseLead(text), {
           source: 'site_form',
-          tgChatId: Number(chatId),
-          tgMessageId: sent.result?.message_id ?? null,
+          tgChatId: messageId ? Number(chatId) : null,
+          tgMessageId: messageId,
           rawText: text,
           utm: Object.keys(utmObj).length ? (utmObj as Record<string, string>) : null,
         })
+        saved = true
       }
     } catch (e) {
       console.error('lead db save failed', e instanceof Error ? e.message : e)
     }
   }
+  if (!tgRes.ok && !saved) return json({ error: 'Telegram delivery failed' }, 502)
 
   if (body.internal !== true) await sendAdEvents(req, body, contact)
 
