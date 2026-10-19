@@ -50,8 +50,19 @@ export function createBot(token: string, repo: Repo, opts: { groupChatId: number
 
   // Telegram может повторить доставку: один update обрабатываем один раз
   bot.use(async (ctx, next) => {
-    if (!(await repo.claimUpdate(ctx.update.update_id))) return
-    await next()
+    const t0 = Date.now()
+    console.log('update', ctx.update.update_id, Object.keys(ctx.update).filter((k) => k !== 'update_id').join(','), ctx.chat?.type ?? '')
+    if (!(await repo.claimUpdate(ctx.update.update_id))) {
+      console.log('update duplicate', ctx.update.update_id)
+      return
+    }
+    try {
+      await next()
+      console.log('update handled', ctx.update.update_id, `${Date.now() - t0}ms`)
+    } catch (e) {
+      console.error('update failed', ctx.update.update_id, e instanceof Error ? e.stack : e)
+      throw e
+    }
   })
 
   bot.command('start', async (ctx) => {
