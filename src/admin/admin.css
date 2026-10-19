@@ -1,0 +1,88 @@
+:root {
+  --bg: #f5f6f8; --card: #fff; --ink: #14171f; --mute: #6b7280; --line: #e3e6ec;
+  --blue: #2f5bff; --blue-soft: #eaf0ff; --green: #19a463; --green-soft: #e6f6ee;
+  --amber: #e8890c; --amber-soft: #fff3e1; --red: #e5484d; --red-soft: #fdecec;
+  --violet: #7c4dff; --violet-soft: #efe9ff; --mark: #fff1a8;
+  --shadow: 0 1px 2px rgba(20, 23, 31, 0.06), 0 6px 18px rgba(20, 23, 31, 0.06);
+  color-scheme: light dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0f1115; --card: #181b22; --ink: #eceef3; --mute: #98a1b3; --line: #2a2f3a;
+    --blue: #6c8cff; --blue-soft: #1c2748; --green: #3ecb8a; --green-soft: #12301f;
+    --amber: #f2a33a; --amber-soft: #35260d; --red: #ff6b70; --red-soft: #3a1618;
+    --violet: #9d7dff; --violet-soft: #241d44; --mark: #5b4a00;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 6px 18px rgba(0, 0, 0, 0.35);
+  }
+}
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; margin: 0; }
+body { font-family: Inter, system-ui, -apple-system, 'Segoe UI', sans-serif; background: var(--bg); color: var(--ink); font-size: 14px; -webkit-font-smoothing: antialiased; }
+button { font: inherit; color: inherit; cursor: pointer; }
+input, textarea, select { font: inherit; color: var(--ink); background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 9px 11px; width: 100%; }
+input:focus, textarea:focus, select:focus { outline: 2px solid var(--blue-soft); border-color: var(--blue); }
+a { color: var(--blue); text-decoration: none; }
+a:hover { text-decoration: underline; }
+mark { background: var(--mark); color: inherit; border-radius: 3px; padding: 0 1px; }
+
+.app { display: flex; height: 100%; }
+.rail { width: 200px; background: var(--card); border-right: 1px solid var(--line); display: flex; flex-direction: column; padding: 14px 10px; gap: 4px; flex: none; }
+.rail .brand { font-weight: 700; font-size: 15px; padding: 6px 10px 14px; }
+.rail a { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; color: var(--ink); font-weight: 500; }
+.rail a:hover { background: var(--bg); text-decoration: none; }
+.rail a.on { background: var(--blue-soft); color: var(--blue); }
+.rail .who { margin-top: auto; padding: 10px; font-size: 12px; color: var(--mute); word-break: break-all; }
+.main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.page { flex: 1; overflow: auto; padding: 18px; }
+.wrap { max-width: 980px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
+.h1 { font-size: 20px; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 14px; box-shadow: var(--shadow); }
+.card h3 { margin: 0 0 10px; font-size: 15px; }
+.row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.sp { flex: 1; }
+.hint { font-size: 12.5px; color: var(--mute); line-height: 1.4; }
+.btn { border: 1px solid var(--line); background: var(--card); border-radius: 10px; padding: 9px 14px; font-weight: 500; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+.btn:hover { background: var(--bg); }
+.btn.primary { background: var(--blue); border-color: var(--blue); color: #fff; }
+.btn:disabled { opacity: 0.45; cursor: default; }
+.chip { display: inline-flex; align-items: center; gap: 4px; font-size: 11.5px; padding: 2px 8px; border-radius: 999px; font-weight: 600; background: var(--bg); color: var(--mute); border: 1px solid var(--line); }
+.chip.blue { background: var(--blue-soft); color: var(--blue); border-color: transparent; }
+.chip.green { background: var(--green-soft); color: var(--green); border-color: transparent; }
+.chip.amber { background: var(--amber-soft); color: var(--amber); border-color: transparent; }
+.chip.red { background: var(--red-soft); color: var(--red); border-color: transparent; }
+.chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.chips button { border: 1px solid var(--line); background: var(--card); border-radius: 999px; padding: 6px 12px; font-size: 13px; }
+.chips button.on { background: var(--blue); border-color: var(--blue); color: #fff; }
+.fld label { display: block; font-size: 12px; color: var(--mute); margin-bottom: 5px; font-weight: 500; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.item { display: block; color: inherit; border: 1px solid var(--line); background: var(--card); border-radius: 14px; padding: 12px; box-shadow: var(--shadow); }
+a.item:hover { border-color: var(--blue); text-decoration: none; }
+.item b { font-size: 15px; }
+.muted { color: var(--mute); }
+.err { color: var(--red); font-size: 13px; }
+.note { background: var(--bg); border-radius: 12px; padding: 9px 11px; white-space: pre-wrap; word-break: break-word; line-height: 1.4; }
+.msg { max-width: 85%; padding: 8px 11px; border-radius: 14px; background: var(--bg); white-space: pre-wrap; word-break: break-word; }
+.msg.admin { align-self: flex-end; background: var(--blue-soft); }
+.chat { display: flex; flex-direction: column; gap: 6px; max-height: 360px; overflow: auto; }
+.login { min-height: 100%; display: grid; place-items: center; padding: 20px; }
+.login .card { width: min(380px, 100%); display: flex; flex-direction: column; gap: 12px; }
+.empty { text-align: center; padding: 30px 10px; color: var(--mute); }
+
+@media (max-width: 720px) {
+  .app { flex-direction: column-reverse; }
+  .rail { width: auto; flex-direction: row; justify-content: space-around; border-right: 0; border-top: 1px solid var(--line); padding: 4px 4px calc(4px + env(safe-area-inset-bottom)); gap: 0; }
+  .rail .brand, .rail .who { display: none; }
+  .rail a { flex: 1; flex-direction: column; gap: 2px; font-size: 11px; padding: 7px 4px; justify-content: center; }
+  .page { padding: 12px; }
+  input, textarea, select { font-size: 16px; min-height: 44px; }
+  .btn { min-height: 44px; }
+  .chips button { min-height: 38px; }
+  .grid2, .grid3 { grid-template-columns: 1fr; }
+  .msg { max-width: 92%; }
+}
+
+.rail .out { display: none; }
+@media (max-width: 720px) {
+  .rail .out { display: flex; flex: 1; flex-direction: column; align-items: center; gap: 2px; font-size: 11px; padding: 7px 4px; border: 0; background: none; color: var(--mute); }
+}
