@@ -2,6 +2,9 @@ import { Bot, InlineKeyboard, type Context } from 'grammy'
 import type { ClientRow, MessageInsert, Repo } from '../repo'
 import { ingestGroupMessage } from '../leads/ingest'
 import { handleTopicMessage, relayToAdmins } from './dialog'
+import { handleClick, handleFreeText, startFunnel, type Env } from '../funnels/engine'
+import { pickFunnel } from '../funnels/triggers'
+import { telegramOut } from './telegramOut'
 import { T, type Lang } from './texts'
 
 const ACK_EVERY_MS = 12 * 3600 * 1000
@@ -48,6 +51,8 @@ function messageKind(m: NonNullable<Context['message']>): MessageInsert['kind'] 
 
 export function createBot(token: string, repo: Repo, opts: { groupChatId: number | null }) {
   const bot = new Bot(token)
+  const envFor = (api: Bot['api']): Env => ({ repo, out: telegramOut(api, repo, opts.groupChatId) })
+  const isMuted = (c: ClientRow) => !!c.human_until && Date.parse(c.human_until) > Date.now()
 
   // Telegram может повторить доставку: один update обрабатываем один раз
   bot.use(async (ctx, next) => {
@@ -73,7 +78,28 @@ export function createBot(token: string, repo: Repo, opts: { groupChatId: number
     const t = T[client.language]
     await repo.insertMessage({ client_id: client.id, direction: 'in', kind: 'text', text: ctx.message?.text ?? '/start', tg_chat_id: ctx.chat.id, tg_message_id: ctx.message?.message_id ?? null })
     const kb = new InlineKeyboard().text(t.agree, 'consent:yes').text(t.decline, 'consent:no')
-    await ctx.reply(t.welcome, { reply_markup: kb, link_preview_options: { is_disabled: true } })
+    // Явный /start начинает всё заново: диалог у человека и прежняя воронка закрываются
+    if (isMuted(client)) await repo.updateClient(client.id, { human_until: null })
+    const active = await repo.findActiveRun(client.id)
+    if (active) await repo.updateRun(active.id, { status: 'stopped', finished_at: new Date().toISOString() })
+    const funnel = pickFunnel(await repo.listPublishedFunnels(), { kind: 'start', payload })
+    if (funnel) {
+      // Приветствие даёт воронка, поэтому сначала короткий запрос согласия, затем воронка
+      await ctx.reply(t.consentAsk, { reply_markup: kb, link_preview_options: { is_disabled: true } })
+      await startFunnel(envFor(ctx.api), funnel, { ...client, human_until: null })
+    } else {
+      await ctx.reply(t.welcome, { reply_markup: kb, link_preview_options: { is_disabled: true } })
+    }
+  })
+
+  // Кнопки быстрых ответов из воронок: fb:<run>:<кнопка>
+  bot.callbackQuery(/^fb:([0-9a-f-]{36}):(\w+)$/, async (ctx) => {
+    const { client } = await ensureClient(repo, ctx.from)
+    const run = await repo.getRun(ctx.match[1])
+    if (!run || run.client_id !== client.id) return void (await ctx.answerCallbackQuery({ text: 'Кнопка устарела' }))
+    await ctx.answerCallbackQuery()
+    const r = await handleClick(envFor(ctx.api), client, run, ctx.match[2])
+    if (r === 'ok') await ctx.editMessageReplyMarkup({ reply_markup: undefined }).catch(() => undefined)
   })
 
   bot.command('stop', async (ctx) => {
@@ -118,8 +144,20 @@ export function createBot(token: string, repo: Repo, opts: { groupChatId: number
             .catch(() => undefined)
         }
       }
+      // Воронки: идущая ждёт текст, иначе ищем воронку по ключевому слову или «любое сообщение».
+      // Пока диалог у человека, бот молчит.
+      let handled = false
+      const muted = isMuted(client)
+      if (!muted && m.text) {
+        const run = await repo.findActiveRun(client.id)
+        if (run) handled = await handleFreeText(envFor(ctx.api), client, run)
+        else {
+          const funnel = pickFunnel(await repo.listPublishedFunnels(), { kind: 'text', text: m.text })
+          if (funnel) handled = (await startFunnel(envFor(ctx.api), funnel, client)) !== null
+        }
+      }
       // Подтверждаем получение не чаще раза в 12 часов
-      if (!prevSeen || Date.now() - Date.parse(prevSeen) > ACK_EVERY_MS) await ctx.reply(T[client.language].ack)
+      if (!handled && !muted && (!prevSeen || Date.now() - Date.parse(prevSeen) > ACK_EVERY_MS)) await ctx.reply(T[client.language].ack)
       return
     }
     if (ctx.chat.type === 'group' || ctx.chat.type === 'supergroup') {

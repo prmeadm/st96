@@ -1,6 +1,7 @@
 // Доступ к данным. Логика (server/leads, server/bot) работает через интерфейс Repo:
 // в проде это Supabase, в тестах — память.
 import { createClient } from '@supabase/supabase-js'
+import type { Funnel, JobRow, RunRow } from './funnels/types'
 
 export type ClientRow = {
   id: string
@@ -17,6 +18,7 @@ export type ClientRow = {
   last_seen_at: string | null
   admin_topic_id: number | null
   dialog_closed_at: string | null
+  human_until: string | null
 }
 
 export type LeadInsert = {
@@ -66,6 +68,7 @@ export interface Repo {
   /** false — апдейт уже обработан (Telegram повторил доставку) */
   claimUpdate(updateId: number): Promise<boolean>
   findClient(by: { tgUserId?: number; phone?: string; username?: string; topicId?: number }): Promise<ClientRow | null>
+  findClientById(id: string): Promise<ClientRow | null>
   insertClient(c: Partial<ClientRow>): Promise<ClientRow>
   updateClient(id: string, patch: Partial<ClientRow>): Promise<void>
   /** Вставка заявки; если заявка с этим сообщением Telegram уже есть, вернёт её */
@@ -78,6 +81,24 @@ export interface Repo {
   listLeads(clientId: string): Promise<{ service_key: string | null; company: string | null; comment: string | null; source: string; created_at: string }[]>
   /** Записывает тему, если у клиента её ещё нет; возвращает действующий номер темы */
   setTopicIfEmpty(clientId: string, topicId: number): Promise<number>
+
+  // воронки
+  listPublishedFunnels(): Promise<Funnel[]>
+  getFunnel(id: string): Promise<Funnel | null>
+  getRun(id: string): Promise<RunRow | null>
+  findActiveRun(clientId: string): Promise<RunRow | null>
+  insertRun(r: { funnel_id: string; client_id: string; version: number; current_node: string | null; vars: Record<string, unknown> }): Promise<RunRow>
+  updateRun(id: string, patch: Partial<Pick<RunRow, 'current_node' | 'status' | 'vars' | 'wake_at'>> & { finished_at?: string | null }): Promise<void>
+  hasRun(clientId: string, funnelId: string): Promise<boolean>
+  insertEvent(e: { run_id: string; funnel_id: string; client_id: string; node_id: string; event: string; data?: Record<string, unknown> }): Promise<void>
+  // теги
+  addTag(clientId: string, name: string): Promise<void>
+  removeTag(clientId: string, name: string): Promise<void>
+  listTags(clientId: string): Promise<string[]>
+  // очередь отложенных шагов
+  enqueueJob(kind: string, runAt: Date, payload: Record<string, unknown>): Promise<void>
+  claimJobs(limit: number): Promise<JobRow[]>
+  finishJob(id: number, error?: string): Promise<void>
 }
 
 const cleanUser = (u: string) => u.replace(/^@/, '')
@@ -105,6 +126,9 @@ export function supabaseRepo(url: string, key: string): Repo {
       else if (username) q = q.ilike('tg_username', cleanUser(username).replace(/[%_]/g, '\\$&'))
       else return null
       return ok(await q.limit(1).maybeSingle(), 'findClient') as ClientRow | null
+    },
+    async findClientById(id) {
+      return ok(await db.from('clients').select('*').eq('id', id).maybeSingle(), 'findClientById') as ClientRow | null
     },
     async insertClient(c) {
       return ok(await db.from('clients').insert(c).select('*').single(), 'insertClient') as ClientRow
@@ -139,6 +163,53 @@ export function supabaseRepo(url: string, key: string): Repo {
     },
     async listLeads(clientId) {
       return ok(await db.from('leads').select('service_key, company, comment, source, created_at').eq('client_id', clientId).order('created_at', { ascending: false }).limit(5), 'listLeads') ?? []
+    },
+    async listPublishedFunnels() {
+      return (ok(await db.from('funnels').select('id, name, status, graph, ai_enabled, version').eq('status', 'published'), 'listPublishedFunnels') ?? []) as Funnel[]
+    },
+    async getFunnel(id) {
+      return ok(await db.from('funnels').select('id, name, status, graph, ai_enabled, version').eq('id', id).maybeSingle(), 'getFunnel') as Funnel | null
+    },
+    async getRun(id) {
+      return ok(await db.from('funnel_runs').select('*').eq('id', id).maybeSingle(), 'getRun') as RunRow | null
+    },
+    async findActiveRun(clientId) {
+      return ok(await db.from('funnel_runs').select('*').eq('client_id', clientId).in('status', ['running', 'waiting']).order('started_at', { ascending: false }).limit(1).maybeSingle(), 'findActiveRun') as RunRow | null
+    },
+    async insertRun(r) {
+      return ok(await db.from('funnel_runs').insert(r).select('*').single(), 'insertRun') as RunRow
+    },
+    async updateRun(id, patch) {
+      ok(await db.from('funnel_runs').update(patch).eq('id', id), 'updateRun')
+    },
+    async hasRun(clientId, funnelId) {
+      const { count, error } = await db.from('funnel_runs').select('id', { count: 'exact', head: true }).eq('client_id', clientId).eq('funnel_id', funnelId)
+      if (error) throw new Error(`hasRun: ${error.message}`)
+      return (count ?? 0) > 0
+    },
+    async insertEvent(e) {
+      ok(await db.from('run_events').insert(e), 'insertEvent')
+    },
+    async addTag(clientId, name) {
+      const t = ok(await db.from('tags').upsert({ name }, { onConflict: 'name' }).select('id').single(), 'addTag tag') as { id: string }
+      ok(await db.from('client_tags').upsert({ client_id: clientId, tag_id: t.id }, { onConflict: 'client_id,tag_id', ignoreDuplicates: true }), 'addTag link')
+    },
+    async removeTag(clientId, name) {
+      const t = ok(await db.from('tags').select('id').eq('name', name).maybeSingle(), 'removeTag tag') as { id: string } | null
+      if (t) ok(await db.from('client_tags').delete().eq('client_id', clientId).eq('tag_id', t.id), 'removeTag link')
+    },
+    async listTags(clientId) {
+      const rows = (ok(await db.from('client_tags').select('tags(name)').eq('client_id', clientId), 'listTags') ?? []) as unknown as { tags: { name: string } | null }[]
+      return rows.map((r) => r.tags?.name).filter((x): x is string => !!x)
+    },
+    async enqueueJob(kind, runAt, payload) {
+      ok(await db.from('jobs').insert({ kind, run_at: runAt.toISOString(), payload }), 'enqueueJob')
+    },
+    async claimJobs(limit) {
+      return (ok(await db.rpc('claim_jobs', { p_limit: limit }), 'claimJobs') ?? []) as JobRow[]
+    },
+    async finishJob(id, error) {
+      ok(await db.from('jobs').update(error ? { last_error: error.slice(0, 500) } : { done_at: new Date().toISOString() }).eq('id', id), 'finishJob')
     },
     async setTopicIfEmpty(clientId, topicId) {
       const rows = ok(await db.from('clients').update({ admin_topic_id: topicId }).eq('id', clientId).is('admin_topic_id', null).select('admin_topic_id'), 'setTopicIfEmpty')

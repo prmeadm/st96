@@ -3,6 +3,8 @@ import assert from 'node:assert/strict'
 import type { Update } from 'grammy/types'
 import { memoryRepo } from '../memoryRepo'
 import { createBot } from './bot'
+import { demoGraph } from '../funnels/demo'
+import { TRIGGER } from '../funnels/types'
 
 const GROUP = -1001
 
@@ -166,4 +168,56 @@ test('диалог: служебные сообщения и чужие темы
   await send(topicMsg(repo.clients[0].admin_topic_id!, '', 8, { text: undefined, forum_topic_created: { name: 'x', icon_color: 1 } }))
   await send(topicMsg(9999, 'сообщение в неизвестной теме', 9))
   assert.equal(calls.length, before)
+})
+
+const publish = (repo: ReturnType<typeof setup>['repo'], graph = demoGraph) =>
+  repo.funnels.push({ id: 'f1', name: 'Демо', status: 'published', graph, ai_enabled: false, version: 1 })
+const START_ENT = { entities: [{ type: 'bot_command', offset: 0, length: 6 }] }
+
+test('воронка: /start присылает запрос согласия и приветствие воронки с кнопками', async () => {
+  const { repo, calls, send } = setup()
+  publish(repo)
+  await send(msg('/start', START_ENT))
+  const toClient = calls.filter((c) => c.method === 'sendMessage' && c.payload.chat_id === 555)
+  assert.equal(toClient.length, 2)
+  assert.match(String(toClient[0].payload.text), /согласие/)
+  assert.match(String(toClient[1].payload.text), /Здравствуйте, Мария!/)
+  assert.match(JSON.stringify(toClient[1].payload.reply_markup), /fb:[0-9a-f-]{36}:q1/)
+  assert.equal(repo.runs[0].status, 'waiting')
+})
+
+test('воронка: кнопка «Связаться с админом» передаёт диалог, бот дальше молчит', async () => {
+  const { repo, calls, send } = setup()
+  publish(repo)
+  await send(msg('/start', START_ENT))
+  await send({ callback_query: { id: 'c1', from: user, chat_instance: 'x', data: `fb:${repo.runs[0].id}:q4`, message: { message_id: 9, date: 1, chat: priv } } })
+  assert.equal(repo.runs[0].status, 'stopped')
+  assert.ok(repo.clients[0].human_until)
+  assert.ok(calls.some((c) => c.method === 'sendMessage' && /администратору/.test(String(c.payload.text))))
+  // сообщение клиента попадает сотрудникам, но бот не отвечает ни воронкой, ни подтверждением
+  const before = calls.filter((c) => c.method === 'sendMessage' && c.payload.chat_id === 555).length
+  await send(msg('Жду ответа', { message_id: 20 }))
+  assert.equal(calls.filter((c) => c.method === 'sendMessage' && c.payload.chat_id === 555).length, before)
+  assert.ok(calls.some((c) => c.method === 'copyMessage' && c.payload.chat_id === GROUP))
+})
+
+test('воронка: чужая кнопка и старый запуск не срабатывают', async () => {
+  const { repo, calls, send } = setup()
+  publish(repo)
+  await send(msg('/start', START_ENT))
+  const other = { ...user, id: 999, username: 'other' }
+  await send({ callback_query: { id: 'c2', from: other, chat_instance: 'x', data: `fb:${repo.runs[0].id}:q1`, message: { message_id: 9, date: 1, chat: { id: 999, type: 'private', first_name: 'X' } } } })
+  assert.equal(repo.runs[0].status, 'waiting')
+  assert.ok(calls.some((c) => c.method === 'answerCallbackQuery' && /устарела/.test(String(c.payload.text))))
+})
+
+test('воронка по ключевому слову запускается на сообщение', async () => {
+  const { repo, calls, send } = setup()
+  const kw = JSON.parse(JSON.stringify(demoGraph))
+  kw.nodes[0].data = { triggers: [TRIGGER.keyword], keyword: 'цена, прайс' }
+  publish(repo, kw)
+  await send(msg('Какая цена у ретуши?'))
+  assert.equal(repo.runs.length, 1)
+  assert.ok(calls.some((c) => c.method === 'sendMessage' && /Здравствуйте, Мария/.test(String(c.payload.text))))
+  assert.ok(!calls.some((c) => /Передали администратору/.test(String(c.payload.text ?? ''))))
 })

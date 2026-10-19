@@ -1,0 +1,34 @@
+import { Api } from 'grammy'
+import { resumeRun } from '../server/funnels/engine'
+import { telegramOut } from '../server/bot/telegramOut'
+import { supabaseRepo } from '../server/repo'
+
+export const config = { runtime: 'edge' }
+
+// Выполняет отложенные шаги воронок. Вызывается каждую минуту расписанием в базе (pg_cron).
+// Эндпоинт безопасно открыт: он только доводит до конца уже запланированные задачи и ничего не принимает на вход.
+export default async function handler(req: Request) {
+  if (req.method !== 'POST') return new Response('Method not allowed', { status: 405 })
+  const token = process.env.TELEGRAM_BOT_TOKEN
+  const url = process.env.SUPABASE_URL
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!token || !url || !key) return new Response('Server not configured', { status: 500 })
+
+  const repo = supabaseRepo(url, key)
+  const env = { repo, out: telegramOut(new Api(token), repo, process.env.TELEGRAM_CHAT_ID ? Number(process.env.TELEGRAM_CHAT_ID) : null) }
+  const jobs = await repo.claimJobs(20)
+  let done = 0
+  let failed = 0
+  for (const job of jobs) {
+    try {
+      if (job.kind === 'resume_run') await resumeRun(env, String(job.payload.runId))
+      await repo.finishJob(job.id)
+      done++
+    } catch (e) {
+      console.error('job failed', job.id, e instanceof Error ? e.message : e)
+      await repo.finishJob(job.id, e instanceof Error ? e.message : String(e)).catch(() => undefined)
+      failed++
+    }
+  }
+  return new Response(JSON.stringify({ claimed: jobs.length, done, failed }), { headers: { 'Content-Type': 'application/json' } })
+}

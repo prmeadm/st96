@@ -4,6 +4,8 @@ import ClientsPage from './pages/ClientsPage'
 import ClientPage from './pages/ClientPage'
 import LeadsPage from './pages/LeadsPage'
 import NotesPage from './pages/NotesPage'
+import FunnelsPage from './pages/FunnelsPage'
+import FunnelPage from './pages/FunnelPage'
 
 function Shell() {
   const { email, signOut } = useAuth()
@@ -14,6 +16,7 @@ function Shell() {
         <div className="brand">ST96 · админка</div>
         <NavLink to="/clients" className={link}>👥 Клиенты</NavLink>
         <NavLink to="/leads" className={link}>📥 Заявки</NavLink>
+        <NavLink to="/funnels" className={link}>🔀 Воронки</NavLink>
         <NavLink to="/notes" className={link}>📝 Заметки</NavLink>
         <button className="out" onClick={signOut}>⎋<span>Выйти</span></button>
         <div className="who">{email}<br /><button className="btn" style={{ marginTop: 8, padding: '5px 10px' }} onClick={signOut}>Выйти</button></div>
@@ -25,6 +28,8 @@ function Shell() {
             <Route path="/clients" element={<ClientsPage />} />
             <Route path="/clients/:id" element={<ClientPage />} />
             <Route path="/leads" element={<LeadsPage />} />
+            <Route path="/funnels" element={<FunnelsPage />} />
+            <Route path="/funnels/:id" element={<FunnelPage />} />
             <Route path="/notes" element={<NotesPage />} />
             <Route path="*" element={<Navigate to="/clients" replace />} />
           </Routes>

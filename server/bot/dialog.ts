@@ -32,7 +32,7 @@ export async function cardText(repo: Repo, c: ClientRow) {
   return lines.filter(Boolean).join('\n')
 }
 
-async function ensureTopic(api: Api, repo: Repo, groupChatId: number, client: ClientRow): Promise<number> {
+export async function ensureTopic(api: Api, repo: Repo, groupChatId: number, client: ClientRow): Promise<number> {
   const t = await api.createForumTopic(groupChatId, topicTitle(client))
   const effective = await repo.setTopicIfEmpty(client.id, t.message_thread_id)
   if (effective !== t.message_thread_id) {
@@ -107,4 +107,15 @@ export async function handleTopicMessage(api: Api, repo: Repo, groupChatId: numb
   await repo.insertMessage({ client_id: client.id, direction: 'admin', kind: 'text', text: text || null, tg_chat_id: client.tg_user_id, tg_message_id: null })
   await react('👍')
   return 'sent'
+}
+
+/** Сообщение сотрудникам в тему клиента (при сбое тем: в общую ленту группы). */
+export async function notifyTopic(api: Api, repo: Repo, groupChatId: number, client: ClientRow, text: string) {
+  try {
+    const topic = client.admin_topic_id ?? (await ensureTopic(api, repo, groupChatId, client))
+    await api.sendMessage(groupChatId, text, { message_thread_id: topic })
+  } catch (e) {
+    console.error('notify failed', e instanceof Error ? e.message : e)
+    await api.sendMessage(groupChatId, `${client.name ?? 'Клиент'}${client.tg_username ? ` (@${client.tg_username})` : ''}: ${text}`).catch(() => undefined)
+  }
 }
