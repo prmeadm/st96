@@ -22,3 +22,10 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+.vercel
+
+# секреты
+.env
+.env.prod
+.env.*.local
+.env*

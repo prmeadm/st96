@@ -1,3 +1,7 @@
+import { ingestLead } from '../server/leads/ingest.ts'
+import { parseLead } from '../server/leads/parse.ts'
+import { supabaseRepo } from '../server/repo.ts'
+
 export const config = { runtime: 'edge' }
 
 type Attribution = {
@@ -32,7 +36,7 @@ export default async function handler(req: Request) {
 
   let body: LeadPayload
   try {
-    body = await req.json()
+    body = (await req.json()) as LeadPayload
   } catch {
     return json({ error: 'Invalid JSON' }, 400)
   }
@@ -81,6 +85,31 @@ export default async function handler(req: Request) {
 
   if (!tgRes.ok) {
     return json({ error: 'Telegram delivery failed' }, 502)
+  }
+
+  // Копия заявки в базу. Ошибка базы не должна ломать отправку формы: заявка уже в группе.
+  if (body.internal !== true) {
+    try {
+      const sent = (await tgRes.json()) as { result?: { message_id?: number } }
+      const url = process.env.SUPABASE_URL
+      const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+      if (url && key) {
+        const utmObj = Object.fromEntries(
+          Object.entries({ source: a.utm_source, medium: a.utm_medium, campaign: a.utm_campaign, content: a.utm_content, term: a.utm_term, referrer: a.referrer })
+            .map(([k, v]) => [k, t(v)])
+            .filter(([, v]) => v),
+        )
+        await ingestLead(supabaseRepo(url, key), parseLead(text), {
+          source: 'site_form',
+          tgChatId: Number(chatId),
+          tgMessageId: sent.result?.message_id ?? null,
+          rawText: text,
+          utm: Object.keys(utmObj).length ? (utmObj as Record<string, string>) : null,
+        })
+      }
+    } catch (e) {
+      console.error('lead db save failed', e instanceof Error ? e.message : e)
+    }
   }
 
   if (body.internal !== true) await sendAdEvents(req, body, contact)
