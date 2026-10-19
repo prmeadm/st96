@@ -31,10 +31,14 @@ export default async function handler(req: Request) {
     })
     const info = await api('getWebhookInfo')
     const me = await api('getMe')
+    const chatId = process.env.TELEGRAM_CHAT_ID
+    const chat = chatId ? await api('getChat', { chat_id: chatId }) : null
+    const member = chatId && me.result?.id ? await api('getChatMember', { chat_id: chatId, user_id: me.result.id }) : null
     return json({
       setWebhook: set.ok ? 'ok' : set.description,
       webhook: { url: info.result?.url, pending: info.result?.pending_update_count, lastError: info.result?.last_error_message ?? null },
       bot: { username: me.result?.username, canReadAllGroupMessages: me.result?.can_read_all_group_messages },
+      group: chat ? { ok: chat.ok, title: chat.result?.title, type: chat.result?.type, error: chat.description ?? null, botStatus: member?.result?.status ?? member?.description ?? null } : null,
     }, 200)
   }
 
