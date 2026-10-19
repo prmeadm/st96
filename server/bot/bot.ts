@@ -99,6 +99,9 @@ export function createBot(token: string, repo: Repo, opts: { groupChatId: number
       if (!prevSeen || Date.now() - Date.parse(prevSeen) > ACK_EVERY_MS) await ctx.reply(T[client.language].ack)
       return
     }
+    if (ctx.chat.type === 'group' || ctx.chat.type === 'supergroup') {
+      if (opts.groupChatId !== ctx.chat.id) console.log('group message ignored: chat', ctx.chat.id, ctx.chat.title, 'expected', opts.groupChatId)
+    }
     if ((ctx.chat.type === 'group' || ctx.chat.type === 'supergroup') && opts.groupChatId === ctx.chat.id) {
       const text = m.text ?? m.caption ?? ''
       const rep = m.reply_to_message
