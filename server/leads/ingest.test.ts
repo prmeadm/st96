@@ -1,8 +1,8 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { memoryRepo } from '../memoryRepo.ts'
-import { ingestGroupMessage, ingestLead, type GroupMessage } from './ingest.ts'
-import { parseLead } from './parse.ts'
+import { memoryRepo } from '../memoryRepo'
+import { ingestGroupMessage, ingestLead, type GroupMessage } from './ingest'
+import { parseLead } from './parse'
 
 const LEAD = [
   '\u{1F195} Заявка: Нейрофотосессия', 'Имя: Александра', 'Telegram: @Alex_Balashova', 'Компания: Фотограф/Видеограф',

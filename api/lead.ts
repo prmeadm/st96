@@ -1,6 +1,6 @@
-import { ingestLead } from '../server/leads/ingest.ts'
-import { parseLead } from '../server/leads/parse.ts'
-import { supabaseRepo } from '../server/repo.ts'
+import { ingestLead } from '../server/leads/ingest'
+import { parseLead } from '../server/leads/parse'
+import { supabaseRepo } from '../server/repo'
 
 export const config = { runtime: 'edge' }
 

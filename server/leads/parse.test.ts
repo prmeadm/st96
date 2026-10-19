@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { clientKey, normalizePhone, normalizeTelegram, parseLead } from './parse.ts'
+import { clientKey, normalizePhone, normalizeTelegram, parseLead } from './parse'
 
 const stand = (title: string, lines: string[]) =>
   [`\u{1F195} Заявка: ${title}`, ...lines, 'Источник: стенд, форма в памятке сотрудника'].join('\n')

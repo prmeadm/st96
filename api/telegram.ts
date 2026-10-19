@@ -1,6 +1,6 @@
 import { webhookCallback } from 'grammy'
-import { createBot } from '../server/bot/bot.ts'
-import { supabaseRepo } from '../server/repo.ts'
+import { createBot } from '../server/bot/bot'
+import { supabaseRepo } from '../server/repo'
 
 export const config = { runtime: 'edge' }
 

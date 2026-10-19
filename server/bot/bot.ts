@@ -1,7 +1,7 @@
 import { Bot, InlineKeyboard, type Context } from 'grammy'
-import type { ClientRow, MessageInsert, Repo } from '../repo.ts'
-import { ingestGroupMessage } from '../leads/ingest.ts'
-import { T, type Lang } from './texts.ts'
+import type { ClientRow, MessageInsert, Repo } from '../repo'
+import { ingestGroupMessage } from '../leads/ingest'
+import { T, type Lang } from './texts'
 
 const ACK_EVERY_MS = 12 * 3600 * 1000
 

@@ -1,8 +1,8 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import type { Update } from 'grammy/types'
-import { memoryRepo } from '../memoryRepo.ts'
-import { createBot } from './bot.ts'
+import { memoryRepo } from '../memoryRepo'
+import { createBot } from './bot'
 
 const GROUP = -1001
 

@@ -1,5 +1,5 @@
 // Репозиторий в памяти: для тестов логики без базы.
-import type { ClientRow, LeadInsert, MessageInsert, NoteInsert, Repo } from './repo.ts'
+import type { ClientRow, LeadInsert, MessageInsert, NoteInsert, Repo } from './repo'
 
 export type MemoryRepo = Repo & {
   clients: ClientRow[]
