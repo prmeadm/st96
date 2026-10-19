@@ -1,6 +1,6 @@
 import { webhookCallback } from 'grammy'
 import { createBot } from '../server/bot/bot'
-import { supabaseRepo } from '../server/repo'
+import { supabaseRepo, tracedRepo } from '../server/repo'
 
 export const config = { runtime: 'edge' }
 
@@ -46,7 +46,7 @@ export default async function handler(req: Request) {
   // Без секрета вебхук не принимает ничего: иначе любой мог бы слать фальшивые апдейты
   if (missing.length) return new Response(`Server not configured: ${missing.join(', ')}`, { status: 500 })
 
-  const bot = createBot(token!, supabaseRepo(url!, key!), { groupChatId: process.env.TELEGRAM_CHAT_ID ? Number(process.env.TELEGRAM_CHAT_ID) : null })
+  const bot = createBot(token!, tracedRepo(supabaseRepo(url!, key!)), { groupChatId: process.env.TELEGRAM_CHAT_ID ? Number(process.env.TELEGRAM_CHAT_ID) : null })
   if (!bot.isInited()) await bot.init()
   return webhookCallback(bot, 'std/http', { secretToken: secret! })(req)
 }

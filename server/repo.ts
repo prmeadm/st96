@@ -77,7 +77,9 @@ export interface Repo {
 const cleanUser = (u: string) => u.replace(/^@/, '')
 
 export function supabaseRepo(url: string, key: string): Repo {
-  const db = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } })
+  // Таймаут на каждый запрос: зависший запрос превращается в понятную ошибку вместо тихого ожидания
+  const timedFetch: typeof fetch = (input, init) => fetch(input, { ...init, signal: AbortSignal.timeout(6000) })
+  const db = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false }, global: { fetch: timedFetch } })
   const ok = <T>(r: { data: T; error: { message: string; code?: string } | null }, what: string): T => {
     if (r.error) throw new Error(`${what}: ${r.error.message}`)
     return r.data
@@ -129,4 +131,25 @@ export function supabaseRepo(url: string, key: string): Repo {
       ok(await db.from('messages').insert(m), 'insertMessage')
     },
   }
+}
+
+/** Обёртка для отладки: пишет в журнал время каждого обращения к базе. */
+export function tracedRepo(repo: Repo): Repo {
+  return new Proxy(repo, {
+    get(target, prop, receiver) {
+      const fn = Reflect.get(target, prop, receiver)
+      if (typeof fn !== 'function') return fn
+      return async (...args: unknown[]) => {
+        const t0 = Date.now()
+        try {
+          const r = await fn.apply(target, args)
+          console.log('repo', String(prop), `${Date.now() - t0}ms`)
+          return r
+        } catch (e) {
+          console.error('repo', String(prop), 'failed', `${Date.now() - t0}ms`, e instanceof Error ? e.message : e)
+          throw e
+        }
+      }
+    },
+  })
 }
