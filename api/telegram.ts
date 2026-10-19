@@ -38,7 +38,7 @@ export default async function handler(req: Request) {
       setWebhook: set.ok ? 'ok' : set.description,
       webhook: { url: info.result?.url, pending: info.result?.pending_update_count, lastError: info.result?.last_error_message ?? null },
       bot: { username: me.result?.username, canReadAllGroupMessages: me.result?.can_read_all_group_messages },
-      group: chat ? { ok: chat.ok, title: chat.result?.title, type: chat.result?.type, error: chat.description ?? null, botStatus: member?.result?.status ?? member?.description ?? null } : null,
+      group: chat ? { ok: chat.ok, title: chat.result?.title, type: chat.result?.type, error: chat.description ?? null, botStatus: member?.result?.status ?? member?.description ?? null, isForum: chat.result?.is_forum ?? false, canManageTopics: member?.result?.can_manage_topics ?? null } : null,
     }, 200)
   }
 

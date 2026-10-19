@@ -1,6 +1,7 @@
 import { Bot, InlineKeyboard, type Context } from 'grammy'
 import type { ClientRow, MessageInsert, Repo } from '../repo'
 import { ingestGroupMessage } from '../leads/ingest'
+import { handleTopicMessage, relayToAdmins } from './dialog'
 import { T, type Lang } from './texts'
 
 const ACK_EVERY_MS = 12 * 3600 * 1000
@@ -106,7 +107,18 @@ export function createBot(token: string, repo: Repo, opts: { groupChatId: number
         client_id: client.id, direction: 'in', kind: messageKind(m), text: m.text ?? m.caption ?? null,
         tg_chat_id: ctx.chat.id, tg_message_id: m.message_id,
       })
-      // Пока нет передачи человеку (этап 1, шаг 5), подтверждаем получение не чаще раза в 12 часов
+      if (opts.groupChatId) {
+        try {
+          await relayToAdmins(ctx.api, repo, opts.groupChatId, client, ctx.chat.id, m.message_id)
+        } catch (e) {
+          // Тема не создалась (нет прав, темы выключены): сообщение не должно потеряться
+          console.error('relay failed', e instanceof Error ? e.message : e)
+          await ctx.api
+            .sendMessage(opts.groupChatId, `Сообщение от ${client.name ?? 'клиента'}${client.tg_username ? ` (@${client.tg_username})` : ''}: ${m.text ?? m.caption ?? '[вложение]'}`)
+            .catch(() => undefined)
+        }
+      }
+      // Подтверждаем получение не чаще раза в 12 часов
       if (!prevSeen || Date.now() - Date.parse(prevSeen) > ACK_EVERY_MS) await ctx.reply(T[client.language].ack)
       return
     }
@@ -115,6 +127,14 @@ export function createBot(token: string, repo: Repo, opts: { groupChatId: number
     }
     if ((ctx.chat.type === 'group' || ctx.chat.type === 'supergroup') && opts.groupChatId === ctx.chat.id) {
       const text = m.text ?? m.caption ?? ''
+      if (m.is_topic_message && m.message_thread_id) {
+        const hasContent = !!(m.text || m.photo || m.video || m.video_note || m.voice || m.audio || m.document || m.sticker || m.animation)
+        await handleTopicMessage(ctx.api, repo, opts.groupChatId, {
+          threadId: m.message_thread_id, messageId: m.message_id, text, hasContent, fromId: ctx.from?.id ?? null,
+          fromName: ctx.from ? fullName(ctx.from) : '', fromIsBot: ctx.from?.is_bot ?? false,
+        })
+        return
+      }
       const rep = m.reply_to_message
       await ingestGroupMessage(repo, {
         chatId: ctx.chat.id, messageId: m.message_id, text, fromId: ctx.from?.id ?? null,

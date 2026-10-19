@@ -15,6 +15,8 @@ export type ClientRow = {
   consent_at: string | null
   opted_out_at: string | null
   last_seen_at: string | null
+  admin_topic_id: number | null
+  dialog_closed_at: string | null
 }
 
 export type LeadInsert = {
@@ -63,7 +65,7 @@ export type MessageInsert = {
 export interface Repo {
   /** false — апдейт уже обработан (Telegram повторил доставку) */
   claimUpdate(updateId: number): Promise<boolean>
-  findClient(by: { tgUserId?: number; phone?: string; username?: string }): Promise<ClientRow | null>
+  findClient(by: { tgUserId?: number; phone?: string; username?: string; topicId?: number }): Promise<ClientRow | null>
   insertClient(c: Partial<ClientRow>): Promise<ClientRow>
   updateClient(id: string, patch: Partial<ClientRow>): Promise<void>
   /** Вставка заявки; если заявка с этим сообщением Telegram уже есть, вернёт её */
@@ -72,6 +74,10 @@ export interface Repo {
   findLeadByContact(by: { phone?: string; username?: string }): Promise<{ id: string; client_id: string | null } | null>
   insertNote(n: NoteInsert): Promise<void>
   insertMessage(m: MessageInsert): Promise<void>
+  /** Последние заявки клиента для карточки в теме */
+  listLeads(clientId: string): Promise<{ service_key: string | null; company: string | null; comment: string | null; source: string; created_at: string }[]>
+  /** Записывает тему, если у клиента её ещё нет; возвращает действующий номер темы */
+  setTopicIfEmpty(clientId: string, topicId: number): Promise<number>
 }
 
 const cleanUser = (u: string) => u.replace(/^@/, '')
@@ -91,9 +97,10 @@ export function supabaseRepo(url: string, key: string): Repo {
       if (error.code === '23505') return false
       throw new Error(`claimUpdate: ${error.message}`)
     },
-    async findClient({ tgUserId, phone, username }) {
+    async findClient({ tgUserId, phone, username, topicId }) {
       let q = db.from('clients').select('*')
-      if (tgUserId) q = q.eq('tg_user_id', tgUserId)
+      if (topicId) q = q.eq('admin_topic_id', topicId)
+      else if (tgUserId) q = q.eq('tg_user_id', tgUserId)
       else if (phone) q = q.eq('phone', phone)
       else if (username) q = q.ilike('tg_username', cleanUser(username).replace(/[%_]/g, '\\$&'))
       else return null
@@ -129,6 +136,15 @@ export function supabaseRepo(url: string, key: string): Repo {
     },
     async insertMessage(m) {
       ok(await db.from('messages').insert(m), 'insertMessage')
+    },
+    async listLeads(clientId) {
+      return ok(await db.from('leads').select('service_key, company, comment, source, created_at').eq('client_id', clientId).order('created_at', { ascending: false }).limit(5), 'listLeads') ?? []
+    },
+    async setTopicIfEmpty(clientId, topicId) {
+      const rows = ok(await db.from('clients').update({ admin_topic_id: topicId }).eq('id', clientId).is('admin_topic_id', null).select('admin_topic_id'), 'setTopicIfEmpty')
+      if (rows && rows.length) return topicId
+      const cur = ok(await db.from('clients').select('admin_topic_id').eq('id', clientId).single(), 'setTopicIfEmpty read')
+      return cur?.admin_topic_id ?? topicId
     },
   }
 }

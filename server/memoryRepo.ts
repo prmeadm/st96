@@ -15,7 +15,8 @@ export function memoryRepo(): MemoryRepo {
   const r: MemoryRepo = {
     clients: [], leads: [], notes: [], messages: [],
     async claimUpdate(u) { if (seen.has(u)) return false; seen.add(u); return true },
-    async findClient({ tgUserId, phone, username }) {
+    async findClient({ tgUserId, phone, username, topicId }) {
+      if (topicId) return r.clients.find((c) => c.admin_topic_id === topicId) ?? null
       if (tgUserId) return r.clients.find((c) => c.tg_user_id === tgUserId) ?? null
       if (phone) return r.clients.find((c) => c.phone === phone) ?? null
       if (username) return r.clients.find((c) => c.tg_username?.toLowerCase() === username.replace(/^@/, '').toLowerCase()) ?? null
@@ -24,7 +25,7 @@ export function memoryRepo(): MemoryRepo {
     async insertClient(c) {
       const row: ClientRow = {
         id: id('c'), tg_user_id: null, tg_username: null, name: null, phone: null, email: null, company: null,
-        language: 'ru', source: null, consent_at: null, opted_out_at: null, last_seen_at: null, ...c,
+        language: 'ru', source: null, consent_at: null, opted_out_at: null, last_seen_at: null, admin_topic_id: null, dialog_closed_at: null, ...c,
       }
       r.clients.push(row)
       return row
@@ -50,6 +51,14 @@ export function memoryRepo(): MemoryRepo {
     },
     async insertNote(n) { r.notes.push(n) },
     async insertMessage(m) { r.messages.push(m) },
+    async listLeads(clientId) {
+      return r.leads.filter((l) => l.client_id === clientId).map((l) => ({ service_key: l.service_key, company: l.company, comment: l.comment, source: l.source, created_at: '' }))
+    },
+    async setTopicIfEmpty(clientId, topicId) {
+      const c = r.clients.find((x) => x.id === clientId)!
+      if (c.admin_topic_id == null) c.admin_topic_id = topicId
+      return c.admin_topic_id
+    },
   }
   return r
 }
