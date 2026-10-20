@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { NavLink, Navigate, Route, Routes } from 'react-router-dom'
+import { useEffect, useRef, useState } from 'react'
+import { NavLink, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { AuthGate, useAuth } from './auth'
 import ClientsPage from './pages/ClientsPage'
 import ClientPage from './pages/ClientPage'
@@ -26,13 +26,22 @@ function Shell() {
     setMin(!min)
     try { localStorage.setItem(RAIL_KEY, min ? 'max' : 'min') } catch { /* память браузера недоступна: меню просто не запомнится */ }
   }
+  // На телефоне нижняя навигация прокручивается: активный раздел всегда в поле зрения
+  const nav = useRef<HTMLElement>(null)
+  const { pathname } = useLocation()
+  useEffect(() => {
+    const r = nav.current
+    const on = r?.querySelector<HTMLElement>('a.on')
+    if (!r || !on || r.scrollWidth <= r.clientWidth) return
+    r.scrollLeft = on.offsetLeft - (r.clientWidth - on.offsetWidth) / 2
+  }, [pathname])
   const link = ({ isActive }: { isActive: boolean }) => (isActive ? 'on' : '')
   const item = (to: string, icon: Parameters<typeof Icon>[0]['name'], label: string) => (
     <NavLink to={to} className={link} title={min ? label : undefined} aria-label={label}><Icon name={icon} /><span>{label}</span></NavLink>
   )
   return (
     <div className="app">
-      <nav className={`rail${min ? ' min' : ''}`} aria-label="Разделы">
+      <nav ref={nav} className={`rail${min ? ' min' : ''}`} aria-label="Разделы">
         <div className="brand">
           {min ? <img className="mark" src="/favicon.svg" alt="ST96" width={36} height={36} /> : <span className="wm" role="img" aria-label="ST96">ST<span>96</span></span>}
           <button type="button" className="fold" onClick={toggle} aria-expanded={!min} aria-label={min ? 'Развернуть меню' : 'Свернуть меню'} title={min ? 'Развернуть меню' : 'Свернуть меню'}>
