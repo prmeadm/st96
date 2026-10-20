@@ -1,7 +1,7 @@
 import { Api } from 'grammy'
 import { requireAdmin, json } from '../server/adminAuth'
 import { notifyClientDecision } from '../server/booking/notify'
-import { createBooking, decideBooking, saveSchedule, setMeetUrl } from '../server/booking/service'
+import { createBooking, decideBooking, saveMeetDefault, saveSchedule, setMeetUrl } from '../server/booking/service'
 import { supabaseRepo } from '../server/repo'
 
 export const config = { runtime: 'edge' }
@@ -16,7 +16,7 @@ export default async function handler(req: Request) {
   const denied = await requireAdmin(req, url, key)
   if (denied) return denied
 
-  let b: { action?: string; schedule?: unknown; id?: string; decision?: 'confirm' | 'reject' | 'cancel'; meetUrl?: string; booking?: Record<string, unknown> }
+  let b: { url?: string; action?: string; schedule?: unknown; id?: string; decision?: 'confirm' | 'reject' | 'cancel'; meetUrl?: string; booking?: Record<string, unknown> }
   try {
     b = (await req.json()) as typeof b
   } catch {
@@ -40,6 +40,10 @@ export default async function handler(req: Request) {
     if (!r.ok) return json({ error: r.error }, r.status)
     const notified = token ? await notifyClientDecision(new Api(token), repo, r.booking).catch(() => false) : false
     return json({ ok: true, status: r.booking.status, notified })
+  }
+  if (b.action === 'save_meet_default') {
+    const r = await saveMeetDefault(repo, b.url ?? '')
+    return r.ok ? json({ ok: true, url: r.url }) : json({ error: r.error }, r.status)
   }
   if (b.action === 'set_meet' && b.id) {
     const r = await setMeetUrl(repo, b.id, b.meetUrl ?? '')

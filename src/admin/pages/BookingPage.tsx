@@ -28,13 +28,16 @@ export default function BookingPage() {
   const [tab, setTab] = useState<Tab>('requests')
   const [rows, setRows] = useState<BookingRow[] | null>(null)
   const [sched, setSched] = useState<Schedule | null>(null)
+  const [meetDefault, setMeetDefault] = useState('')
   const [error, setError] = useState('')
 
   const load = useCallback(async () => {
-    const [b, s] = await Promise.all([
+    const [b, s, m] = await Promise.all([
       supabase.from('bookings').select('*').order('starts_at', { ascending: false }).limit(300),
       supabase.from('app_settings').select('value').eq('key', 'booking_schedule').maybeSingle(),
+      supabase.from('app_settings').select('value').eq('key', 'booking_meet_default').maybeSingle(),
     ])
+    setMeetDefault(typeof m.data?.value === 'string' ? m.data.value : '')
     if (b.error) return setError('Не удалось загрузить заявки на встречи')
     setRows((b.data ?? []) as BookingRow[])
     let parsed: unknown = null
@@ -51,7 +54,7 @@ export default function BookingPage() {
       {error && <div className="err" role="alert">{error}</div>}
       {tab === 'requests' && <Requests rows={rows} reload={load} />}
       {tab === 'schedule' && sched && <ScheduleTab initial={sched} rows={rows ?? []} onSaved={setSched} onBooked={load} />}
-      {tab === 'link' && <LinkTab />}
+      {tab === 'link' && <LinkTab meetDefault={meetDefault} onMeet={setMeetDefault} />}
     </div>
   )
 }
@@ -352,13 +355,28 @@ function ScheduleTab({ initial, rows, onSaved, onBooked }: { initial: Schedule; 
 }
 
 // ───────────────────────── ссылка ─────────────────────────
-function LinkTab() {
+function LinkTab({ meetDefault, onMeet }: { meetDefault: string; onMeet: (u: string) => void }) {
   const [service, setService] = useState<'' | ServiceKey>('')
   const [format, setFormat] = useState<'' | FormatKey>('')
   const [copied, setCopied] = useState('')
   const url = `https://st96.by/book${service || format ? `?${[service && `s=${service}`, format && `f=${format}`].filter(Boolean).join('&')}` : ''}`
   const copy = async (text: string) => { try { await navigator.clipboard.writeText(text); setCopied(text); setTimeout(() => setCopied(''), 1800) } catch { setCopied('') } }
+  const [mu, setMu] = useState(meetDefault)
+  const [mmsg, setMmsg] = useState('')
+  useEffect(() => setMu(meetDefault), [meetDefault])
+  const saveMeet = async () => {
+    const r = await callApi<{ url: string }>('/api/booking-admin', { action: 'save_meet_default', url: mu })
+    if (!r.ok) return setMmsg(r.error)
+    onMeet(r.data.url); setMmsg(r.data.url ? 'Сохранено: теперь она прикрепляется ко всем видеозвонкам' : 'Ссылка убрана')
+  }
   return (
+    <>
+    <div className="card">
+      <h3>Ссылка на видеозвонок (Google Meet)</h3>
+      <div className="hint">Одна постоянная комната: при подтверждении видеозвонка (в админке или кнопкой в Telegram) ссылка сама попадёт в сообщение клиенту, напоминание за час и файл календаря. Создайте комнату в Google Meet (кнопка «Новая встреча» → «Создать встречу на потом») и вставьте ссылку. Для отдельной встречи ссылку можно заменить в её карточке.</div>
+      <div className="fld"><label>Ссылка</label><input type="url" value={mu} onChange={(e) => setMu(e.target.value)} placeholder="https://meet.google.com/abc-defg-hij" /></div>
+      <div className="row"><button type="button" className="btn primary" onClick={saveMeet} disabled={mu.trim() === meetDefault}>Сохранить ссылку</button>{mmsg && <span className="hint" role="status">{mmsg}</span>}</div>
+    </div>
     <div className="card">
       <h3>Ссылка на запись для клиентов</h3>
       <div className="hint">Страница отдельная, в брендовом стиле сайта, на русском и английском. Свободное время считается по вашему расписанию.</div>
@@ -375,5 +393,6 @@ function LinkTab() {
         <li><b>Решение по заявке</b> можно принять здесь или кнопками в рабочей группе Telegram. Клиент получит сообщение и файл календаря, за час до встречи придёт напоминание.</li>
       </ul>
     </div>
+    </>
   )
 }

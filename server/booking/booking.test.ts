@@ -5,7 +5,7 @@ import { memoryRepo } from '../memoryRepo'
 import { buildIcs } from './ics'
 import { notifyAdminsNewBooking, notifyClientDecision, tickBookingReminders, whenLabel } from './notify'
 import { dayInfo, defaultSchedule, normalizeSchedule, slotAvailable, toInstant, type DayBooking } from './schedule'
-import { createBooking, decideBooking, monthAvailability, saveSchedule, loadSchedule } from './service'
+import { MEET_SETTING, createBooking, decideBooking, loadMeetDefault, monthAvailability, saveMeetDefault, saveSchedule, loadSchedule } from './service'
 
 const NOW = new Date('2026-10-20T06:00:00Z') // вторник 09:00 по Минску
 const S = defaultSchedule()
@@ -202,4 +202,28 @@ test('кнопки в группе: подтверждение через бот
   assert.ok(calls.some((x) => x.method === 'sendDocument' && x.payload.chat_id === 77))
   await press(-1001, `bk:no:${r.booking.id}`, 3)
   assert.equal(repo.bookings[0]!.status, 'confirmed', 'повторное решение не меняет заявку')
+})
+
+test('видеозвонок получает общую ссылку Meet при подтверждении; офлайн и свою ссылку она не трогает', async () => {
+  const repo = memoryRepo()
+  assert.equal((await saveMeetDefault(repo, 'http://meet')).ok, false, 'только https')
+  assert.ok((await saveMeetDefault(repo, 'https://meet.google.com/abc-defg-hij')).ok)
+  assert.equal(await loadMeetDefault(repo), 'https://meet.google.com/abc-defg-hij')
+  const a = await createBooking(repo, { ...input, format: 'video', time: '11:00' }, NOW)
+  assert.ok(a.ok)
+  if (!a.ok) return
+  const d = await decideBooking(repo, a.booking.id, 'confirm')
+  assert.ok(d.ok && d.booking.meet_url === 'https://meet.google.com/abc-defg-hij')
+  assert.equal(repo.bookings[0]!.meet_url, 'https://meet.google.com/abc-defg-hij')
+  const b = await createBooking(repo, { ...input, format: 'call', time: '15:00', phone: '+375 33 555-44-33', telegram: undefined, name: 'Игорь' }, NOW)
+  assert.ok(b.ok)
+  if (!b.ok) return
+  const d2 = await decideBooking(repo, b.booking.id, 'confirm')
+  assert.ok(d2.ok && d2.booking.meet_url === null, 'звонок по телефону без ссылки')
+  const c = await createBooking(repo, { ...input, format: 'video', time: '16:30', phone: '+375 25 111-00-00', telegram: undefined, name: 'Олег' }, NOW)
+  assert.ok(c.ok)
+  if (!c.ok) return
+  const d3 = await decideBooking(repo, c.booking.id, 'confirm', 'https://meet.example/own')
+  assert.ok(d3.ok && d3.booking.meet_url === 'https://meet.example/own', 'своя ссылка сильнее общей')
+  assert.equal(MEET_SETTING, 'booking_meet_default')
 })

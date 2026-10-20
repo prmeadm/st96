@@ -105,13 +105,29 @@ export async function createBooking(repo: Repo, input: BookingInput, now = new D
 }
 
 /** Решение администратора. Подтверждённую можно позже отменить. Возвращает обновлённую заявку. */
+export const MEET_SETTING = 'booking_meet_default'
+const isHttps = (u: string) => /^https:\/\/[^\s]+$/.test(u)
+/** Ссылка на видеозвонок по умолчанию (постоянная комната Google Meet): подставляется в видеозвонки при подтверждении */
+export async function loadMeetDefault(repo: Repo): Promise<string> {
+  const v = ((await repo.getSetting(MEET_SETTING).catch(() => null)) ?? '').trim()
+  return isHttps(v) ? v : ''
+}
+export async function saveMeetDefault(repo: Repo, url: string): Promise<Result<{ url: string }>> {
+  const u = url.trim()
+  if (u && !isHttps(u)) return { ok: false, error: 'Ссылка должна начинаться с https://', status: 422 }
+  await repo.setSetting(MEET_SETTING, u)
+  return { ok: true, url: u }
+}
+
 export async function decideBooking(repo: Repo, id: string, decision: 'confirm' | 'reject' | 'cancel', meetUrl?: string): Promise<Result<{ booking: BookingRow }>> {
   const b = await repo.getBooking(id)
   if (!b) return { ok: false, error: 'Заявка не найдена', status: 404 }
   const from: Record<typeof decision, BookingRow['status'][]> = { confirm: ['pending'], reject: ['pending'], cancel: ['confirmed', 'pending'] }
   if (!from[decision].includes(b.status)) return { ok: false, error: 'Эту заявку уже обработали', status: 409 }
-  const url = (meetUrl ?? '').trim()
-  if (url && !/^https:\/\/[^\s]+$/.test(url)) return { ok: false, error: 'Ссылка на встречу должна начинаться с https://', status: 422 }
+  let url = (meetUrl ?? '').trim()
+  if (url && !isHttps(url)) return { ok: false, error: 'Ссылка на встречу должна начинаться с https://', status: 422 }
+  // Видеозвонок без своей ссылки получает общую: клиент увидит её в сообщении и в файле календаря
+  if (decision === 'confirm' && b.format === 'video' && !url && !b.meet_url) url = await loadMeetDefault(repo)
   const status = decision === 'confirm' ? 'confirmed' : decision === 'reject' ? 'rejected' : 'canceled'
   await repo.updateBooking(id, { status, decided_at: new Date().toISOString(), ...(decision === 'confirm' && url ? { meet_url: url } : {}) })
   // Воронка, ждавшая записи, продолжается по выходу «подтвердил» или «отклонил»
