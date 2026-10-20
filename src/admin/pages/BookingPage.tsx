@@ -12,12 +12,14 @@ import {
   type DayBooking, type FormatKey, type Override, type Schedule, type ServiceKey, type Win,
 } from '../../../server/booking/schedule'
 import { BOOKING_STATUS, type BookingRow, type BookingStatus } from '../../../server/booking/types'
+import { UNKNOWN_SERVICE, serviceLabel } from '../../../server/catalog'
 import './booking.css'
 
 const CHIP: Record<BookingStatus, string> = { pending: 'amber', confirmed: 'green', rejected: 'red', canceled: '' }
 /** Цвет услуги на календаре: дополнительные цвета бренда ST96 по порядку услуг на сайте */
 const SVC_COLORS = ['#8b6bff', '#ff5fa8', '#1fbfa5', '#4d7bff', '#ff8a3d']
-const svcColor = (k: string) => SVC_COLORS[Math.max(0, SERVICE_KEYS.indexOf(k)) % SVC_COLORS.length]!
+// Встречи со старой услугой (её больше нет на сайте) — серым
+const svcColor = (k: string) => (SERVICE_KEYS.includes(k) ? SVC_COLORS[SERVICE_KEYS.indexOf(k) % SVC_COLORS.length]! : '#8a8a93')
 const hhmm = (m: number) => `${pad(Math.floor(m / 60))}:${pad(m % 60)}`
 const active = (b: BookingRow) => b.status === 'pending' || b.status === 'confirmed'
 type Tab = 'requests' | 'schedule' | 'link'
@@ -102,7 +104,7 @@ function Requests({ rows, reload }: { rows: BookingRow[] | null; reload: () => P
             </>}
           </div>
           <dl className="kv">
-            <dt>Услуга</dt><dd>{SERVICE_LABEL[b.service].ru} · {Math.round((Date.parse(b.ends_at) - Date.parse(b.starts_at)) / 60000)} мин</dd>
+            <dt>Услуга</dt><dd>{serviceLabel(b.service, 'ru')} · {Math.round((Date.parse(b.ends_at) - Date.parse(b.starts_at)) / 60000)} мин</dd>
             <dt>Формат</dt><dd>{FORMAT_LABEL[b.format].ru}</dd>
             <dt>Клиент</dt><dd>{b.client_id ? <Link to={`/clients/${b.client_id}`}>{b.name}</Link> : b.name}{b.company ? `, ${b.company}` : ''}</dd>
             <dt>Контакты</dt><dd>{[b.telegram, b.phone].filter(Boolean).join(' · ') || '—'}</dd>
@@ -182,8 +184,8 @@ function ScheduleTab({ initial, rows, onSaved, onBooked }: { initial: Schedule; 
   const cell = (d: string): CellInfo => {
     const i = info(d)
     const list = meetingsBy.get(d) ?? []
-    const per = SERVICE_KEYS.map((k) => ({ k, n: list.filter((b) => b.service === k).length })).filter((x) => x.n)
-    const marks = per.map((x) => ({ color: svcColor(x.k), n: x.n, label: SERVICE_LABEL[x.k]?.ru ?? x.k }))
+    const per = [...SERVICE_KEYS, UNKNOWN_SERVICE].map((k) => ({ k, n: list.filter((b) => (SERVICE_KEYS.includes(b.service) ? b.service : UNKNOWN_SERVICE) === k).length })).filter((x) => x.n)
+    const marks = per.map((x) => ({ color: svcColor(x.k), n: x.n, label: serviceLabel(x.k) }))
     const what = marks.map((x) => `${x.label}: ${x.n}`).join(', ')
     return { cls: i.past || i.far ? 'dis' : i.closed ? 'closed' : 'open', dot: !!S.overrides[d], marks, title: [i.closed ? i.why : `Свободно слотов: ${i.free}`, what && `Встречи: ${what}`].filter(Boolean).join('. ') }
   }
@@ -315,7 +317,7 @@ function ScheduleTab({ initial, rows, onSaved, onBooked }: { initial: Schedule; 
                     <div className="row"><TimeRange w={blk} onChange={setBlk} />
                       <button type="button" className="btn" onClick={() => blk.to > blk.from ? setOv(sel, { blocks: [...(ov.blocks ?? []), { ...blk, reason: 'Закрыто вручную' }] }) : setMsg('Время «до» должно быть позже «с»')}>Закрыть</button></div>
                     <div className="h2">Встречи дня</div>
-                    {(meetingsBy.get(sel) ?? []).map((b) => <div className="meetrow" key={b.id}><i className="svcdot" style={{ background: svcColor(b.service) }} /><b>{hhmm(toLocal(b.starts_at).min)}</b><span>{SERVICE_LABEL[b.service]?.ru ?? b.service}</span><span className="hint">{b.name}</span><span className={`chip ${CHIP[b.status]}`}>{BOOKING_STATUS[b.status]}</span></div>)}
+                    {(meetingsBy.get(sel) ?? []).map((b) => <div className="meetrow" key={b.id}><i className="svcdot" style={{ background: svcColor(b.service) }} /><b>{hhmm(toLocal(b.starts_at).min)}</b><span>{serviceLabel(b.service)}</span><span className="hint">{b.name}</span><span className={`chip ${CHIP[b.status]}`}>{BOOKING_STATUS[b.status]}</span></div>)}
                     {!meetingsBy.get(sel)?.length && <div className="hint">Встреч пока нет.</div>}
                     <div className="h2">Свободное время</div>
                     <div className="slotsrow">
