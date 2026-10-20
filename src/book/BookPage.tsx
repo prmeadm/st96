@@ -9,22 +9,22 @@ type Slot = { t: string; free: boolean }
 const T = {
   ru: {
     title: 'Запись на встречу', sub: 'Выберите услугу, формат и удобное время. Мы подтвердим встречу и напишем вам.',
-    service: 'Услуга', format: 'Формат встречи', date: 'Дата', time: 'Время', pickService: 'Сначала выберите услугу', noSlots: 'На этот день свободного времени нет',
+    service: 'Услуга', format: 'Формат встречи', date: 'Дата', time: 'Время', noSlots: 'На этот день свободного времени нет',
     contacts: 'Ваши контакты', name: 'Имя', phone: 'Телефон', telegram: 'Telegram', company: 'Компания', goal: 'Цель встречи', comment: 'Комментарий',
     contactHint: 'Достаточно телефона или Telegram', consentPre: 'Согласен на обработку персональных данных:', consentLink: 'политика конфиденциальности',
     send: 'Отправить заявку', sending: 'Отправляю…', missing: 'Заполните', mService: 'услугу', mFormat: 'формат', mDate: 'дату', mTime: 'время', mName: 'имя', mContact: 'телефон или Telegram', mConsent: 'согласие',
     doneTitle: 'Заявка отправлена', doneText: 'Мы подтвердим время и напишем вам. Чтобы получить подтверждение сразу в Telegram и быстро связаться с менеджером, откройте нашего бота.',
-    openTg: 'Перейти в Telegram', again: 'Новая запись', when: 'Когда', offline: 'Офлайн-встречи проходят по дням', video: 'Ссылку на видеозвонок пришлём после подтверждения.', min: 'мин', more: 'Подробнее на сайте', err: 'Не удалось отправить. Попробуйте ещё раз.',
+    openTg: 'Перейти в Telegram', again: 'Новая запись', when: 'Когда', offline: 'Офлайн-встречи проходят по дням', video: 'Ссылку на видеозвонок пришлём после подтверждения.', min: 'мин', pickDay: 'Выберите день: у каждого дня своё свободное время.', freeSlots: 'свободных времён', duration: 'Длительность встречи', more: 'Подробнее на сайте', err: 'Не удалось отправить. Попробуйте ещё раз.',
     dows: ['пн', 'вт', 'ср', 'чт', 'пт', 'сб', 'вс'], minsk: 'время по Минску',
   },
   en: {
     title: 'Book a meeting', sub: 'Pick a service, format and a convenient time. We will confirm the meeting and message you.',
-    service: 'Service', format: 'Meeting format', date: 'Date', time: 'Time', pickService: 'Choose a service first', noSlots: 'No free time on this day',
+    service: 'Service', format: 'Meeting format', date: 'Date', time: 'Time', noSlots: 'No free time on this day',
     contacts: 'Your contacts', name: 'Name', phone: 'Phone', telegram: 'Telegram', company: 'Company', goal: 'Meeting goal', comment: 'Comment',
     contactHint: 'A phone or Telegram is enough', consentPre: 'I agree to the processing of personal data:', consentLink: 'privacy policy',
     send: 'Send request', sending: 'Sending…', missing: 'Please fill in', mService: 'service', mFormat: 'format', mDate: 'date', mTime: 'time', mName: 'name', mContact: 'phone or Telegram', mConsent: 'consent',
     doneTitle: 'Request sent', doneText: 'We will confirm the time and message you. To get the confirmation right in Telegram and reach a manager faster, open our bot.',
-    openTg: 'Open Telegram', again: 'New booking', when: 'When', offline: 'In-person meetings take place on', video: 'We will send the video call link after confirmation.', min: 'min', more: 'More on the site', err: 'Could not send. Please try again.',
+    openTg: 'Open Telegram', again: 'New booking', when: 'When', offline: 'In-person meetings take place on', video: 'We will send the video call link after confirmation.', min: 'min', pickDay: 'Pick a day: every day has its own free times.', freeSlots: 'free times', duration: 'Meeting length', more: 'More on the site', err: 'Could not send. Please try again.',
     dows: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], minsk: 'Minsk time',
   },
 } as const
@@ -57,20 +57,26 @@ export default function BookPage() {
   useEffect(() => { document.documentElement.lang = lang; document.title = `${t.title} — ST96` }, [lang, t.title])
 
   useEffect(() => {
-    if (!service || !month) return
+    if (!month) return
     let alive = true
-    void api<{ days: typeof days }>({ action: 'month', service, format, month }).then((r) => alive && r.days && setDays(r.days))
+    void api<{ days: typeof days }>({ action: 'month', format, month }).then((r) => alive && r.days && setDays(r.days))
     return () => { alive = false }
-  }, [service, format, month])
+  }, [format, month])
   useEffect(() => {
-    if (!service || !date) return setSlots(null)
+    if (!date) return setSlots(null)
     let alive = true
-    void api<{ slots: Slot[] }>({ action: 'day', service, format, date }).then((r) => alive && setSlots(r.slots ?? []))
+    void api<{ slots: Slot[] }>({ action: 'day', format, date }).then((r) => {
+      if (!alive) return
+      const list = r.slots ?? []
+      setSlots(list)
+      setTime((cur) => (list.some((x) => x.t === cur && x.free) ? cur : ''))
+    })
     return () => { alive = false }
-  }, [service, format, date])
+  }, [format, date])
 
   const svc = cfg?.services.find((s) => s.key === service)
-  const missing = useMemo(() => [!service && t.mService, !format && t.mFormat, !date && t.mDate, !time && t.mTime, !f.name.trim() && t.mName, !f.phone.trim() && !f.telegram.trim() && t.mContact, !consent && t.mConsent].filter(Boolean) as string[], [service, format, date, time, f, consent, t])
+  const missing = useMemo(() => [!date && t.mDate, !time && t.mTime, !service && t.mService, !format && t.mFormat, !f.name.trim() && t.mName, !f.phone.trim() && !f.telegram.trim() && t.mContact, !consent && t.mConsent].filter(Boolean) as string[], [service, format, date, time, f, consent, t])
+  const dayLabel = (d: string) => new Date(`${d}T12:00:00+03:00`).toLocaleDateString(lang === 'en' ? 'en-GB' : 'ru-RU', { timeZone: 'Europe/Minsk', weekday: 'long', day: 'numeric', month: 'long' })
   const dateLabel = (iso: string) => new Date(iso).toLocaleString(lang === 'en' ? 'en-GB' : 'ru-RU', { timeZone: 'Europe/Minsk', day: 'numeric', month: 'long', weekday: 'short', hour: '2-digit', minute: '2-digit' })
 
   const submit = async () => {
@@ -81,7 +87,7 @@ export default function BookPage() {
     if (r.ok) setDone({ ref: r.ref ?? '', starts_at: r.starts_at ?? '' })
     else {
       setError(r.error ?? t.err)
-      if (date) { setSlots(null); void api<{ slots: Slot[] }>({ action: 'day', service, format, date }).then((x) => setSlots(x.slots ?? [])); setTime('') }
+      if (date) { setSlots(null); void api<{ slots: Slot[] }>({ action: 'day', format, date }).then((x) => setSlots(x.slots ?? [])); setTime('') }
     }
   }
   const reset = () => { setDone(null); setDate(''); setTime(''); setConsent(false); setF({ name: '', phone: '', telegram: '', company: '', goal: '', comment: '', website: '' }) }
@@ -113,36 +119,40 @@ export default function BookPage() {
         ) : (
           <>
             <section className="bk-card">
-              <h2>{t.service}</h2>
-              <div className="bk-chips">{cfg?.services.map((s) => <button key={s.key} type="button" className={service === s.key ? 'on' : ''} aria-pressed={service === s.key} onClick={() => { setService(s.key); setTime('') }}>{s[lang]}<small>{s.minutes} {t.min}</small></button>)}</div>
+              <h2><span className="bk-n">1</span>{t.date}</h2>
+              {month && (
+                <MonthGrid lang={lang} month={month} onMonth={(m) => { setMonth(m); setDays({}) }} selected={date}
+                  cell={(d) => { const x = days[d]; const ok = !!x && x.free > 0; return { disabled: !ok, cls: ok ? 'open' : 'dis', title: x?.why ?? (ok ? `${x.free} ${t.freeSlots}` : undefined) } }}
+                  onPick={(d) => { setDate(d); setTime(''); if (d.slice(0, 7) !== month) setMonth(d.slice(0, 7)) }} />
+              )}
+              {!date && <p className="bk-dim">{t.pickDay}</p>}
+              {date && slots && (
+                <>
+                  <h2 className="bk-sub2">{dayLabel(date)} <small className="bk-dim">{t.minsk}</small></h2>
+                  <div className="bk-slots">
+                    {slots.filter((s) => s.free).map((s) => <button key={s.t} type="button" className={time === s.t ? 'on' : ''} aria-pressed={time === s.t} onClick={() => setTime(s.t)}>{s.t}</button>)}
+                    {!slots.some((s) => s.free) && <p className="bk-dim">{t.noSlots}</p>}
+                  </div>
+                  {cfg && <p className="bk-dim">{t.duration}: {cfg.services[0]?.minutes} {t.min}</p>}
+                </>
+              )}
+            </section>
+
+            <section className="bk-card">
+              <h2><span className="bk-n">2</span>{t.service}</h2>
+              <div className="bk-chips">{cfg?.services.map((s) => <button key={s.key} type="button" className={service === s.key ? 'on' : ''} aria-pressed={service === s.key} onClick={() => setService(s.key)}>{s[lang]}</button>)}</div>
               {svc && <p className="bk-dim">{lang === 'en' ? svc.infoEn : svc.infoRu} <a href={lang === 'en' ? svc.urlEn : svc.url} target="_blank" rel="noreferrer">{t.more}</a></p>}
-              <h2>{t.format}</h2>
-              <div className="bk-chips">{cfg?.formats.map((x) => <button key={x.key} type="button" className={format === x.key ? 'on' : ''} aria-pressed={format === x.key} onClick={() => { setFormat(x.key); setDate(''); setTime('') }}>{x[lang]}</button>)}</div>
+            </section>
+
+            <section className="bk-card">
+              <h2><span className="bk-n">3</span>{t.format}</h2>
+              <div className="bk-chips">{cfg?.formats.map((x) => <button key={x.key} type="button" className={format === x.key ? 'on' : ''} aria-pressed={format === x.key} onClick={() => setFormat(x.key)}>{x[lang]}</button>)}</div>
               {format === 'offline' && cfg && <p className="bk-dim">{t.offline}: {cfg.offlineDays.map((i) => t.dows[i]).join(', ')}.</p>}
               {format === 'video' && <p className="bk-dim">{t.video}</p>}
             </section>
 
             <section className="bk-card">
-              <h2>{t.date}</h2>
-              {!service || !month ? <p className="bk-dim">{t.pickService}</p> : (
-                <MonthGrid lang={lang} month={month} onMonth={(m) => { setMonth(m); setDays({}) }} selected={date}
-                  cell={(d) => { const x = days[d]; const ok = !!x && x.free > 0; return { disabled: !ok, cls: ok ? 'open' : 'dis', title: x?.why } }}
-                  onPick={(d) => { setDate(d); setTime(''); if (d.slice(0, 7) !== month) setMonth(d.slice(0, 7)) }} />
-              )}
-              {date && slots && (
-                <>
-                  <h2>{t.time} <small className="bk-dim">{t.minsk}</small></h2>
-                  <div className="bk-slots">
-                    {slots.filter((s) => s.free).map((s) => <button key={s.t} type="button" className={time === s.t ? 'on' : ''} aria-pressed={time === s.t} onClick={() => setTime(s.t)}>{s.t}</button>)}
-                    {!slots.some((s) => s.free) && <p className="bk-dim">{t.noSlots}</p>}
-                  </div>
-                </>
-              )}
-              {svc && <p className="bk-dim">{svc[lang]} · {svc.minutes} {t.min}</p>}
-            </section>
-
-            <section className="bk-card">
-              <h2>{t.contacts}</h2>
+              <h2><span className="bk-n">4</span>{t.contacts}</h2>
               <div className="bk-grid">
                 {input('name', `${t.name} *`, { autoComplete: 'name' })}
                 {input('company', t.company, { autoComplete: 'organization' })}

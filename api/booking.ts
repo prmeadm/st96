@@ -2,7 +2,7 @@ import { Api } from 'grammy'
 import { json } from '../server/adminAuth'
 import { buildIcs } from '../server/booking/ics'
 import { notifyAdminsNewBooking } from '../server/booking/notify'
-import { FORMAT_KEYS, FORMAT_LABEL, SERVICE_KEYS, isDate, minskNow, type FormatKey, type ServiceKey } from '../server/booking/schedule'
+import { FORMAT_KEYS, FORMAT_LABEL, isDate, minskNow, type FormatKey } from '../server/booking/schedule'
 import { SITE_SERVICES } from '../server/catalog'
 import { createBooking, daySlots, loadSchedule, monthAvailability } from '../server/booking/service'
 import { supabaseRepo } from '../server/repo'
@@ -34,7 +34,6 @@ export default async function handler(req: Request) {
   }
   const now = new Date()
   const S = await loadSchedule(repo)
-  const service = SERVICE_KEYS.includes(b.service as ServiceKey) ? (b.service as ServiceKey) : null
   const format = FORMAT_KEYS.includes(b.format as FormatKey) ? (b.format as FormatKey) : null
 
   if (b.action === 'config') {
@@ -45,11 +44,11 @@ export default async function handler(req: Request) {
     })
   }
   if (b.action === 'month') {
-    if (!service || typeof b.month !== 'string' || !/^\d{4}-\d{2}$/.test(b.month)) return json({ error: 'Неверный запрос' }, 400)
+    if (typeof b.month !== 'string' || !/^\d{4}-\d{2}$/.test(b.month)) return json({ error: 'Неверный запрос' }, 400)
     return json({ days: await monthAvailability(repo, S, b.month, format, now) })
   }
   if (b.action === 'day') {
-    if (!service || !isDate(b.date)) return json({ error: 'Неверный запрос' }, 400)
+    if (!isDate(b.date)) return json({ error: 'Неверный запрос' }, 400)
     const d = await daySlots(repo, S, b.date, format, now)
     return json({ closed: d.closed, why: d.why, slots: d.slots.map((s) => ({ t: s.t, free: s.free })) })
   }
