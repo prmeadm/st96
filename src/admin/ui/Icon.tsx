@@ -30,6 +30,7 @@ const PATHS = {
   minus: 'M6 12h12',
   circle: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z',
   external: 'M7 17L17 7M9 7h8v8',
+  translate: 'M4 5h9M8.5 3v2M6 5c0 3.5-1.7 6.2-3.5 7.5M6 8c.8 1.8 2.3 3.4 4.5 4.5M13 21l4-10 4 10M14.4 17.5h5.2',
   logout: 'M9.5 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h3.5M14 8l4 4-4 4M18 12H9.5',
 } as const
 

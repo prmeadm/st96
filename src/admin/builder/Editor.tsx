@@ -4,6 +4,7 @@ import type { Node } from '@xyflow/react'
 import { TRIGGER } from '../../../server/funnels/types'
 import { ACT_TYPES, COND_TYPES, DAYS, FORMATS, P, SERVICES, TRIGGERS, TYPES, uid, type D } from './catalog'
 import { Ic } from './Nodes'
+import { TranslateButton } from '../ui/TranslateButton'
 import { supabase } from '../supabase'
 import type { TemplateRow } from '../../../server/templates'
 import { TPL_KINDS } from '../../../server/templates'
@@ -102,6 +103,7 @@ export function Editor({ node, patch, remove, duplicate, close }: { node: Node; 
           <button type="button" className="x" onClick={() => set({ parts: d.parts.filter((x: D) => x.id !== p.id) })} aria-label="Удалить" title="Удалить"><Ic d={P.close} size={14} /></button></div>
         {p.kind === 'text' ? (<>
           <textarea value={p.text ?? ''} placeholder="Текст сообщения. Можно {имя} и {компания}" onChange={(e) => set({ parts: d.parts.map((x: D) => x.id === p.id ? { ...x, text: e.target.value } : x) })} />
+          <div className="lblrow"><span className="hint">English</span><TranslateButton source={p.text ?? ''} target={p.en ?? ''} onDone={(t) => set({ parts: d.parts.map((x: D) => x.id === p.id ? { ...x, en: t } : x) })} /></div>
           <textarea className="en" value={p.en ?? ''} placeholder="English (необязательно, для клиентов с английским)" onChange={(e) => set({ parts: d.parts.map((x: D) => x.id === p.id ? { ...x, en: e.target.value } : x) })} />
         </>) : (
           <input type="url" value={p.url ?? ''} placeholder="https://… ссылка на файл" onChange={(e) => set({ parts: d.parts.map((x: D) => x.id === p.id ? { ...x, url: e.target.value } : x) })} />
@@ -123,7 +125,10 @@ export function Editor({ node, patch, remove, duplicate, close }: { node: Node; 
       <div className="item" key={q.id}>
         <div className="ih"><span>Ответ</span><button type="button" className="x" onClick={() => set({ quick: d.quick.filter((x: D) => x.id !== q.id) })} aria-label="Удалить" title="Удалить"><Ic d={P.close} size={14} /></button></div>
         <input type="text" value={q.label ?? ''} placeholder="Название кнопки" onChange={(e) => set({ quick: d.quick.map((x: D) => x.id === q.id ? { ...x, label: e.target.value } : x) })} />
-        <input type="text" value={q.en ?? ''} placeholder="English (необязательно)" onChange={(e) => set({ quick: d.quick.map((x: D) => x.id === q.id ? { ...x, en: e.target.value } : x) })} />
+        <div className="inrow">
+          <input type="text" value={q.en ?? ''} placeholder="English (необязательно)" onChange={(e) => set({ quick: d.quick.map((x: D) => x.id === q.id ? { ...x, en: e.target.value } : x) })} />
+          <TranslateButton compact source={q.label ?? ''} target={q.en ?? ''} onDone={(t) => set({ quick: d.quick.map((x: D) => x.id === q.id ? { ...x, en: t } : x) })} />
+        </div>
       </div>
     ))}
     <div className="addrow"><button type="button" onClick={() => set({ quick: [...d.quick, { id: uid('q'), label: '' }] })}><Ic d={P.plus} size={14} /> Быстрый ответ</button></div>

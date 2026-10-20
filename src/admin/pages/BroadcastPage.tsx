@@ -5,6 +5,7 @@ import { callApi } from '../api'
 import { SERVICES, clientTitle, fmtDate } from '../types'
 import { BackLink } from '../ui/BackLink'
 import { MediaField } from '../ui/MediaField'
+import { TranslateButton } from '../ui/TranslateButton'
 import { KIND_OPTIONS, Seg } from '../ui/Seg'
 import { BROADCAST_STATUS, MEDIA_CAPTION_LIMIT, validateBroadcast, type BroadcastRow, type Segment } from '../../../server/broadcasts'
 import { TPL_VARS, fillTemplate, type TemplateKind, type TemplateRow } from '../../../server/templates'
@@ -141,7 +142,7 @@ export default function BroadcastPage() {
           <div className="fld"><label>{d.kind === 'text' ? 'Текст' : 'Подпись'}{d.kind !== 'text' ? ` (до ${MEDIA_CAPTION_LIMIT} знаков)` : ''}</label>
             <div className="chips">{TPL_VARS.map((v) => <button type="button" key={v} onClick={() => up({ body: `${d.body}${v}` })}>{v}</button>)}</div>
             <textarea value={d.body} onChange={(e) => up({ body: e.target.value })} /></div>
-          <div className="fld"><label>English (необязательно, для клиентов с английским)</label><textarea value={d.body_en} onChange={(e) => up({ body_en: e.target.value })} /></div>
+          <div className="fld"><div className="lblrow"><label>English (необязательно, для клиентов с английским)</label>{draft && <TranslateButton source={d.body} target={d.body_en} onDone={(t) => up({ body_en: t })} />}</div><textarea value={d.body_en} onChange={(e) => up({ body_en: e.target.value })} /></div>
         </fieldset>
         <div className="fld"><label>Предпросмотр в Telegram</label><div className="tgprev">{fillTemplate(d.body, SAMPLE) || '…'}<div className="hint">Отписаться: /stop</div></div></div>
       </div>

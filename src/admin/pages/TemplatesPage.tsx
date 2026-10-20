@@ -4,6 +4,7 @@ import { fmtDate } from '../types'
 import { TPL_GOALS, TPL_KINDS, TPL_SERVICES, TPL_TASKS, TPL_VARS, type TemplateKind, type TemplateRow } from '../../../server/templates'
 import { MediaField } from '../ui/MediaField'
 import { Icon } from '../ui/Icon'
+import { TranslateButton } from '../ui/TranslateButton'
 import { KIND_OPTIONS, Seg } from '../ui/Seg'
 import './templates.css'
 
@@ -150,7 +151,7 @@ function Editor({ d: init, onSave, onClose, onDelete, onCopy }: { d: Draft; onSa
           <div className="fld"><label>{d.kind === 'text' ? 'Текст сообщения' : 'Подпись'}</label>
             <div className="chips">{TPL_VARS.map((v) => <button type="button" key={v} onClick={() => insert(v)}>{v}</button>)}</div>
             <textarea ref={ta} value={d.body} onChange={(e) => up({ body: e.target.value })} /></div>
-          <div className="fld"><label>English (необязательно)</label><textarea value={d.body_en} onChange={(e) => up({ body_en: e.target.value })} placeholder="Для клиентов с английским языком" /></div>
+          <div className="fld"><div className="lblrow"><label>English (необязательно)</label><TranslateButton source={d.body} target={d.body_en} onDone={(t) => up({ body_en: t })} /></div><textarea value={d.body_en} onChange={(e) => up({ body_en: e.target.value })} placeholder="Для клиентов с английским языком" /></div>
           <div className="fld"><label>Предпросмотр в Telegram</label><div className="tgprev">{preview(d.body) || '…'}</div></div>
           <div className="fld"><label>Задача</label><select value={d.task} onChange={(e) => up({ task: e.target.value })}>{TPL_TASKS.map((x) => <option key={x}>{x}</option>)}</select></div>
           <div className="fld"><label>Цель</label><select value={d.goal} onChange={(e) => up({ goal: e.target.value })}>{TPL_GOALS.map((x) => <option key={x}>{x}</option>)}</select></div>

@@ -209,3 +209,13 @@ input[type="checkbox"]::after { content: ''; width: 12px; height: 12px; backgrou
 input[type="checkbox"]:checked::after { transform: scale(1); }
 input[type="checkbox"]:disabled { opacity: 0.5; cursor: default; }
 @media (prefers-reduced-motion: reduce) { input[type="checkbox"], input[type="checkbox"]::after { transition: none; } }
+
+.lblrow { display: flex; align-items: center; justify-content: space-between; gap: var(--s-2); flex-wrap: wrap; }
+.lblrow > label { margin: 0; }
+.tr { display: inline-flex; align-items: center; gap: var(--s-2); flex-wrap: wrap; }
+.btn.small-btn { min-height: 34px; padding: 0 12px; font-size: var(--fs-sm); background: var(--accent); border-color: var(--accent-edge); color: var(--on-accent); font-weight: 600; }
+.btn.small-btn:hover:not(:disabled) { background: var(--accent-hover); }
+.btn.small-btn:disabled { background: var(--bg); border-color: var(--line); color: var(--mute); }
+.inrow { display: flex; align-items: center; gap: var(--s-2); }
+.inrow input { flex: 1; min-width: 0; }
+.tr .err { font-size: var(--fs-xs); }
