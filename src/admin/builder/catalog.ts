@@ -86,7 +86,7 @@ export function problems(type: string, d: D): string[] {
   return p
 }
 
-export const edgeStyle = { type: 'default', markerEnd: { type: MarkerType.ArrowClosed, color: '#aab1c0', width: 16, height: 16 } }
+export const edgeStyle = { type: 'default', markerEnd: { type: MarkerType.ArrowClosed, color: 'var(--edge)', width: 16, height: 16 } }
 
 export function newData(type: string): D {
   return ({
