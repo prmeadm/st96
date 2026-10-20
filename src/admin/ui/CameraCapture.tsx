@@ -139,6 +139,7 @@ export function CameraCapture({ mode, maxMB, onDone, onClose, onFallback }: {
         ) : (
           <div className="cam-one">
             <div><span>Камера:</span> <b>{devices[0]?.label || 'не определена'}</b></div>
+            <div className="hint">Safari сообщил камер: {devices.length}{devices.length ? ` (${devices.map((d) => d.label).join('; ')})` : ''}. Вид браузера: {isSafari ? 'Safari' : 'другой'}.</div>
             {isSafari
               ? <div className="hint"><b>Safari показывает только одну камеру, пока у сайта нет постоянного разрешения.</b> Откройте Safari → Настройки → Веб-сайты → Камера, для st96.by выберите «Разрешить» (то же для «Микрофон»), закройте это окно, обновите страницу (Cmd+R) и снова нажмите «Снять»: появится список со всеми камерами, включая iPhone, если он рядом и разблокирован. <button type="button" className="lnk" onClick={() => void refreshDevices()}>Обновить список</button></div>
               : <div className="hint">Браузер показывает только эту камеру. Другую выберите в настройках браузера для сайта: в Chrome нажмите значок камеры справа в адресной строке. <button type="button" className="lnk" onClick={() => void refreshDevices()}>Обновить список</button></div>}
