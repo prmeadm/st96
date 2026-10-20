@@ -3,6 +3,8 @@ import { resumeRun } from '../server/funnels/engine'
 import { telegramOut } from '../server/bot/telegramOut'
 import { supabaseRepo } from '../server/repo'
 import { tickBroadcasts } from '../server/broadcasts'
+import { agentDeps } from '../server/agent/deps'
+import { tickAgentTasks } from '../server/agent/engine'
 
 export const config = { runtime: 'edge' }
 
@@ -37,5 +39,11 @@ export default async function handler(req: Request) {
   } catch (e) {
     console.error('broadcast tick failed', e instanceof Error ? e.message : e)
   }
-  return new Response(JSON.stringify({ claimed: jobs.length, done, failed, broadcast }), { headers: { 'Content-Type': 'application/json' } })
+  let agent = { ran: 0 }
+  try {
+    agent = await tickAgentTasks(agentDeps(repo, new Api(token), process.env))
+  } catch (e) {
+    console.error('agent tick failed', e instanceof Error ? e.message : e)
+  }
+  return new Response(JSON.stringify({ claimed: jobs.length, done, failed, broadcast, agent }), { headers: { 'Content-Type': 'application/json' } })
 }

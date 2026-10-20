@@ -72,6 +72,7 @@ mark { background: var(--mark); color: inherit; border-radius: 3px; padding: 0 1
 .chip.blue { background: var(--blue-soft); color: var(--blue); border-color: transparent; }
 .chip.green { background: var(--green-soft); color: var(--green); border-color: transparent; }
 .chip.amber { background: var(--amber-soft); color: var(--amber); border-color: transparent; }
+.chip.violet { background: var(--violet-soft); color: var(--violet); border-color: transparent; }
 .chip.red { background: var(--red-soft); color: var(--red); border-color: transparent; }
 .chips { display: flex; gap: 6px; flex-wrap: wrap; }
 .chips button { border: 1px solid var(--line-strong); background: var(--card); border-radius: 999px; padding: 6px 12px; font-size: var(--fs-sm); }
@@ -94,10 +95,10 @@ a.item:hover { border-color: var(--accent-edge); text-decoration: none; }
 
 @media (max-width: 720px) {
   .app { flex-direction: column-reverse; }
-  .rail { width: auto; flex-direction: row; justify-content: space-around; border-right: 0; border-top: 1px solid var(--line); padding: 4px 4px calc(4px + env(safe-area-inset-bottom)); gap: 0; }
+  .rail { width: auto; flex-direction: row; justify-content: space-around; overflow-x: auto; border-right: 0; border-top: 1px solid var(--line); padding: 4px 4px calc(4px + env(safe-area-inset-bottom)); gap: 0; }
   .rail .brand { display: none; }
   .rail, .rail.min { width: auto; }
-  .rail a, .rail .out, .rail.min a, .rail.min .out { flex: 1; flex-direction: column; align-items: center; gap: 2px; font-size: 11px; padding: 7px 2px; justify-content: center; margin-top: 0; width: auto; text-align: center; }
+  .rail a, .rail .out, .rail.min a, .rail.min .out { flex: 1 0 58px; flex-direction: column; align-items: center; gap: 2px; font-size: 11px; padding: 7px 2px; justify-content: center; margin-top: 0; width: auto; text-align: center; }
   .rail.min a span, .rail.min .out span { display: inline; }
   .rail a.on { box-shadow: none; }
   .page { padding: 12px; }

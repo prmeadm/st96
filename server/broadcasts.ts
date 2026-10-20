@@ -96,3 +96,19 @@ export async function tickBroadcasts(deps: { repo: Repo; api: Api; now?: Date },
   }
   return { sent, failed }
 }
+
+/** Фиксирует получателей и ставит рассылку в очередь. Общая логика для админки и для агента. */
+export async function startBroadcast(repo: Repo, api: Api, id: string): Promise<{ ok: true; total: number } | { ok: false; error: string; status: number }> {
+  const b = await repo.getBroadcast(id)
+  if (!b) return { ok: false, error: 'Рассылка не найдена', status: 404 }
+  if (b.status !== 'draft') return { ok: false, error: 'Запустить можно только черновик', status: 409 }
+  const problem = validateBroadcast(b)
+  if (problem) return { ok: false, error: problem, status: 422 }
+  const ids = (await repo.listAudience()).filter((c) => inAudience(c, b.segment)).map((c) => c.id)
+  if (!ids.length) return { ok: false, error: 'В выбранном сегменте нет клиентов с согласием на рассылки', status: 422 }
+  await repo.insertRecipients(b.id, ids)
+  await repo.updateBroadcast(b.id, { status: 'scheduled', total: ids.length })
+  // Если время уже пришло, первая пачка уходит сразу, остальное доберёт расписание (раз в минуту)
+  if (!b.scheduled_at || Date.parse(b.scheduled_at) <= Date.now()) await tickBroadcasts({ repo, api }, 50)
+  return { ok: true, total: ids.length }
+}

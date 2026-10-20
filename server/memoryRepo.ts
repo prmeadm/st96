@@ -3,6 +3,7 @@ import type { ClientRow, LeadInsert, MessageInsert, NoteInsert, Repo } from './r
 import type { Funnel, JobRow, RunRow } from './funnels/types'
 import type { TemplateRow } from './templates'
 import type { AudienceClient, BroadcastRow } from './broadcasts'
+import type { AgentStats, AgentTask } from './agent/types'
 
 export type MemoryRepo = Repo & {
   clients: ClientRow[]
@@ -15,6 +16,7 @@ export type MemoryRepo = Repo & {
   tags: Map<string, Set<string>>
   templates: TemplateRow[]
   broadcasts: BroadcastRow[]
+  agentTasks: (AgentTask & { locked: boolean })[]
   recipients: { broadcast_id: string; client_id: string; status: 'pending' | 'sending' | 'sent' | 'failed'; error?: string }[]
   jobs: (JobRow & { run_at: Date; done: boolean; error?: string })[]
 }
@@ -24,7 +26,7 @@ export function memoryRepo(): MemoryRepo {
   const id = (p: string) => `${p}${++seq}`
   const seen = new Set<number>()
   const r: MemoryRepo = {
-    clients: [], leads: [], notes: [], messages: [], funnels: [], runs: [], events: [], tags: new Map(), templates: [], broadcasts: [], recipients: [], jobs: [],
+    clients: [], leads: [], notes: [], messages: [], funnels: [], runs: [], events: [], tags: new Map(), templates: [], broadcasts: [], agentTasks: [], recipients: [], jobs: [],
     async claimUpdate(u) { if (seen.has(u)) return false; seen.add(u); return true },
     async findClient({ tgUserId, phone, username, topicId }) {
       if (topicId) return r.clients.find((c) => c.admin_topic_id === topicId) ?? null
@@ -109,6 +111,41 @@ export function memoryRepo(): MemoryRepo {
       const l = r.recipients.filter((x) => x.broadcast_id === bid)
       const n = (s: string) => l.filter((x) => x.status === s).length
       return { pending: n('pending'), sending: n('sending'), sent: n('sent'), failed: n('failed') }
+    },
+    async insertAgentTask(t) {
+      const row = { id: id('at'), title: t.title, text: t.text, attach: t.attach, status: 'planning' as const, rev: 1, plan: [], log: [], report: null, error: null, llm_calls: 0, created_at: new Date().toISOString(), locked: false }
+      r.agentTasks.push(row)
+      return row
+    },
+    async getAgentTask(tid) { return r.agentTasks.find((x) => x.id === tid) ?? null },
+    async updateAgentTask(tid, patch) { Object.assign(r.agentTasks.find((x) => x.id === tid)!, patch) },
+    async listRunningAgentTasks() { return r.agentTasks.filter((x) => x.status === 'running') },
+    async claimAgentTask(tid) {
+      const x = r.agentTasks.find((y) => y.id === tid)
+      if (!x || x.locked) return null
+      x.locked = true
+      return x
+    },
+    async releaseAgentTask(tid) { const x = r.agentTasks.find((y) => y.id === tid); if (x) x.locked = false },
+    async agentStats(): Promise<AgentStats> {
+      const leads30: Record<string, number> = {}
+      const leadStatus: Record<string, number> = {}
+      for (const l of r.leads) { leads30[l.service_key ?? 'other'] = (leads30[l.service_key ?? 'other'] ?? 0) + 1 }
+      return {
+        clients: r.clients.length, consented: r.clients.filter((c) => c.consent_at && !c.opted_out_at).length, optedOut: r.clients.filter((c) => c.opted_out_at).length,
+        leads30, leadStatus, newLeads7: r.leads.length, funnels: r.funnels.length, publishedFunnels: r.funnels.filter((f) => f.status === 'published').length,
+        templates: r.templates.length, broadcasts: r.broadcasts.length,
+      }
+    },
+    async insertTemplate(t) {
+      const row = { id: id('tpl'), fav: false, used: 0, body_en: null, media_url: null, updated_at: '', ...t }
+      r.templates.push(row)
+      return { id: row.id }
+    },
+    async insertBroadcastDraft(b) {
+      const row: BroadcastRow = { id: id('bc'), title: b.title, kind: 'text', body: b.body, body_en: null, media_url: null, segment: b.segment, status: 'draft', scheduled_at: null, total: 0, sent: 0, failed: 0, created_at: '', finished_at: null }
+      r.broadcasts.push(row)
+      return { id: row.id }
     },
     async enqueueJob(kind, runAt, payload) { r.jobs.push({ id: ++seq, kind, payload, attempts: 0, run_at: runAt, done: false }) },
     async claimJobs(limit) {

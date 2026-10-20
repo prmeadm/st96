@@ -3,7 +3,9 @@
 import { createClient } from '@supabase/supabase-js'
 import type { Funnel, JobRow, RunRow } from './funnels/types'
 import type { TemplateRow } from './templates'
-import type { AudienceClient, BroadcastRow } from './broadcasts'
+import type { AudienceClient, BroadcastRow, Segment } from './broadcasts'
+import type { AgentStats, AgentTask } from './agent/types'
+import type { TemplateKind } from './templates'
 
 export type ClientRow = {
   id: string
@@ -110,6 +112,17 @@ export interface Repo {
   claimRecipients(broadcastId: string, limit: number): Promise<ClientRow[]>
   finishRecipient(broadcastId: string, clientId: string, status: 'sent' | 'failed' | 'pending', error?: string): Promise<void>
   recipientCounts(broadcastId: string): Promise<{ pending: number; sending: number; sent: number; failed: number }>
+  // задания агента
+  insertAgentTask(t: { title: string; text: string; attach: string[] }): Promise<AgentTask>
+  getAgentTask(id: string): Promise<AgentTask | null>
+  updateAgentTask(id: string, patch: Partial<Pick<AgentTask, 'status' | 'rev' | 'plan' | 'log' | 'report' | 'error' | 'llm_calls'>>): Promise<void>
+  listRunningAgentTasks(): Promise<AgentTask[]>
+  /** Берёт задание в работу; null, если им уже занят другой запуск (замок на 2 минуты) */
+  claimAgentTask(id: string): Promise<AgentTask | null>
+  releaseAgentTask(id: string): Promise<void>
+  agentStats(): Promise<AgentStats>
+  insertTemplate(t: { title: string; kind: TemplateKind; body: string; task: string; goal: string; services: string[] }): Promise<{ id: string }>
+  insertBroadcastDraft(b: { title: string; body: string; segment: Segment }): Promise<{ id: string }>
   // очередь отложенных шагов
   enqueueJob(kind: string, runAt: Date, payload: Record<string, unknown>): Promise<void>
   claimJobs(limit: number): Promise<JobRow[]>
@@ -266,6 +279,60 @@ export function supabaseRepo(url: string, key: string): Repo {
         out[k] = r.count ?? 0
       }
       return out
+    },
+    async insertAgentTask(t) {
+      return ok(await db.from('agent_tasks').insert(t).select('*').single(), 'insertAgentTask') as AgentTask
+    },
+    async getAgentTask(id) {
+      return (ok(await db.from('agent_tasks').select('*').eq('id', id).maybeSingle(), 'getAgentTask') as AgentTask | null) ?? null
+    },
+    async updateAgentTask(id, patch) {
+      ok(await db.from('agent_tasks').update(patch).eq('id', id), 'updateAgentTask')
+    },
+    async listRunningAgentTasks() {
+      return (ok(await db.from('agent_tasks').select('*').eq('status', 'running').order('created_at'), 'listRunningAgentTasks') ?? []) as AgentTask[]
+    },
+    async claimAgentTask(id) {
+      const lim = new Date(Date.now() - 2 * 60_000).toISOString()
+      const rows = ok(await db.from('agent_tasks').update({ locked_at: new Date().toISOString() }).eq('id', id).or(`locked_at.is.null,locked_at.lt.${lim}`).select('*'), 'claimAgentTask') as AgentTask[] | null
+      return rows?.[0] ?? null
+    },
+    async releaseAgentTask(id) {
+      ok(await db.from('agent_tasks').update({ locked_at: null }).eq('id', id), 'releaseAgentTask')
+    },
+    async agentStats() {
+      const count = async (q: PromiseLike<{ count: number | null; error: { message: string } | null }>, what: string) => {
+        const r = await q
+        if (r.error) throw new Error(`agentStats ${what}: ${r.error.message}`)
+        return r.count ?? 0
+      }
+      const head = { count: 'exact' as const, head: true }
+      const since30 = new Date(Date.now() - 30 * 86400_000).toISOString()
+      const since7 = new Date(Date.now() - 7 * 86400_000).toISOString()
+      const leads = (ok(await db.from('leads').select('service_key, status').gte('created_at', since30).limit(5000), 'agentStats leads') ?? []) as { service_key: string | null; status: string }[]
+      const leads30: Record<string, number> = {}
+      const leadStatus: Record<string, number> = {}
+      for (const l of leads) {
+        leads30[l.service_key ?? 'other'] = (leads30[l.service_key ?? 'other'] ?? 0) + 1
+        leadStatus[l.status] = (leadStatus[l.status] ?? 0) + 1
+      }
+      return {
+        clients: await count(db.from('clients').select('id', head), 'clients'),
+        consented: await count(db.from('clients').select('id', head).not('consent_at', 'is', null).is('opted_out_at', null), 'consented'),
+        optedOut: await count(db.from('clients').select('id', head).not('opted_out_at', 'is', null), 'optedOut'),
+        leads30, leadStatus,
+        newLeads7: await count(db.from('leads').select('id', head).gte('created_at', since7), 'newLeads7'),
+        funnels: await count(db.from('funnels').select('id', head), 'funnels'),
+        publishedFunnels: await count(db.from('funnels').select('id', head).eq('status', 'published'), 'publishedFunnels'),
+        templates: await count(db.from('templates').select('id', head), 'templates'),
+        broadcasts: await count(db.from('broadcasts').select('id', head), 'broadcasts'),
+      }
+    },
+    async insertTemplate(t) {
+      return ok(await db.from('templates').insert(t).select('id').single(), 'insertTemplate') as { id: string }
+    },
+    async insertBroadcastDraft(b) {
+      return ok(await db.from('broadcasts').insert(b).select('id').single(), 'insertBroadcastDraft') as { id: string }
     },
     async enqueueJob(kind, runAt, payload) {
       ok(await db.from('jobs').insert({ kind, run_at: runAt.toISOString(), payload }), 'enqueueJob')

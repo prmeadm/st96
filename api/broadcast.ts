@@ -1,6 +1,6 @@
 import { Api } from 'grammy'
 import { requireAdmin, json } from '../server/adminAuth'
-import { inAudience, tickBroadcasts, validateBroadcast, type Segment } from '../server/broadcasts'
+import { inAudience, startBroadcast, type Segment } from '../server/broadcasts'
 import { supabaseRepo } from '../server/repo'
 
 export const config = { runtime: 'edge' }
@@ -41,16 +41,8 @@ export default async function handler(req: Request) {
   }
 
   if (body.action === 'start') {
-    if (b.status !== 'draft') return json({ error: 'Запустить можно только черновик' }, 409)
-    const problem = validateBroadcast(b)
-    if (problem) return json({ error: problem }, 422)
-    const ids = (await repo.listAudience()).filter((c) => inAudience(c, b.segment)).map((c) => c.id)
-    if (!ids.length) return json({ error: 'В выбранном сегменте нет клиентов с согласием на рассылки' }, 422)
-    await repo.insertRecipients(b.id, ids)
-    await repo.updateBroadcast(b.id, { status: 'scheduled', total: ids.length })
-    // Если время уже пришло, первая пачка уходит сразу, остальное доберёт расписание (раз в минуту)
-    if (!b.scheduled_at || Date.parse(b.scheduled_at) <= Date.now()) await tickBroadcasts({ repo, api: new Api(token) }, 50)
-    return json({ ok: true, total: ids.length })
+    const r = await startBroadcast(repo, new Api(token), b.id)
+    return r.ok ? json({ ok: true, total: r.total }) : json({ error: r.error }, r.status)
   }
   return json({ error: 'Unknown action' }, 400)
 }

@@ -73,6 +73,13 @@ builder.css и templates.css. Дальше фаза 2 (общие Modal/Seg/Temp
 
 Не проверено вживую: запись голоса, съёмка с камеры, рассылка с медиа; в Storage остался тестовый файл broadcasts/…-zodzle.mp3 (2 КБ).
 
+Задания агента (шаг 4), код готов, НЕ выложен, миграция `0006_agent.sql` НЕ применена, ключ `LLM_API_KEY` в Vercel владелец добавляет сам:
+- Модель: бесплатный Google Gemini Flash через OpenAI-совместимый API (`server/agent/llm.ts`; переменные `LLM_API_KEY`, необязательно `LLM_BASE_URL`, `LLM_MODEL`, по умолчанию gemini-2.5-flash). Сменить модель = сменить переменные.
+- `server/agent/engine.ts`: план (только инструменты из `tools.ts`, риск задаёт код) → согласование (`approval`) → выполнение по 3 шага за минуту из `api/jobs` → пауза на опасных шагах (`start_broadcast`) до подтверждения → отчёт. Лимит 25 обращений к модели на задание, шагов не больше 7.
+- Инструменты: read_stats, read_templates, write_text, save_template, draft_broadcast, notify_admin, start_broadcast (danger), report. В модель не уходят персональные данные клиентов (только сводка и тексты).
+- `api/agent.ts` (админ): create, revise, approve, confirm, reject. Таблица `agent_tasks`: админы только читают, пишет сервер.
+- Админка `/admin/agent`. Тесты 63/63. Не сделано: блок «ИИ-ответ» в воронке, черновики шаблонов из заметок, вложения файлами.
+
 ## Дальше (в порядке приоритета)
 1. Живая проверка воронки: опубликовать демо, /start боту, кнопки, handoff, отложенный шаг.
 2. Календарь записи (Google Calendar/Meet, .ics).
