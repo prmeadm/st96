@@ -3,7 +3,71 @@ import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../auth'
 import { Highlight } from '../highlight'
 import { GROUP_LINK_ID, supabase } from '../supabase'
+import { TPL_KINDS, fillTemplate, type TemplateRow } from '../../../server/templates'
 import { SERVICES, SOURCES, STATUSES, WARNINGS, clientTitle, fmtDate, type Client, type Lead, type Msg, type Note } from '../types'
+
+function SendTemplate({ client, onSent }: { client: Client; onSent: () => void }) {
+  const [open, setOpen] = useState(false)
+  const [rows, setRows] = useState<TemplateRow[] | null>(null)
+  const [pick, setPick] = useState<TemplateRow | null>(null)
+  const [q, setQ] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [msg, setMsg] = useState('')
+
+  const toggle = () => {
+    setOpen(!open)
+    setPick(null)
+    if (!open && !rows) supabase.from('templates').select('*').order('fav', { ascending: false }).order('used', { ascending: false })
+      .then(({ data, error: e }) => (e ? setMsg('Не удалось загрузить шаблоны') : setRows((data ?? []) as TemplateRow[])))
+  }
+  const send = async () => {
+    if (!pick) return
+    setBusy(true)
+    setMsg('')
+    const { data: s } = await supabase.auth.getSession()
+    const r = await fetch('/api/send-template', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${s.session?.access_token ?? ''}` },
+      body: JSON.stringify({ clientId: client.id, templateId: pick.id }),
+    }).catch(() => null)
+    setBusy(false)
+    if (r?.ok) { setMsg(`Отправлено: ${pick.title}`); setPick(null); setOpen(false); onSent() }
+    else setMsg(`Не отправлено: ${((await r?.json().catch(() => null)) as { error?: string } | null)?.error ?? 'нет связи с сервером'}`)
+  }
+  const list = (rows ?? []).filter((t) => !q.trim() || `${t.title} ${t.body}`.toLowerCase().includes(q.trim().toLowerCase()))
+  const raw = pick ? (client.language === 'en' && pick.body_en ? pick.body_en : pick.body) : ''
+
+  return (
+    <div className="card">
+      <div className="row"><h3 style={{ margin: 0 }}>Отправить шаблон</h3><span className="sp" />
+        <button className="btn" onClick={toggle} disabled={!client.tg_user_id} title={client.tg_user_id ? '' : 'Клиент ещё не писал боту'}>{open ? 'Закрыть' : 'Выбрать шаблон'}</button></div>
+      {!client.tg_user_id && <div className="hint" style={{ marginTop: 6 }}>Клиент ещё не писал боту, отправить некуда.</div>}
+      {msg && <div className="hint" role="status" style={{ marginTop: 6 }}>{msg}</div>}
+      {open && !pick && (
+        <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Поиск шаблонов" />
+          {rows === null && <div className="hint">Загрузка…</div>}
+          {rows && list.length === 0 && <div className="hint">Шаблонов нет. Создайте их в разделе «Шаблоны».</div>}
+          <div style={{ maxHeight: 280, overflow: 'auto', display: 'flex', flexDirection: 'column', gap: 4 }}>
+            {list.map((t) => (
+              <button key={t.id} className="btn" style={{ justifyContent: 'flex-start', flexDirection: 'column', alignItems: 'flex-start', textAlign: 'left' }} onClick={() => setPick(t)}>
+                <b>{t.fav ? '★ ' : ''}{t.title} <span className="hint">· {TPL_KINDS[t.kind]}</span></b>
+                <span className="hint" style={{ whiteSpace: 'normal' }}>{t.body.slice(0, 90)}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+      {open && pick && (
+        <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div className="hint">Клиент получит ({TPL_KINDS[pick.kind]}):</div>
+          <div className="note">{fillTemplate(raw, client) || '…'}</div>
+          <div className="row"><button className="btn primary" disabled={busy} onClick={send}>{busy ? 'Отправляю…' : 'Отправить клиенту'}</button><button className="btn" onClick={() => setPick(null)}>Назад</button></div>
+        </div>
+      )}
+    </div>
+  )
+}
 
 export default function ClientPage() {
   const { id } = useParams()
@@ -95,6 +159,8 @@ export default function ClientPage() {
         </div>
         <div className="row" style={{ marginTop: 10 }}><button className="btn primary">Сохранить</button>{saved && <span className="hint" role="status">{saved}</span>}</div>
       </form>
+
+      <SendTemplate client={client} onSent={load} />
 
       <div className="card">
         <h3>Заметки ({notes.length})</h3>
