@@ -3,6 +3,7 @@
 import { createClient } from '@supabase/supabase-js'
 import type { Funnel, JobRow, RunRow } from './funnels/types'
 import type { TemplateRow } from './templates'
+import type { AudienceClient, BroadcastRow } from './broadcasts'
 
 export type ClientRow = {
   id: string
@@ -100,6 +101,15 @@ export interface Repo {
   listTemplates(): Promise<TemplateRow[]>
   getTemplate(id: string): Promise<TemplateRow | null>
   bumpTemplateUsed(id: string): Promise<void>
+  // рассылки
+  listAudience(): Promise<AudienceClient[]>
+  getBroadcast(id: string): Promise<BroadcastRow | null>
+  listActiveBroadcasts(): Promise<BroadcastRow[]>
+  updateBroadcast(id: string, patch: Partial<Pick<BroadcastRow, 'status' | 'sent' | 'failed' | 'total' | 'finished_at'>>): Promise<void>
+  insertRecipients(broadcastId: string, clientIds: string[]): Promise<void>
+  claimRecipients(broadcastId: string, limit: number): Promise<ClientRow[]>
+  finishRecipient(broadcastId: string, clientId: string, status: 'sent' | 'failed' | 'pending', error?: string): Promise<void>
+  recipientCounts(broadcastId: string): Promise<{ pending: number; sending: number; sent: number; failed: number }>
   // очередь отложенных шагов
   enqueueJob(kind: string, runAt: Date, payload: Record<string, unknown>): Promise<void>
   claimJobs(limit: number): Promise<JobRow[]>
@@ -216,6 +226,46 @@ export function supabaseRepo(url: string, key: string): Repo {
     async bumpTemplateUsed(id) {
       const t = ok(await db.from('templates').select('used').eq('id', id).maybeSingle(), 'bumpTemplateUsed read') as { used: number } | null
       if (t) ok(await db.from('templates').update({ used: t.used + 1 }).eq('id', id), 'bumpTemplateUsed')
+    },
+    async listAudience() {
+      const rows = (ok(await db.from('clients').select('*, leads(service_key), client_tags(tags(name))').not('tg_user_id', 'is', null).not('consent_at', 'is', null).is('opted_out_at', null).limit(5000), 'listAudience') ?? []) as unknown as (ClientRow & { leads: { service_key: string | null }[]; client_tags: { tags: { name: string } | null }[] })[]
+      return rows.map(({ leads, client_tags, ...c }) => ({
+        ...c,
+        services: [...new Set(leads.map((l) => l.service_key).filter((x): x is string => !!x))],
+        tags: client_tags.map((t) => t.tags?.name).filter((x): x is string => !!x),
+      }))
+    },
+    async getBroadcast(id) {
+      return (ok(await db.from('broadcasts').select('*').eq('id', id).maybeSingle(), 'getBroadcast') as BroadcastRow | null) ?? null
+    },
+    async listActiveBroadcasts() {
+      return (ok(await db.from('broadcasts').select('*').in('status', ['scheduled', 'sending']).order('created_at'), 'listActiveBroadcasts') ?? []) as BroadcastRow[]
+    },
+    async updateBroadcast(id, patch) {
+      ok(await db.from('broadcasts').update(patch).eq('id', id), 'updateBroadcast')
+    },
+    async insertRecipients(broadcastId, clientIds) {
+      for (let i = 0; i < clientIds.length; i += 500) {
+        ok(await db.from('broadcast_recipients').upsert(clientIds.slice(i, i + 500).map((client_id) => ({ broadcast_id: broadcastId, client_id })), { onConflict: 'broadcast_id,client_id', ignoreDuplicates: true }), 'insertRecipients')
+      }
+    },
+    async claimRecipients(broadcastId, limit) {
+      const rec = (ok(await db.rpc('claim_broadcast_recipients', { p_broadcast: broadcastId, p_limit: limit }), 'claimRecipients') ?? []) as { client_id: string }[]
+      if (!rec.length) return []
+      return (ok(await db.from('clients').select('*').in('id', rec.map((r) => r.client_id)), 'claimRecipients clients') ?? []) as ClientRow[]
+    },
+    async finishRecipient(broadcastId, clientId, status, error) {
+      const patch = status === 'pending' ? { status, claimed_at: null } : { status, error: error ?? null, sent_at: status === 'sent' ? new Date().toISOString() : null }
+      ok(await db.from('broadcast_recipients').update(patch).eq('broadcast_id', broadcastId).eq('client_id', clientId), 'finishRecipient')
+    },
+    async recipientCounts(broadcastId) {
+      const out = { pending: 0, sending: 0, sent: 0, failed: 0 }
+      for (const k of Object.keys(out) as (keyof typeof out)[]) {
+        const r = await db.from('broadcast_recipients').select('client_id', { count: 'exact', head: true }).eq('broadcast_id', broadcastId).eq('status', k)
+        if (r.error) throw new Error(`recipientCounts: ${r.error.message}`)
+        out[k] = r.count ?? 0
+      }
+      return out
     },
     async enqueueJob(kind, runAt, payload) {
       ok(await db.from('jobs').insert({ kind, run_at: runAt.toISOString(), payload }), 'enqueueJob')

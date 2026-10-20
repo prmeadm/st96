@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { supabase } from '../supabase'
 import { fmtDate } from '../types'
 import { TPL_GOALS, TPL_KINDS, TPL_SERVICES, TPL_TASKS, TPL_VARS, type TemplateKind, type TemplateRow } from '../../../server/templates'
+import { MediaField } from '../ui/MediaField'
 import './templates.css'
 
 const SAMPLE = { name: 'Анна', tg_username: 'anna', company: 'Студия «Лето»' }
@@ -131,7 +132,7 @@ function Editor({ d: init, onSave, onClose, onDelete, onCopy }: { d: Draft; onSa
     up({ body: d.body.slice(0, s) + v + d.body.slice(e) })
     setTimeout(() => el?.focus(), 0)
   }
-  const missing = [!d.title.trim() && 'название', d.kind === 'text' && !d.body.trim() && 'текст', d.kind !== 'text' && !d.media_url.trim() && 'ссылку на файл', !d.services.length && 'услугу'].filter(Boolean) as string[]
+  const missing = [!d.title.trim() && 'название', d.kind === 'text' && !d.body.trim() && 'текст', d.kind !== 'text' && !d.media_url.trim() && 'файл', !d.services.length && 'услугу'].filter(Boolean) as string[]
   return (
     <div className="ov" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
@@ -141,7 +142,7 @@ function Editor({ d: init, onSave, onClose, onDelete, onCopy }: { d: Draft; onSa
         <div className="mb">
           <div className="seg">{(Object.entries(TPL_KINDS) as [TemplateKind, string][]).map(([k, l]) => <button type="button" key={k} className={d.kind === k ? 'on' : ''} onClick={() => up({ kind: k })}>{l}</button>)}</div>
           <div className="fld"><label>Название</label><input type="text" value={d.title} onChange={(e) => up({ title: e.target.value })} placeholder="Например, «Напоминание за час»" /></div>
-          {d.kind !== 'text' && <div className="fld"><label>Ссылка на файл</label><input type="url" value={d.media_url} onChange={(e) => up({ media_url: e.target.value })} placeholder="https://… прямая ссылка" /></div>}
+          {d.kind !== 'text' && <div className="fld"><label>{d.kind === 'voice' ? 'Голосовое сообщение' : 'Файл'}</label><MediaField kind={d.kind} value={d.media_url} onChange={(url) => up({ media_url: url })} folder="templates" /></div>}
           <div className="fld"><label>{d.kind === 'text' ? 'Текст сообщения' : 'Подпись'}</label>
             <div className="chips">{TPL_VARS.map((v) => <button type="button" key={v} onClick={() => insert(v)}>{v}</button>)}</div>
             <textarea ref={ta} value={d.body} onChange={(e) => up({ body: e.target.value })} /></div>

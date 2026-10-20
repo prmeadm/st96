@@ -5,7 +5,7 @@
 //   «/close» в теме          -> диалог закрыт, тема закрывается.
 import { InlineKeyboard, type Api } from 'grammy'
 import type { ClientRow, Repo } from '../repo'
-import { TPL_KINDS, fillTemplate, type TemplateRow } from '../templates'
+import { TPL_KINDS, fillTemplate, type TemplateKind, type TemplateRow } from '../templates'
 
 const SERVICE_NAMES: Record<string, string> = {
   neurophoto: 'Нейрофотосессия', retouch: 'Retouch Studio', digital_office: 'Цифровой офис', production: 'Продакшн', other: 'Другое',
@@ -139,22 +139,31 @@ export async function showTemplateMenu(api: Api, repo: Repo, groupChatId: number
   await api.sendMessage(groupChatId, 'Какой шаблон отправить клиенту?', { message_thread_id: threadId, reply_markup: kb })
 }
 
-/** Отправка шаблона клиенту с подстановкой переменных; язык клиента учитывается. */
-export async function sendTemplate(api: Api, repo: Repo, client: ClientRow, t: TemplateRow): Promise<void> {
+export type Content = { kind: TemplateKind; body: string; body_en: string | null; media_url: string | null }
+
+/** Отправка содержимого клиенту с подстановкой переменных; язык клиента учитывается. Возвращает отправленный текст. */
+export async function sendContent(api: Api, client: ClientRow, c: Content, footer = ''): Promise<string> {
   if (!client.tg_user_id) throw new Error('у клиента нет Telegram')
   const chat = client.tg_user_id
-  const raw = client.language === 'en' && t.body_en ? t.body_en : t.body
-  const text = fillTemplate(raw, client).trim()
-  if (t.kind === 'text') {
+  const raw = client.language === 'en' && c.body_en ? c.body_en : c.body
+  const text = (fillTemplate(raw, client).trim() + footer).trim()
+  if (c.kind === 'text') {
     await api.sendMessage(chat, text, { link_preview_options: { is_disabled: true } })
   } else {
-    if (!t.media_url) throw new Error('в шаблоне нет ссылки на файл')
+    if (!c.media_url) throw new Error('нет ссылки на файл')
     const extra = { caption: text || undefined }
-    if (t.kind === 'photo') await api.sendPhoto(chat, t.media_url, extra)
-    else if (t.kind === 'video') await api.sendVideo(chat, t.media_url, extra)
-    else if (t.kind === 'audio') await api.sendAudio(chat, t.media_url, extra)
-    else await api.sendDocument(chat, t.media_url, extra)
+    if (c.kind === 'photo') await api.sendPhoto(chat, c.media_url, extra)
+    else if (c.kind === 'video') await api.sendVideo(chat, c.media_url, extra)
+    else if (c.kind === 'voice') await api.sendVoice(chat, c.media_url, extra)
+    else if (c.kind === 'audio') await api.sendAudio(chat, c.media_url, extra)
+    else await api.sendDocument(chat, c.media_url, extra)
   }
-  await repo.insertMessage({ client_id: client.id, direction: 'admin', kind: t.kind === 'text' ? 'text' : t.kind, text: text || null, tg_chat_id: chat, tg_message_id: null })
+  return text
+}
+
+/** Отправка шаблона клиенту из темы или с карточки. */
+export async function sendTemplate(api: Api, repo: Repo, client: ClientRow, t: TemplateRow): Promise<void> {
+  const text = await sendContent(api, client, t)
+  await repo.insertMessage({ client_id: client.id, direction: 'admin', kind: t.kind === 'text' ? 'text' : t.kind, text: text || null, tg_chat_id: client.tg_user_id, tg_message_id: null })
   await repo.bumpTemplateUsed(t.id)
 }

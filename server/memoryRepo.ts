@@ -2,6 +2,7 @@
 import type { ClientRow, LeadInsert, MessageInsert, NoteInsert, Repo } from './repo'
 import type { Funnel, JobRow, RunRow } from './funnels/types'
 import type { TemplateRow } from './templates'
+import type { AudienceClient, BroadcastRow } from './broadcasts'
 
 export type MemoryRepo = Repo & {
   clients: ClientRow[]
@@ -13,6 +14,8 @@ export type MemoryRepo = Repo & {
   events: { run_id: string; node_id: string; event: string; data?: Record<string, unknown> }[]
   tags: Map<string, Set<string>>
   templates: TemplateRow[]
+  broadcasts: BroadcastRow[]
+  recipients: { broadcast_id: string; client_id: string; status: 'pending' | 'sending' | 'sent' | 'failed'; error?: string }[]
   jobs: (JobRow & { run_at: Date; done: boolean; error?: string })[]
 }
 
@@ -21,7 +24,7 @@ export function memoryRepo(): MemoryRepo {
   const id = (p: string) => `${p}${++seq}`
   const seen = new Set<number>()
   const r: MemoryRepo = {
-    clients: [], leads: [], notes: [], messages: [], funnels: [], runs: [], events: [], tags: new Map(), templates: [], jobs: [],
+    clients: [], leads: [], notes: [], messages: [], funnels: [], runs: [], events: [], tags: new Map(), templates: [], broadcasts: [], recipients: [], jobs: [],
     async claimUpdate(u) { if (seen.has(u)) return false; seen.add(u); return true },
     async findClient({ tgUserId, phone, username, topicId }) {
       if (topicId) return r.clients.find((c) => c.admin_topic_id === topicId) ?? null
@@ -81,6 +84,32 @@ export function memoryRepo(): MemoryRepo {
     async listTemplates() { return [...r.templates] },
     async getTemplate(tid) { return r.templates.find((t) => t.id === tid) ?? null },
     async bumpTemplateUsed(tid) { const t = r.templates.find((x) => x.id === tid); if (t) t.used++ },
+    async listAudience() {
+      return r.clients.filter((c) => c.tg_user_id && c.consent_at && !c.opted_out_at).map((c): AudienceClient => ({
+        ...c,
+        services: [...new Set(r.leads.filter((l) => l.client_id === c.id && l.service_key).map((l) => l.service_key!))],
+        tags: [...(r.tags.get(c.id) ?? [])],
+      }))
+    },
+    async getBroadcast(bid) { return r.broadcasts.find((b) => b.id === bid) ?? null },
+    async listActiveBroadcasts() { return r.broadcasts.filter((b) => b.status === 'scheduled' || b.status === 'sending') },
+    async updateBroadcast(bid, patch) { Object.assign(r.broadcasts.find((b) => b.id === bid)!, patch) },
+    async insertRecipients(bid, ids) { for (const cid of ids) if (!r.recipients.some((x) => x.broadcast_id === bid && x.client_id === cid)) r.recipients.push({ broadcast_id: bid, client_id: cid, status: 'pending' }) },
+    async claimRecipients(bid, limit) {
+      const pick = r.recipients.filter((x) => x.broadcast_id === bid && x.status === 'pending').slice(0, limit)
+      pick.forEach((x) => { x.status = 'sending' })
+      return pick.map((x) => r.clients.find((c) => c.id === x.client_id)!)
+    },
+    async finishRecipient(bid, cid, status, error) {
+      const x = r.recipients.find((y) => y.broadcast_id === bid && y.client_id === cid)!
+      x.status = status
+      x.error = error
+    },
+    async recipientCounts(bid) {
+      const l = r.recipients.filter((x) => x.broadcast_id === bid)
+      const n = (s: string) => l.filter((x) => x.status === s).length
+      return { pending: n('pending'), sending: n('sending'), sent: n('sent'), failed: n('failed') }
+    },
     async enqueueJob(kind, runAt, payload) { r.jobs.push({ id: ++seq, kind, payload, attempts: 0, run_at: runAt, done: false }) },
     async claimJobs(limit) {
       const due = r.jobs.filter((j) => !j.done && j.run_at.getTime() <= Date.now()).slice(0, limit)

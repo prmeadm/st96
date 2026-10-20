@@ -2,6 +2,7 @@ import { Api } from 'grammy'
 import { resumeRun } from '../server/funnels/engine'
 import { telegramOut } from '../server/bot/telegramOut'
 import { supabaseRepo } from '../server/repo'
+import { tickBroadcasts } from '../server/broadcasts'
 
 export const config = { runtime: 'edge' }
 
@@ -30,5 +31,11 @@ export default async function handler(req: Request) {
       failed++
     }
   }
-  return new Response(JSON.stringify({ claimed: jobs.length, done, failed }), { headers: { 'Content-Type': 'application/json' } })
+  let broadcast = { sent: 0, failed: 0 }
+  try {
+    broadcast = await tickBroadcasts({ repo, api: new Api(token) }, 100)
+  } catch (e) {
+    console.error('broadcast tick failed', e instanceof Error ? e.message : e)
+  }
+  return new Response(JSON.stringify({ claimed: jobs.length, done, failed, broadcast }), { headers: { 'Content-Type': 'application/json' } })
 }

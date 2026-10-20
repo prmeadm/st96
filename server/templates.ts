@@ -1,5 +1,5 @@
 // Шаблоны сообщений: общие типы и константы для админки и бота.
-export type TemplateKind = 'text' | 'photo' | 'video' | 'audio' | 'file'
+export type TemplateKind = 'text' | 'photo' | 'video' | 'voice' | 'audio' | 'file'
 export type TemplateRow = {
   id: string
   kind: TemplateKind
@@ -15,7 +15,7 @@ export type TemplateRow = {
   updated_at: string
 }
 
-export const TPL_KINDS: Record<TemplateKind, string> = { text: 'Текст', photo: 'Фото', video: 'Видео', audio: 'Аудио', file: 'Файл' }
+export const TPL_KINDS: Record<TemplateKind, string> = { text: 'Текст', photo: 'Фото', video: 'Видео', voice: 'Голос', audio: 'Аудио', file: 'Файл' }
 export const TPL_TASKS = ['Первое касание', 'Напоминание', 'Дожим', 'После встречи', 'Ответ на вопрос', 'Рассылка']
 export const TPL_GOALS = ['Привлечь заявку', 'Прогреть', 'Записать на встречу', 'Вернуть клиента', 'Собрать отзыв', 'Информировать']
 export const TPL_SERVICES = ['Общее', 'Нейрофотосессия', 'Ретушь', 'Цветокоррекция', 'Съёмка', 'Цифровой офис', 'Продакшн']

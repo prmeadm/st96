@@ -8,6 +8,8 @@ import NotesPage from './pages/NotesPage'
 import FunnelsPage from './pages/FunnelsPage'
 import FunnelPage from './pages/FunnelPage'
 import TemplatesPage from './pages/TemplatesPage'
+import BroadcastsPage from './pages/BroadcastsPage'
+import BroadcastPage from './pages/BroadcastPage'
 import { Icon } from './ui/Icon'
 import wordmark from './assets/st96-wordmark.png'
 
@@ -37,6 +39,7 @@ function Shell() {
         {item('/clients', 'clients', 'Клиенты')}
         {item('/leads', 'leads', 'Заявки')}
         {item('/funnels', 'funnels', 'Воронки')}
+        {item('/broadcasts', 'send', 'Рассылки')}
         {item('/templates', 'templates', 'Шаблоны')}
         {item('/notes', 'notes', 'Заметки')}
         <button className="out" onClick={signOut} title={min ? 'Выйти' : undefined} aria-label="Выйти"><Icon name="logout" /><span>Выйти</span></button>
@@ -50,6 +53,8 @@ function Shell() {
             <Route path="/leads" element={<LeadsPage />} />
             <Route path="/funnels" element={<FunnelsPage />} />
             <Route path="/funnels/:id" element={<FunnelPage />} />
+            <Route path="/broadcasts" element={<BroadcastsPage />} />
+            <Route path="/broadcasts/:id" element={<BroadcastPage />} />
             <Route path="/templates" element={<TemplatesPage />} />
             <Route path="/notes" element={<NotesPage />} />
             <Route path="*" element={<Navigate to="/clients" replace />} />
