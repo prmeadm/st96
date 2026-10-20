@@ -79,3 +79,11 @@ test('правка заявки: поля меняются, при смене т
   assert.ok(e3.ok && e3.clientCreated && e3.clientId !== a.clientId && e3.clientId !== b.clientId)
   assert.equal((await updateManualLead(repo, 'нет', { name: 'x' })).ok, false)
 })
+
+test('фраза без заглавных слов не становится именем', () => {
+  const { fields } = parseManualText('Тест: Продюсирование\nhttps://t.me/test_zayavka_96\nХотим обсудить релиз альбома')
+  assert.equal(fields.name, '')
+  assert.equal(fields.telegram, '@test_zayavka_96')
+  assert.equal(fields.service_key, 'producing')
+  assert.match(fields.comment, /Хотим обсудить релиз альбома/)
+})

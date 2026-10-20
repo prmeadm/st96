@@ -83,7 +83,8 @@ export function parseManualText(raw: string): { fields: LeadFields; warnings: st
   if (!telegram && got.telegram) telegram = normalizeTelegram(got.telegram) ?? ''
 
   const cleaned = (s: string) => s.replace(/[\s,;|]+/g, ' ').replace(/^[\s\-–—:,.]+|[\s\-–—:,]+$/g, '').trim()
-  const looksName = (s: string) => /^[\p{L}][\p{L}'.\- ]{1,39}$/u.test(s) && s.split(/\s+/).length <= 4 && !/[.!?]$/.test(s)
+  // Имя: до 4 слов, каждое с заглавной буквы («Анна Петрова»); обычная фраза («Хотим обсудить релиз») именем не считается
+const looksName = (s: string) => /^[\p{L}][\p{L}'.\- ]{1,39}$/u.test(s) && s.split(/\s+/).length <= 4 && s.split(/\s+/).every((w) => /^\p{Lu}/u.test(w)) && !/[.!?]$/.test(s)
   let name = got.name ? cleaned(strip(strip(strip(got.name, EMAIL_RE), HANDLE_RE), PHONE_RE)) : ''
   if (!name && headName) name = headName
   const light = (f: string) => strip(strip(strip(f, EMAIL_RE), HANDLE_RE), PHONE_RE).replace(/[ \t]+/g, ' ').replace(/^[\s,;|\-–—:]+|[\s,;|\-–—:]+$/g, '')
