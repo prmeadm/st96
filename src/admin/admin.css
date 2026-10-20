@@ -162,8 +162,8 @@ fieldset.plain { border: 0; margin: 0; padding: 0; min-width: 0; display: flex; 
 .irow .item-main:hover { text-decoration: none; }
 .irow .item-main b { font-size: var(--fs-lg); }
 .acts { display: flex; align-items: center; gap: 6px; padding: 0 12px 0 0; flex: none; }
-.ibtn.sm { width: 36px; height: 36px; border-color: transparent; background: none; color: var(--mute); }
-.ibtn.sm:hover { background: var(--bg); border-color: var(--line-strong); color: var(--ink); text-decoration: none; }
+.ibtn.sm { width: 36px; height: 36px; }
+.ibtn.sm:hover { background: var(--accent-hover); text-decoration: none; }
 .ibtn.danger:hover { color: var(--red); border-color: var(--red); background: var(--red-soft); }
 
 /* ───────── Единый вид кнопок и элементов управления ───────── */
