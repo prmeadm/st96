@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../supabase'
+import { Icon, type IconName } from './Icon'
 import type { TemplateKind } from '../../../server/templates'
 
 // Файл для сообщения: снять или выбрать с устройства, записать голос или вставить ссылку. Файлы лежат в хранилище Supabase (бакет media).
@@ -47,6 +48,7 @@ export function MediaField({ kind, value, onChange, folder }: { kind: Exclude<Te
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState('')
   const [rec, setRec] = useState<{ sec: number } | null>(null)
+  const [over, setOver] = useState(false)
   const recorder = useRef<MediaRecorder | null>(null)
   const timer = useRef<number | undefined>(undefined)
   useEffect(() => () => { window.clearInterval(timer.current); recorder.current?.stream.getTracks().forEach((t) => t.stop()) }, [])
@@ -62,6 +64,8 @@ export function MediaField({ kind, value, onChange, folder }: { kind: Exclude<Te
 
   const pick = async (file: File | undefined) => {
     if (!file) return
+    const want = { photo: 'image/', video: 'video/', voice: 'audio/', audio: 'audio/' }[kind as 'photo' | 'video' | 'voice' | 'audio']
+    if (want && file.type && !file.type.startsWith(want)) return setMsg(kind === 'photo' ? 'Нужна картинка' : kind === 'video' ? 'Нужен видеофайл' : 'Нужен аудиофайл')
     setBusy(true)
     setMsg('')
     try {
@@ -111,31 +115,42 @@ export function MediaField({ kind, value, onChange, folder }: { kind: Exclude<Te
   }
   const stopRec = () => recorder.current?.state === 'recording' && recorder.current.stop()
 
-  const input = (label: string, capture?: 'environment' | 'user') => (
-    <label className="btn media-btn" aria-disabled={busy}>
-      {label}
+  const KIND_ICON: Record<typeof kind, IconName> = { photo: 'photo', video: 'video', voice: 'audio', audio: 'audio', file: 'file' }
+  const pickBtn = (label: string, icon: IconName, capture?: 'environment' | 'user') => (
+    <label className="ibtn" title={label} aria-label={label} aria-disabled={busy}>
+      <Icon name={icon} size={20} />
       <input type="file" hidden accept={ACCEPT[kind]} capture={capture} disabled={busy} onChange={(e) => { void pick(e.target.files?.[0]); e.target.value = '' }} />
     </label>
   )
   const mm = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`
+  const hint = { photo: 'Перетащите фото сюда', video: 'Перетащите видео сюда', voice: 'Запишите голос или перетащите аудиофайл', audio: 'Перетащите аудиофайл сюда', file: 'Перетащите файл сюда' }[kind]
 
   return (
     <div className="mfield">
       {value && kind === 'photo' && <img className="media-prev" src={value} alt="Выбранное фото" />}
       {value && kind === 'video' && <video className="media-prev" src={value} controls playsInline />}
       {value && (kind === 'voice' || kind === 'audio') && <audio className="media-audio" src={value} controls />}
-      {value && kind === 'file' && <a href={value} target="_blank" rel="noreferrer">Открыть файл</a>}
-      <div className="row">
-        {kind === 'photo' && <>{input('Снять фото', 'environment')}{input('Выбрать фото')}</>}
-        {kind === 'video' && <>{input('Снять видео', 'environment')}{input('Выбрать видео')}</>}
-        {kind === 'voice' && <>
-          {rec ? <button type="button" className="btn danger" onClick={stopRec}>Остановить · {mm(rec.sec)}</button> : <button type="button" className="btn primary" onClick={startRec} disabled={busy}>{value ? 'Записать заново' : 'Записать голос'}</button>}
-          {!rec && input('Выбрать аудиофайл')}
-        </>}
-        {(kind === 'audio' || kind === 'file') && input('Выбрать файл')}
-        {value && !rec && <button type="button" className="btn" onClick={() => onChange('')}>Убрать</button>}
+      {value && kind === 'file' && <a className="media-link" href={value} target="_blank" rel="noreferrer"><Icon name="file" size={16} /> Открыть файл</a>}
+      <div
+        className={`drop${over ? ' over' : ''}${rec ? ' rec' : ''}`}
+        onDragOver={(e) => { e.preventDefault(); setOver(true) }}
+        onDragLeave={() => setOver(false)}
+        onDrop={(e) => { e.preventDefault(); setOver(false); void pick(e.dataTransfer.files?.[0]) }}
+      >
+        {rec ? (
+          <div className="recline" role="status"><i className="dot" aria-hidden="true" /> Идёт запись {mm(rec.sec)}</div>
+        ) : (
+          <div className="drop-hint"><Icon name="upload" size={22} /><span>{busy ? 'Загружаю…' : hint}</span></div>
+        )}
+        <div className="ibtns">
+          {kind === 'photo' && pickBtn('Снять фото', 'camera', 'environment')}
+          {kind === 'video' && pickBtn('Снять видео', 'video', 'environment')}
+          {kind === 'voice' && !rec && <button type="button" className="ibtn rec-btn" title={value ? 'Записать заново' : 'Записать голос'} aria-label={value ? 'Записать заново' : 'Записать голос'} onClick={startRec} disabled={busy}><Icon name="voice" size={20} /></button>}
+          {kind === 'voice' && rec && <button type="button" className="ibtn stop-btn" title="Остановить запись" aria-label="Остановить запись" onClick={stopRec}><Icon name="stop" size={18} /></button>}
+          {!rec && pickBtn(kind === 'photo' ? 'Выбрать фото' : kind === 'video' ? 'Выбрать видео' : kind === 'file' ? 'Выбрать файл' : 'Выбрать аудиофайл', KIND_ICON[kind])}
+          {value && !rec && <button type="button" className="ibtn" title="Убрать файл" aria-label="Убрать файл" onClick={() => onChange('')}><Icon name="trash" size={18} /></button>}
+        </div>
       </div>
-      {busy && <div className="hint" role="status">Загружаю…</div>}
       {msg && !busy && <div className="hint" role="status">{msg}</div>}
       <input type="url" value={value} onChange={(e) => onChange(e.target.value)} placeholder="или вставьте ссылку https://…" aria-label="Ссылка на файл" />
     </div>

@@ -4,8 +4,9 @@ import { supabase } from '../supabase'
 import { callApi } from '../api'
 import { SERVICES, clientTitle, fmtDate } from '../types'
 import { MediaField } from '../ui/MediaField'
+import { KIND_OPTIONS, Seg } from '../ui/Seg'
 import { BROADCAST_STATUS, MEDIA_CAPTION_LIMIT, validateBroadcast, type BroadcastRow, type Segment } from '../../../server/broadcasts'
-import { TPL_KINDS, TPL_VARS, fillTemplate, type TemplateKind, type TemplateRow } from '../../../server/templates'
+import { TPL_VARS, fillTemplate, type TemplateKind, type TemplateRow } from '../../../server/templates'
 import { STATUS_CHIP } from './BroadcastsPage'
 
 type Draft = { title: string; kind: TemplateKind; body: string; body_en: string; media_url: string; segment: Segment; when: 'now' | 'later'; at: string }
@@ -134,7 +135,7 @@ export default function BroadcastPage() {
             <div className="fld"><label>Взять из шаблона</label>
               <select value="" onChange={(e) => fromTemplate(e.target.value)} aria-label="Шаблон"><option value="">Выберите шаблон…</option>{templates.map((t) => <option key={t.id} value={t.id}>{t.title}</option>)}</select></div>
           )}
-          <div className="seg" role="group" aria-label="Тип сообщения">{(Object.entries(TPL_KINDS) as [TemplateKind, string][]).map(([k, l]) => <button type="button" key={k} className={d.kind === k ? 'on' : ''} aria-pressed={d.kind === k} onClick={() => up({ kind: k })}>{l}</button>)}</div>
+          <Seg label="Тип сообщения" iconOnly value={d.kind} options={KIND_OPTIONS} onChange={(k) => up({ kind: k })} />
           {d.kind !== 'text' && <div className="fld"><label>{d.kind === 'voice' ? 'Голосовое сообщение' : 'Файл'}</label><MediaField kind={d.kind} value={d.media_url} onChange={(url) => up({ media_url: url })} folder="broadcasts" /></div>}
           <div className="fld"><label>{d.kind === 'text' ? 'Текст' : 'Подпись'}{d.kind !== 'text' ? ` (до ${MEDIA_CAPTION_LIMIT} знаков)` : ''}</label>
             <div className="chips">{TPL_VARS.map((v) => <button type="button" key={v} onClick={() => up({ body: `${d.body}${v}` })}>{v}</button>)}</div>
@@ -152,7 +153,7 @@ export default function BroadcastPage() {
           {tags.length > 0 && <div className="fld"><label>Теги клиента (любой из выбранных)</label>
             <div className="chips">{tags.map((t) => <button type="button" key={t} className={d.segment.tags?.includes(t) ? 'on' : ''} aria-pressed={!!d.segment.tags?.includes(t)} onClick={() => toggle('tags', t)}>{t}</button>)}</div></div>}
           <div className="fld"><label>Язык клиента</label>
-            <div className="seg" role="group" aria-label="Язык">{([['', 'Все'], ['ru', 'Русский'], ['en', 'English']] as const).map(([k, l]) => <button type="button" key={k} className={(d.segment.language ?? '') === k ? 'on' : ''} aria-pressed={(d.segment.language ?? '') === k} onClick={() => seg({ language: k })}>{l}</button>)}</div></div>
+            <Seg label="Язык" value={d.segment.language ?? ''} options={[{ value: '', label: 'Все', icon: 'globe' }, { value: 'ru', label: 'Русский' }, { value: 'en', label: 'English' }]} onChange={(k) => seg({ language: k })} /></div>
         </fieldset>
         {draft && <div className="hint" role="status">{count ? <>Получат <b>{count.count}</b> из {count.reachable} клиентов, которые согласились на рассылки.</> : 'Считаю получателей…'}</div>}
         {!draft && <div className="hint">Получателей на момент запуска: {b.total}.</div>}
@@ -161,10 +162,7 @@ export default function BroadcastPage() {
       {draft && (
         <div className="card">
           <h3>Когда отправить</h3>
-          <div className="seg" role="group" aria-label="Время отправки">
-            <button type="button" className={d.when === 'now' ? 'on' : ''} aria-pressed={d.when === 'now'} onClick={() => up({ when: 'now' })}>Сразу</button>
-            <button type="button" className={d.when === 'later' ? 'on' : ''} aria-pressed={d.when === 'later'} onClick={() => up({ when: 'later' })}>В выбранное время</button>
-          </div>
+          <Seg label="Время отправки" value={d.when} options={[{ value: 'now', label: 'Сразу', icon: 'bolt' }, { value: 'later', label: 'В выбранное время', icon: 'clock' }]} onChange={(k) => up({ when: k })} />
           {d.when === 'later' && <div className="fld" style={{ marginTop: 8 }}><label>Дата и время (по времени вашего устройства)</label><input type="datetime-local" value={d.at} onChange={(e) => up({ at: e.target.value })} /></div>}
           <div className="hint" style={{ marginTop: 8 }}>Плановые рассылки уходят в течение минуты после назначенного времени, по ~25 сообщений в секунду.</div>
         </div>

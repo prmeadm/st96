@@ -120,12 +120,30 @@ code { background: var(--bg); border-radius: 5px; padding: 1px 5px; font-size: v
 .mfield { display: flex; flex-direction: column; gap: var(--s-2); }
 .media-prev { max-width: 100%; max-height: 220px; border-radius: 12px; border: 1px solid var(--line); object-fit: contain; background: var(--bg); }
 .media-audio { width: 100%; }
-.media-btn { cursor: pointer; }
-.media-btn[aria-disabled="true"] { opacity: 0.6; pointer-events: none; }
+.media-link { display: inline-flex; align-items: center; gap: 6px; }
+.drop { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); flex-wrap: wrap; border: 1.5px dashed var(--line-strong); border-radius: 16px; padding: var(--s-3) var(--s-4); background: var(--bg); transition: border-color 0.15s, background 0.15s; }
+.drop.over { border-color: var(--accent-edge); background: var(--accent-soft); }
+.drop.rec { border-style: solid; border-color: var(--red); background: var(--red-soft); }
+.drop-hint { display: flex; align-items: center; gap: 10px; color: var(--mute); font-size: var(--fs-sm); }
+.recline { display: flex; align-items: center; gap: 10px; color: var(--red); font-weight: 600; }
+.recline .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--red); animation: pulse 1.2s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: 0.3; } }
+.ibtns { display: flex; gap: var(--s-2); margin-left: auto; }
+.ibtn { display: inline-grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--line-strong); background: var(--card); color: var(--ink); cursor: pointer; padding: 0; transition: background 0.15s, border-color 0.15s; }
+.ibtn:hover { background: var(--bg); border-color: var(--ink); }
+.ibtn[aria-disabled="true"], .ibtn:disabled { opacity: 0.5; pointer-events: none; }
+.ibtn.rec-btn { background: var(--accent); border-color: var(--accent-edge); }
+.ibtn.rec-btn:hover { background: var(--accent-hover); border-color: var(--accent-edge); }
+.ibtn.stop-btn { background: var(--red); border-color: var(--red); color: var(--card); }
+@media (prefers-reduced-motion: reduce) { .recline .dot { animation: none; } }
 .btn.danger { color: var(--red); border-color: var(--red); }
-.seg { display: flex; background: var(--bg); border-radius: 10px; padding: 3px; gap: 3px; }
-.seg button { flex: 1; border: 0; background: none; border-radius: 8px; padding: 6px 8px; font-size: var(--fs-sm); }
-.seg button.on { background: var(--card); box-shadow: var(--shadow-sm); font-weight: 600; }
+.seg { display: inline-flex; max-width: 100%; align-self: flex-start; gap: 2px; padding: 3px; background: var(--bg); border: 1px solid var(--line); border-radius: 999px; overflow-x: auto; }
+.seg button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 36px; padding: 0 14px; border: 0; background: none; border-radius: 999px; color: var(--mute); font-size: var(--fs-md); font-weight: 500; white-space: nowrap; transition: background 0.15s, color 0.15s; }
+.seg button:hover { color: var(--ink); }
+.seg button.on { background: var(--card); color: var(--ink); font-weight: 600; box-shadow: var(--shadow-sm); }
+.seg.icons button { padding: 0 12px; }
+.seg.icons button:not(.on) span { display: none; }
+.chips button.on::before { content: ''; width: 12px; height: 12px; margin-right: 6px; display: inline-block; vertical-align: -1px; background: currentColor; -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7'/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7'/%3E%3C/svg%3E") center / contain no-repeat; }
 fieldset.plain { border: 0; margin: 0; padding: 0; min-width: 0; display: flex; flex-direction: column; gap: var(--s-3); }
 .card .tgprev { background: var(--bg); border: 1px solid var(--line); border-radius: 14px 14px 14px 4px; padding: 10px 12px; line-height: 1.4; max-width: 92%; white-space: pre-wrap; }
 .progress { height: 10px; background: var(--bg); border-radius: 999px; overflow: hidden; margin: 6px 0; }

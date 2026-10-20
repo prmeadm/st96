@@ -51,9 +51,8 @@
 .fb .panel .pb { padding: 14px 16px; overflow: auto; flex: 1; display: flex; flex-direction: column; gap: 14px; }
 .fb .panel .pf { padding: 12px 16px; border-top: 1px solid var(--line); display: flex; gap: 8px; }
 .fb .sheet-grip { display: none; }
-.fb .seg { display: flex; background: var(--bg); border-radius: 10px; padding: 3px; gap: 3px; }
-.fb .seg button { flex: 1; border: 0; background: none; border-radius: 8px; padding: 6px 8px; font-size: var(--fs-sm); }
-.fb .seg button.on { background: var(--card); box-shadow: var(--shadow-sm); font-weight: 600; }
+.fb .seg { align-self: stretch; }
+.fb .seg button { flex: 1; font-size: var(--fs-sm); }
 .fb .item { border: 1px solid var(--line); border-radius: 12px; padding: 10px; display: flex; flex-direction: column; gap: 8px; background: var(--card); box-shadow: none; }
 .fb .item .ih { display: flex; align-items: center; justify-content: space-between; font-size: var(--fs-xs); color: var(--mute); font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; }
 .fb .x { border: 0; background: none; color: var(--mute); padding: 2px 6px; border-radius: 6px; }

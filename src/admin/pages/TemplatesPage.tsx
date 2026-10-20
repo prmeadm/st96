@@ -3,6 +3,7 @@ import { supabase } from '../supabase'
 import { fmtDate } from '../types'
 import { TPL_GOALS, TPL_KINDS, TPL_SERVICES, TPL_TASKS, TPL_VARS, type TemplateKind, type TemplateRow } from '../../../server/templates'
 import { MediaField } from '../ui/MediaField'
+import { KIND_OPTIONS, Seg } from '../ui/Seg'
 import './templates.css'
 
 const SAMPLE = { name: 'Анна', tg_username: 'anna', company: 'Студия «Лето»' }
@@ -140,7 +141,7 @@ function Editor({ d: init, onSave, onClose, onDelete, onCopy }: { d: Draft; onSa
           <button className={`star ${d.fav ? 'on' : ''}`} onClick={() => up({ fav: !d.fav })} aria-label="Избранное">{d.fav ? '★' : '☆'}</button>
           <button className="x" onClick={onClose} aria-label="Закрыть">✕</button></div>
         <div className="mb">
-          <div className="seg">{(Object.entries(TPL_KINDS) as [TemplateKind, string][]).map(([k, l]) => <button type="button" key={k} className={d.kind === k ? 'on' : ''} onClick={() => up({ kind: k })}>{l}</button>)}</div>
+          <Seg label="Тип сообщения" iconOnly value={d.kind} options={KIND_OPTIONS} onChange={(k) => up({ kind: k })} />
           <div className="fld"><label>Название</label><input type="text" value={d.title} onChange={(e) => up({ title: e.target.value })} placeholder="Например, «Напоминание за час»" /></div>
           {d.kind !== 'text' && <div className="fld"><label>{d.kind === 'voice' ? 'Голосовое сообщение' : 'Файл'}</label><MediaField kind={d.kind} value={d.media_url} onChange={(url) => up({ media_url: url })} folder="templates" /></div>}
           <div className="fld"><label>{d.kind === 'text' ? 'Текст сообщения' : 'Подпись'}</label>
