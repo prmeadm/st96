@@ -16,7 +16,9 @@ import { P } from './catalog'
 const isMobile = () => typeof window !== 'undefined' && window.matchMedia('(max-width:720px)').matches
 type Snap = { nodes: Node[]; edges: Edge[] }
 
-function Inner({ graph, onChange, counts }: { graph: Graph; onChange: (g: Graph) => void; counts: Record<string, number> }) {
+type Props = { graph: Graph; onChange: (g: Graph) => void; counts: Record<string, number>; onSave?: () => void; saveDisabled?: boolean; saveMsg?: string }
+
+function Inner({ graph, onChange, counts, full, setFull, onSave, saveDisabled, saveMsg }: Props & { full: boolean; setFull: (v: boolean) => void }) {
   const init = useMemo(() => toFlow(graph), []) // eslint-disable-line react-hooks/exhaustive-deps
   const [nodes, setNodes] = useState<Node[]>(init.nodes)
   const [edges, setEdges] = useState<Edge[]>(init.edges)
@@ -31,6 +33,20 @@ function Inner({ graph, onChange, counts }: { graph: Graph; onChange: (g: Graph)
   cur.current = { nodes, edges }
   const lastCommit = useRef(0)
   const first = useRef(true)
+
+  // Во весь экран: холст меняет размер, схему вписываем заново; Esc выходит из полноэкранного режима
+  const firstFull = useRef(true)
+  useEffect(() => {
+    if (firstFull.current) { firstFull.current = false; return }
+    const t = setTimeout(() => rf.fitView({ padding: 0.15, minZoom: 0.2, duration: 250 }), 120)
+    return () => clearTimeout(t)
+  }, [full]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (!full) return
+    const k = (e: KeyboardEvent) => { if (e.key === 'Escape' && !preview) setFull(false) }
+    window.addEventListener('keydown', k)
+    return () => window.removeEventListener('keydown', k)
+  }, [full, preview]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const flash = (m: string) => { setToast(m); setTimeout(() => setToast(''), 2200) }
   const commit = (force?: boolean) => {
@@ -135,6 +151,12 @@ function Inner({ graph, onChange, counts }: { graph: Graph; onChange: (g: Graph)
         <button type="button" className="btn" onClick={layout}><Ic d={P.grid} /><span className="hide-s"> Упорядочить</span></button>
         <button type="button" className="btn" onClick={() => setPreview(true)}><Ic d={P.play} size={14} /><span className="hide-s"> Превью</span></button>
         {allProblems > 0 && <span className="warn" style={{ color: 'var(--red)', background: 'var(--red-soft)' }}>Не заполнено: {allProblems}</span>}
+        <span className="sp" />
+        {full && saveMsg && <span className="hint" role="status">{saveMsg}</span>}
+        {full && onSave && <button type="button" className="btn primary" disabled={saveDisabled} onClick={onSave}>Сохранить</button>}
+        <button type="button" className="btn" onClick={() => setFull(!full)} aria-pressed={full} title={full ? 'Свернуть (Esc)' : 'Развернуть на весь экран'} aria-label={full ? 'Свернуть' : 'Развернуть на весь экран'}>
+          <Ic d={full ? P.shrink : P.expand} size={16} /><span className="hide-s"> {full ? 'Свернуть' : 'На весь экран'}</span>
+        </button>
       </div>
       <div className="stage" ref={wrap}>
         <ReactFlow
@@ -174,6 +196,7 @@ function Inner({ graph, onChange, counts }: { graph: Graph; onChange: (g: Graph)
   )
 }
 
-export function Builder(props: { graph: Graph; onChange: (g: Graph) => void; counts: Record<string, number> }) {
-  return <div className="fb"><ReactFlowProvider><Inner {...props} /></ReactFlowProvider></div>
+export function Builder(props: Props) {
+  const [full, setFull] = useState(false)
+  return <div className={`fb${full ? ' full' : ''}`}><ReactFlowProvider><Inner {...props} full={full} setFull={setFull} /></ReactFlowProvider></div>
 }

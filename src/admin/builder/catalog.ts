@@ -7,6 +7,8 @@ export type D = any
 export const uid = (p = 'id') => p + Math.random().toString(36).slice(2, 8)
 
 export const P = {
+  expand: 'M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5',
+  shrink: 'M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5',
   msg: 'M21 12a8 8 0 0 1-11.6 7.1L3 21l1.9-6.4A8 8 0 1 1 21 12z',
   filter: 'M3 4h18l-7 8v7l-4 2v-9z',
   bolt: 'M13 2L4 14h7l-1 8 9-12h-7z',

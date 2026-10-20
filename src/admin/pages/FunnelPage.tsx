@@ -89,7 +89,7 @@ export default function FunnelPage() {
             : <button className="btn" onClick={() => save('draft')}>Снять с публикации</button>}
         </div>
         {builderOn
-          ? <Builder key={bkey} graph={parsed.graph as Graph} counts={counts} onChange={(g) => setJson(JSON.stringify(g, null, 2))} />
+          ? <Builder key={bkey} graph={parsed.graph as Graph} counts={counts} onChange={(g) => setJson(JSON.stringify(g, null, 2))} onSave={() => save(status === 'published' ? 'published' : 'draft')} saveDisabled={!!parsed.error} saveMsg={msg} />
           : <div className="fld"><label>Схема (JSON: блоки nodes и связи edges)</label><textarea className="code" rows={22} spellCheck={false} value={json} onChange={(e) => setJson(e.target.value)} /></div>}
         {parsed.error && <div className="err" role="alert">JSON: {parsed.error}</div>}
         {check.errors.map((e, i) => <div key={i} className="err">Ошибка{e.node ? ` (блок ${e.node})` : ''}: {e.text}</div>)}

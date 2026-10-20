@@ -129,3 +129,9 @@
 .fb .fnote { position: relative; }
 .fb .fnote .nhead { display: flex; justify-content: flex-end; margin: -6px -6px 2px 0; }
 @media (max-width: 720px) { .fb .nbtn { width: 36px; height: 36px; } }
+
+/* Во весь экран: конструктор занимает окно целиком, поверх меню страниц */
+.fb.full { position: fixed; inset: 0; z-index: 60; height: 100dvh; box-sizing: border-box; background: var(--card); padding: 10px 12px calc(10px + env(safe-area-inset-bottom)); }
+.fb.full .stage { border-radius: 12px; }
+.fb .bar .sp { flex: 1; }
+.fb.full .menu { max-height: calc(100dvh - 170px); }
