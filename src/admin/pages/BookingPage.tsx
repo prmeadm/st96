@@ -4,6 +4,8 @@ import { supabase } from '../supabase'
 import { callApi } from '../api'
 import { fmtDate } from '../types'
 import { Icon } from '../ui/Icon'
+import { PhoneField } from '../../components/ui/PhoneField'
+
 import { Seg } from '../ui/Seg'
 import { MonthGrid, type CellInfo } from '../../booking/MonthGrid'
 import '../../booking/monthgrid.css'
@@ -336,7 +338,7 @@ function ScheduleTab({ initial, rows, onSaved, onBooked }: { initial: Schedule; 
                           <div className="fld"><label>Услуга</label><select value={nb.service} onChange={(e) => setNb({ ...nb, service: e.target.value })}>{SERVICE_KEYS.map((k) => <option key={k} value={k}>{SERVICE_LABEL[k]!.ru}</option>)}</select></div>
                           <div className="fld"><label>Формат</label><select value={nb.format} onChange={(e) => setNb({ ...nb, format: e.target.value as FormatKey })}>{FORMAT_KEYS.map((k) => <option key={k} value={k}>{FORMAT_LABEL[k].ru}</option>)}</select></div>
                           <div className="fld"><label>Имя клиента</label><input value={nb.name} onChange={(e) => setNb({ ...nb, name: e.target.value })} /></div>
-                          <div className="fld"><label>Телефон</label><input type="tel" value={nb.phone} onChange={(e) => setNb({ ...nb, phone: e.target.value })} /></div>
+                          <div className="fld"><label>Телефон</label><PhoneField value={nb.phone} onChange={(v) => setNb({ ...nb, phone: v })} /></div>
                           <div className="fld"><label>Telegram</label><input value={nb.telegram} onChange={(e) => setNb({ ...nb, telegram: e.target.value })} placeholder="@ник" /></div>
                           <div className="fld"><label>Комментарий</label><input value={nb.comment} onChange={(e) => setNb({ ...nb, comment: e.target.value })} /></div>
                         </div>

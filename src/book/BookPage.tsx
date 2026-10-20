@@ -1,3 +1,4 @@
+import { PhoneField } from '../components/ui/PhoneField'
 import { useEffect, useMemo, useState } from 'react'
 import { MonthGrid, shiftMonth } from '../booking/MonthGrid'
 import { POLICY_PATH } from '../data/privacy'
@@ -169,7 +170,7 @@ export default function BookPage() {
               <div className="bk-grid">
                 {input('name', `${t.name} *`, { autoComplete: 'name' })}
                 {input('company', t.company, { autoComplete: 'organization' })}
-                {input('phone', t.phone, { type: 'tel', inputMode: 'tel', autoComplete: 'tel', placeholder: '+375 29 000-00-00' })}
+                <div className="bk-fld"><span>{t.phone}</span><PhoneField lang={lang} value={f.phone} onChange={(v) => setF((x) => ({ ...x, phone: v }))} inputClassName="bk-phone" /></div>
                 {input('telegram', t.telegram, { autoCapitalize: 'none', placeholder: '@username' })}
               </div>
               <p className="bk-dim">{t.contactHint}</p>

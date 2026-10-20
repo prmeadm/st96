@@ -12,6 +12,7 @@ import { isInternal } from '../../lib/internal'
 import { readAdIdentifiers, readAttribution } from '../../lib/attribution'
 import { POLICY_PATH, POLICY_VERSION } from '../../data/privacy'
 import Reveal from '../ui/Reveal'
+import { PhoneField } from '../ui/PhoneField'
 import MagneticButton from '../ui/MagneticButton'
 
 type Props = {
@@ -29,6 +30,7 @@ export default function LeadCapture({ service, title, text }: Props) {
   const trust = l.trust.map((text, i) => ({ icon: trustIcons[i], text }))
   const [name, setName] = useState('')
   const [contact, setContact] = useState('')
+  const [byEmail, setByEmail] = useState(false) // по умолчанию телефон с маской страны; можно указать email
   const [interest, setInterest] = useState(service?.slug ?? '')
   const [message, setMessage] = useState('')
   const [consent, setConsent] = useState(true)
@@ -160,16 +162,32 @@ export default function LeadCapture({ service, title, text }: Props) {
                           className="ym-disable-keys rounded-xl border border-ink-line bg-ink px-4 py-3.5 text-paper outline-none transition-colors focus:border-paper-dim"
                         />
                       </label>
-                      <label className="flex flex-col gap-2">
-                        <span className="text-xs font-medium text-paper-dim">{l.contact}</span>
-                        <input
-                          value={contact}
-                          onChange={(e) => setContact(e.target.value)}
-                          type="text"
-                          placeholder={l.contactPh}
-                          className="ym-disable-keys rounded-xl border border-ink-line bg-ink px-4 py-3.5 text-paper outline-none transition-colors focus:border-paper-dim"
-                        />
-                      </label>
+                      <div className="flex flex-col gap-2">
+                        <span className="flex items-center justify-between gap-3 text-xs font-medium text-paper-dim">
+                          <span>{l.contact}</span>
+                          <button type="button" className="underline underline-offset-2 hover:text-paper" onClick={() => { setByEmail(!byEmail); setContact('') }}>
+                            {byEmail ? l.contactToPhone : l.contactToEmail}
+                          </button>
+                        </span>
+                        {byEmail ? (
+                          <input
+                            value={contact}
+                            onChange={(e) => setContact(e.target.value)}
+                            type="email"
+                            autoComplete="email"
+                            placeholder={l.contactEmailPh}
+                            className="ym-disable-keys rounded-xl border border-ink-line bg-ink px-4 py-3.5 text-paper outline-none transition-colors focus:border-paper-dim"
+                          />
+                        ) : (
+                          <PhoneField
+                            lang={lang}
+                            value={contact}
+                            onChange={setContact}
+                            selectClassName="rounded-xl border border-ink-line bg-ink text-paper"
+                            inputClassName="ym-disable-keys rounded-xl border border-ink-line bg-ink px-4 py-3.5 text-paper outline-none transition-colors focus:border-paper-dim"
+                          />
+                        )}
+                      </div>
                     </div>
 
                     <label className="flex flex-col gap-2">

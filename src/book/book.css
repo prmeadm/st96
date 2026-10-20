@@ -43,3 +43,5 @@ h2:first-child { margin-top: 0; }
 .bk-dim a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
 .bk-n { display: inline-grid; place-items: center; width: 26px; height: 26px; margin-right: 10px; border-radius: 50%; background: var(--accent, #d8ff3f); color: #09090b; font-size: 14px; font-weight: 700; vertical-align: 2px; }
 .bk-sub2 { font-size: 16px; margin: 18px 0 8px; text-transform: capitalize; }
+.bk-fld .pf-sel { color: var(--ink); background: var(--bg); border: 1px solid #34343a; border-radius: 14px; min-height: 48px; font-size: 16px; }
+.bk-fld .pf-sel:focus-within { outline: 2px solid var(--acid); outline-offset: 1px; }

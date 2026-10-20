@@ -1,0 +1,7 @@
+.pf { display: flex; gap: 8px; align-items: stretch; min-width: 0; }
+.pf-input { flex: 1 1 auto; min-width: 0; }
+.pf-plain { width: 100%; }
+/* Выбор страны: видна подпись «флаг +код», сам список накладывается прозрачным */
+.pf-sel { position: relative; flex: none; display: inline-flex; align-items: center; gap: 6px; padding: 0 12px; white-space: nowrap; cursor: pointer; }
+.pf-sel select { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; font-size: 16px; }
+.pf-sel:focus-within { outline: 2px solid currentColor; outline-offset: 2px; }

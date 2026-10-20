@@ -6,6 +6,8 @@ import { GROUP_LINK_ID, supabase } from '../supabase'
 import { deleteClient } from '../clientDelete'
 import { BackLink } from '../ui/BackLink'
 import { Icon } from '../ui/Icon'
+import { PhoneField } from '../../components/ui/PhoneField'
+
 import { TPL_KINDS, fillTemplate, type TemplateRow } from '../../../server/templates'
 import { SERVICES, SOURCES, STATUSES, WARNINGS, clientTitle, fmtDate, type Client, type Lead, type Msg, type Note } from '../types'
 
@@ -163,7 +165,7 @@ export default function ClientPage() {
         <div className="grid2">
           <div className="fld"><label>Имя</label><input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
           <div className="fld"><label>Компания</label><input value={form.company} onChange={(e) => setForm({ ...form, company: e.target.value })} /></div>
-          <div className="fld"><label>Телефон</label><input inputMode="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="+375291234567" /></div>
+          <div className="fld"><label>Телефон</label><PhoneField value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} /></div>
           <div className="fld"><label>Почта</label><input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
         </div>
         <div className="row" style={{ marginTop: 10 }}><button className="btn primary">Сохранить</button>{saved && <span className="hint" role="status">{saved}</span>}</div>

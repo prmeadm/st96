@@ -3,6 +3,8 @@ import { SITE_SERVICES } from '../../../server/catalog'
 import { callApi } from '../api'
 import { SERVICES, STATUSES, WARNINGS, type Lead } from '../types'
 import { Icon } from '../ui/Icon'
+import { PhoneField } from '../../components/ui/PhoneField'
+
 
 type Form = { service_key: string; name: string; phone: string; telegram: string; email: string; company: string; comment: string; status: Lead['status'] }
 type Saved = { clientId: string | null; clientCreated: boolean; leadsOfClient: number }
@@ -69,7 +71,7 @@ export function LeadEditor({ lead, onClose, onSaved }: { lead: Lead | null; onCl
               <select value={f.status} onChange={(e) => up({ status: e.target.value as Lead['status'] })}>{Object.entries(STATUSES).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></div>
             <div className="fld"><label>Имя</label><input value={f.name} onChange={(e) => up({ name: e.target.value })} /></div>
             <div className="fld"><label>Компания</label><input value={f.company} onChange={(e) => up({ company: e.target.value })} /></div>
-            <div className="fld"><label>Телефон</label><input type="tel" value={f.phone} onChange={(e) => up({ phone: e.target.value })} placeholder="+375 29 123-45-67" /></div>
+            <div className="fld"><label>Телефон</label><PhoneField value={f.phone} onChange={(v) => up({ phone: v })} /></div>
             <div className="fld"><label>Telegram</label><input value={f.telegram} onChange={(e) => up({ telegram: e.target.value })} placeholder="@ник" /></div>
             <div className="fld lx-wide"><label>Почта</label><input type="email" value={f.email} onChange={(e) => up({ email: e.target.value })} /></div>
           </div>
