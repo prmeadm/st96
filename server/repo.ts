@@ -2,6 +2,7 @@
 // в проде это Supabase, в тестах — память.
 import { createClient } from '@supabase/supabase-js'
 import type { Funnel, JobRow, RunRow } from './funnels/types'
+import type { TemplateRow } from './templates'
 
 export type ClientRow = {
   id: string
@@ -95,6 +96,10 @@ export interface Repo {
   addTag(clientId: string, name: string): Promise<void>
   removeTag(clientId: string, name: string): Promise<void>
   listTags(clientId: string): Promise<string[]>
+  // шаблоны сообщений
+  listTemplates(): Promise<TemplateRow[]>
+  getTemplate(id: string): Promise<TemplateRow | null>
+  bumpTemplateUsed(id: string): Promise<void>
   // очередь отложенных шагов
   enqueueJob(kind: string, runAt: Date, payload: Record<string, unknown>): Promise<void>
   claimJobs(limit: number): Promise<JobRow[]>
@@ -201,6 +206,16 @@ export function supabaseRepo(url: string, key: string): Repo {
     async listTags(clientId) {
       const rows = (ok(await db.from('client_tags').select('tags(name)').eq('client_id', clientId), 'listTags') ?? []) as unknown as { tags: { name: string } | null }[]
       return rows.map((r) => r.tags?.name).filter((x): x is string => !!x)
+    },
+    async listTemplates() {
+      return (ok(await db.from('templates').select('*').order('fav', { ascending: false }).order('used', { ascending: false }).limit(200), 'listTemplates') ?? []) as TemplateRow[]
+    },
+    async getTemplate(id) {
+      return (ok(await db.from('templates').select('*').eq('id', id).maybeSingle(), 'getTemplate') as TemplateRow | null) ?? null
+    },
+    async bumpTemplateUsed(id) {
+      const t = ok(await db.from('templates').select('used').eq('id', id).maybeSingle(), 'bumpTemplateUsed read') as { used: number } | null
+      if (t) ok(await db.from('templates').update({ used: t.used + 1 }).eq('id', id), 'bumpTemplateUsed')
     },
     async enqueueJob(kind, runAt, payload) {
       ok(await db.from('jobs').insert({ kind, run_at: runAt.toISOString(), payload }), 'enqueueJob')

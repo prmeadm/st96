@@ -1,7 +1,7 @@
 import { Bot, InlineKeyboard, type Context } from 'grammy'
 import type { ClientRow, MessageInsert, Repo } from '../repo'
 import { ingestGroupMessage } from '../leads/ingest'
-import { handleTopicMessage, relayToAdmins } from './dialog'
+import { handleTopicMessage, relayToAdmins, sendTemplate } from './dialog'
 import { handleClick, handleFreeText, startFunnel, type Env } from '../funnels/engine'
 import { pickFunnel } from '../funnels/triggers'
 import { telegramOut } from './telegramOut'
@@ -100,6 +100,22 @@ export function createBot(token: string, repo: Repo, opts: { groupChatId: number
     await ctx.answerCallbackQuery()
     const r = await handleClick(envFor(ctx.api), client, run, ctx.match[2])
     if (r === 'ok') await ctx.editMessageReplyMarkup({ reply_markup: undefined }).catch(() => undefined)
+  })
+
+  // Кнопка шаблона в теме клиента (после /t): отправляем шаблон тому, чья это тема
+  bot.callbackQuery(/^tpl:([0-9a-f-]{36})$/, async (ctx) => {
+    const msg = ctx.callbackQuery.message
+    if (!opts.groupChatId || !msg || msg.chat.id !== opts.groupChatId || !msg.message_thread_id) return void (await ctx.answerCallbackQuery())
+    const client = await repo.findClient({ topicId: msg.message_thread_id })
+    const tpl = await repo.getTemplate(ctx.match[1]!)
+    if (!client || !tpl) return void (await ctx.answerCallbackQuery({ text: 'Шаблон или клиент не найден' }))
+    try {
+      await sendTemplate(ctx.api, repo, client, tpl)
+      await ctx.answerCallbackQuery({ text: `Отправлено: ${tpl.title}`.slice(0, 190) })
+    } catch (e) {
+      const why = e instanceof Error ? e.message : String(e)
+      await ctx.answerCallbackQuery({ text: `Не доставлено: ${/blocked|deactivated|chat not found/i.test(why) ? 'клиент заблокировал бота' : why}`.slice(0, 190), show_alert: true })
+    }
   })
 
   bot.command('stop', async (ctx) => {

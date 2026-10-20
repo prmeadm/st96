@@ -4,6 +4,43 @@ import type { Node } from '@xyflow/react'
 import { TRIGGER } from '../../../server/funnels/types'
 import { ACT_TYPES, COND_TYPES, DAYS, FORMATS, P, SERVICES, TRIGGERS, TYPES, uid, type D } from './catalog'
 import { Ic } from './Nodes'
+import { supabase } from '../supabase'
+import type { TemplateRow } from '../../../server/templates'
+import { TPL_KINDS } from '../../../server/templates'
+
+/** Выбор шаблона из библиотеки: текст копируется в блок, поздние правки шаблона опубликованные воронки не меняют */
+function TemplatePicker({ onPick }: { onPick: (t: TemplateRow) => void }) {
+  const [open, setOpen] = useState(false)
+  const [rows, setRows] = useState<TemplateRow[] | null>(null)
+  const [q, setQ] = useState('')
+  const [err, setErr] = useState('')
+  const toggle = () => {
+    setOpen(!open)
+    if (!open && !rows) supabase.from('templates').select('*').order('used', { ascending: false }).then(({ data, error }) => (error ? setErr('Не удалось загрузить шаблоны') : setRows((data ?? []) as TemplateRow[])))
+  }
+  const list = (rows ?? []).filter((t) => !q.trim() || `${t.title} ${t.body}`.toLowerCase().includes(q.trim().toLowerCase()))
+  return (
+    <div>
+      <button type="button" className="btn" style={{ width: '100%', justifyContent: 'center' }} onClick={toggle}>Вставить из шаблона</button>
+      {open && (
+        <div className="item" style={{ marginTop: 6 }}>
+          <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Поиск шаблонов" />
+          {err && <div className="err">{err}</div>}
+          {rows === null && !err && <div className="hint">Загрузка…</div>}
+          {rows && list.length === 0 && <div className="hint">Шаблонов не найдено. Создайте их в разделе «Шаблоны».</div>}
+          <div style={{ maxHeight: 260, overflow: 'auto', marginTop: 6 }}>
+            {list.map((t) => (
+              <button type="button" key={t.id} className="btn" style={{ width: '100%', justifyContent: 'flex-start', textAlign: 'left', marginBottom: 4, flexDirection: 'column', alignItems: 'flex-start' }} onClick={() => { onPick(t); setOpen(false) }}>
+                <b>{t.title} <span className="hint">· {TPL_KINDS[t.kind]}</span></b>
+                <span className="hint" style={{ whiteSpace: 'normal' }}>{t.body.slice(0, 90)}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
 
 const Field = ({ label, children }: { label: string; children: ReactNode }) => <div className="fld"><label>{label}</label>{children}</div>
 const Seg = ({ value, options, onChange }: { value: string; options: [string, string][]; onChange: (v: string) => void }) => (
@@ -75,6 +112,10 @@ export function Editor({ node, patch, remove, duplicate, close }: { node: Node; 
       {[['text', '+ Текст'], ['image', '+ Фото'], ['video', '+ Видео'], ['audio', '+ Аудио'], ['file', '+ Файл']].map(([k, l]) =>
         <button type="button" key={k} onClick={() => set({ parts: [...d.parts, { id: uid('p'), kind: k, text: '', url: '' }] })}>{l}</button>)}
     </div>
+    <TemplatePicker onPick={(t) => {
+      set({ parts: [...d.parts, { id: uid('p'), kind: t.kind === 'photo' ? 'image' : t.kind, text: t.body, en: t.body_en ?? '', url: t.media_url ?? '' }] })
+      void supabase.from('templates').update({ used: t.used + 1 }).eq('id', t.id)
+    }} />
     <div className="hint">Загрузка файлов появится позже: пока вставляйте прямую ссылку на фото, видео или файл.</div>
     <div className="h2">Быстрые ответы</div>
     <div className="hint">Каждый ответ получает свой выход: тяните связь к следующему блоку.</div>

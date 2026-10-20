@@ -221,3 +221,25 @@ test('воронка по ключевому слову запускается �
   assert.ok(calls.some((c) => c.method === 'sendMessage' && /Здравствуйте, Мария/.test(String(c.payload.text))))
   assert.ok(!calls.some((c) => /Передали администратору/.test(String(c.payload.text ?? ''))))
 })
+
+test('/t в теме показывает шаблоны, кнопка отправляет клиенту с подстановкой имени', async () => {
+  const { repo, calls, send } = setup()
+  await send(msg('Здравствуйте'))
+  const client = repo.clients[0]
+  const topic = client.admin_topic_id!
+  repo.templates.push({ id: '11111111-1111-1111-1111-111111111111', kind: 'text', title: 'Привет', body: 'Здравствуйте, {имя}!', body_en: 'Hello, {имя}!', media_url: null, task: 'Первое касание', goal: 'Привлечь заявку', services: ['Общее'], fav: true, used: 0, updated_at: '' })
+  await send(topicMsg(topic, '/t', 20))
+  const menu = calls.filter((c) => c.method === 'sendMessage' && JSON.stringify(c.payload.reply_markup ?? '').includes('tpl:1111'))
+  assert.equal(menu.length, 1)
+  await send({ callback_query: { id: 'c1', from: staff, chat_instance: 'x', data: 'tpl:11111111-1111-1111-1111-111111111111', message: { message_id: 50, date: 1, chat: { id: GROUP, type: 'supergroup', title: 'Лиды ST96', is_forum: true }, is_topic_message: true, message_thread_id: topic } } } as never)
+  const out = calls.filter((c) => c.method === 'sendMessage' && c.payload.chat_id === 555).pop()!
+  assert.match(String(out.payload.text), /Здравствуйте, Мария!/)
+  assert.equal(repo.templates[0].used, 1)
+})
+
+test('/t без шаблонов подсказывает, где их создать', async () => {
+  const { repo, calls, send } = setup()
+  await send(msg('Привет'))
+  await send(topicMsg(repo.clients[0].admin_topic_id!, '/t', 21))
+  assert.ok(calls.some((c) => c.method === 'sendMessage' && /Шаблонов пока нет/.test(String(c.payload.text))))
+})

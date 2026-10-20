@@ -3,8 +3,9 @@
 //   сотрудник пишет в теме   -> бот отправляет клиенту (то же сообщение, включая фото и голосовые);
 //   «//текст» в теме         -> внутренняя заметка, клиенту не уходит;
 //   «/close» в теме          -> диалог закрыт, тема закрывается.
-import type { Api } from 'grammy'
+import { InlineKeyboard, type Api } from 'grammy'
 import type { ClientRow, Repo } from '../repo'
+import { TPL_KINDS, fillTemplate, type TemplateRow } from '../templates'
 
 const SERVICE_NAMES: Record<string, string> = {
   neurophoto: 'Нейрофотосессия', retouch: 'Retouch Studio', digital_office: 'Цифровой офис', production: 'Продакшн', other: 'Другое',
@@ -94,6 +95,10 @@ export async function handleTopicMessage(api: Api, repo: Repo, groupChatId: numb
     }
     return 'note'
   }
+  if (/^\/t(@\w+)?$/i.test(text)) {
+    await showTemplateMenu(api, repo, groupChatId, m.threadId)
+    return 'ignored'
+  }
   if (text.startsWith('/')) return 'ignored'
   if (!client.tg_user_id) return 'ignored'
 
@@ -118,4 +123,38 @@ export async function notifyTopic(api: Api, repo: Repo, groupChatId: number, cli
     console.error('notify failed', e instanceof Error ? e.message : e)
     await api.sendMessage(groupChatId, `${client.name ?? 'Клиент'}${client.tg_username ? ` (@${client.tg_username})` : ''}: ${text}`).catch(() => undefined)
   }
+}
+
+const TEMPLATE_MENU_LIMIT = 30
+
+/** /t в теме клиента: список шаблонов кнопками (сначала избранные и частые). */
+export async function showTemplateMenu(api: Api, repo: Repo, groupChatId: number, threadId: number) {
+  const list = (await repo.listTemplates()).slice(0, TEMPLATE_MENU_LIMIT)
+  if (!list.length) {
+    await api.sendMessage(groupChatId, 'Шаблонов пока нет. Создайте их в админке: раздел «Шаблоны».', { message_thread_id: threadId })
+    return
+  }
+  const kb = new InlineKeyboard()
+  for (const t of list) kb.text(`${t.fav ? '★ ' : ''}${t.kind === 'text' ? '' : `[${TPL_KINDS[t.kind]}] `}${t.title}`.slice(0, 60), `tpl:${t.id}`).row()
+  await api.sendMessage(groupChatId, 'Какой шаблон отправить клиенту?', { message_thread_id: threadId, reply_markup: kb })
+}
+
+/** Отправка шаблона клиенту с подстановкой переменных; язык клиента учитывается. */
+export async function sendTemplate(api: Api, repo: Repo, client: ClientRow, t: TemplateRow): Promise<void> {
+  if (!client.tg_user_id) throw new Error('у клиента нет Telegram')
+  const chat = client.tg_user_id
+  const raw = client.language === 'en' && t.body_en ? t.body_en : t.body
+  const text = fillTemplate(raw, client).trim()
+  if (t.kind === 'text') {
+    await api.sendMessage(chat, text, { link_preview_options: { is_disabled: true } })
+  } else {
+    if (!t.media_url) throw new Error('в шаблоне нет ссылки на файл')
+    const extra = { caption: text || undefined }
+    if (t.kind === 'photo') await api.sendPhoto(chat, t.media_url, extra)
+    else if (t.kind === 'video') await api.sendVideo(chat, t.media_url, extra)
+    else if (t.kind === 'audio') await api.sendAudio(chat, t.media_url, extra)
+    else await api.sendDocument(chat, t.media_url, extra)
+  }
+  await repo.insertMessage({ client_id: client.id, direction: 'admin', kind: t.kind === 'text' ? 'text' : t.kind, text: text || null, tg_chat_id: chat, tg_message_id: null })
+  await repo.bumpTemplateUsed(t.id)
 }
