@@ -116,7 +116,8 @@ export function PhoneField({ value, onChange, lang = 'ru', className = '', input
   const pick = (c: string) => {
     setCountry(c)
     try { localStorage.setItem(COUNTRY_KEY, c) } catch { /* необязательно */ }
-    apply(c, typed)
+    const keep = nat(country, typed) // при смене страны переносим номер без «8»/«0» прежней страны
+    if (!apply(c, keep)) { setTyped(''); emit('') }
   }
 
   return (
