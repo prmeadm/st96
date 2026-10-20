@@ -135,3 +135,8 @@
 .fb.full .stage { border-radius: 12px; }
 .fb .bar .sp { flex: 1; }
 .fb.full .menu { max-height: calc(100dvh - 170px); }
+@media (max-width: 720px) {
+  .fb.full .bar { flex-wrap: nowrap; gap: 6px; overflow-x: auto; scrollbar-width: none; }
+  .fb.full .bar .btn { flex: none; min-height: 40px; padding: 8px 10px; }
+  .fb.full .bar .hint { display: none; }
+}
