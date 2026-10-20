@@ -14,7 +14,7 @@ const T = {
     contactHint: 'Достаточно телефона или Telegram', consentPre: 'Согласен на обработку персональных данных:', consentLink: 'политика конфиденциальности',
     send: 'Отправить заявку', sending: 'Отправляю…', missing: 'Заполните', mService: 'услугу', mFormat: 'формат', mDate: 'дату', mTime: 'время', mName: 'имя', mContact: 'телефон или Telegram', mConsent: 'согласие',
     doneTitle: 'Заявка отправлена', doneText: 'Мы подтвердим время и напишем вам. Чтобы получить подтверждение сразу в Telegram и быстро связаться с менеджером, откройте нашего бота.',
-    openTg: 'Перейти в Telegram', again: 'Новая запись', when: 'Когда', offline: 'Офлайн-встречи проходят по дням', video: 'Ссылку на видеозвонок пришлём после подтверждения.', min: 'мин', pickDay: 'Выберите день: у каждого дня своё свободное время.', freeSlots: 'свободных времён', duration: 'Длительность встречи', more: 'Подробнее на сайте', err: 'Не удалось отправить. Попробуйте ещё раз.',
+    openTg: 'Перейти в Telegram', again: 'Новая запись', when: 'Когда', offline: 'Офлайн-встречи проходят по дням', video: 'Ссылку на видеозвонок пришлём после подтверждения.', min: 'мин', prefilled: 'Мы подставили контакты, которые вы оставляли в заявке. Проверьте и при необходимости исправьте.', pickDay: 'Выберите день: у каждого дня своё свободное время.', freeSlots: 'свободных времён', duration: 'Длительность встречи', more: 'Подробнее на сайте', err: 'Не удалось отправить. Попробуйте ещё раз.',
     dows: ['пн', 'вт', 'ср', 'чт', 'пт', 'сб', 'вс'], minsk: 'время по Минску',
   },
   en: {
@@ -24,7 +24,7 @@ const T = {
     contactHint: 'A phone or Telegram is enough', consentPre: 'I agree to the processing of personal data:', consentLink: 'privacy policy',
     send: 'Send request', sending: 'Sending…', missing: 'Please fill in', mService: 'service', mFormat: 'format', mDate: 'date', mTime: 'time', mName: 'name', mContact: 'phone or Telegram', mConsent: 'consent',
     doneTitle: 'Request sent', doneText: 'We will confirm the time and message you. To get the confirmation right in Telegram and reach a manager faster, open our bot.',
-    openTg: 'Open Telegram', again: 'New booking', when: 'When', offline: 'In-person meetings take place on', video: 'We will send the video call link after confirmation.', min: 'min', pickDay: 'Pick a day: every day has its own free times.', freeSlots: 'free times', duration: 'Meeting length', more: 'More on the site', err: 'Could not send. Please try again.',
+    openTg: 'Open Telegram', again: 'New booking', when: 'When', offline: 'In-person meetings take place on', video: 'We will send the video call link after confirmation.', min: 'min', prefilled: 'We filled in the contacts you left in your request. Please check and edit if needed.', pickDay: 'Pick a day: every day has its own free times.', freeSlots: 'free times', duration: 'Meeting length', more: 'More on the site', err: 'Could not send. Please try again.',
     dows: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], minsk: 'Minsk time',
   },
 } as const
@@ -48,12 +48,24 @@ export default function BookPage() {
   const [slots, setSlots] = useState<Slot[] | null>(null)
   const [time, setTime] = useState('')
   const [f, setF] = useState({ name: '', phone: '', telegram: '', company: '', goal: '', comment: '', website: '' })
-  const [consent, setConsent] = useState(false)
+  const [consent, setConsent] = useState(true) // по просьбе владельца отмечен заранее; клиент может снять
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [done, setDone] = useState<{ ref: string; starts_at: string } | null>(null)
 
   useEffect(() => { void api<Cfg>({ action: 'config' }).then((c) => { if (!c.error) { setCfg(c); setMonth(c.today.slice(0, 7)) } }) }, [])
+  // Контакты из карточки клиента по личной ссылке: клиент уже оставлял их в заявке
+  const [prefilled, setPrefilled] = useState(false)
+  useEffect(() => {
+    const id = qs.get('c')
+    if (!id) return
+    void api<{ client: { name: string; company: string; phone: string; telegram: string } | null }>({ action: 'client', id }).then((r) => {
+      const c = r.client
+      if (!c) return
+      setF((x) => ({ ...x, name: x.name || c.name, company: x.company || c.company, phone: x.phone || c.phone, telegram: x.telegram || c.telegram }))
+      setPrefilled(!!(c.name || c.phone || c.telegram))
+    })
+  }, [])
   useEffect(() => { document.documentElement.lang = lang; document.title = `${t.title} — ST96` }, [lang, t.title])
 
   useEffect(() => {
@@ -90,7 +102,7 @@ export default function BookPage() {
       if (date) { setSlots(null); void api<{ slots: Slot[] }>({ action: 'day', format, date }).then((x) => setSlots(x.slots ?? [])); setTime('') }
     }
   }
-  const reset = () => { setDone(null); setDate(''); setTime(''); setConsent(false); setF({ name: '', phone: '', telegram: '', company: '', goal: '', comment: '', website: '' }) }
+  const reset = () => { setDone(null); setDate(''); setTime(''); setConsent(true); setF({ name: '', phone: '', telegram: '', company: '', goal: '', comment: '', website: '' }) }
   const input = (k: keyof typeof f, label: string, extra: Partial<React.InputHTMLAttributes<HTMLInputElement>> = {}) => (
     <label className="bk-fld"><span>{label}</span><input value={f[k]} onChange={(e) => setF({ ...f, [k]: e.target.value })} {...extra} /></label>
   )
@@ -153,6 +165,7 @@ export default function BookPage() {
 
             <section className="bk-card">
               <h2><span className="bk-n">4</span>{t.contacts}</h2>
+              {prefilled && <p className="bk-dim">{t.prefilled}</p>}
               <div className="bk-grid">
                 {input('name', `${t.name} *`, { autoComplete: 'name' })}
                 {input('company', t.company, { autoComplete: 'organization' })}
