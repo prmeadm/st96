@@ -10,7 +10,7 @@ export function RowActions({ editTo, onEdit, onDelete, deleteDisabled, deleteTit
   deleteTitle?: string
 }) {
   return (
-    <div className="acts" onClick={(e) => e.stopPropagation()}>
+    <div className="acts" onClick={(e) => { e.stopPropagation(); e.preventDefault() }}>
       {editTo
         ? <Link className="ibtn sm" to={editTo} title="Изменить" aria-label="Изменить"><Icon name="edit" size={18} /></Link>
         : <button type="button" className="ibtn sm" title="Изменить" aria-label="Изменить" onClick={onEdit}><Icon name="edit" size={18} /></button>}

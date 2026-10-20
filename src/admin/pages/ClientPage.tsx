@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
-import { useParams, useSearchParams } from 'react-router-dom'
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../auth'
 import { Highlight } from '../highlight'
 import { GROUP_LINK_ID, supabase } from '../supabase'
+import { deleteClient } from '../clientDelete'
 import { BackLink } from '../ui/BackLink'
 import { Icon } from '../ui/Icon'
 import { TPL_KINDS, fillTemplate, type TemplateRow } from '../../../server/templates'
@@ -73,6 +74,7 @@ function SendTemplate({ client, onSent }: { client: Client; onSent: () => void }
 
 export default function ClientPage() {
   const { id } = useParams()
+  const nav = useNavigate()
   const [sp] = useSearchParams()
   const { email } = useAuth()
   const words = (sp.get('hl') ?? '').split(',').filter(Boolean)
@@ -143,6 +145,11 @@ export default function ClientPage() {
         {client.consent_at && !client.opted_out_at && <span className="chip green">рассылки: да</span>}
         {client.opted_out_at && <span className="chip red">отписан</span>}
         {client.tg_user_id && <span className="chip">пишет боту</span>}
+        <span className="sp" />
+        <button type="button" className="ibtn danger" title="Удалить клиента" aria-label="Удалить клиента" onClick={async () => {
+          const r = await deleteClient(client)
+          if (r === 'deleted') nav('/clients'); else if (r === 'error') setError('Не удалось удалить клиента')
+        }}><Icon name="trash" size={20} /></button>
       </h1>
       <div className="row hint">
         {tg && <a href={tg} target="_blank" rel="noreferrer">@{client.tg_username}</a>}

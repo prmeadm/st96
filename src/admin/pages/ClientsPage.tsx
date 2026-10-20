@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../supabase'
+import { deleteClient } from '../clientDelete'
 import { SERVICES, clientTitle, fmtDate, type Client } from '../types'
+import { RowActions } from '../ui/RowActions'
 
 type Row = Client & { leads: { service_key: string | null; company: string | null; created_at: string }[] }
 
@@ -9,6 +11,7 @@ const words = (s: string | null) => (s ?? '').split(',').map((x) => x.trim()).fi
 
 export default function ClientsPage() {
   const [sp, setSp] = useSearchParams()
+  const nav = useNavigate()
   const q = sp.get('q') ?? ''
   const svc = sp.get('svc') ?? ''
   const consent = sp.get('consent') ?? ''
@@ -116,6 +119,10 @@ export default function ClientsPage() {
               {c.tg_username && c.name && <span className="muted">@{c.tg_username}</span>}
               <span className="sp" />
               <span className="hint">{fmtDate(c.last_seen_at ?? c.created_at)}</span>
+              <RowActions onEdit={() => nav(`/clients/${c.id}`)} onDelete={async () => {
+                const r = await deleteClient(c)
+                if (r === 'deleted') { setError(''); setRows((x) => x && x.filter((y) => y.id !== c.id)) } else if (r === 'error') setError('Не удалось удалить клиента')
+              }} />
             </div>
             <div className="hint" style={{ marginTop: 4 }}>{[c.company, c.phone].filter(Boolean).join(' · ') || '—'}</div>
             <div className="chips" style={{ marginTop: 8 }}>
