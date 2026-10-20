@@ -18,11 +18,14 @@ export function CameraCapture({ mode, maxMB, onDone, onClose, onFallback }: {
 }) {
   const videoEl = useRef<HTMLVideoElement>(null)
   const currentId = useRef('')
+  const currentIsPhone = useRef(false)
   const stream = useRef<MediaStream | null>(null)
   const rec = useRef<MediaRecorder | null>(null)
   const timer = useRef<number | undefined>(undefined)
   // Камера выбирается явно и запоминается: на Mac рядом лежащий iPhone системе виден как камера и мог бы выбраться сам
   const [deviceId, setDeviceId] = useState<string>(() => { try { return localStorage.getItem(CAM_KEY) ?? '' } catch { return '' } })
+  const [tryRear, setTryRear] = useState(false)
+  const [active, setActive] = useState('')
   const [devices, setDevices] = useState<{ id: string; label: string }[]>([])
   const [err, setErr] = useState('')
   const [ready, setReady] = useState(false)
@@ -47,13 +50,14 @@ export function CameraCapture({ mode, maxMB, onDone, onClose, onFallback }: {
     setErr('')
     stop()
     if (!navigator.mediaDevices?.getUserMedia) { setErr('Этот браузер не даёт открыть камеру.'); return }
-    const video = deviceId ? { deviceId: { exact: deviceId }, width: { ideal: 1920 } } : touch() ? { facingMode: { ideal: 'environment' }, width: { ideal: 1920 } } : { width: { ideal: 1920 } }
+    const video = deviceId ? { deviceId: { exact: deviceId }, width: { ideal: 1920 } } : tryRear || touch() ? { facingMode: { ideal: 'environment' }, width: { ideal: 1920 } } : { width: { ideal: 1920 } }
     navigator.mediaDevices.getUserMedia({ video, audio: mode === 'video' })
       .then(async (s) => {
         if (off) return s.getTracks().forEach((t) => t.stop())
         stream.current = s
         if (videoEl.current) { videoEl.current.srcObject = s; void videoEl.current.play().catch(() => undefined) }
         // после разрешения у устройств появляются названия: показываем список камер
+        setActive(s.getVideoTracks()[0]?.label ?? '')
         await refreshDevices()
         const cur = s.getVideoTracks()[0]?.getSettings().deviceId
         if (cur && cur !== deviceId) setCurrent(cur)
@@ -65,12 +69,18 @@ export function CameraCapture({ mode, maxMB, onDone, onClose, onFallback }: {
         setErr(/denied|permission|notallowed/i.test(String(e)) ? 'Нет доступа к камере. Разрешите камеру и микрофон для этого сайта в настройках браузера и откройте снова.' : 'Камера недоступна: она занята другой программой или не найдена.')
       })
     return () => { off = true }
-  }, [deviceId, shot, mode])
+  }, [deviceId, shot, mode, tryRear])
 
   const setCurrent = (id: string) => { currentId.current = id }
   async function refreshDevices() {
     const list = (await navigator.mediaDevices.enumerateDevices().catch(() => [])).filter((d) => d.kind === 'videoinput')
-    setDevices(list.map((d, i) => ({ id: d.deviceId, label: d.label || `Камера ${i + 1}` })))
+    const all = list.map((d, i) => ({ id: d.deviceId, label: d.label || `Камера ${i + 1}` }))
+    setDevices(all)
+    // iPhone по умолчанию: если браузер видит его камеру и выбор ещё не сделан вручную, берём её и запоминаем
+    const phone = all.find((d) => /iphone|continuity/i.test(d.label))
+    let saved = ''
+    try { saved = localStorage.getItem(CAM_KEY) ?? '' } catch { /* необязательно */ }
+    if (phone && !saved && !currentIsPhone.current && phone.id !== currentId.current) { currentIsPhone.current = true; choose(phone.id) }
   }
   // iPhone рядом может появиться или исчезнуть как камера уже после открытия окна
   useEffect(() => {
@@ -138,8 +148,11 @@ export function CameraCapture({ mode, maxMB, onDone, onClose, onFallback }: {
           </label>
         ) : (
           <div className="cam-one">
-            <div><span>Камера:</span> <b>{devices[0]?.label || 'не определена'}</b></div>
+            <div><span>Камера:</span> <b>{active || devices[0]?.label || 'не определена'}</b></div>
             <div className="hint">Safari сообщил камер: {devices.length}{devices.length ? ` (${devices.map((d) => d.label).join('; ')})` : ''}. Вид браузера: {isSafari ? 'Safari' : 'другой'}.</div>
+            <div className="cam-try">
+              <button type="button" className="btn" onClick={() => { setTryRear(!tryRear); setDeviceId('') }}>{tryRear ? 'Вернуть основную камеру' : 'Попробовать камеру iPhone'}</button>
+            </div>
             {isSafari
               ? <div className="hint"><b>Safari показывает только одну камеру, пока у сайта нет постоянного разрешения.</b> Откройте Safari → Настройки → Веб-сайты → Камера, для st96.by выберите «Разрешить» (то же для «Микрофон»), закройте это окно, обновите страницу (Cmd+R) и снова нажмите «Снять»: появится список со всеми камерами, включая iPhone, если он рядом и разблокирован. <button type="button" className="lnk" onClick={() => void refreshDevices()}>Обновить список</button></div>
               : <div className="hint">Браузер показывает только эту камеру. Другую выберите в настройках браузера для сайта: в Chrome нажмите значок камеры справа в адресной строке. <button type="button" className="lnk" onClick={() => void refreshDevices()}>Обновить список</button></div>}

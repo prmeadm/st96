@@ -283,3 +283,4 @@ body { overflow-wrap: break-word; }
 .cam-pick select { flex: 1; min-width: 0; }
 .cam-one { display: flex; flex-direction: column; gap: 4px; font-size: var(--fs-sm); }
 .cam-one span { color: var(--mute); }
+.cam-try { display: flex; gap: 8px; flex-wrap: wrap; }
