@@ -20,8 +20,33 @@ import { QuickNav } from './ui/QuickNav'
 const RAIL_KEY = 'st96-admin-rail'
 const readMin = () => { try { return localStorage.getItem(RAIL_KEY) === 'min' } catch { return false } }
 
+const SCRIPT_RE = /\/assets\/admin-[A-Za-z0-9_-]+\.js/
+
+/** Страница админки открыта давно, а сайт уже обновлён: сравниваем файл скрипта в открытой странице и на сервере. */
+function useNewVersion() {
+  const [stale, setStale] = useState(false)
+  useEffect(() => {
+    const mine = document.querySelector<HTMLScriptElement>('script[src*="/assets/admin-"]')?.src.match(SCRIPT_RE)?.[0]
+    if (!mine) return
+    const check = async () => {
+      try {
+        const html = await (await fetch('/admin/', { cache: 'no-store' })).text()
+        const now = html.match(SCRIPT_RE)?.[0]
+        if (now && now !== mine) setStale(true)
+      } catch { /* нет связи: проверим позже */ }
+    }
+    const t = window.setInterval(check, 5 * 60_000)
+    const onVis = () => { if (document.visibilityState === 'visible') void check() }
+    document.addEventListener('visibilitychange', onVis)
+    void check()
+    return () => { window.clearInterval(t); document.removeEventListener('visibilitychange', onVis) }
+  }, [])
+  return stale
+}
+
 function Shell() {
   const { signOut } = useAuth()
+  const stale = useNewVersion()
   const [min, setMin] = useState(readMin)
   const toggle = () => {
     setMin(!min)
@@ -63,6 +88,12 @@ function Shell() {
         <button className="out" onClick={signOut} title={min ? 'Выйти' : undefined} aria-label="Выйти"><Icon name="logout" /><span>Выйти</span></button>
       </nav>
       <main className="main">
+        {stale && (
+          <div className="newver" role="status">
+            <span>Вышла новая версия админки: часть новых возможностей на этой странице ещё не видна.</span>
+            <button type="button" className="btn primary" onClick={() => window.location.reload()}>Обновить</button>
+          </div>
+        )}
         <header className="topbar"><span className="sp" /><QuickNav /></header>
         <div className="page">
           <Routes>
