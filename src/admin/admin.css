@@ -284,3 +284,5 @@ body { overflow-wrap: break-word; }
 .cam-one { display: flex; flex-direction: column; gap: 4px; font-size: var(--fs-sm); }
 .cam-one span { color: var(--mute); }
 .cam-try { display: flex; gap: 8px; flex-wrap: wrap; }
+.cam-src { display: flex; align-items: center; gap: 10px; }
+.cam-src > span { color: var(--mute); font-size: var(--fs-sm); }
