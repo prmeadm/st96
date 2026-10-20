@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { supabase } from '../supabase'
 import { Icon, type IconName } from './Icon'
 import type { TemplateKind } from '../../../server/templates'
+import { CameraCapture } from './CameraCapture'
 
 // Файл для сообщения: снять или выбрать с устройства, записать голос или вставить ссылку. Файлы лежат в хранилище Supabase (бакет media).
 const MB = 1024 * 1024
@@ -49,6 +50,8 @@ export function MediaField({ kind, value, onChange, folder, maxMB }: { kind: Exc
   const [msg, setMsg] = useState('')
   const [rec, setRec] = useState<{ sec: number } | null>(null)
   const [over, setOver] = useState(false)
+  const [cam, setCam] = useState(false)
+  const fallback = useRef<HTMLInputElement>(null)
   const recorder = useRef<MediaRecorder | null>(null)
   const timer = useRef<number | undefined>(undefined)
   useEffect(() => () => { window.clearInterval(timer.current); recorder.current?.stream.getTracks().forEach((t) => t.stop()) }, [])
@@ -146,14 +149,21 @@ export function MediaField({ kind, value, onChange, folder, maxMB }: { kind: Exc
           <div className="drop-hint"><Icon name="upload" size={22} /><span>{busy ? 'Загружаю…' : hint}</span></div>
         )}
         <div className="ibtns">
-          {kind === 'photo' && pickBtn('Снять фото', 'camera', 'Снять', 'environment')}
-          {kind === 'video' && pickBtn('Снять видео', 'video', 'Снять', 'environment')}
+          {kind === 'photo' && !rec && cap('Снять', <button type="button" className="ibtn" title="Снять фото камерой" aria-label="Снять фото камерой" disabled={busy} onClick={() => setCam(true)}><Icon name="camera" size={20} /></button>)}
+          {kind === 'video' && !rec && cap('Снять', <button type="button" className="ibtn" title="Снять видео камерой" aria-label="Снять видео камерой" disabled={busy} onClick={() => setCam(true)}><Icon name="video" size={20} /></button>)}
           {kind === 'voice' && !rec && cap(value ? 'Заново' : 'Записать', <button type="button" className="ibtn rec-btn" title={value ? 'Записать заново' : 'Записать голос'} aria-label={value ? 'Записать заново' : 'Записать голос'} onClick={startRec} disabled={busy}><Icon name="voice" size={20} /></button>)}
           {kind === 'voice' && rec && cap('Стоп', <button type="button" className="ibtn stop-btn" title="Остановить запись" aria-label="Остановить запись" onClick={stopRec}><Icon name="stop" size={18} /></button>)}
           {!rec && pickBtn(kind === 'photo' ? 'Выбрать фото' : kind === 'video' ? 'Выбрать видео' : kind === 'file' ? 'Выбрать файл' : 'Выбрать аудиофайл', kind === 'photo' || kind === 'video' ? 'upload' : KIND_ICON[kind], kind === 'photo' || kind === 'video' ? 'Из галереи' : 'Файл')}
           {value && !rec && cap('Убрать', <button type="button" className="ibtn" title="Убрать файл" aria-label="Убрать файл" onClick={() => onChange('')}><Icon name="trash" size={18} /></button>)}
         </div>
       </div>
+      {cam && (kind === 'photo' || kind === 'video') && (
+        <CameraCapture mode={kind} maxMB={maxMB ?? LIMIT[kind] / MB}
+          onClose={() => setCam(false)}
+          onFallback={() => { setCam(false); fallback.current?.click() }}
+          onDone={async (blob, extension, type) => { setCam(false); setBusy(true); setMsg(''); try { await upload(blob, extension, type) } catch { setMsg('Не удалось загрузить снимок') } setBusy(false) }} />
+      )}
+      <input ref={fallback} type="file" hidden accept={ACCEPT[kind]} capture="environment" onChange={(e) => { void pick(e.target.files?.[0]); e.target.value = '' }} />
       {msg && !busy && <div className="hint" role="status">{msg}</div>}
       <input type="url" value={value} onChange={(e) => onChange(e.target.value)} placeholder="или вставьте ссылку https://…" aria-label="Ссылка на файл" />
     </div>

@@ -261,3 +261,20 @@ body { overflow-wrap: break-word; }
 .ibw { display: inline-flex; flex-direction: column; align-items: center; gap: 3px; }
 .ibw > span { font-size: var(--fs-xs); color: var(--mute); line-height: 1.1; }
 .ibtns { align-items: flex-start; }
+
+/* Камера устройства: «Снять» фото или видео */
+.cam-ov { position: fixed; inset: 0; z-index: 200; background: rgba(9, 9, 11, 0.86); display: grid; place-items: center; padding: 12px; }
+.cam { width: min(760px, 100%); max-height: calc(100dvh - 24px); display: flex; flex-direction: column; gap: 10px; background: var(--card); border-radius: 18px; padding: 12px; box-shadow: var(--shadow); }
+.cam-top { display: flex; align-items: center; gap: 8px; }
+.cam-view { position: relative; background: #000; border-radius: 14px; overflow: hidden; display: grid; place-items: center; min-height: 240px; max-height: calc(100dvh - 230px); }
+.cam-view video, .cam-view img { width: 100%; max-height: calc(100dvh - 230px); object-fit: contain; display: block; background: #000; }
+.cam-view video.mirror { transform: scaleX(-1); }
+.cam-err { padding: 20px; text-align: center; color: #fff; display: flex; flex-direction: column; gap: 12px; align-items: center; }
+.cam-rec { position: absolute; left: 10px; top: 10px; display: inline-flex; align-items: center; gap: 8px; background: rgba(0, 0, 0, 0.6); color: #fff; padding: 4px 10px; border-radius: 999px; font-weight: 600; }
+.cam-rec .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--red); animation: pulse 1.2s ease-in-out infinite; }
+.cam-note { font-size: var(--fs-sm); color: var(--mute); }
+.cam-note.bad { color: var(--red); }
+.cam-bar { display: flex; align-items: flex-start; justify-content: center; gap: 28px; padding: 4px 0 2px; }
+.ibtn.shutter { width: 64px; height: 64px; }
+.ibtn.shutter.rec { background: var(--red); border-color: var(--red); color: var(--card); }
+@media (prefers-reduced-motion: reduce) { .cam-rec .dot { animation: none; } }
