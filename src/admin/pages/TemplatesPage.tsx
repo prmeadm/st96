@@ -41,7 +41,7 @@ export default function TemplatesPage() {
   // Просмотр шаблона (открыли карточку) попадает в «Аналитику»; один раз за посещение страницы
   const openTpl = (t: TemplateRow) => {
     setEdit({ ...t, body_en: t.body_en ?? '', media_url: t.media_url ?? '' })
-    if (!viewed.current.has(t.id)) { viewed.current.add(t.id); void supabase.from('template_events').insert({ template_id: t.id, kind: 'view' }) }
+    if (!viewed.current.has(t.id)) { viewed.current.add(t.id); supabase.from('template_events').insert({ template_id: t.id, kind: 'view' }).then(() => undefined) }
   }
   const rating = useMemo(() => {
     const ids = (rows ?? []).map((t) => t.id)
