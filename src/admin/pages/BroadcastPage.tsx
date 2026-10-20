@@ -170,7 +170,7 @@ export default function BroadcastPage() {
       )}
 
       {draft && (
-        <div className="row">
+        <div className="row formbtns">
           <button className="btn danger" onClick={remove} disabled={busy}>Удалить</button><span className="sp" />
           <button className="btn" onClick={save} disabled={busy}>Сохранить черновик</button>
           <button className="btn primary" onClick={start} disabled={busy || !!problem || needTime || !count?.count} title={problem || (needTime ? 'Укажите дату и время' : !count?.count ? 'В сегменте нет получателей' : '')}>{d.when === 'later' ? 'Запланировать' : 'Отправить'}</button>
