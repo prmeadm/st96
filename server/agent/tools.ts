@@ -3,6 +3,7 @@ import type { Api } from 'grammy'
 import { startBroadcast, type Segment } from '../broadcasts'
 import type { Repo } from '../repo'
 import { TPL_GOALS, TPL_SERVICES, TPL_TASKS } from '../templates'
+import { emptyStats, importSlice, MAX_EXPORT_BYTES, parseExport, planImport, summarize, totalOf, type ImportStats } from './groupImport'
 import { parseJson, type Llm } from './llm'
 import type { AgentStats, AgentTask, Risk, Step } from './types'
 
@@ -16,7 +17,8 @@ export type ToolCtx = {
   /** результаты уже выполненных шагов и id черновика рассылки из них */
   done: Step[]
 }
-export type ToolResult = { text: string; ref?: string }
+/** partial: шаг не закончен, продолжится на следующем запуске с этого места */
+export type ToolResult = { text: string; ref?: string; partial?: { cursor: number; carry: Record<string, unknown> } }
 export type Tool = { name: string; risk: Risk; describe: string; run: (ctx: ToolCtx, step: Step) => Promise<ToolResult> }
 
 const SERVICE_KEYS: Record<string, string> = { neurophoto: 'Нейрофотосессия', retouch: 'Ретушь (Retouch Studio)', digital_office: 'Цифровой офис', production: 'Продакшн', other: 'Другое' }
@@ -91,7 +93,46 @@ export const TOOLS: Tool[] = [
     },
   },
   {
-    name: 'notify_admin', risk: 'send', describe: 'Отправить короткое сообщение в рабочую группу администраторов (например, тест или итог)',
+    name: 'import_group_export', risk: 'write',
+    describe: 'Собрать клиентов и заявки из ИСТОРИИ группы по ПРИЛОЖЕННОМУ к заданию файлу экспорта чата Telegram (result.json): создаёт клиентов и заявки, пропускает тестовые и уже загруженные, помечает новых тегом. Бот сам историю группы читать не умеет, поэтому без приложенного .json этот шаг невозможен',
+    run: async (ctx, step) => {
+      if (!ctx.groupChatId) throw new Error('Не задан TELEGRAM_CHAT_ID: неизвестно, какая это группа')
+      const url = ctx.task.attach.find((a) => /\.json(\?|#|$)/i.test(a))
+      if (!url) throw new Error('К заданию не приложен файл экспорта группы (.json). Как получить: Telegram Desktop, открыть группу, меню ⋮, «Экспорт истории чата», формат JSON, без медиа. Загрузите result.json в форме задания.')
+      const res = await fetch(url, { signal: AbortSignal.timeout(25_000) }).catch(() => null)
+      if (!res || !res.ok) throw new Error('Не удалось скачать приложенный файл экспорта')
+      const len = Number(res.headers.get('content-length') ?? 0)
+      if (len > MAX_EXPORT_BYTES) throw new Error('Файл экспорта больше 25 МБ: выгрузите без медиа или за более короткий период')
+      let parsed: ReturnType<typeof parseExport>
+      try {
+        parsed = parseExport(JSON.parse(await res.text()))
+      } catch (e) {
+        throw new Error(e instanceof SyntaxError ? 'Файл не читается как JSON' : (e as Error).message)
+      }
+      const plan = planImport(parsed.messages)
+      const total = totalOf(plan)
+      const carry = step.carry ?? {}
+      let extra = Array.isArray(carry.extra) ? (carry.extra as string[]) : null
+      if (!extra) {
+        // Слова-признаки тестовых заявок из текста задания (например «кроме тестовых» или «без ТЕСТ-УДАЛИТЬ»); база шаблонных слов зашита в код
+        extra = await askJson<{ exclude?: string[] }>(ctx, step, '{"exclude": ["слова из задания, по которым нужно считать заявку тестовой; пусто, если таких нет"]}').then((r) => (Array.isArray(r.exclude) ? r.exclude.filter((x) => typeof x === 'string' && x.trim().length >= 3).map((x) => x.trim()).slice(0, 10) : [])).catch(() => [])
+      }
+      const clients0 = typeof carry.clients0 === 'number' ? carry.clients0 : (await ctx.repo.agentStats()).clients
+      const stats: ImportStats = (carry.stats as ImportStats | undefined) ?? emptyStats()
+      const samples: string[] = Array.isArray(carry.samples) ? (carry.samples as string[]) : []
+      const from = step.cursor ?? 0
+      const next = await importSlice(ctx.repo, ctx.groupChatId, plan, from, stats, { extraWords: extra, budgetMs: 15_000, samples })
+      if (next <= from && from < total) throw new Error('Импорт не продвигается, остановлен')
+      const clientsNow = (await ctx.repo.agentStats()).clients
+      const done = next >= total
+      const reachable = done ? (await ctx.repo.listAudience()).length : undefined
+      let text = summarize(stats, next, total, clients0, clientsNow, reachable)
+      if (done && samples.length) text += `\nПропущено как тестовые (примеры): ${samples.join(' | ')}`
+      return done ? { text } : { text, partial: { cursor: next, carry: { extra, clients0, stats, samples } } }
+    },
+  },
+  {
+    name: 'notify_admin', risk: 'send', describe: 'Только уведомить людей короткой запиской в рабочую группу администраторов. Это НЕ способ выполнить работу: ничего не собирает, не загружает и не считает',
     run: async (ctx, step) => {
       if (!ctx.api || !ctx.groupChatId) throw new Error('Группа администраторов не настроена')
       const r = await askJson<{ text?: string }>(ctx, step, '{"text": "сообщение администраторам, до 500 знаков"}')

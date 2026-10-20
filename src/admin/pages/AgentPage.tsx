@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../supabase'
 import { callApi } from '../api'
 import { fmtDate } from '../types'
@@ -7,8 +7,7 @@ import { RISK_LABEL, TASK_STATUS, type AgentTask, type Step, type TaskStatus } f
 import { BackLink } from '../ui/BackLink'
 import { Icon } from '../ui/Icon'
 import { RowActions } from '../ui/RowActions'
-import ModelPicker from './ModelPicker'
-import { Seg } from '../ui/Seg'
+import { MediaField } from '../ui/MediaField'
 import './agent.css'
 
 const STATUS_CHIP: Record<TaskStatus, string> = { planning: 'violet', approval: 'amber', running: 'blue', paused: 'red', done: 'green', rejected: '', failed: 'red' }
@@ -19,12 +18,10 @@ const LIVE: TaskStatus[] = ['planning', 'running', 'paused']
 export default function AgentPage() {
   const { id } = useParams()
   const nav = useNavigate()
-  const [sp, setSp] = useSearchParams()
-  const tab = sp.get('tab') === 'model' ? 'model' : 'tasks'
   const [tasks, setTasks] = useState<AgentTask[] | null>(null)
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
-  const [form, setForm] = useState({ title: '', text: '', links: '' })
+  const [form, setForm] = useState({ title: '', text: '', links: '', file: '' })
   const [showForm, setShowForm] = useState(false)
   const [note, setNote] = useState('')
   const [on, setOn] = useState<Record<string, boolean>>({})
@@ -63,26 +60,33 @@ export default function AgentPage() {
   }
 
   const create = async () => {
-    const d = await act({ action: 'create', title: form.title, text: form.text, attach: form.links.split('\n').map((x) => x.trim()).filter(Boolean) })
-    if (d) { setForm({ title: '', text: '', links: '' }); setShowForm(false); nav(`/agent/${d.id}`) }
+    const d = await act({ action: 'create', title: form.title, text: form.text, attach: [form.file, ...form.links.split('\n')].map((x) => x.trim()).filter(Boolean) })
+    if (d) { setForm({ title: '', text: '', links: '', file: '' }); setShowForm(false); nav(`/agent/${d.id}`) }
   }
   const isOn = (s: Step) => on[s.id] ?? s.on
 
   return (
     <div className={`wrap agent ${id ? 'has-id' : ''}`}>
-      <h1 className="h1">Задания агента <span className="chip">{tasks?.length ?? '…'}</span><span className="sp" />{tab === 'tasks' && <button className="btn primary" onClick={() => { setShowForm(true); nav('/agent') }}><Icon name="plus" size={18} />Новое задание</button>}</h1>
-      <Seg label="Раздел" value={tab} options={[{ value: 'tasks', label: 'Задания', icon: 'agent' }, { value: 'model', label: 'Модель ИИ', icon: 'bolt' }]} onChange={(v) => setSp(v === 'model' ? { tab: 'model' } : {})} />
-      {tab === 'model' && <ModelPicker />}
-      {tab === 'tasks' && <div className="hint">Опишите задачу обычным текстом. Агент составит план, вы его утвердите или поправите, и только потом он начнёт выполнять. Рассылки и другие опасные шаги запускаются только после вашего отдельного подтверждения.</div>}
-      {tab === 'tasks' && error && <div className="err" role="alert">{error}</div>}
+      <h1 className="h1">Задания агента <span className="chip">{tasks?.length ?? '…'}</span><span className="sp" /><button className="btn primary" onClick={() => { setShowForm(true); nav('/agent') }}><Icon name="plus" size={18} />Новое задание</button></h1>
+      <div className="hint">Опишите задачу обычным текстом. Агент составит план, вы его утвердите или поправите, и только потом он начнёт выполнять. Рассылки и другие опасные шаги запускаются только после вашего отдельного подтверждения. Модель ИИ выбирается в <Link to="/settings">Настройках</Link>.</div>
+      {error && <div className="err" role="alert">{error}</div>}
 
-      {tab === 'tasks' && <div className="split">
+      <div className="split">
         <div className="list-col">
           {showForm && (
             <div className="card" style={{ marginBottom: 8 }}>
               <h3>Новое задание</h3>
               <div className="fld"><label htmlFor="at-title">Название</label><input id="at-title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Тексты для напоминаний" /></div>
               <div className="fld"><label htmlFor="at-text">Что нужно сделать</label><textarea id="at-text" rows={4} value={form.text} onChange={(e) => setForm({ ...form, text: e.target.value })} placeholder="Подготовь 3 варианта напоминания за час до встречи и сохрани лучший как шаблон" /></div>
+              <div className="fld"><label>Файл к заданию <small>например, экспорт группы</small></label><MediaField kind="file" folder="agent" maxMB={25} value={form.file} onChange={(u) => setForm({ ...form, file: u })} /></div>
+              <details className="howto"><summary>Как собрать клиентов из группы</summary>
+                <ol>
+                  <li>В Telegram Desktop откройте группу, меню ⋮, «Экспорт истории чата».</li>
+                  <li>Уберите все галочки с медиа, формат выберите JSON, нажмите «Экспортировать».</li>
+                  <li>Загрузите файл result.json выше и напишите задание, например: «Добавь клиентов из заявок группы, кроме тестовых».</li>
+                </ol>
+                <div className="hint">Бот Telegram не умеет читать историю группы по ссылке-приглашению. Новые заявки он сохраняет сам, экспорт нужен только для старых.</div>
+              </details>
               <div className="fld"><label htmlFor="at-links">Ссылки на материалы <small>необязательно</small></label><textarea id="at-links" rows={2} value={form.links} onChange={(e) => setForm({ ...form, links: e.target.value })} placeholder="По одной ссылке в строке" /></div>
               <div className="row formbtns"><button className="btn primary" onClick={create} disabled={busy || !form.title.trim() || form.text.trim().length < 5}>{busy ? 'Агент думает…' : 'Поставить задание'}</button><button className="btn" onClick={() => setShowForm(false)} disabled={busy}>Отмена</button></div>
               <div className="hint formnote">План появится через несколько секунд.</div>
@@ -129,7 +133,8 @@ export default function AgentPage() {
                           <span>{s.text}</span>
                         </label>
                         <div className="row"><span className={`chip ${RISK_CHIP[s.risk]}`}>{RISK_LABEL[s.risk]}</span>{task.status !== 'approval' && <span className="hint">{s.state === 'todo' ? 'в очереди' : s.state === 'running' ? 'выполняется' : s.state === 'done' ? 'готово' : s.state === 'skipped' ? 'пропущен' : 'ошибка'}</span>}</div>
-                        {s.result && s.tool !== 'report' && <details><summary className="hint">Результат шага</summary><div className="res">{s.result}</div></details>}
+                        {s.cursor != null && s.state === 'todo' && s.result && <div className="res">{s.result}</div>}
+                        {s.result && s.tool !== 'report' && s.cursor == null && <details><summary className="hint">Результат шага</summary><div className="res">{s.result}</div></details>}
                         {s.error && <div className="res bad">{s.error}</div>}
                       </li>
                     ))}
@@ -172,7 +177,7 @@ export default function AgentPage() {
             </div>
           )}
         </div>
-      </div>}
+      </div>
     </div>
   )
 }

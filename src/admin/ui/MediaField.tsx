@@ -44,7 +44,7 @@ async function toVoiceFile(blob: Blob): Promise<{ data: Blob; ext: string; type:
   return { data: new Blob(parts as BlobPart[], { type: 'audio/mpeg' }), ext: 'mp3', type: 'audio/mpeg' }
 }
 
-export function MediaField({ kind, value, onChange, folder }: { kind: Exclude<TemplateKind, 'text'>; value: string; onChange: (url: string) => void; folder: string }) {
+export function MediaField({ kind, value, onChange, folder, maxMB }: { kind: Exclude<TemplateKind, 'text'>; value: string; onChange: (url: string) => void; folder: string; maxMB?: number }) {
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState('')
   const [rec, setRec] = useState<{ sec: number } | null>(null)
@@ -54,7 +54,8 @@ export function MediaField({ kind, value, onChange, folder }: { kind: Exclude<Te
   useEffect(() => () => { window.clearInterval(timer.current); recorder.current?.stream.getTracks().forEach((t) => t.stop()) }, [])
 
   const upload = async (data: Blob, extension: string, type: string) => {
-    if (data.size > LIMIT[kind]) return setMsg(`Файл слишком большой: ${(data.size / MB).toFixed(1)} МБ, допустимо до ${LIMIT[kind] / MB} МБ (ограничение Telegram)`)
+    const limit = maxMB ? maxMB * MB : LIMIT[kind]
+    if (data.size > limit) return setMsg(`Файл слишком большой: ${(data.size / MB).toFixed(1)} МБ, допустимо до ${limit / MB} МБ${maxMB ? '' : ' (ограничение Telegram)'}`)
     const path = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${extension}`
     const { error } = await supabase.storage.from('media').upload(path, data, { contentType: type, cacheControl: '31536000' })
     if (error) return setMsg('Не удалось загрузить файл. Попробуйте ещё раз.')

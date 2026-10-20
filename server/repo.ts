@@ -137,7 +137,20 @@ const cleanUser = (u: string) => u.replace(/^@/, '')
 
 export function supabaseRepo(url: string, key: string): Repo {
   // Таймаут на каждый запрос: зависший запрос превращается в понятную ошибку вместо тихого ожидания
-  const timedFetch: typeof fetch = (input, init) => fetch(input, { ...init, signal: AbortSignal.timeout(6000) })
+  // Повторяем безопасные запросы (чтение, обновление, удаление) при таймауте или сбое сети; вставки не повторяем, чтобы не плодить дубли
+  const timedFetch: typeof fetch = async (input, init) => {
+    const retries = (init?.method ?? 'GET').toUpperCase() === 'POST' ? 0 : 2
+    let last: unknown
+    for (let i = 0; i <= retries; i++) {
+      try {
+        return await fetch(input, { ...init, signal: AbortSignal.timeout(12_000) })
+      } catch (e) {
+        last = e
+        if (i < retries) await new Promise((r) => setTimeout(r, 400 * (i + 1)))
+      }
+    }
+    throw last
+  }
   const db = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false }, global: { fetch: timedFetch } })
   const ok = <T>(r: { data: T; error: { message: string; code?: string } | null }, what: string): T => {
     if (r.error) throw new Error(`${what}: ${r.error.message}`)

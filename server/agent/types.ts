@@ -1,7 +1,7 @@
 // Задания агента: план из шагов, каждый шаг = один разрешённый инструмент с фиксированным уровнем риска.
 export type Risk = 'read' | 'write' | 'send' | 'danger'
 export type StepState = 'todo' | 'running' | 'done' | 'skipped' | 'failed'
-export type Step = { id: string; text: string; tool: string; risk: Risk; on: boolean; state: StepState; confirmed?: boolean; result?: string; ref?: string; error?: string }
+export type Step = { id: string; text: string; tool: string; risk: Risk; on: boolean; state: StepState; confirmed?: boolean; result?: string; ref?: string; error?: string; cursor?: number; carry?: Record<string, unknown> }
 export type TaskStatus = 'planning' | 'approval' | 'running' | 'paused' | 'done' | 'rejected' | 'failed'
 export type LogLine = { at: string; text: string }
 export type AgentTask = {

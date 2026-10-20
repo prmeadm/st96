@@ -47,7 +47,8 @@ mark { background: var(--mark); color: inherit; border-radius: 3px; padding: 0 1
 .rail a:hover, .rail .out:hover { background: var(--bg); color: var(--ink); text-decoration: none; }
 .rail a.on { background: var(--accent-soft); color: var(--ink); box-shadow: inset 0 0 0 1px var(--accent-edge); }
 .rail .ic { flex: none; }
-.rail .out { margin-top: auto; }
+.rail-gap { flex: 1; }
+.rail .out { margin-top: 0; }
 .rail.min { width: 68px; }
 .rail.min .brand { flex-direction: column; padding: 4px 0 14px; gap: 8px; }
 .rail.min .fold { margin-left: 0; }
@@ -106,6 +107,7 @@ a.item:hover { border-color: var(--accent-edge); text-decoration: none; }
   .rail { width: auto; flex-direction: row; justify-content: space-around; overflow-x: auto; border-right: 0; border-top: 1px solid var(--line); padding: 4px 4px calc(4px + env(safe-area-inset-bottom)); gap: 0; }
   .rail .brand { display: none; }
   .rail, .rail.min { width: auto; }
+  .rail-gap { display: none; }
   .rail a, .rail .out, .rail.min a, .rail.min .out { flex: 1 0 58px; flex-direction: column; align-items: center; gap: 2px; font-size: 11px; padding: 7px 2px; justify-content: center; margin-top: 0; width: auto; text-align: center; }
   .rail.min a span, .rail.min .out span { display: inline; }
   .rail a.on { box-shadow: none; }

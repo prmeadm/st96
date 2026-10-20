@@ -231,3 +231,75 @@ test('выбор модели: своя работает строго, без п
   await repo.setSetting(MODEL_SETTING, 'custom:gone')
   await assert.rejects((await resolveLlm(repo, { LLM_KEY_GROQ: 'k' }))({ system: 's', user: 'u' }), /удалена/)
 })
+
+const leadText = (name: string, phone: string, extra = '') => `🆕 Новая заявка с сайта ST96\nИмя: ${name}\nКонтакт: ${phone}\nИнтересует: Ретушь\nСообщение: Хочу ретушь портретов${extra}\nЯзык сайта: Русский (RU)\nИсточник: прямой заход`
+const exportJson = (extra: object[] = []) => ({
+  name: 'Лиды ST96', type: 'private_supergroup', id: 1001,
+  messages: [
+    { id: 10, type: 'message', from: 'ST96 bot', text: leadText('Анна Иванова', '+375 29 111 22 33') },
+    { id: 11, type: 'message', from: 'ST96 bot', text: [{ type: 'plain', text: leadText('Тест', '+375 29 000 00 01', '\nИсточник тест') }] },
+    { id: 12, type: 'message', from: 'ST96 bot', text: leadText('Анна И.', '+375291112233') },
+    { id: 13, type: 'message', from: 'Карина', text: 'Позвонила, ждёт коммерческое предложение до пятницы', reply_to_message_id: 10 },
+    { id: 14, type: 'service', text: 'Группа создана' },
+    { id: 15, type: 'message', from: 'Карина', text: 'ок' },
+    { id: 16, type: 'message', from: 'ST96 bot', text: leadText('Тестов Олег', '+375 33 555 44 33') },
+    ...extra,
+  ],
+})
+
+function withFetch<T>(body: unknown, fn: () => Promise<T>) {
+  const real = globalThis.fetch
+  globalThis.fetch = (async () => new Response(JSON.stringify(body), { status: 200 })) as never
+  return fn().finally(() => { globalThis.fetch = real })
+}
+
+test('импорт из экспорта группы: заявки, тестовые пропущены, дубли клиентов не создаются, повтор безопасен', async () => {
+  const { repo, deps } = setup(plan('import_group_export'))
+  repo.clients.length = 0
+  await createTask(deps, { ...input, attach: ['https://example.com/agent/result.json'] })
+  const id = repo.agentTasks[0]!.id
+  await approveTask(deps, id, {})
+  await withFetch(exportJson(), () => tickAgentTasks(deps, { maxSteps: 10 }))
+  const t = repo.agentTasks[0]!
+  assert.equal(t.status, 'done', t.error ?? '')
+  assert.equal(repo.leads.length, 3, 'две заявки Анны и «Тестов Олег» (фамилия, а не тест)')
+  assert.equal(repo.clients.length, 2, 'у Анны один клиент на две заявки')
+  assert.ok(repo.leads.every((l) => !/Тест$/.test(l.name ?? '')) && !repo.leads.some((l) => l.name === 'Тест'))
+  assert.equal(repo.notes.length, 1, 'ответ сотрудника привязан к заявке')
+  assert.ok([...repo.tags.values()].every((s) => s.has('импорт из группы')))
+  const res = t.plan[0]!.result!
+  assert.match(res, /новых 3/)
+  assert.match(res, /тестовых пропущено 1/)
+
+  // повторный запуск того же файла не создаёт ничего нового
+  const t2 = await repo.insertAgentTask({ title: 'Повтор', text: 'Повторить импорт группы', attach: ['https://example.com/agent/result.json'] })
+  await repo.updateAgentTask(t2.id, { plan: normalizePlan({ steps: [{ text: 'импорт', tool: 'import_group_export' }] }), status: 'running' })
+  await withFetch(exportJson(), () => tickAgentTasks(deps, { maxSteps: 10 }))
+  assert.equal(repo.leads.length, 3)
+  assert.equal(repo.clients.length, 2)
+  assert.match(repo.agentTasks[1]!.plan[0]!.result!, /уже были в базе 3/)
+})
+
+test('импорт без приложенного файла падает с понятной инструкцией, а не молча', async () => {
+  const { repo, deps } = setup(plan('import_group_export'))
+  await createTask(deps, input)
+  await approveTask(deps, repo.agentTasks[0]!.id, {})
+  await tickAgentTasks(deps, { maxSteps: 10 })
+  assert.equal(repo.agentTasks[0]!.status, 'failed')
+  assert.match(repo.agentTasks[0]!.error ?? '', /экспорта группы/)
+})
+
+test('планировщик честно отказывается, если инструмента нет, и не подставляет чужой', async () => {
+  const { repo, deps } = setup('{"steps": [], "reason": "Бот не читает историю группы: приложите файл экспорта"}')
+  await createTask(deps, input)
+  assert.equal(repo.agentTasks[0]!.status, 'failed')
+  assert.match(repo.agentTasks[0]!.error ?? '', /Агент не может выполнить это задание: Бот не читает историю/)
+})
+
+test('не экспорт чата: понятная ошибка', async () => {
+  const { repo, deps } = setup(plan('import_group_export'))
+  await createTask(deps, { ...input, attach: ['https://example.com/x.json'] })
+  await approveTask(deps, repo.agentTasks[0]!.id, {})
+  await withFetch({ hello: 1 }, () => tickAgentTasks(deps, { maxSteps: 10 }))
+  assert.match(repo.agentTasks[0]!.error ?? '', /не экспорт чата/i)
+})

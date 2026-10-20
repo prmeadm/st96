@@ -26,7 +26,21 @@ function counted(deps: AgentDeps, task: AgentTask): Llm {
 
 const catalog = () => PLANNABLE.map((t) => `- ${t.name} (${t.risk}): ${t.describe}`).join('\n')
 
-type RawPlan = { steps?: { text?: unknown; tool?: unknown }[] }
+type RawPlan = { steps?: { text?: unknown; tool?: unknown }[]; reason?: unknown }
+
+/** Повтор записи в базу при сбое: результат уже выполненного шага нельзя терять из-за таймаута. */
+async function retry<T>(fn: () => Promise<T>, tries = 3): Promise<T> {
+  let last: unknown
+  for (let i = 0; i < tries; i++) {
+    try {
+      return await fn()
+    } catch (e) {
+      last = e
+      await new Promise((r) => setTimeout(r, 500 * (i + 1)))
+    }
+  }
+  throw last
+}
 
 /** Приводит ответ модели к безопасному плану: только известные инструменты, риск берётся из кода, отчёт всегда последний. */
 export function normalizePlan(raw: RawPlan): Step[] {
@@ -44,11 +58,13 @@ export function normalizePlan(raw: RawPlan): Step[] {
 async function makePlan(deps: AgentDeps, task: AgentTask, note?: string): Promise<EngineResult> {
   const ask = counted(deps, task)
   const prev = task.plan.length && note ? `\nПредыдущий план:\n${task.plan.filter((s) => s.tool !== 'report').map((s, i) => `${i + 1}. [${s.tool}] ${s.text}${s.on ? '' : ' (отключён)'}`).join('\n')}\nЗамечание владельца: ${note}\nУчти замечание и пересобери план.` : ''
-  const user = `Задание: ${task.text}${task.attach.length ? `\nМатериалы: ${task.attach.join(', ')}` : ''}${prev}\n\nСоставь план из 1-${MAX_STEPS} шагов. Каждый шаг использует ровно один инструмент из списка. Не добавляй шагов, которых не просили; запуск рассылки или отправку добавляй, только если задание прямо об этом.\nВерни JSON: {"steps":[{"text":"что сделать, одной фразой","tool":"имя_инструмента"}]}`
+  const user = `Задание: ${task.text}${task.attach.length ? `\nМатериалы: ${task.attach.join(', ')}` : ''}${prev}\n\nСоставь план из 1-${MAX_STEPS} шагов. Каждый шаг использует ровно один инструмент из списка. Не добавляй шагов, которых не просили; запуск рассылки или отправку добавляй, только если задание прямо об этом.\nЕсли задание нельзя выполнить доступными инструментами, НЕ подставляй другие инструменты: верни {"steps":[],"reason":"по-русски: чего не хватает и что сделать владельцу"}.\nИначе верни JSON: {"steps":[{"text":"что сделать, одной фразой","tool":"имя_инструмента"}]}`
   try {
     let plan: Step[] = []
     for (let attempt = 0; attempt < 2 && !plan.length; attempt++) {
-      plan = normalizePlan(parseJson<RawPlan>(await ask({ system: `Ты планировщик заданий для студии ST96. Доступные инструменты:\n${catalog()}\nНичего, кроме этих инструментов, ты делать не умеешь. Отвечай только JSON.`, user })))
+      const raw = parseJson<RawPlan>(await ask({ system: `Ты планировщик заданий для студии ST96. Доступные инструменты:\n${catalog()}\nНичего, кроме этих инструментов, ты делать не умеешь. Отвечай только JSON.`, user }))
+      plan = normalizePlan(raw)
+      if (!plan.length && typeof raw.reason === 'string' && raw.reason.trim()) throw new LlmError(`Агент не может выполнить это задание: ${raw.reason.trim().slice(0, 600)}`)
     }
     if (!plan.length) throw new LlmError('Агент не смог составить план из доступных инструментов. Уточните задание.')
     await deps.repo.updateAgentTask(task.id, { plan, status: 'approval', error: null, log: [...task.log, line(note ? `План обновлён по замечанию (версия ${task.rev})` : 'Агент составил план, ждёт согласования')] })
@@ -146,20 +162,28 @@ export async function tickAgentTasks(deps: AgentDeps, opts: { maxSteps?: number;
           break
         }
         task.plan[idx] = { ...step, state: 'running' }
-        await deps.repo.updateAgentTask(task.id, { plan: task.plan })
+        await retry(() => deps.repo.updateAgentTask(task.id, { plan: task.plan }))
         left--
         ran++
+        let res: Awaited<ReturnType<typeof tool.run>>
         try {
-          const res = await tool.run({ repo: deps.repo, api: deps.api, groupChatId: deps.groupChatId, task, ask: counted(deps, task), done: task.plan.filter((s) => s.state === 'done') }, step)
-          task.plan[idx] = { ...step, state: 'done', result: res.text, ref: res.ref }
-          task.log = [...task.log, line(`Готово: ${step.text}`)]
-          await deps.repo.updateAgentTask(task.id, { plan: task.plan, log: task.log })
+          res = await tool.run({ repo: deps.repo, api: deps.api, groupChatId: deps.groupChatId, task, ask: counted(deps, task), done: task.plan.filter((s) => s.state === 'done') }, step)
         } catch (e) {
           const msg = e instanceof Error ? e.message : String(e)
           task.plan[idx] = { ...step, state: 'failed', error: msg }
-          await deps.repo.updateAgentTask(task.id, { plan: task.plan, status: 'failed', error: msg, log: [...task.log, line(`Шаг не выполнен («${step.text}»): ${msg}`)] })
+          await retry(() => deps.repo.updateAgentTask(task.id, { plan: task.plan, status: 'failed', error: msg, log: [...task.log, line(`Шаг не выполнен («${step.text}»): ${msg}`)] }))
           break
         }
+        // Шаг выполнен: результат нужно сохранить, даже если база отвечает медленно (иначе выполненный шаг выглядел бы ошибочным)
+        if (res.partial) {
+          task.plan[idx] = { ...step, state: 'todo', cursor: res.partial.cursor, carry: res.partial.carry, result: res.text }
+          task.log = [...task.log, line(`${step.text}: ${res.text.split('\n')[0]}`)]
+          await retry(() => deps.repo.updateAgentTask(task.id, { plan: task.plan, log: task.log }))
+          break // продолжение на следующем запуске по расписанию
+        }
+        task.plan[idx] = { ...step, state: 'done', result: res.text, ref: res.ref, cursor: undefined, carry: undefined }
+        task.log = [...task.log, line(`Готово: ${step.text}`)]
+        await retry(() => deps.repo.updateAgentTask(task.id, { plan: task.plan, log: task.log }))
         task = await reload(deps.repo, task.id)
       }
     } finally {

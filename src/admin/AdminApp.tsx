@@ -11,6 +11,7 @@ import TemplatesPage from './pages/TemplatesPage'
 import BroadcastsPage from './pages/BroadcastsPage'
 import BroadcastPage from './pages/BroadcastPage'
 import AgentPage from './pages/AgentPage'
+import SettingsPage from './pages/SettingsPage'
 import { Icon } from './ui/Icon'
 
 const RAIL_KEY = 'st96-admin-rail'
@@ -43,6 +44,8 @@ function Shell() {
         {item('/templates', 'templates', 'Шаблоны')}
         {item('/agent', 'agent', 'Агент')}
         {item('/notes', 'notes', 'Заметки')}
+        <div className="rail-gap" />
+        {item('/settings', 'settings', 'Настройки')}
         <button className="out" onClick={signOut} title={min ? 'Выйти' : undefined} aria-label="Выйти"><Icon name="logout" /><span>Выйти</span></button>
       </nav>
       <main className="main">
@@ -59,6 +62,7 @@ function Shell() {
             <Route path="/templates" element={<TemplatesPage />} />
             <Route path="/agent" element={<AgentPage />} />
             <Route path="/agent/:id" element={<AgentPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
             <Route path="/notes" element={<NotesPage />} />
             <Route path="*" element={<Navigate to="/clients" replace />} />
           </Routes>

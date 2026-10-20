@@ -33,3 +33,6 @@
 .mlist li.minus .ic { color: var(--mute); }
 .mact { display: flex; align-items: center; gap: var(--s-2); margin-top: auto; padding-top: var(--s-2); }
 .mcard .chip { max-width: 100%; white-space: normal; }
+.agent .howto { background: var(--bg); border-radius: 12px; padding: 10px 12px; margin-bottom: var(--s-4); }
+.agent .howto summary { cursor: pointer; font-weight: 500; }
+.agent .howto ol { margin: 8px 0; padding-left: 20px; display: flex; flex-direction: column; gap: 4px; font-size: var(--fs-sm); }
