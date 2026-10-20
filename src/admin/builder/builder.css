@@ -71,7 +71,11 @@
 .fb .aibox.teal { background: var(--teal-soft); color: var(--teal); }
 
 .fb .dock { position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 15; display: flex; gap: 8px; align-items: center; }
-.fb .menu { position: absolute; bottom: 56px; left: 50%; transform: translateX(-50%); width: 330px; background: var(--card); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow); padding: 8px; z-index: 30; }
+/* Меню блоков открывается вверх от кнопки и не выходит за холст: две колонки и прокрутка, если холст низкий
+   (над меню: отступ кнопки 18 + кнопка ~48 + зазор; холст = высота .fb минус панель инструментов) */
+.fb .menu { position: absolute; bottom: 56px; left: 50%; transform: translateX(-50%); width: min(640px, calc(100vw - 340px)); background: var(--card); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow); padding: 8px; z-index: 30;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 2px 6px; align-content: start; max-height: max(296px, calc(100dvh - 380px - 144px)); overflow: auto; overscroll-behavior: contain; }
+.fb .menu .sep { grid-column: 1 / -1; }
 .fb .menu button { display: flex; gap: 10px; align-items: flex-start; text-align: left; border: 0; background: none; width: 100%; padding: 8px; border-radius: 10px; }
 .fb .menu button:hover { background: var(--bg); }
 .fb .menu .ic { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; flex: none; }
@@ -106,7 +110,7 @@
   .fb .dock { bottom: 14px; left: 0; right: 0; transform: none; justify-content: center; white-space: nowrap; }
   .fb .dock.hid { display: none; }
   .fb .dock .btn.primary { min-height: 48px; box-shadow: var(--shadow); }
-  .fb .menu { left: 12px; right: 12px; width: auto; transform: none; max-height: 58vh; overflow: auto; bottom: 62px; white-space: normal; }
+  .fb .menu { left: 12px; right: 12px; width: auto; transform: none; grid-template-columns: 1fr; max-height: max(200px, calc(100dvh - 215px - 150px)); overflow: auto; bottom: 62px; white-space: normal; }
   .fb .menu button { padding: 12px 8px; }
   .fb .panel { left: 0; right: 0; bottom: 0; top: auto; width: auto; height: 72%; border-radius: 20px 20px 0 0; border-bottom: 0; box-shadow: var(--shadow-up); }
   .fb .sheet-grip { display: block; position: absolute; top: 6px; left: 50%; width: 40px; height: 4px; margin-left: -20px; border-radius: 4px; background: var(--line); }
