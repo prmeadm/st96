@@ -243,3 +243,16 @@ test('/t без шаблонов подсказывает, где их созд�
   await send(topicMsg(repo.clients[0].admin_topic_id!, '/t', 21))
   assert.ok(calls.some((c) => c.method === 'sendMessage' && /Шаблонов пока нет/.test(String(c.payload.text))))
 })
+
+test('/start site_<id> привязывает Telegram к клиенту из заявки с сайта без дубля', async () => {
+  const { repo, send } = setup()
+  const lead = await repo.insertClient({ name: 'Анна', phone: '+375291112233', source: 'site' })
+  await send(msg(`/start site_${lead.id}`, { entities: [{ type: 'bot_command', offset: 0, length: 6 }] }))
+  assert.equal(repo.clients.length, 1, 'новый клиент не создан')
+  assert.equal(repo.clients[0].id, lead.id)
+  assert.equal(repo.clients[0].tg_user_id, 555)
+  assert.equal(repo.clients[0].phone, '+375291112233')
+  // повторный переход с чужой ссылкой не перетирает уже привязанного
+  await send(msg(`/start site_${lead.id}`, { entities: [{ type: 'bot_command', offset: 0, length: 6 }] }))
+  assert.equal(repo.clients.length, 1)
+})

@@ -4,6 +4,7 @@ import type { Funnel, JobRow, RunRow } from './funnels/types'
 import type { TemplateRow } from './templates'
 import type { AudienceClient, BroadcastRow } from './broadcasts'
 import type { AgentStats, AgentTask } from './agent/types'
+import type { BookingInsert, BookingRow } from './booking/types'
 
 export type MemoryRepo = Repo & {
   clients: ClientRow[]
@@ -18,6 +19,7 @@ export type MemoryRepo = Repo & {
   broadcasts: BroadcastRow[]
   agentTasks: (AgentTask & { locked: boolean })[]
   settings: Map<string, string>
+  bookings: BookingRow[]
   recipients: { broadcast_id: string; client_id: string; status: 'pending' | 'sending' | 'sent' | 'failed'; error?: string }[]
   jobs: (JobRow & { run_at: Date; done: boolean; error?: string })[]
 }
@@ -27,7 +29,7 @@ export function memoryRepo(): MemoryRepo {
   const id = (p: string) => `${p}${++seq}`
   const seen = new Set<number>()
   const r: MemoryRepo = {
-    clients: [], leads: [], notes: [], messages: [], funnels: [], runs: [], events: [], tags: new Map(), templates: [], broadcasts: [], agentTasks: [], settings: new Map(), recipients: [], jobs: [],
+    clients: [], leads: [], notes: [], messages: [], funnels: [], runs: [], events: [], tags: new Map(), templates: [], broadcasts: [], agentTasks: [], settings: new Map(), bookings: [], recipients: [], jobs: [],
     async claimUpdate(u) { if (seen.has(u)) return false; seen.add(u); return true },
     async findClient({ tgUserId, phone, username, topicId }) {
       if (topicId) return r.clients.find((c) => c.admin_topic_id === topicId) ?? null
@@ -148,6 +150,26 @@ export function memoryRepo(): MemoryRepo {
       const row: BroadcastRow = { id: id('bc'), title: b.title, kind: 'text', body: b.body, body_en: null, media_url: null, segment: b.segment, status: 'draft', scheduled_at: null, total: 0, sent: 0, failed: 0, created_at: '', finished_at: null }
       r.broadcasts.push(row)
       return { id: row.id }
+    },
+    async insertBooking(b: BookingInsert) {
+      const overlap = r.bookings.some((x) => (x.status === 'pending' || x.status === 'confirmed') && Date.parse(b.starts_at) < Date.parse(x.ends_at) && Date.parse(b.ends_at) > Date.parse(x.starts_at))
+      if (overlap) return { ok: false as const, conflict: true as const }
+      const row: BookingRow = { ...b, id: id('bk'), status: 'pending', meet_url: null, reminded_at: null, decided_at: null, created_at: new Date().toISOString() }
+      r.bookings.push(row)
+      return { ok: true as const, booking: row }
+    },
+    async getBooking(bid) { return r.bookings.find((x) => x.id === bid) ?? null },
+    async updateBooking(bid, patch) { Object.assign(r.bookings.find((x) => x.id === bid)!, patch) },
+    async listActiveBookings(fromDate, toDate) {
+      const from = Date.parse(`${fromDate}T00:00:00+03:00`)
+      const to = Date.parse(`${toDate}T00:00:00+03:00`) + 86_400_000
+      return r.bookings.filter((x) => (x.status === 'pending' || x.status === 'confirmed') && Date.parse(x.starts_at) >= from && Date.parse(x.starts_at) < to)
+    },
+    async countRecentBookings(c, since) {
+      return r.bookings.filter((x) => x.created_at >= since && ((c.phone && x.phone === c.phone) || (c.telegram && x.telegram === c.telegram))).length
+    },
+    async listDueReminders(from, to) {
+      return r.bookings.filter((x) => x.status === 'confirmed' && !x.reminded_at && x.starts_at >= from && x.starts_at < to)
     },
     async getSetting(key) { return r.settings.get(key) ?? null },
     async setSetting(key, value) { r.settings.set(key, value) },

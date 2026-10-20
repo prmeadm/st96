@@ -33,6 +33,7 @@ export default function LeadCapture({ service, title, text }: Props) {
   const [message, setMessage] = useState('')
   const [consent, setConsent] = useState(true)
   const [status, setStatus] = useState<'idle' | 'sent'>('idle')
+  const [tgRef, setTgRef] = useState<string | null>(null)
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
@@ -74,6 +75,8 @@ export default function LeadCapture({ service, title, text }: Props) {
         }),
       })
       if (!res.ok) throw new Error('request failed')
+      const ok = (await res.json().catch(() => null)) as { ref?: string | null } | null
+      setTgRef(typeof ok?.ref === 'string' && /^[0-9a-f-]{36}$/.test(ok.ref) ? ok.ref : null)
       trackLead(eventId, lang)
       setStatus('sent')
     } catch {
@@ -256,15 +259,16 @@ export default function LeadCapture({ service, title, text }: Props) {
                     <p className="max-w-xs text-paper-dim">
                       {l.sentText}
                     </p>
+                    <p className="max-w-xs text-sm text-paper-dim">{l.tgHint}</p>
                     <a
-                      href={CONTACTS.telegramHref}
+                      href={`https://t.me/${CONTACTS.botName}?start=${tgRef ? `site_${tgRef}` : 'site'}`}
                       target="_blank"
                       rel="noreferrer"
                       data-cursor-hover
-                      className="mt-2 inline-flex items-center gap-2 rounded-full border border-ink-line px-5 py-3 text-sm font-medium"
+                      className="inline-flex items-center gap-2 rounded-full bg-acid px-6 py-3.5 text-sm font-semibold text-ink transition-transform hover:scale-[1.03]"
                     >
                       <Send className="h-4 w-4" />
-                      {l.writeTg}
+                      {l.openTg}
                     </a>
                     <button
                       onClick={() => setStatus('idle')}

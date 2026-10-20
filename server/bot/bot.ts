@@ -14,6 +14,15 @@ type From = NonNullable<Context['from']>
 const langOf = (from: From): Lang => (from.language_code?.toLowerCase().startsWith('en') ? 'en' : 'ru')
 const fullName = (f: From) => [f.first_name, f.last_name].filter(Boolean).join(' ')
 
+/** Переход из формы сайта (/start site_<id клиента>): привязываем Telegram к клиенту, созданному заявкой, чтобы не плодить дубль. */
+export async function linkLeadClient(repo: Repo, from: From, clientId: string) {
+  const c = await repo.findClientById(clientId)
+  if (!c || c.tg_user_id) return
+  if (await repo.findClient({ tgUserId: from.id })) return
+  const byName = !c.tg_username && from.username ? await repo.findClient({ username: from.username }) : null
+  await repo.updateClient(c.id, { tg_user_id: from.id, ...(c.tg_username || byName || !from.username ? {} : { tg_username: from.username }) })
+}
+
 /** Клиент по Telegram id; если заявка со стенда или сайта уже есть с таким ником, привязываем к ней. */
 export async function ensureClient(repo: Repo, from: From, source?: string): Promise<{ client: ClientRow; isNew: boolean; prevSeen: string | null }> {
   let client = await repo.findClient({ tgUserId: from.id })
@@ -73,7 +82,10 @@ export function createBot(token: string, repo: Repo, opts: { groupChatId: number
 
   bot.command('start', async (ctx) => {
     if (ctx.chat.type !== 'private' || !ctx.from) return
-    const payload = ctx.match?.trim().slice(0, 64) || undefined
+    const rawPayload = ctx.match?.trim().slice(0, 64) || undefined
+    const leadRef = rawPayload?.match(/^site_([A-Za-z0-9-]{1,40})$/)?.[1]
+    const payload = leadRef ? 'site' : rawPayload
+    if (leadRef) await linkLeadClient(repo, ctx.from, leadRef)
     const { client } = await ensureClient(repo, ctx.from, payload ? `bot:${payload}` : 'bot')
     const t = T[client.language]
     await repo.insertMessage({ client_id: client.id, direction: 'in', kind: 'text', text: ctx.message?.text ?? '/start', tg_chat_id: ctx.chat.id, tg_message_id: ctx.message?.message_id ?? null })

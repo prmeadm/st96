@@ -92,6 +92,7 @@ export default async function handler(req: Request) {
   }
 
   let saved = false
+  let ref: string | null = null
   if (body.internal !== true) {
     try {
       const url = process.env.SUPABASE_URL
@@ -102,7 +103,7 @@ export default async function handler(req: Request) {
             .map(([k, v]) => [k, t(v)])
             .filter(([, v]) => v),
         )
-        await ingestLead(supabaseRepo(url, key), parseLead(text), {
+        const ingested = await ingestLead(supabaseRepo(url, key), parseLead(text), {
           source: 'site_form',
           tgChatId: messageId ? Number(chatId) : null,
           tgMessageId: messageId,
@@ -110,6 +111,7 @@ export default async function handler(req: Request) {
           utm: Object.keys(utmObj).length ? (utmObj as Record<string, string>) : null,
         })
         saved = true
+        ref = ingested.clientId
       }
     } catch (e) {
       console.error('lead db save failed', e instanceof Error ? e.message : e)
@@ -119,7 +121,7 @@ export default async function handler(req: Request) {
 
   if (body.internal !== true) await sendAdEvents(req, body, contact)
 
-  return json({ ok: true }, 200)
+  return json({ ok: true, ref }, 200)
 }
 
 function json(data: unknown, status: number) {

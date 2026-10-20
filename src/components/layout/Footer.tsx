@@ -12,6 +12,7 @@ const CONTACTS = {
   phoneHref: '+375299545151',
   telegram: '@studia96',
   telegramHref: 'https://t.me/studia96',
+  botName: 'st96_leads_bot',
 }
 
 export default function Footer() {

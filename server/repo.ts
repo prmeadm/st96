@@ -6,6 +6,7 @@ import type { TemplateRow } from './templates'
 import type { AudienceClient, BroadcastRow, Segment } from './broadcasts'
 import type { AgentStats, AgentTask } from './agent/types'
 import type { TemplateKind } from './templates'
+import type { BookingInsert, BookingRow } from './booking/types'
 
 export type ClientRow = {
   id: string
@@ -124,6 +125,15 @@ export interface Repo {
   agentStats(): Promise<AgentStats>
   insertTemplate(t: { title: string; kind: TemplateKind; body: string; task: string; goal: string; services: string[] }): Promise<{ id: string }>
   insertBroadcastDraft(b: { title: string; body: string; segment: Segment }): Promise<{ id: string }>
+  // запись на встречу
+  /** conflict: время уже занято (защита базы от двойной записи) */
+  insertBooking(b: BookingInsert): Promise<{ ok: true; booking: BookingRow } | { ok: false; conflict: true }>
+  getBooking(id: string): Promise<BookingRow | null>
+  updateBooking(id: string, patch: Partial<Pick<BookingRow, 'status' | 'meet_url' | 'decided_at' | 'reminded_at'>>): Promise<void>
+  /** Активные (на рассмотрении и подтверждённые) заявки в интервале дат по Минску, включительно */
+  listActiveBookings(fromDate: string, toDate: string): Promise<BookingRow[]>
+  countRecentBookings(contact: { phone?: string | null; telegram?: string | null }, sinceIso: string): Promise<number>
+  listDueReminders(fromIso: string, toIso: string): Promise<BookingRow[]>
   // настройки платформы
   getSetting(key: string): Promise<string | null>
   setSetting(key: string, value: string): Promise<void>
@@ -353,6 +363,35 @@ export function supabaseRepo(url: string, key: string): Repo {
     },
     async insertBroadcastDraft(b) {
       return ok(await db.from('broadcasts').insert(b).select('id').single(), 'insertBroadcastDraft') as { id: string }
+    },
+    async insertBooking(b) {
+      const r = await db.from('bookings').insert(b).select('*').single()
+      if (r.error) {
+        if (r.error.code === '23P01') return { ok: false, conflict: true }
+        throw new Error(`insertBooking: ${r.error.message}`)
+      }
+      return { ok: true, booking: r.data as BookingRow }
+    },
+    async getBooking(id) {
+      return (ok(await db.from('bookings').select('*').eq('id', id).maybeSingle(), 'getBooking') as BookingRow | null) ?? null
+    },
+    async updateBooking(id, patch) {
+      ok(await db.from('bookings').update(patch).eq('id', id), 'updateBooking')
+    },
+    async listActiveBookings(fromDate, toDate) {
+      const from = new Date(`${fromDate}T00:00:00+03:00`).toISOString()
+      const to = new Date(new Date(`${toDate}T00:00:00+03:00`).getTime() + 86_400_000).toISOString()
+      return (ok(await db.from('bookings').select('*').in('status', ['pending', 'confirmed']).gte('starts_at', from).lt('starts_at', to).order('starts_at'), 'listActiveBookings') ?? []) as BookingRow[]
+    },
+    async countRecentBookings(contact, sinceIso) {
+      const conds = [contact.phone ? `phone.eq.${contact.phone}` : '', contact.telegram ? `telegram.eq.${contact.telegram}` : ''].filter(Boolean)
+      if (!conds.length) return 0
+      const r = await db.from('bookings').select('id', { count: 'exact', head: true }).gte('created_at', sinceIso).or(conds.join(','))
+      if (r.error) throw new Error(`countRecentBookings: ${r.error.message}`)
+      return r.count ?? 0
+    },
+    async listDueReminders(fromIso, toIso) {
+      return (ok(await db.from('bookings').select('*').eq('status', 'confirmed').is('reminded_at', null).gte('starts_at', fromIso).lt('starts_at', toIso), 'listDueReminders') ?? []) as BookingRow[]
     },
     async getSetting(key) {
       const r = ok(await db.from('app_settings').select('value').eq('key', key).maybeSingle(), 'getSetting') as { value: unknown } | null
