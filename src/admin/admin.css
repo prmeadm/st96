@@ -149,3 +149,12 @@ fieldset.plain { border: 0; margin: 0; padding: 0; min-width: 0; display: flex; 
 .progress { height: 10px; background: var(--bg); border-radius: 999px; overflow: hidden; margin: 6px 0; }
 .progress i { display: block; height: 100%; background: var(--accent-edge); border-radius: 999px; transition: width 0.3s ease; }
 .faillist { margin: 8px 0 0; padding-left: 18px; font-size: var(--fs-sm); color: var(--mute); }
+.irow { display: flex; align-items: stretch; background: var(--card); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow); }
+.irow:hover { border-color: var(--accent-edge); }
+.irow .item-main { flex: 1; min-width: 0; padding: 12px; color: inherit; display: block; border-radius: 14px; }
+.irow .item-main:hover { text-decoration: none; }
+.irow .item-main b { font-size: var(--fs-lg); }
+.acts { display: flex; align-items: center; gap: 6px; padding: 0 12px 0 0; flex: none; }
+.ibtn.sm { width: 36px; height: 36px; border-color: transparent; background: none; color: var(--mute); }
+.ibtn.sm:hover { background: var(--bg); border-color: var(--line-strong); color: var(--ink); text-decoration: none; }
+.ibtn.danger:hover { color: var(--red); border-color: var(--red); background: var(--red-soft); }

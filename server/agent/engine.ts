@@ -107,6 +107,14 @@ export async function rejectTask(deps: AgentDeps, id: string): Promise<EngineRes
   return { ok: true, task: await reload(deps.repo, id) }
 }
 
+export async function deleteTask(deps: AgentDeps, id: string): Promise<EngineResult> {
+  const task = await deps.repo.getAgentTask(id)
+  if (!task) return { ok: false, error: 'Задание не найдено', status: 404 }
+  if (task.status === 'planning' || task.status === 'running') return { ok: false, error: 'Сначала остановите задание', status: 409 }
+  await deps.repo.deleteAgentTask(id)
+  return { ok: true, task }
+}
+
 /** Выполняет следующие шаги утверждённых заданий (вызывается расписанием раз в минуту). */
 export async function tickAgentTasks(deps: AgentDeps, opts: { maxSteps?: number; budgetMs?: number } = {}): Promise<{ ran: number }> {
   const started = Date.now()

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { Api } from 'grammy'
 import { memoryRepo } from '../memoryRepo'
 import { agentDeps } from './deps'
-import { approveTask, confirmStep, createTask, normalizePlan, rejectTask, reviseTask, tickAgentTasks, type AgentDeps } from './engine'
+import { approveTask, confirmStep, createTask, deleteTask, normalizePlan, rejectTask, reviseTask, tickAgentTasks, type AgentDeps } from './engine'
 import { formatStats } from './tools'
 import type { Llm } from './llm'
 
@@ -178,4 +178,17 @@ test('слой модели: недоступную модель (404) проп�
   } finally {
     globalThis.fetch = real
   }
+})
+
+test('удаление: нельзя удалить идущее задание, остальные удаляются', async () => {
+  const { repo, deps } = setup(plan('read_stats'))
+  await createTask(deps, input)
+  const id = repo.agentTasks[0]!.id
+  await approveTask(deps, id, {})
+  assert.equal((await deleteTask(deps, id)).ok, false)
+  assert.equal(repo.agentTasks.length, 1)
+  await rejectTask(deps, id)
+  assert.ok((await deleteTask(deps, id)).ok)
+  assert.equal(repo.agentTasks.length, 0)
+  assert.equal((await deleteTask(deps, id)).ok, false)
 })

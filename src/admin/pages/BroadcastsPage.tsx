@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../supabase'
 import { fmtDate } from '../types'
+import { RowActions } from '../ui/RowActions'
 import { BROADCAST_STATUS, type BroadcastRow } from '../../../server/broadcasts'
 
 export const STATUS_CHIP: Record<BroadcastRow['status'], string> = { draft: '', scheduled: 'amber', sending: 'blue', done: 'green', canceled: 'red' }
@@ -15,6 +16,13 @@ export default function BroadcastsPage() {
     supabase.from('broadcasts').select('*').order('created_at', { ascending: false })
       .then(({ data, error: e }) => (e ? setError('Не удалось загрузить рассылки') : setRows((data ?? []) as BroadcastRow[])))
   }, [])
+
+  const remove = async (b: BroadcastRow) => {
+    if (!confirm(`Удалить рассылку «${b.title}»?`)) return
+    const { error: e } = await supabase.from('broadcasts').delete().eq('id', b.id)
+    if (e) return setError('Не удалось удалить рассылку')
+    setRows((r) => r && r.filter((x) => x.id !== b.id))
+  }
 
   const create = async () => {
     const { data, error: e } = await supabase.from('broadcasts').insert({ title: 'Новая рассылка' }).select('id').single()
@@ -30,13 +38,16 @@ export default function BroadcastsPage() {
       {rows === null && !error && <div className="empty">Загрузка…</div>}
       {rows?.length === 0 && <div className="empty">Рассылок пока нет. Нажмите «+ Новая рассылка».</div>}
       {rows?.map((b) => (
-        <Link key={b.id} className="item" to={`/broadcasts/${b.id}`}>
-          <div className="row"><b>{b.title}</b><span className={`chip ${STATUS_CHIP[b.status]}`}>{BROADCAST_STATUS[b.status]}</span><span className="sp" /><span className="hint">{fmtDate(b.created_at)}</span></div>
-          <div className="hint">
-            {b.status === 'draft' ? 'Не запущена' : `Отправлено ${b.sent} из ${b.total}${b.failed ? `, не доставлено ${b.failed}` : ''}`}
-            {b.scheduled_at && b.status === 'scheduled' ? ` · на ${fmtDate(b.scheduled_at)}` : ''}
-          </div>
-        </Link>
+        <div key={b.id} className="irow">
+          <Link className="item-main" to={`/broadcasts/${b.id}`}>
+            <div className="row"><b>{b.title}</b><span className={`chip ${STATUS_CHIP[b.status]}`}>{BROADCAST_STATUS[b.status]}</span><span className="sp" /><span className="hint">{fmtDate(b.created_at)}</span></div>
+            <div className="hint">
+              {b.status === 'draft' ? 'Не запущена' : `Отправлено ${b.sent} из ${b.total}${b.failed ? `, не доставлено ${b.failed}` : ''}`}
+              {b.scheduled_at && b.status === 'scheduled' ? ` · на ${fmtDate(b.scheduled_at)}` : ''}
+            </div>
+          </Link>
+          <RowActions editTo={`/broadcasts/${b.id}`} onDelete={() => remove(b)} deleteDisabled={b.status === 'scheduled' || b.status === 'sending'} deleteTitle={b.status === 'scheduled' || b.status === 'sending' ? 'Сначала остановите рассылку' : 'Удалить'} />
+        </div>
       ))}
     </div>
   )

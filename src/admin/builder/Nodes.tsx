@@ -4,6 +4,19 @@ import { Handle, Position, useUpdateNodeInternals } from '@xyflow/react'
 import { P, TYPES, actText, condText, problems, type D } from './catalog'
 
 export const CountsCtx = createContext<Record<string, number>>({})
+/** Действия над блоком прямо на схеме: открыть настройки и удалить */
+export const NodeActionsCtx = createContext<{ edit: (id: string) => void; remove: (id: string) => void }>({ edit: () => undefined, remove: () => undefined })
+
+function NodeActions({ id, removable = true }: { id: string; removable?: boolean }) {
+  const { edit, remove } = useContext(NodeActionsCtx)
+  const stop = (e: React.SyntheticEvent) => e.stopPropagation()
+  return (
+    <span className="nacts nodrag nopan">
+      <button type="button" className="nbtn" title="Настройки блока" aria-label="Настройки блока" onClick={(e) => { stop(e); edit(id) }}><Ic d={P.edit} size={15} /></button>
+      {removable && <button type="button" className="nbtn danger" title="Удалить блок" aria-label="Удалить блок" onClick={(e) => { stop(e); remove(id) }}><Ic d={P.trash} size={15} /></button>}
+    </span>
+  )
+}
 
 export const Ic = ({ d, size = 16, sw = 1.8 }: { d: string; size?: number; sw?: number }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round"><path d={d} /></svg>
@@ -23,7 +36,9 @@ function Shell({ id, type, selected, data, children }: { id: string; type: strin
       <div className="hd">
         <span className="ic" style={{ background: t.soft, color: t.color }}><Ic d={t.icon} size={14} /></span>
         <span>{t.name}</span>
+        <span className="sp" />
         {count != null && <span className="cnt" title="Вошли в блок"><Ic d={P.user} size={12} />{count}</span>}
+        <NodeActions id={id} removable={type !== 'start'} />
       </div>
       <div className="bd">
         {type === 'ai' && <div className="warn">ИИ пока не подключён, шаг пропускается</div>}
@@ -116,8 +131,13 @@ function AiNode({ id, data, selected }: any) {
     </Shell>
   )
 }
-function NoteNode({ data, selected }: any) {
-  return <div className={`fnote ${selected ? 'sel' : ''} ${data.text ? '' : 'empty'}`}>{data.text || 'Введите заметку'}</div>
+function NoteNode({ id, data, selected }: any) {
+  return (
+    <div className={`fnote ${selected ? 'sel' : ''} ${data.text ? '' : 'empty'}`}>
+      <div className="nhead"><NodeActions id={id} /></div>
+      {data.text || 'Введите заметку'}
+    </div>
+  )
 }
 
 export const nodeTypes = { start: StartNode, message: MessageNode, condition: ConditionNode, action: ActionNode, booking: BookingNode, handoff: HandoffNode, ai: AiNode, note: NoteNode }

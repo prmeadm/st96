@@ -120,6 +120,7 @@ export interface Repo {
   /** Берёт задание в работу; null, если им уже занят другой запуск (замок на 2 минуты) */
   claimAgentTask(id: string): Promise<AgentTask | null>
   releaseAgentTask(id: string): Promise<void>
+  deleteAgentTask(id: string): Promise<void>
   agentStats(): Promise<AgentStats>
   insertTemplate(t: { title: string; kind: TemplateKind; body: string; task: string; goal: string; services: string[] }): Promise<{ id: string }>
   insertBroadcastDraft(b: { title: string; body: string; segment: Segment }): Promise<{ id: string }>
@@ -296,6 +297,9 @@ export function supabaseRepo(url: string, key: string): Repo {
       const lim = new Date(Date.now() - 2 * 60_000).toISOString()
       const rows = ok(await db.from('agent_tasks').update({ locked_at: new Date().toISOString() }).eq('id', id).or(`locked_at.is.null,locked_at.lt.${lim}`).select('*'), 'claimAgentTask') as AgentTask[] | null
       return rows?.[0] ?? null
+    },
+    async deleteAgentTask(id) {
+      ok(await db.from('agent_tasks').delete().eq('id', id), 'deleteAgentTask')
     },
     async releaseAgentTask(id) {
       ok(await db.from('agent_tasks').update({ locked_at: null }).eq('id', id), 'releaseAgentTask')

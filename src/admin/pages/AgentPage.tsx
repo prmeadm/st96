@@ -4,6 +4,7 @@ import { supabase } from '../supabase'
 import { callApi } from '../api'
 import { fmtDate } from '../types'
 import { RISK_LABEL, TASK_STATUS, type AgentTask, type Step, type TaskStatus } from '../../../server/agent/types'
+import { RowActions } from '../ui/RowActions'
 import './agent.css'
 
 const STATUS_CHIP: Record<TaskStatus, string> = { planning: 'violet', approval: 'amber', running: 'blue', paused: 'red', done: 'green', rejected: '', failed: 'red' }
@@ -49,6 +50,12 @@ export default function AgentPage() {
     return r.data
   }
 
+  const removeTask = async (t: AgentTask) => {
+    if (!confirm(`Удалить задание «${t.title}»?`)) return
+    const r = await act({ action: 'delete', id: t.id })
+    if (r && id === t.id) nav('/agent')
+  }
+
   const create = async () => {
     const d = await act({ action: 'create', title: form.title, text: form.text, attach: form.links.split('\n').map((x) => x.trim()).filter(Boolean) })
     if (d) { setForm({ title: '', text: '', links: '' }); setShowForm(false); nav(`/agent/${d.id}`) }
@@ -77,10 +84,13 @@ export default function AgentPage() {
             {tasks === null && !error && <div className="empty">Загрузка…</div>}
             {tasks?.length === 0 && !showForm && <div className="empty">Заданий пока нет. Нажмите «+ Новое задание».</div>}
             {tasks?.map((t) => (
-              <Link key={t.id} to={`/agent/${t.id}`} className={`titem ${t.id === id ? 'on' : ''}`}>
-                <b>{t.title}</b>
-                <div className="row"><span className={`chip ${STATUS_CHIP[t.status]}`}>{TASK_STATUS[t.status]}</span><span className="sp" /><span className="hint">{fmtDate(t.created_at)}</span></div>
-              </Link>
+              <div key={t.id} className={`irow ${t.id === id ? 'on' : ''}`}>
+                <Link to={`/agent/${t.id}`} className="item-main">
+                  <b>{t.title}</b>
+                  <div className="row"><span className={`chip ${STATUS_CHIP[t.status]}`}>{TASK_STATUS[t.status]}</span><span className="sp" /><span className="hint">{fmtDate(t.created_at)}</span></div>
+                </Link>
+                <RowActions editTo={`/agent/${t.id}`} onDelete={() => removeTask(t)} deleteDisabled={t.status === 'running' || t.status === 'planning'} deleteTitle={t.status === 'running' || t.status === 'planning' ? 'Сначала остановите задание' : 'Удалить'} />
+              </div>
             ))}
           </div>
         </div>

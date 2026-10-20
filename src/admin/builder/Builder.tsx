@@ -9,7 +9,7 @@ import './builder.css'
 import type { Graph } from '../../../server/funnels/types'
 import { MENU, TYPES, autoLayout, edgeStyle, fromFlow, newData, problems, toFlow, uid } from './catalog'
 import { Editor } from './Editor'
-import { CountsCtx, Ic, nodeTypes } from './Nodes'
+import { CountsCtx, Ic, NodeActionsCtx, nodeTypes } from './Nodes'
 import { Preview } from './Preview'
 import { P } from './catalog'
 
@@ -83,6 +83,7 @@ function Inner({ graph, onChange, counts }: { graph: Graph; onChange: (g: Graph)
 
   const patch = (id: string, p: any) => { commit(); setNodes((ns) => ns.map((n) => n.id === id ? { ...n, data: { ...n.data, ...p } } : n)) }
   const remove = (id: string) => { commit(true); setNodes((ns) => ns.filter((n) => n.id !== id)); setEdges((es) => es.filter((e) => e.source !== id && e.target !== id)) }
+  const editNode = (id: string) => setNodes((ns) => ns.map((n): Node => ({ ...n, selected: n.id === id })))
   const duplicate = (id: string) => {
     const n = nodes.find((x) => x.id === id)
     if (!n) return
@@ -127,6 +128,7 @@ function Inner({ graph, onChange, counts }: { graph: Graph; onChange: (g: Graph)
 
   return (
     <CountsCtx.Provider value={counts}>
+      <NodeActionsCtx.Provider value={{ edit: editNode, remove: (id) => { remove(id); flash('Блок удалён. Вернуть можно кнопкой «Отменить»') } }}>
       <div className="bar">
         <button type="button" className="btn icon" onClick={undo} disabled={!past.length} title="Отменить (⌘Z)" aria-label="Отменить"><Ic d={P.undo} /></button>
         <button type="button" className="btn icon" onClick={redo} disabled={!future.length} title="Повторить (⌘⇧Z)" aria-label="Повторить"><Ic d={P.redo} /></button>
@@ -167,6 +169,7 @@ function Inner({ graph, onChange, counts }: { graph: Graph; onChange: (g: Graph)
         {toast && <div className="toast">{toast}</div>}
       </div>
       {preview && <Preview nodes={nodes} edges={edges} onClose={() => setPreview(false)} />}
+      </NodeActionsCtx.Provider>
     </CountsCtx.Provider>
   )
 }

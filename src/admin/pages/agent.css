@@ -1,10 +1,7 @@
 .agent { max-width: 1240px; }
 .agent .split { display: grid; grid-template-columns: 340px 1fr; gap: 16px; align-items: start; }
 .agent .list { display: flex; flex-direction: column; gap: 8px; }
-.agent .titem { display: block; text-align: left; width: 100%; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 10px 12px; color: inherit; }
-.agent .titem:hover { text-decoration: none; border-color: var(--accent-edge); }
-.agent .titem.on { border-color: var(--accent-edge); box-shadow: inset 0 0 0 1px var(--accent-edge); background: var(--accent-soft); }
-.agent .titem b { display: block; font-size: var(--fs-md); margin-bottom: 4px; }
+.agent .irow.on { border-color: var(--accent-edge); box-shadow: inset 0 0 0 1px var(--accent-edge); background: var(--accent-soft); }
 .agent .steps { display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 0; list-style: none; }
 .agent .step { border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; }
 .agent .step.off { opacity: 0.55; }

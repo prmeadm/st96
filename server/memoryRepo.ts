@@ -126,6 +126,7 @@ export function memoryRepo(): MemoryRepo {
       x.locked = true
       return x
     },
+    async deleteAgentTask(tid) { r.agentTasks = r.agentTasks.filter((x) => x.id !== tid) },
     async releaseAgentTask(tid) { const x = r.agentTasks.find((y) => y.id === tid); if (x) x.locked = false },
     async agentStats(): Promise<AgentStats> {
       const leads30: Record<string, number> = {}

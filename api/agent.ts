@@ -1,12 +1,12 @@
 import { Api } from 'grammy'
 import { requireAdmin, json } from '../server/adminAuth'
 import { agentDeps } from '../server/agent/deps'
-import { approveTask, confirmStep, createTask, rejectTask, reviseTask } from '../server/agent/engine'
+import { approveTask, confirmStep, createTask, deleteTask, rejectTask, reviseTask } from '../server/agent/engine'
 import { supabaseRepo } from '../server/repo'
 
 export const config = { runtime: 'edge' }
 
-// Задания агента из админки (только администраторы): create, revise, approve, confirm, reject.
+// Задания агента из админки (только администраторы): create, revise, approve, confirm, reject, delete.
 // Выполнение утверждённых шагов идёт в api/jobs раз в минуту.
 export default async function handler(req: Request) {
   if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405)
@@ -31,6 +31,7 @@ export default async function handler(req: Request) {
     : b.action === 'approve' ? await approveTask(deps, id, b.on ?? {})
     : b.action === 'confirm' ? await confirmStep(deps, id, b.stepId ?? '')
     : b.action === 'reject' ? await rejectTask(deps, id)
+    : b.action === 'delete' ? await deleteTask(deps, id)
     : null
   if (!r) return json({ error: 'Unknown action' }, 400)
   return r.ok ? json({ ok: true, id: r.task.id, status: r.task.status }) : json({ error: r.error }, r.status)

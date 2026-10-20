@@ -3,6 +3,7 @@ import { supabase } from '../supabase'
 import { fmtDate } from '../types'
 import { TPL_GOALS, TPL_KINDS, TPL_SERVICES, TPL_TASKS, TPL_VARS, type TemplateKind, type TemplateRow } from '../../../server/templates'
 import { MediaField } from '../ui/MediaField'
+import { Icon } from '../ui/Icon'
 import { KIND_OPTIONS, Seg } from '../ui/Seg'
 import './templates.css'
 
@@ -97,7 +98,9 @@ export default function TemplatesPage() {
               <div key={t.id} className="tcard" role="button" tabIndex={0} onClick={() => setEdit({ ...t, body_en: t.body_en ?? '', media_url: t.media_url ?? '' })}
                 onKeyDown={(e) => e.key === 'Enter' && setEdit({ ...t, body_en: t.body_en ?? '', media_url: t.media_url ?? '' })}>
                 <div className="row"><span className="chip">{TPL_KINDS[t.kind]}</span><span className="sp" />
-                  <button className={`star ${t.fav ? 'on' : ''}`} aria-label="Избранное" onClick={(e) => { e.stopPropagation(); void toggleFav(t) }}>{t.fav ? '★' : '☆'}</button></div>
+                  <button className={`star ${t.fav ? 'on' : ''}`} aria-label="Избранное" onClick={(e) => { e.stopPropagation(); void toggleFav(t) }}>{t.fav ? '★' : '☆'}</button>
+                  <button type="button" className="ibtn sm" title="Изменить" aria-label="Изменить" onClick={(e) => { e.stopPropagation(); setEdit({ ...t, body_en: t.body_en ?? '', media_url: t.media_url ?? '' }) }}><Icon name="edit" size={18} /></button>
+                  <button type="button" className="ibtn sm danger" title="Удалить" aria-label="Удалить" onClick={(e) => { e.stopPropagation(); void remove({ ...t, body_en: t.body_en ?? '', media_url: t.media_url ?? '' }) }}><Icon name="trash" size={18} /></button></div>
                 <b>{t.title}</b>
                 <div className="tex">{preview(t.body)}</div>
                 <div className="chips tags"><span className="tg">{t.task}</span><span className="tg">{t.goal}</span>{t.services.map((s) => <span className="tg" key={s}>{s}</span>)}</div>
