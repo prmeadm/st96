@@ -12,7 +12,9 @@ import BroadcastsPage from './pages/BroadcastsPage'
 import BroadcastPage from './pages/BroadcastPage'
 import AgentPage from './pages/AgentPage'
 import SettingsPage from './pages/SettingsPage'
+import BookingPage from './pages/BookingPage'
 import { Icon } from './ui/Icon'
+import { QuickNav } from './ui/QuickNav'
 
 const RAIL_KEY = 'st96-admin-rail'
 const readMin = () => { try { return localStorage.getItem(RAIL_KEY) === 'min' } catch { return false } }
@@ -41,6 +43,7 @@ function Shell() {
         {item('/leads', 'leads', 'Заявки')}
         {item('/funnels', 'funnels', 'Воронки')}
         {item('/broadcasts', 'send', 'Рассылки')}
+        {item('/booking', 'calendar', 'Запись')}
         {item('/templates', 'templates', 'Шаблоны')}
         {item('/agent', 'agent', 'Агент')}
         {item('/notes', 'notes', 'Заметки')}
@@ -49,6 +52,7 @@ function Shell() {
         <button className="out" onClick={signOut} title={min ? 'Выйти' : undefined} aria-label="Выйти"><Icon name="logout" /><span>Выйти</span></button>
       </nav>
       <main className="main">
+        <header className="topbar"><span className="sp" /><QuickNav /></header>
         <div className="page">
           <Routes>
             <Route path="/" element={<Navigate to="/clients" replace />} />
@@ -59,6 +63,7 @@ function Shell() {
             <Route path="/funnels/:id" element={<FunnelPage />} />
             <Route path="/broadcasts" element={<BroadcastsPage />} />
             <Route path="/broadcasts/:id" element={<BroadcastPage />} />
+            <Route path="/booking" element={<BookingPage />} />
             <Route path="/templates" element={<TemplatesPage />} />
             <Route path="/agent" element={<AgentPage />} />
             <Route path="/agent/:id" element={<AgentPage />} />

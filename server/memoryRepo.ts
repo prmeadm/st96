@@ -167,6 +167,7 @@ export function memoryRepo(): MemoryRepo {
       const to = Date.parse(`${toDate}T00:00:00+03:00`) + 86_400_000
       return r.bookings.filter((x) => (x.status === 'pending' || x.status === 'confirmed') && Date.parse(x.starts_at) >= from && Date.parse(x.starts_at) < to)
     },
+    async countUpcomingBookings(cid, from) { return r.bookings.filter((x) => x.client_id === cid && (x.status === 'pending' || x.status === 'confirmed') && x.starts_at >= from).length },
     async countRecentBookings(c, since) {
       return r.bookings.filter((x) => x.created_at >= since && ((c.phone && x.phone === c.phone) || (c.telegram && x.telegram === c.telegram))).length
     },

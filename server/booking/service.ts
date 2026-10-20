@@ -1,11 +1,10 @@
 // Запись на встречу: создание заявки, решение администратора, публичная доступность слотов.
 import { normalizePhone, normalizeTelegram } from '../leads/parse'
 import type { ClientRow, Repo } from '../repo'
-import { FORMAT_KEYS, SERVICE_KEYS, addDays, dayInfo, defaultSchedule, isDate, isTime, minskNow, normalizeSchedule, slotAvailable, tm, toInstant, toLocal, type DayBooking, type DayInfo, type FormatKey, type Schedule, type ServiceKey } from './schedule'
+import { BOOK_ORIGIN, bookingUrl, FORMAT_KEYS, SERVICE_KEYS, addDays, dayInfo, defaultSchedule, isDate, isTime, minskNow, normalizeSchedule, slotAvailable, tm, toInstant, toLocal, type DayBooking, type DayInfo, type FormatKey, type Schedule, type ServiceKey } from './schedule'
 import type { BookingRow } from './types'
 
 export const SCHEDULE_SETTING = 'booking_schedule'
-export const BOOK_ORIGIN = 'https://st96.by'
 
 export async function loadSchedule(repo: Repo): Promise<Schedule> {
   const raw = await repo.getSetting(SCHEDULE_SETTING).catch(() => null)
@@ -129,15 +128,15 @@ export async function setMeetUrl(repo: Repo, id: string, meetUrl: string): Promi
   return { ok: true, booking: { ...b, meet_url: url || null } }
 }
 
-/** Личная ссылка на запись: клиент, пришедший по ней, привязывается к своей карточке. */
-export function bookingUrl(clientId?: string | null, opts: { service?: ServiceKey; format?: FormatKey; run?: string; node?: string } = {}): string {
-  const q = new URLSearchParams()
-  if (clientId) q.set('c', clientId)
-  if (opts.service) q.set('s', opts.service)
-  if (opts.format) q.set('f', opts.format)
-  if (opts.run) q.set('r', opts.run)
-  if (opts.node) q.set('n', opts.node)
-  const s = q.toString()
-  return `${BOOK_ORIGIN}/book${s ? `?${s}` : ''}`
+export { BOOK_ORIGIN, bookingUrl, minskNow, tm }
+
+/** Есть ли хоть один свободный слот в ближайшее время (для условия воронки «Есть свободные слоты»). */
+export async function hasFreeSlots(repo: Repo, now: Date, service: ServiceKey = 'retouch'): Promise<boolean> {
+  const S = await loadSchedule(repo)
+  const today = minskNow(now).date
+  for (const month of [today.slice(0, 7), addDays(today, 31).slice(0, 7)]) {
+    const days = await monthAvailability(repo, S, month, service, null, now)
+    if (Object.values(days).some((d) => d.free > 0)) return true
+  }
+  return false
 }
-export { minskNow, tm }

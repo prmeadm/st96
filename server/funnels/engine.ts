@@ -1,4 +1,6 @@
 // Исполнитель воронок: проводит клиента по схеме. Логика повторяет предпросмотр в конструкторе.
+import { bookingUrl, FORMAT_KEYS, SERVICE_KEYS, type FormatKey, type ServiceKey } from '../booking/schedule'
+import { hasFreeSlots } from '../booking/service'
 import type { ClientRow, Repo } from '../repo'
 import {
   asArray, nextOf, parseDelay, parsePair, str,
@@ -39,7 +41,11 @@ const hm = (s: string) => {
   return m ? parseInt(m[1], 10) * 60 + parseInt(m[2], 10) : null
 }
 
-type CondCtx = { client: ClientRow; tags: string[]; services: string[]; vars: Record<string, unknown>; now: Date }
+type CondCtx = { client: ClientRow; tags: string[]; services: string[]; vars: Record<string, unknown>; now: Date; slotFree: boolean; booked: boolean }
+
+const FORMAT_BY_LABEL: Record<string, FormatKey> = { 'телефонный звонок': 'call', видеозвонок: 'video', 'офлайн встреча': 'offline' }
+const serviceKeyOf = (label: string): ServiceKey | undefined => { const k = SERVICE_ALIASES[label.toLowerCase()] ?? label.toLowerCase(); return (SERVICE_KEYS as readonly string[]).includes(k) ? (k as ServiceKey) : undefined }
+const formatKeyOf = (label: string): FormatKey | undefined => FORMAT_BY_LABEL[label.toLowerCase()] ?? ((FORMAT_KEYS as readonly string[]).includes(label) ? (label as FormatKey) : undefined)
 
 function evalRule(r: Rule, c: CondCtx): boolean {
   const v = str(r.value).trim()
@@ -77,7 +83,9 @@ function evalRule(r: Rule, c: CondCtx): boolean {
       const today = minskNow(c.now).iso
       return iso.length === 1 ? iso[0] === today : iso.length >= 2 ? today >= iso[0]! && today <= iso[1]! : false
     }
-    default: return false // запись и слоты появятся вместе с календарём
+    case 'slot': return c.slotFree
+    case 'booked': return c.booked
+    default: return false
   }
 }
 
@@ -86,6 +94,7 @@ const fill = (text: string, client: ClientRow, vars: Record<string, unknown>) =>
     .replace(/\{имя\}|\{name\}/gi, client.name || client.tg_username || '')
     .replace(/\{компания\}|\{company\}/gi, client.company ?? '')
     .replace(/\{ник\}/gi, client.tg_username ? `@${client.tg_username}` : '')
+    .replace(/\{запись\}|\{booking\}/gi, bookingUrl(client.id))
     .replace(/\{var\.([^}]+)\}/g, (_m, k: string) => String(vars[k] ?? ''))
 
 export async function startFunnel(env: Env, funnel: Funnel, client: ClientRow): Promise<Outcome | null> {
@@ -137,6 +146,29 @@ export async function resumeRun(env: Env, runId: string): Promise<'resumed' | 's
   }
   await env.repo.updateRun(run.id, { status: 'running', wake_at: null, vars: { ...run.vars, __wait: null, __resume: null } })
   await advance(env, funnel, client, { ...run, status: 'running' }, r.node, { itemIndex: r.item, proactive: true })
+  return 'resumed'
+}
+
+/** Продолжение воронки после решения по записи: выход «confirmed» (подтвердили) или «declined» (отклонили / другое время). */
+export async function resumeBooking(env: Env, runId: string, handle: 'confirmed' | 'declined'): Promise<'resumed' | 'skipped'> {
+  const run = await env.repo.getRun(runId)
+  if (!run || run.status !== 'waiting' || run.vars.__wait !== 'booking') return 'skipped'
+  const funnel = await env.repo.getFunnel(run.funnel_id)
+  const client = await env.repo.findClientById(run.client_id)
+  const r = run.vars.__resume as { node: string } | undefined
+  if (!funnel || !client || !r) {
+    await env.repo.updateRun(run.id, { status: 'failed' })
+    return 'skipped'
+  }
+  await env.repo.insertEvent({ run_id: run.id, funnel_id: funnel.id, client_id: client.id, node_id: r.node, event: handle === 'confirmed' ? 'booking_confirmed' : 'booking_declined' })
+  const vars = { ...run.vars, __wait: null, __resume: null }
+  const next = nextOf(funnel.graph, r.node, handle)
+  if (!next) {
+    await env.repo.updateRun(run.id, { status: 'done', vars, finished_at: new Date().toISOString() })
+    return 'resumed'
+  }
+  await env.repo.updateRun(run.id, { status: 'running', wake_at: null, vars })
+  await advance(env, funnel, client, { ...run, status: 'running', vars }, next, { proactive: true })
   return 'resumed'
 }
 
@@ -210,6 +242,8 @@ export async function advance(env: Env, funnel: Funnel, client: ClientRow, run: 
       const ctx: CondCtx = {
         client, vars, now: nowOf(env), tags: await repo.listTags(client.id),
         services: (await repo.listLeads(client.id)).map((l) => l.service_key).filter((x): x is string => !!x),
+        slotFree: rules.some((r) => r.kind === 'slot') ? await hasFreeSlots(repo, nowOf(env)) : false,
+        booked: rules.some((r) => r.kind === 'booked') ? (await repo.countUpcomingBookings(client.id, nowOf(env).toISOString())) > 0 : false,
       }
       const results = rules.map((r) => evalRule(r, ctx))
       const ok = rules.length > 0 && (d.mode === 'any' ? results.some(Boolean) : results.every(Boolean))
@@ -256,12 +290,20 @@ export async function advance(env: Env, funnel: Funnel, client: ClientRow, run: 
     }
 
     if (node.type === 'booking') {
-      // Календарь появится позже: пока запись подбирает администратор
-      if (chat && mayPush) await env.out.sendText(chat, lang === 'en' ? 'Thanks! Our administrator will contact you to pick a time.' : 'Спасибо! Администратор свяжется с вами и подберёт время встречи.')
-      await env.out.notifyAdmins(client, 'Клиент хочет записаться на встречу. Календарь пока не подключён, подберите время вручную.')
-      await repo.updateClient(client.id, { human_until: new Date(nowOf(env).getTime() + HUMAN_MUTE_MS).toISOString() })
-      await event(node.id, 'booking_manual')
-      return finish('stopped')
+      // Клиент выбирает время на странице записи по личной ссылке; воронка ждёт решения администратора
+      if (!chat || !mayPush) {
+        await event(node.id, 'booking_skipped_no_consent')
+        return finish('done')
+      }
+      const sv = asArray<string>(d.services).map(serviceKeyOf).filter((x): x is ServiceKey => !!x)
+      const fm = asArray<string>(d.formats).map(formatKeyOf).filter((x): x is FormatKey => !!x)
+      const url = bookingUrl(client.id, { service: sv.length === 1 ? sv[0] : undefined, format: fm.length === 1 ? fm[0] : undefined, run: run.id, node: node.id })
+      const text = fill(str(lang === 'en' && d.messageEn ? d.messageEn : d.message) || (lang === 'en' ? 'Pick a convenient time for the meeting:' : 'Выберите удобное время для встречи:'), client, vars)
+      await env.out.sendText(chat, text, [[{ text: lang === 'en' ? 'Choose a time' : 'Выбрать время', url }]])
+      await repo.insertMessage({ client_id: client.id, direction: 'out', kind: 'text', text, tg_chat_id: chat, tg_message_id: null })
+      await repo.updateRun(run.id, { status: 'waiting', current_node: node.id, vars: { ...vars, __wait: 'booking', __resume: { node: node.id } } })
+      await event(node.id, 'booking_link')
+      return 'waiting_input'
     }
 
     if (node.type === 'ai') {

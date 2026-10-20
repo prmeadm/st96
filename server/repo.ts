@@ -132,6 +132,8 @@ export interface Repo {
   updateBooking(id: string, patch: Partial<Pick<BookingRow, 'status' | 'meet_url' | 'decided_at' | 'reminded_at'>>): Promise<void>
   /** Активные (на рассмотрении и подтверждённые) заявки в интервале дат по Минску, включительно */
   listActiveBookings(fromDate: string, toDate: string): Promise<BookingRow[]>
+  /** Сколько у клиента будущих заявок (на рассмотрении или подтверждённых) */
+  countUpcomingBookings(clientId: string, fromIso: string): Promise<number>
   countRecentBookings(contact: { phone?: string | null; telegram?: string | null }, sinceIso: string): Promise<number>
   listDueReminders(fromIso: string, toIso: string): Promise<BookingRow[]>
   // настройки платформы
@@ -382,6 +384,11 @@ export function supabaseRepo(url: string, key: string): Repo {
       const from = new Date(`${fromDate}T00:00:00+03:00`).toISOString()
       const to = new Date(new Date(`${toDate}T00:00:00+03:00`).getTime() + 86_400_000).toISOString()
       return (ok(await db.from('bookings').select('*').in('status', ['pending', 'confirmed']).gte('starts_at', from).lt('starts_at', to).order('starts_at'), 'listActiveBookings') ?? []) as BookingRow[]
+    },
+    async countUpcomingBookings(clientId, fromIso) {
+      const r = await db.from('bookings').select('id', { count: 'exact', head: true }).eq('client_id', clientId).in('status', ['pending', 'confirmed']).gte('starts_at', fromIso)
+      if (r.error) throw new Error(`countUpcomingBookings: ${r.error.message}`)
+      return r.count ?? 0
     },
     async countRecentBookings(contact, sinceIso) {
       const conds = [contact.phone ? `phone.eq.${contact.phone}` : '', contact.telegram ? `telegram.eq.${contact.telegram}` : ''].filter(Boolean)

@@ -102,7 +102,7 @@ export function Editor({ node, patch, remove, duplicate, close }: { node: Node; 
         <div className="ih"><span>{PART_NAMES[p.kind] ?? 'Блок'}</span>
           <button type="button" className="x" onClick={() => set({ parts: d.parts.filter((x: D) => x.id !== p.id) })} aria-label="Удалить" title="Удалить"><Ic d={P.close} size={14} /></button></div>
         {p.kind === 'text' ? (<>
-          <textarea value={p.text ?? ''} placeholder="Текст сообщения. Можно {имя} и {компания}" onChange={(e) => set({ parts: d.parts.map((x: D) => x.id === p.id ? { ...x, text: e.target.value } : x) })} />
+          <textarea value={p.text ?? ''} placeholder="Текст сообщения. Можно {имя}, {компания}, {запись}" onChange={(e) => set({ parts: d.parts.map((x: D) => x.id === p.id ? { ...x, text: e.target.value } : x) })} />
           <div className="lblrow"><span className="hint">English</span><TranslateButton source={p.text ?? ''} target={p.en ?? ''} onDone={(t) => set({ parts: d.parts.map((x: D) => x.id === p.id ? { ...x, en: t } : x) })} /></div>
           <textarea className="en" value={p.en ?? ''} placeholder="English (необязательно, для клиентов с английским)" onChange={(e) => set({ parts: d.parts.map((x: D) => x.id === p.id ? { ...x, en: e.target.value } : x) })} />
         </>) : (
@@ -154,7 +154,9 @@ export function Editor({ node, patch, remove, duplicate, close }: { node: Node; 
             ? <select value={r.value} onChange={(e) => upd({ value: e.target.value })}><option value="">Выберите услугу</option>{SERVICES.map((s) => <option key={s}>{s}</option>)}</select>
             : r.kind === 'day'
               ? <select value={r.value} onChange={(e) => upd({ value: e.target.value })}><option value="">День недели</option>{DAYS.map((s) => <option key={s}>{s}</option>)}</select>
-              : <input type="text" value={r.value ?? ''} placeholder={COND_HINT[r.kind]} onChange={(e) => upd({ value: e.target.value })} />}
+              : r.kind === 'slot' || r.kind === 'booked'
+                ? <div className="hint">Проверяется автоматически по расписанию и заявкам клиента.</div>
+                : <input type="text" value={r.value ?? ''} placeholder={COND_HINT[r.kind]} onChange={(e) => upd({ value: e.target.value })} />}
         </div>
       )
     })}
@@ -176,11 +178,15 @@ export function Editor({ node, patch, remove, duplicate, close }: { node: Node; 
   </>)
 
   if (type === 'booking') body = (<>
-    <div className="aibox teal">Календарь с выбором времени появится позже. Сейчас этот блок передаёт диалог администратору, он согласует встречу в теме клиента.</div>
+    <div className="aibox teal">Клиент получает кнопку «Выбрать время» с личной ссылкой на календарь. Воронка ждёт решения администратора: по выходу «Админ подтвердил» или «Админ отклонил / другое время».</div>
+    <Field label="Сообщение клиенту"><textarea value={d.message ?? ''} placeholder="Выберите удобное время для встречи:" onChange={(e) => set({ message: e.target.value })} /></Field>
+    <div className="lblrow"><span className="hint">English</span><TranslateButton source={d.message ?? ''} target={d.messageEn ?? ''} onDone={(t) => set({ messageEn: t })} /></div>
+    <textarea className="en" value={d.messageEn ?? ''} placeholder="English (необязательно)" onChange={(e) => set({ messageEn: e.target.value })} />
     <div className="h2">Услуги на выбор</div>
     {SERVICES.map((s) => <Check key={s} checked={d.services.includes(s)} onChange={(v) => set({ services: v ? [...d.services, s] : d.services.filter((x: string) => x !== s) })}>{s}</Check>)}
     <div className="h2">Форматы</div>
     {FORMATS.map((s) => <Check key={s} checked={d.formats.includes(s)} onChange={(v) => set({ formats: v ? [...d.formats, s] : d.formats.filter((x: string) => x !== s) })}>{s}</Check>)}
+    <div className="hint">Если выбрана одна услуга или один формат, они подставятся в форму заранее. Рабочие часы и правила задаются в разделе «Запись».</div>
   </>)
 
   if (type === 'handoff') body = (<>

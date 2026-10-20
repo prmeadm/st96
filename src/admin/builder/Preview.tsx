@@ -35,7 +35,11 @@ export function Preview({ nodes, edges, onClose }: { nodes: Node[]; edges: Edge[
         choices = [{ label: 'Условие выполнено (демо)', target: next(n.id, 'yes') }, { label: 'Не выполнено (демо)', target: next(n.id, 'no') }]; break
       }
       if (n.type === 'action') { d.items.forEach((a: D) => items.push({ k: 'sys', t: 'Действие: ' + actText(a) })); id = next(id, 'out'); continue }
-      if (n.type === 'booking') { items.push({ k: 'sys', t: 'Запись на встречу: диалог передан администратору' }); handed = true; break }
+      if (n.type === 'booking') {
+        items.push({ k: 'bot', parts: [{ id: 'bk', kind: 'text', text: d.message || 'Выберите удобное время для встречи:' }], links: [{ id: 'bl', label: 'Выбрать время', url: '#' }] })
+        choices = [{ label: 'Админ подтвердил (демо)', target: next(n.id, 'confirmed') }, { label: 'Админ отклонил (демо)', target: next(n.id, 'declined') }]
+        break
+      }
       if (n.type === 'handoff') { items.push({ k: 'bot', parts: [{ id: 'h', kind: 'text', text: d.message }], links: [] }); items.push({ k: 'sys', t: 'Диалог передан администратору' }); handed = true; break }
       if (n.type === 'ai') { items.push({ k: 'sys', t: 'ИИ пока не подключён: шаг пропущен' }); id = next(id, 'out'); continue }
       break

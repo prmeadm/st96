@@ -2,22 +2,10 @@
 import { InlineKeyboard, InputFile, type Api } from 'grammy'
 import type { ClientRow, Repo } from '../repo'
 import { buildIcs } from './ics'
-import { FORMAT_LABEL, SERVICE_LABEL, toLocal } from './schedule'
-import { bookingUrl } from './service'
+import { FORMAT_LABEL, SERVICE_LABEL, bookingUrl, whenLabel } from './schedule'
 import type { BookingRow } from './types'
 
-const MONTHS = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря']
-const MONTHS_EN = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-const DOW_RU = ['пн', 'вт', 'ср', 'чт', 'пт', 'сб', 'вс']
-const DOW_EN = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-
-export function whenLabel(iso: string, lang: 'ru' | 'en' = 'ru'): string {
-  const { date, min } = toLocal(iso)
-  const [y, m, d] = date.split('-').map(Number)
-  const dow = (new Date(Date.UTC(y!, m! - 1, d!)).getUTCDay() + 6) % 7
-  const t = `${String(Math.floor(min / 60)).padStart(2, '0')}:${String(min % 60).padStart(2, '0')}`
-  return lang === 'en' ? `${DOW_EN[dow]}, ${MONTHS_EN[m! - 1]} ${d}, ${t} (Minsk)` : `${d} ${MONTHS[m! - 1]}, ${DOW_RU[dow]}, ${t} (Минск)`
-}
+export { whenLabel }
 const minutes = (b: BookingRow) => Math.round((Date.parse(b.ends_at) - Date.parse(b.starts_at)) / 60_000)
 
 export function adminText(b: BookingRow): string {

@@ -10,6 +10,7 @@ const adminFallback = (): Plugin => ({
     server.middlewares.use((req, _res, next) => {
       const url = req.url ?? ''
       if (/^\/admin(\/|$|\?)/.test(url) && !/\.[a-z0-9]+(\?|$)/i.test(url.split('?')[0])) req.url = '/admin/index.html'
+      else if (/^\/book(\/|$|\?)/.test(url) && !/\.[a-z0-9]+(\?|$)/i.test(url.split('?')[0])) req.url = '/book/index.html'
       next()
     })
   },
@@ -20,7 +21,7 @@ export default defineConfig({
   plugins: [react(), tailwindcss(), adminFallback()],
   build: {
     rollupOptions: {
-      input: { main: resolve(__dirname, 'index.html'), admin: resolve(__dirname, 'admin/index.html') },
+      input: { main: resolve(__dirname, 'index.html'), admin: resolve(__dirname, 'admin/index.html'), book: resolve(__dirname, 'book/index.html') },
     },
   },
 })

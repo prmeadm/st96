@@ -109,7 +109,7 @@ function BookingNode({ id, data, selected }: any) {
     <Shell id={id} type="booking" selected={selected} data={data}>
       <div className="bubble">Услуги: {data.services.join(', ') || '—'}</div>
       <div className="media">{data.formats.join(' · ') || 'Форматы не выбраны'}</div>
-      <div className="warn">Пока передаёт диалог администратору</div>
+      <div className="bubble">Клиент выбирает время по ссылке</div>
       <OutHandle id="confirmed" label="Админ подтвердил" cls="yes" />
       <OutHandle id="declined" label="Админ отклонил / другое время" cls="no" />
     </Shell>

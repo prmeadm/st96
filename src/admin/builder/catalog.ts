@@ -35,7 +35,7 @@ export const TYPES: Record<string, { name: string; color: string; soft: string; 
   message: { name: 'Сообщение', color: 'var(--blue)', soft: 'var(--blue-soft)', icon: P.msg, d: 'Текст, фото, видео, аудио, файл, кнопки и быстрые ответы' },
   condition: { name: 'Условие', color: 'var(--green)', soft: 'var(--green-soft)', icon: P.filter, d: 'Ветвление по тегам, услуге, времени, данным клиента' },
   action: { name: 'Действие', color: 'var(--amber)', soft: 'var(--amber-soft)', icon: P.bolt, d: 'Задержка, теги, переменные, уведомление админу' },
-  booking: { name: 'Запись на встречу', color: 'var(--teal)', soft: 'var(--teal-soft)', icon: P.cal2, d: 'Пока передаёт диалог администратору (календарь будет позже)' },
+  booking: { name: 'Запись на встречу', color: 'var(--teal)', soft: 'var(--teal-soft)', icon: P.cal2, d: 'Клиент получает личную ссылку на календарь и выбирает время; воронка ждёт решения администратора' },
   handoff: { name: 'Передать человеку', color: 'var(--red)', soft: 'var(--red-soft)', icon: P.hand, d: 'Остановить бота и уведомить администратора' },
   ai: { name: 'ИИ-ответ', color: 'var(--violet)', soft: 'var(--violet-soft)', icon: P.ai },
   note: { name: 'Заметка', color: 'var(--violet)', soft: 'var(--violet-soft)', icon: P.note, d: 'Комментарий на схеме, клиент его не видит' },
@@ -51,6 +51,8 @@ export const COND_TYPES = [
   { k: 'time', n: 'Время (Минск)', g: 'Время' },
   { k: 'day', n: 'День недели', g: 'Время' },
   { k: 'date', n: 'Дата', g: 'Время' },
+  { k: 'slot', n: 'Есть свободные слоты записи', g: 'Запись' },
+  { k: 'booked', n: 'Клиент уже записан на встречу', g: 'Запись' },
 ]
 export const ACT_TYPES = [
   { k: 'delay', n: 'Задержка', g: 'Популярные' },
@@ -95,7 +97,7 @@ export function newData(type: string): D {
     message: { parts: [{ id: uid('p'), kind: 'text', text: '' }], quick: [], links: [] },
     condition: { mode: 'all', rules: [] },
     action: { items: [] },
-    booking: { services: SERVICES.slice(0, 3), formats: FORMATS, meet: true },
+    booking: { services: SERVICES.slice(0, 3), formats: FORMATS, meet: true, message: '', messageEn: '' },
     handoff: { message: 'Передаю ваш вопрос администратору, он ответит в ближайшее время.', notify: true },
     note: { text: '' },
   } as Record<string, D>)[type] ?? {}

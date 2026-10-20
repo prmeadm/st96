@@ -9,7 +9,7 @@ import { KIND_OPTIONS, Seg } from '../ui/Seg'
 import './templates.css'
 
 const SAMPLE = { name: 'Анна', tg_username: 'anna', company: 'Студия «Лето»' }
-const preview = (s: string) => s.replace(/\{имя\}/gi, SAMPLE.name).replace(/\{компания\}/gi, SAMPLE.company).replace(/\{ник\}/gi, `@${SAMPLE.tg_username}`)
+const preview = (s: string) => s.replace(/\{имя\}/gi, SAMPLE.name).replace(/\{компания\}/gi, SAMPLE.company).replace(/\{ник\}/gi, `@${SAMPLE.tg_username}`).replace(/\{запись\}/gi, 'https://st96.by/book?c=…')
 const blank = (): Draft => ({ kind: 'text', title: '', body: '', body_en: '', media_url: '', task: TPL_TASKS[0]!, goal: TPL_GOALS[0]!, services: [], fav: false })
 type Draft = Omit<TemplateRow, 'id' | 'used' | 'updated_at' | 'body_en' | 'media_url'> & { id?: string; body_en: string; media_url: string }
 type Filters = { task: string[]; goal: string[]; service: string[] }

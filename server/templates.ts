@@ -1,3 +1,4 @@
+import { bookingUrl } from './booking/schedule'
 // Шаблоны сообщений: общие типы и константы для админки и бота.
 export type TemplateKind = 'text' | 'photo' | 'video' | 'voice' | 'audio' | 'file'
 export type TemplateRow = {
@@ -19,11 +20,12 @@ export const TPL_KINDS: Record<TemplateKind, string> = { text: 'Текст', pho
 export const TPL_TASKS = ['Первое касание', 'Напоминание', 'Дожим', 'После встречи', 'Ответ на вопрос', 'Рассылка']
 export const TPL_GOALS = ['Привлечь заявку', 'Прогреть', 'Записать на встречу', 'Вернуть клиента', 'Собрать отзыв', 'Информировать']
 export const TPL_SERVICES = ['Общее', 'Нейрофотосессия', 'Ретушь', 'Цветокоррекция', 'Съёмка', 'Цифровой офис', 'Продакшн']
-export const TPL_VARS = ['{имя}', '{компания}', '{ник}']
+export const TPL_VARS = ['{имя}', '{компания}', '{ник}', '{запись}']
 
 /** Подстановка переменных клиента; та же, что в воронках */
-export const fillTemplate = (text: string, c: { name: string | null; tg_username: string | null; company: string | null }) =>
+export const fillTemplate = (text: string, c: { id?: string; name: string | null; tg_username: string | null; company: string | null }) =>
   text
     .replace(/\{имя\}|\{name\}/gi, c.name || c.tg_username || '')
     .replace(/\{компания\}|\{company\}/gi, c.company ?? '')
     .replace(/\{ник\}/gi, c.tg_username ? `@${c.tg_username}` : '')
+    .replace(/\{запись\}|\{booking\}/gi, bookingUrl(c.id))

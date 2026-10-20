@@ -41,7 +41,7 @@ export function validateGraph(g: unknown): { errors: Issue[]; warnings: Issue[] 
         if (['http', 'goto', 'task', 'collect'].includes(a.kind)) warnings.push({ node: n.id, text: `Действие «${a.kind}» пока не выполняется и будет пропущено` })
       }
     }
-    if (n.type === 'booking') warnings.push({ node: n.id, text: 'Запись на встречу пока передаёт диалог администратору (календарь будет позже)' })
+    if (n.type === 'booking' && !graph.edges.some((e) => e.source === n.id)) warnings.push({ node: n.id, text: 'У блока записи не подключены выходы: после решения воронка закончится' })
     if (n.type === 'ai') warnings.push({ node: n.id, text: 'ИИ-ответ пока пропускается' })
   }
   return { errors, warnings }

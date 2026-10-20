@@ -2,7 +2,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { memoryRepo } from '../memoryRepo'
 import type { ClientRow } from '../repo'
-import { handleClick, handleFreeText, resumeRun, startFunnel, type Env, type Out } from './engine'
+import { handleClick, handleFreeText, resumeBooking, resumeRun, startFunnel, type Env, type Out } from './engine'
 import { demoGraph } from './demo'
 import { pickFunnel } from './triggers'
 import { TRIGGER, type Funnel, type Graph } from './types'
@@ -46,16 +46,19 @@ test('старт: приветствие с кнопками, подстанов
   assert.ok(repo.messages.some((m) => m.direction === 'out'))
 })
 
-test('кнопка «Услуги»: ответ со ссылкой, затем запись передаётся администратору', async () => {
+test('кнопка «Услуги»: ответ со ссылкой, затем блок записи даёт личную ссылку и ждёт решения', async () => {
   const { repo, calls, env, funnel, clientP } = setup()
   const client = await clientP
   await startFunnel(env, funnel, client)
   const run = repo.runs[0]
   assert.equal(await handleClick(env, client, run, 'q1'), 'ok')
   assert.ok(only(calls, 'text').some((c) => /Наши услуги/.test(c.text!) && JSON.stringify(c.buttons).includes('st96.by')))
-  assert.ok(only(calls, 'notify').some((c) => /записаться/.test(c.text!)))
-  assert.equal(repo.runs[0].status, 'stopped')
-  assert.ok(repo.clients[0].human_until)
+  const link = only(calls, 'text').find((c) => /Выберите удобное время/.test(c.text!))!
+  assert.ok(link, 'клиент получил сообщение с выбором времени')
+  assert.match(JSON.stringify(link.buttons), new RegExp(`https://st96.by/book\\?c=${client.id}&(?:s=[a-z_]+&)?r=${run.id}&n=b1`))
+  assert.equal(repo.runs[0].status, 'waiting')
+  assert.equal(repo.runs[0].vars.__wait, 'booking')
+  assert.ok(!repo.clients[0].human_until, 'бот не замолкает: ждём запись, а не человека')
   assert.ok(repo.events.some((e) => e.event === 'click' && e.data?.quick === 'q1'))
 })
 
@@ -202,11 +205,52 @@ test('выбор воронки по триггеру', () => {
 test('проверка схемы: демо без ошибок, битая схема с ошибками', () => {
   const ok = validateGraph(demoGraph)
   assert.equal(ok.errors.length, 0)
-  assert.ok(ok.warnings.some((w) => /Запись на встречу/.test(w.text)))
+  assert.ok(ok.warnings.every((w) => !/блока записи/.test(w.text)), 'у демо выходы записи подключены')
+  assert.ok(validateGraph(g([start(), { id: 'b', type: 'booking', data: { services: [], formats: [] } }], [E('start', 'out', 'b')])).warnings.some((w) => /блока записи/.test(w.text)))
   const bad = validateGraph(g([start([]), { id: 'm', type: 'message', data: { parts: [{ id: 'p', kind: 'text', text: ' ' }] } }, { id: 'a', type: 'action', data: { items: [{ id: 'x', kind: 'delay', value: 'скоро' }] } }], [E('start', 'out', 'zzz')]))
   const texts = bad.errors.map((e) => e.text).join(' | ')
   assert.match(texts, /триггер/)
   assert.match(texts, /Пустое сообщение/)
   assert.match(texts, /задержку/)
   assert.match(texts, /несуществующий/)
+})
+
+
+test('запись из воронки: подтверждение продолжает по выходу «подтвердил», отклонение передаёт человеку', async () => {
+  const graph = g([start(), { id: 'b', type: 'booking', data: { services: ['Ретушь'], formats: ['Видеозвонок'], message: 'Запишитесь, {имя}' } }, msg('ok', 'Ждём вас!'), msg('no', 'Подберём другое время')], [E('start', 'out', 'b'), E('b', 'confirmed', 'ok'), E('b', 'declined', 'no')])
+  const a = setup(graph)
+  const client = await a.clientP
+  assert.equal(await startFunnel(a.env, a.funnel, client), 'waiting_input')
+  const first = only(a.calls, 'text')[0]!
+  assert.match(first.text!, /Запишитесь, Мария/)
+  assert.match(JSON.stringify(first.buttons), /s=retouch&f=video&r=/, 'одна услуга и один формат попадают в ссылку')
+  const runId = a.repo.runs[0].id
+  assert.equal(await resumeBooking(a.env, runId, 'confirmed'), 'resumed')
+  assert.ok(only(a.calls, 'text').some((c) => /Ждём вас/.test(c.text!)))
+  assert.equal(a.repo.runs[0].status, 'done')
+  assert.equal(await resumeBooking(a.env, runId, 'confirmed'), 'skipped', 'повторное решение игнорируется')
+
+  const b = setup(graph)
+  await startFunnel(b.env, b.funnel, await b.clientP)
+  await resumeBooking(b.env, b.repo.runs[0].id, 'declined')
+  assert.ok(only(b.calls, 'text').some((c) => /другое время/.test(c.text!)))
+})
+
+test('условия записи: «есть свободные слоты» и «клиент уже записан»; {запись} подставляет личную ссылку', async () => {
+  const graph = g([
+    start(),
+    { id: 'c', type: 'condition', data: { mode: 'all', rules: [{ id: 'r1', kind: 'slot', value: '' }, { id: 'r2', kind: 'booked', value: '' }] } },
+    msg('yes', 'Вы уже записаны'), msg('no', 'Запишитесь: {запись}'),
+  ], [E('start', 'out', 'c'), E('c', 'yes', 'yes'), E('c', 'no', 'no')])
+  const a = setup(graph)
+  a.setNow(new Date('2026-10-20T06:00:00Z'))
+  const client = await a.clientP
+  await startFunnel(a.env, a.funnel, client)
+  assert.match(only(a.calls, 'text')[0]!.text!, new RegExp(`Запишитесь: https://st96.by/book\\?c=${client.id}`))
+  // записываем клиента: условие «записан» становится истинным
+  a.repo.bookings.push({ id: 'b1', client_id: client.id, run_id: null, run_node: null, service: 'retouch', format: 'call', starts_at: '2026-10-22T08:00:00.000Z', ends_at: '2026-10-22T08:30:00.000Z', name: 'М', company: null, telegram: null, phone: null, goal: null, comment: null, status: 'pending', meet_url: null, source: 'site', reminded_at: null, created_at: '', decided_at: null })
+  a.calls.length = 0
+  const f2: Funnel = { ...a.funnel, id: 'f2' }
+  await startFunnel(a.env, f2, client)
+  assert.match(only(a.calls, 'text')[0]!.text!, /Вы уже записаны/)
 })

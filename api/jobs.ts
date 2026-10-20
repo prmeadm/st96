@@ -1,5 +1,5 @@
 import { Api } from 'grammy'
-import { resumeRun } from '../server/funnels/engine'
+import { resumeBooking, resumeRun } from '../server/funnels/engine'
 import { telegramOut } from '../server/bot/telegramOut'
 import { supabaseRepo } from '../server/repo'
 import { tickBroadcasts } from '../server/broadcasts'
@@ -26,6 +26,7 @@ export default async function handler(req: Request) {
   for (const job of jobs) {
     try {
       if (job.kind === 'resume_run') await resumeRun(env, String(job.payload.runId))
+      if (job.kind === 'booking_resume') await resumeBooking(env, String(job.payload.runId), job.payload.handle === 'confirmed' ? 'confirmed' : 'declined')
       await repo.finishJob(job.id)
       done++
     } catch (e) {
