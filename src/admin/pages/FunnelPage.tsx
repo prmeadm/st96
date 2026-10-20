@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { validateGraph } from '../../../server/funnels/validate'
+import type { Graph } from '../../../server/funnels/types'
+import { Builder } from '../builder/Builder'
 import { supabase } from '../supabase'
 import { FUNNEL_STATUS } from './FunnelsPage'
 
@@ -16,6 +18,8 @@ export default function FunnelPage() {
   const [json, setJson] = useState('')
   const [msg, setMsg] = useState('')
   const [stats, setStats] = useState<Stat[]>([])
+  const [tab, setTab] = useState<'builder' | 'json'>('builder')
+  const [bkey, setBkey] = useState(0)
 
   useEffect(() => {
     if (!id) return
@@ -41,6 +45,9 @@ export default function FunnelPage() {
   }, [json])
   const check = useMemo(() => (parsed.graph ? validateGraph(parsed.graph) : { errors: [], warnings: [] }), [parsed])
   const invalid = !!parsed.error || check.errors.length > 0
+  const graphOk = !!parsed.graph && Array.isArray((parsed.graph as Graph).nodes) && Array.isArray((parsed.graph as Graph).edges)
+  const counts = useMemo(() => Object.fromEntries(stats.map((s) => [s.node, s.enter])), [stats])
+  const showTab = (t: 'builder' | 'json') => { if (t === 'builder') setBkey((k) => k + 1); setTab(t) }
 
   const save = async (nextStatus: Funnel['status']) => {
     if (!f || !parsed.graph) return
@@ -62,22 +69,32 @@ export default function FunnelPage() {
 
   if (!f) return <div className="wrap"><Link to="/funnels">← Воронки</Link><div className={msg ? 'err' : 'empty'}>{msg || 'Загрузка…'}</div></div>
 
+  const builderOn = tab === 'builder' && graphOk
   return (
-    <div className="wrap">
+    <div className="wrap" style={builderOn ? { maxWidth: 'none' } : undefined}>
       <Link to="/funnels">← Воронки</Link>
       <h1 className="h1">{name || 'Воронка'} <span className={`chip ${status === 'published' ? 'green' : ''}`}>{FUNNEL_STATUS[status]}</span></h1>
       <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         <div className="fld"><label>Название</label><input value={name} onChange={(e) => setName(e.target.value)} /></div>
-        <div className="fld"><label>Схема (JSON: блоки nodes и связи edges)</label><textarea className="code" rows={22} spellCheck={false} value={json} onChange={(e) => setJson(e.target.value)} /></div>
+        <div className="row">
+          <div className="chips">
+            <button type="button" className={tab === 'builder' ? 'on' : ''} disabled={!graphOk} onClick={() => showTab('builder')}>Конструктор</button>
+            <button type="button" className={tab === 'json' ? 'on' : ''} onClick={() => showTab('json')}>JSON</button>
+          </div>
+          <span className="sp" />
+          <button className="btn" disabled={!!parsed.error} onClick={() => save(status === 'published' ? 'published' : 'draft')}>Сохранить</button>
+          {status !== 'published'
+            ? <button className="btn primary" disabled={invalid} onClick={() => save('published')}>Сохранить и опубликовать</button>
+            : <button className="btn" onClick={() => save('draft')}>Снять с публикации</button>}
+        </div>
+        {builderOn
+          ? <Builder key={bkey} graph={parsed.graph as Graph} counts={counts} onChange={(g) => setJson(JSON.stringify(g, null, 2))} />
+          : <div className="fld"><label>Схема (JSON: блоки nodes и связи edges)</label><textarea className="code" rows={22} spellCheck={false} value={json} onChange={(e) => setJson(e.target.value)} /></div>}
         {parsed.error && <div className="err" role="alert">JSON: {parsed.error}</div>}
         {check.errors.map((e, i) => <div key={i} className="err">Ошибка{e.node ? ` (блок ${e.node})` : ''}: {e.text}</div>)}
         {check.warnings.map((e, i) => <div key={i} className="hint">Внимание{e.node ? ` (блок ${e.node})` : ''}: {e.text}</div>)}
         {!invalid && <div className="hint">Схема корректна.</div>}
         <div className="row">
-          <button className="btn" disabled={!!parsed.error} onClick={() => save(status === 'published' ? 'published' : 'draft')}>Сохранить</button>
-          {status !== 'published'
-            ? <button className="btn primary" disabled={invalid} onClick={() => save('published')}>Сохранить и опубликовать</button>
-            : <button className="btn" onClick={() => save('draft')}>Снять с публикации</button>}
           <span className="sp" />
           <button className="btn" style={{ color: 'var(--red)' }} onClick={remove}>Удалить</button>
         </div>

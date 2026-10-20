@@ -1,0 +1,160 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { useState, type ReactNode } from 'react'
+import type { Node } from '@xyflow/react'
+import { TRIGGER } from '../../../server/funnels/types'
+import { ACT_TYPES, COND_TYPES, DAYS, FORMATS, P, SERVICES, TRIGGERS, TYPES, uid, type D } from './catalog'
+import { Ic } from './Nodes'
+
+const Field = ({ label, children }: { label: string; children: ReactNode }) => <div className="fld"><label>{label}</label>{children}</div>
+const Seg = ({ value, options, onChange }: { value: string; options: [string, string][]; onChange: (v: string) => void }) => (
+  <div className="seg">{options.map(([v, l]) => <button type="button" key={v} className={value === v ? 'on' : ''} onClick={() => onChange(v)}>{l}</button>)}</div>
+)
+const Check = ({ checked, onChange, children }: { checked: boolean; onChange: (v: boolean) => void; children: ReactNode }) => (
+  <label className="chk"><input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} />{children}</label>
+)
+
+function Grouped({ items, onPick, label }: { items: { k: string; n: string; g: string }[]; onPick: (k: string) => void; label: string }) {
+  const [open, setOpen] = useState(false)
+  const groups = [...new Set(items.map((i) => i.g))]
+  return (
+    <div style={{ position: 'relative' }}>
+      <button type="button" className="btn" style={{ width: '100%', justifyContent: 'center' }} onClick={() => setOpen(!open)}><Ic d={P.plus} size={14} /> {label}</button>
+      {open && (
+        <div className="menu" style={{ bottom: 'auto', top: 44, left: 0, transform: 'none', width: '100%', maxHeight: 320, overflow: 'auto' }}>
+          {groups.map((g) => (
+            <div key={g}><div className="sep">{g}</div>
+              {items.filter((i) => i.g === g).map((i) => <button type="button" key={i.k} onClick={() => { onPick(i.k); setOpen(false) }}><b style={{ fontWeight: 500 }}>{i.n}</b></button>)}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+const PART_NAMES: Record<string, string> = { text: 'Текст', image: 'Фото', video: 'Видео', audio: 'Аудио', file: 'Файл' }
+const ACT_HINT: Record<string, string> = {
+  delay: 'Например: 2 часа, 30 мин, 1 день', notify: 'Текст уведомления, можно {имя}', addtag: 'Теги через запятую', deltag: 'Теги через запятую',
+  segment: 'Название сегмента', setvar: 'ключ = значение', conv: 'Название цели',
+}
+const COND_HINT: Record<string, string> = {
+  tag: 'Тег, например VIP', field: 'Поле = значение (имя, телефон, компания, email, язык, ник, источник; * = заполнено)', var: 'Переменная = значение', time: 'С 10:00 до 18:00', date: '2026-10-25 или 2026-10-25 — 2026-10-30',
+}
+
+export function Editor({ node, patch, remove, duplicate, close }: { node: Node; patch: (id: string, p: D) => void; remove: (id: string) => void; duplicate: (id: string) => void; close: () => void }) {
+  const d: D = node.data
+  const type = node.type as string
+  const t = TYPES[type]
+  const set = (p: D) => patch(node.id, p)
+  let body: ReactNode = null
+
+  if (type === 'start') body = (<>
+    <div className="h2">Когда запускать воронку</div>
+    {TRIGGERS.map((x) => (
+      <Check key={x} checked={d.triggers.includes(x)} onChange={(v) => set({ triggers: v ? [...d.triggers, x] : d.triggers.filter((y: string) => y !== x) })}>{x}</Check>
+    ))}
+    {d.triggers.includes(TRIGGER.keyword) && <Field label="Ключевые слова (через запятую, лучше основы)"><input type="text" value={d.keyword} onChange={(e) => set({ keyword: e.target.value })} placeholder="цен, прайс, запис" /></Field>}
+    <Check checked={!!d.once} onChange={(v) => set({ once: v })}>Не запускать повторно для одного клиента</Check>
+  </>)
+
+  if (type === 'message') body = (<>
+    <div className="h2">Содержимое</div>
+    {d.parts.map((p: D) => (
+      <div className="item" key={p.id}>
+        <div className="ih"><span>{PART_NAMES[p.kind] ?? 'Блок'}</span>
+          <button type="button" className="x" onClick={() => set({ parts: d.parts.filter((x: D) => x.id !== p.id) })}>✕</button></div>
+        {p.kind === 'text' ? (<>
+          <textarea value={p.text ?? ''} placeholder="Текст сообщения. Можно {имя} и {компания}" onChange={(e) => set({ parts: d.parts.map((x: D) => x.id === p.id ? { ...x, text: e.target.value } : x) })} />
+          <textarea className="en" value={p.en ?? ''} placeholder="English (необязательно, для клиентов с английским)" onChange={(e) => set({ parts: d.parts.map((x: D) => x.id === p.id ? { ...x, en: e.target.value } : x) })} />
+        </>) : (
+          <input type="url" value={p.url ?? ''} placeholder="https://… ссылка на файл" onChange={(e) => set({ parts: d.parts.map((x: D) => x.id === p.id ? { ...x, url: e.target.value } : x) })} />
+        )}
+      </div>
+    ))}
+    <div className="addrow">
+      {[['text', '+ Текст'], ['image', '+ Фото'], ['video', '+ Видео'], ['audio', '+ Аудио'], ['file', '+ Файл']].map(([k, l]) =>
+        <button type="button" key={k} onClick={() => set({ parts: [...d.parts, { id: uid('p'), kind: k, text: '', url: '' }] })}>{l}</button>)}
+    </div>
+    <div className="hint">Загрузка файлов появится позже: пока вставляйте прямую ссылку на фото, видео или файл.</div>
+    <div className="h2">Быстрые ответы</div>
+    <div className="hint">Каждый ответ получает свой выход: тяните связь к следующему блоку.</div>
+    {d.quick.map((q: D) => (
+      <div className="item" key={q.id}>
+        <div className="ih"><span>Ответ</span><button type="button" className="x" onClick={() => set({ quick: d.quick.filter((x: D) => x.id !== q.id) })}>✕</button></div>
+        <input type="text" value={q.label ?? ''} placeholder="Название кнопки" onChange={(e) => set({ quick: d.quick.map((x: D) => x.id === q.id ? { ...x, label: e.target.value } : x) })} />
+        <input type="text" value={q.en ?? ''} placeholder="English (необязательно)" onChange={(e) => set({ quick: d.quick.map((x: D) => x.id === q.id ? { ...x, en: e.target.value } : x) })} />
+      </div>
+    ))}
+    <div className="addrow"><button type="button" onClick={() => set({ quick: [...d.quick, { id: uid('q'), label: '' }] })}>+ Быстрый ответ</button></div>
+    <div className="h2">Кнопки-ссылки</div>
+    {d.links.map((l: D) => (
+      <div className="item" key={l.id}>
+        <div className="ih"><span>Ссылка</span><button type="button" className="x" onClick={() => set({ links: d.links.filter((x: D) => x.id !== l.id) })}>✕</button></div>
+        <input type="text" value={l.label ?? ''} placeholder="Название" onChange={(e) => set({ links: d.links.map((x: D) => x.id === l.id ? { ...x, label: e.target.value } : x) })} />
+        <input type="url" value={l.url ?? ''} placeholder="https://" onChange={(e) => set({ links: d.links.map((x: D) => x.id === l.id ? { ...x, url: e.target.value } : x) })} />
+      </div>
+    ))}
+    <div className="addrow"><button type="button" onClick={() => set({ links: [...d.links, { id: uid('l'), label: '', url: '' }] })}>+ Кнопка-ссылка</button></div>
+  </>)
+
+  if (type === 'condition') body = (<>
+    <Field label="Соответствует"><Seg value={d.mode} onChange={(v) => set({ mode: v })} options={[['all', 'Всем условиям'], ['any', 'Любому']]} /></Field>
+    {d.rules.map((r: D) => {
+      const upd = (p: D) => set({ rules: d.rules.map((x: D) => x.id === r.id ? { ...x, ...p } : x) })
+      return (
+        <div className="item" key={r.id}>
+          <div className="ih"><span>{COND_TYPES.find((c) => c.k === r.kind)?.n ?? r.kind}</span><button type="button" className="x" onClick={() => set({ rules: d.rules.filter((x: D) => x.id !== r.id) })}>✕</button></div>
+          {r.kind === 'service'
+            ? <select value={r.value} onChange={(e) => upd({ value: e.target.value })}><option value="">Выберите услугу</option>{SERVICES.map((s) => <option key={s}>{s}</option>)}</select>
+            : r.kind === 'day'
+              ? <select value={r.value} onChange={(e) => upd({ value: e.target.value })}><option value="">День недели</option>{DAYS.map((s) => <option key={s}>{s}</option>)}</select>
+              : <input type="text" value={r.value ?? ''} placeholder={COND_HINT[r.kind]} onChange={(e) => upd({ value: e.target.value })} />}
+        </div>
+      )
+    })}
+    <Grouped items={COND_TYPES} label="Условие" onPick={(k) => set({ rules: [...d.rules, { id: uid('r'), kind: k, value: '' }] })} />
+  </>)
+
+  if (type === 'action') body = (<>
+    {d.items.map((a: D) => {
+      const upd = (p: D) => set({ items: d.items.map((x: D) => x.id === a.id ? { ...x, ...p } : x) })
+      return (
+        <div className="item" key={a.id}>
+          <div className="ih"><span>{ACT_TYPES.find((c) => c.k === a.kind)?.n ?? a.kind}</span><button type="button" className="x" onClick={() => set({ items: d.items.filter((x: D) => x.id !== a.id) })}>✕</button></div>
+          <input type="text" value={a.value ?? ''} onChange={(e) => upd({ value: e.target.value })} placeholder={ACT_HINT[a.kind]} />
+        </div>
+      )
+    })}
+    <Grouped items={ACT_TYPES} label="Действие" onPick={(k) => set({ items: [...d.items, { id: uid('a'), kind: k, value: '' }] })} />
+    <div className="hint">Сообщения после паузы получают только клиенты, согласившиеся на рассылки.</div>
+  </>)
+
+  if (type === 'booking') body = (<>
+    <div className="aibox teal">Календарь с выбором времени появится позже. Сейчас этот блок передаёт диалог администратору, он согласует встречу в теме клиента.</div>
+    <div className="h2">Услуги на выбор</div>
+    {SERVICES.map((s) => <Check key={s} checked={d.services.includes(s)} onChange={(v) => set({ services: v ? [...d.services, s] : d.services.filter((x: string) => x !== s) })}>{s}</Check>)}
+    <div className="h2">Форматы</div>
+    {FORMATS.map((s) => <Check key={s} checked={d.formats.includes(s)} onChange={(v) => set({ formats: v ? [...d.formats, s] : d.formats.filter((x: string) => x !== s) })}>{s}</Check>)}
+  </>)
+
+  if (type === 'handoff') body = (<>
+    <Field label="Что увидит клиент"><textarea value={d.message ?? ''} onChange={(e) => set({ message: e.target.value })} /></Field>
+    <Check checked={!!d.notify} onChange={(v) => set({ notify: v })}>Уведомить администратора в Telegram</Check>
+    <div className="hint">После этого блока бот молчит 12 часов или пока администратор не закроет диалог.</div>
+  </>)
+
+  if (type === 'ai') body = <div className="aibox">ИИ-ответ пока не подключён: шаг пропускается.</div>
+  if (type === 'note') body = <Field label="Заметка"><textarea value={d.text ?? ''} onChange={(e) => set({ text: e.target.value })} /></Field>
+
+  return (
+    <div className="panel"><span className="sheet-grip" />
+      <div className="ph"><span className="ic" style={{ width: 26, height: 26, borderRadius: 8, display: 'grid', placeItems: 'center', background: t.soft, color: t.color }}><Ic d={t.icon} size={14} /></span>{t.name}<span className="sp" />
+        <button type="button" className="x" onClick={close} title="Закрыть">✕</button></div>
+      <div className="pb">{body}</div>
+      {type !== 'start' && <div className="pf">
+        <button type="button" className="btn" onClick={() => duplicate(node.id)}><Ic d={P.copy} size={14} /> Копия</button>
+        <button type="button" className="btn" style={{ color: 'var(--red)' }} onClick={() => remove(node.id)}><Ic d={P.trash} size={14} /> Удалить</button>
+      </div>}
+    </div>
+  )
+}

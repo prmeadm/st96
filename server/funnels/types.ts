@@ -5,7 +5,7 @@ export type Link = { id: string; label: string; url: string }
 export type Rule = { id: string; kind: string; value: string }
 export type ActionItem = { id: string; kind: string; value: string }
 
-export type FNode = { id: string; type: 'start' | 'message' | 'condition' | 'action' | 'booking' | 'handoff' | 'ai' | 'note'; data: Record<string, unknown> }
+export type FNode = { id: string; type: 'start' | 'message' | 'condition' | 'action' | 'booking' | 'handoff' | 'ai' | 'note'; data: Record<string, unknown>; position?: { x: number; y: number } }
 export type FEdge = { source: string; sourceHandle?: string | null; target: string }
 export type Graph = { nodes: FNode[]; edges: FEdge[] }
 
