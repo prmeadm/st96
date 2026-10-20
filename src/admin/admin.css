@@ -278,3 +278,6 @@ body { overflow-wrap: break-word; }
 .ibtn.shutter { width: 64px; height: 64px; }
 .ibtn.shutter.rec { background: var(--red); border-color: var(--red); color: var(--card); }
 @media (prefers-reduced-motion: reduce) { .cam-rec .dot { animation: none; } }
+.cam-pick { display: flex; align-items: center; gap: 10px; }
+.cam-pick span { color: var(--mute); font-size: var(--fs-sm); flex: none; }
+.cam-pick select { flex: 1; min-width: 0; }

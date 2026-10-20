@@ -4,6 +4,8 @@ import { Icon } from './Icon'
 type Shot = { blob: Blob; url: string; ext: string; type: string }
 const MAX_VIDEO_SEC = 90
 const MB = 1024 * 1024
+const CAM_KEY = 'st96-camera'
+const touch = () => window.matchMedia('(pointer: coarse)').matches
 
 /** Камера того устройства, с которого нажали «Снять»: превью, снимок или запись видео, просмотр и подтверждение. Нужен доступ к камере (и микрофону для видео). */
 export function CameraCapture({ mode, maxMB, onDone, onClose, onFallback }: {
@@ -13,11 +15,14 @@ export function CameraCapture({ mode, maxMB, onDone, onClose, onFallback }: {
   onClose: () => void
   onFallback: () => void
 }) {
-  const video = useRef<HTMLVideoElement>(null)
+  const videoEl = useRef<HTMLVideoElement>(null)
+  const currentId = useRef('')
   const stream = useRef<MediaStream | null>(null)
   const rec = useRef<MediaRecorder | null>(null)
   const timer = useRef<number | undefined>(undefined)
-  const [facing, setFacing] = useState<'user' | 'environment'>(() => (window.matchMedia('(pointer: coarse)').matches ? 'environment' : 'user'))
+  // Камера выбирается явно и запоминается: на Mac рядом лежащий iPhone системе виден как камера и мог бы выбраться сам
+  const [deviceId, setDeviceId] = useState<string>(() => { try { return localStorage.getItem(CAM_KEY) ?? '' } catch { return '' } })
+  const [devices, setDevices] = useState<{ id: string; label: string }[]>([])
   const [err, setErr] = useState('')
   const [ready, setReady] = useState(false)
   const [sec, setSec] = useState<number | null>(null)
@@ -41,19 +46,32 @@ export function CameraCapture({ mode, maxMB, onDone, onClose, onFallback }: {
     setErr('')
     stop()
     if (!navigator.mediaDevices?.getUserMedia) { setErr('Этот браузер не даёт открыть камеру.'); return }
-    navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: facing }, width: { ideal: 1920 } }, audio: mode === 'video' })
-      .then((s) => {
+    const video = deviceId ? { deviceId: { exact: deviceId }, width: { ideal: 1920 } } : touch() ? { facingMode: { ideal: 'environment' }, width: { ideal: 1920 } } : { width: { ideal: 1920 } }
+    navigator.mediaDevices.getUserMedia({ video, audio: mode === 'video' })
+      .then(async (s) => {
         if (off) return s.getTracks().forEach((t) => t.stop())
         stream.current = s
-        if (video.current) { video.current.srcObject = s; void video.current.play().catch(() => undefined) }
+        if (videoEl.current) { videoEl.current.srcObject = s; void videoEl.current.play().catch(() => undefined) }
+        // после разрешения у устройств появляются названия: показываем список камер
+        const list = (await navigator.mediaDevices.enumerateDevices().catch(() => [])).filter((d) => d.kind === 'videoinput')
+        setDevices(list.map((d, i) => ({ id: d.deviceId, label: d.label || `Камера ${i + 1}` })))
+        const cur = s.getVideoTracks()[0]?.getSettings().deviceId
+        if (cur && cur !== deviceId) setCurrent(cur)
         setReady(true)
       })
-      .catch((e: unknown) => setErr(/denied|permission|notallowed/i.test(String(e)) ? 'Нет доступа к камере. Разрешите камеру и микрофон для этого сайта в настройках браузера и откройте снова.' : 'Камера недоступна: она занята другой программой или не найдена.'))
+      .catch((e: unknown) => {
+        // запомненная камера могла исчезнуть (iPhone ушёл из зоны): возвращаемся к камере по умолчанию
+        if (deviceId && /overconstrained|notfound/i.test(String(e))) { setDeviceId(''); try { localStorage.removeItem(CAM_KEY) } catch { /* необязательно */ } return }
+        setErr(/denied|permission|notallowed/i.test(String(e)) ? 'Нет доступа к камере. Разрешите камеру и микрофон для этого сайта в настройках браузера и откройте снова.' : 'Камера недоступна: она занята другой программой или не найдена.')
+      })
     return () => { off = true }
-  }, [facing, shot, mode])
+  }, [deviceId, shot, mode])
+
+  const setCurrent = (id: string) => { currentId.current = id }
+  const choose = (id: string) => { setDeviceId(id); try { localStorage.setItem(CAM_KEY, id) } catch { /* необязательно */ } }
 
   const snap = () => {
-    const v = video.current
+    const v = videoEl.current
     if (!v || !v.videoWidth) return
     const k = Math.min(1, 2000 / Math.max(v.videoWidth, v.videoHeight))
     const c = document.createElement('canvas')
@@ -100,6 +118,13 @@ export function CameraCapture({ mode, maxMB, onDone, onClose, onFallback }: {
           <b>{mode === 'photo' ? 'Снять фото' : 'Снять видео'}</b><span className="sp" />
           <button type="button" className="ibtn" onClick={() => { stopRec(); stop(); onClose() }} aria-label="Закрыть" title="Закрыть"><Icon name="close" size={20} /></button>
         </div>
+        {devices.length > 1 && !shot && sec === null && (
+          <label className="cam-pick"><span>Камера</span>
+            <select value={deviceId || currentId.current} onChange={(e) => choose(e.target.value)} aria-label="Выбор камеры">
+              {devices.map((d) => <option key={d.id} value={d.id}>{d.label}</option>)}
+            </select>
+          </label>
+        )}
         <div className="cam-view">
           {err ? (
             <div className="cam-err" role="alert">
@@ -109,7 +134,7 @@ export function CameraCapture({ mode, maxMB, onDone, onClose, onFallback }: {
           ) : shot ? (
             mode === 'photo' ? <img src={shot.url} alt="Снимок" /> : <video src={shot.url} controls playsInline />
           ) : (
-            <video ref={video} playsInline muted autoPlay className={facing === 'user' ? 'mirror' : ''} />
+            <video ref={videoEl} playsInline muted autoPlay className={/front|facetime|встроенн|built-in/i.test(devices.find((d) => d.id === (deviceId || currentId.current))?.label ?? '') ? 'mirror' : ''} />
           )}
           {sec !== null && <div className="cam-rec"><i className="dot" aria-hidden="true" /> {mm(sec)} из {mm(MAX_VIDEO_SEC)}</div>}
         </div>
@@ -123,7 +148,6 @@ export function CameraCapture({ mode, maxMB, onDone, onClose, onFallback }: {
             </>
           ) : !err && (
             <>
-              <div className="ibw"><button type="button" className="ibtn" disabled={sec !== null} onClick={() => setFacing(facing === 'user' ? 'environment' : 'user')} aria-label="Другая камера" title="Другая камера"><Icon name="camera" size={20} /></button><span>Другая камера</span></div>
               {mode === 'photo'
                 ? <div className="ibw"><button type="button" className="ibtn shutter" disabled={!ready} onClick={snap} aria-label="Сделать снимок" title="Сделать снимок"><Icon name="camera" size={26} /></button><span>Снимок</span></div>
                 : sec === null
