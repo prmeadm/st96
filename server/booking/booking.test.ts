@@ -179,3 +179,26 @@ test('расписание хранится в настройках, месяц 
   assert.ok(m['2026-10-21']!.free > 0 && m['2026-10-21']!.free < dayInfo('2026-10-21', s, [], 'retouch', null, NOW).free)
   assert.equal(m['2026-10-19']!.why, 'Прошедший день')
 })
+
+test('кнопки в группе: подтверждение через бота уведомляет клиента, чужие чаты игнорируются', async () => {
+  const { createBot } = await import('../bot/bot')
+  const repo = memoryRepo()
+  repo.clock = () => NOW
+  const c = await repo.insertClient({ name: 'Анна', tg_user_id: 77, source: 'bot' })
+  const r = await createBooking(repo, { ...input, clientId: c.id }, NOW)
+  assert.ok(r.ok)
+  if (!r.ok) return
+  const bot = createBot('123:TEST', repo, { groupChatId: -1001 })
+  bot.botInfo = { id: 123, is_bot: true, first_name: 'ST96', username: 'st96_bot', can_join_groups: true, can_read_all_group_messages: true, supports_inline_queries: false, can_connect_to_business: false, has_main_web_app: false } as never
+  const calls: { method: string; payload: Record<string, unknown> }[] = []
+  bot.api.config.use(async (_p, method, payload) => { calls.push({ method, payload: payload as Record<string, unknown> }); return { ok: true, result: true } as never })
+  const press = (chat: number, data: string, uid: number) => bot.handleUpdate({ update_id: uid, callback_query: { id: String(uid), from: { id: 9, is_bot: false, first_name: 'Карина' }, chat_instance: 'x', data, message: { message_id: 5, date: 1, chat: { id: chat, type: 'supergroup', title: 'Лиды' }, text: 'Новая заявка' } } } as never)
+  await press(-777, `bk:ok:${r.booking.id}`, 1)
+  assert.equal(repo.bookings[0]!.status, 'pending', 'из чужого чата решение не принимается')
+  await press(-1001, `bk:ok:${r.booking.id}`, 2)
+  assert.equal(repo.bookings[0]!.status, 'confirmed')
+  assert.ok(calls.some((x) => x.method === 'sendMessage' && x.payload.chat_id === 77 && /Встреча подтверждена/.test(String(x.payload.text))))
+  assert.ok(calls.some((x) => x.method === 'sendDocument' && x.payload.chat_id === 77))
+  await press(-1001, `bk:no:${r.booking.id}`, 3)
+  assert.equal(repo.bookings[0]!.status, 'confirmed', 'повторное решение не меняет заявку')
+})

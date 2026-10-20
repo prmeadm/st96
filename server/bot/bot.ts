@@ -5,6 +5,8 @@ import { handleTopicMessage, relayToAdmins, sendTemplate } from './dialog'
 import { handleClick, handleFreeText, startFunnel, type Env } from '../funnels/engine'
 import { pickFunnel } from '../funnels/triggers'
 import { telegramOut } from './telegramOut'
+import { notifyClientDecision } from '../booking/notify'
+import { decideBooking } from '../booking/service'
 import { T, type Lang } from './texts'
 
 const ACK_EVERY_MS = 12 * 3600 * 1000
@@ -128,6 +130,20 @@ export function createBot(token: string, repo: Repo, opts: { groupChatId: number
       const why = e instanceof Error ? e.message : String(e)
       await ctx.answerCallbackQuery({ text: `Не доставлено: ${/blocked|deactivated|chat not found/i.test(why) ? 'клиент заблокировал бота' : why}`.slice(0, 190), show_alert: true })
     }
+  })
+
+  // Кнопки решения по заявке на встречу в группе администраторов: bk:ok:<id> / bk:no:<id>
+  bot.callbackQuery(/^bk:(ok|no):([A-Za-z0-9-]{1,40})$/, async (ctx) => {
+    const msg = ctx.callbackQuery.message
+    if (!opts.groupChatId || !msg || msg.chat.id !== opts.groupChatId) return void (await ctx.answerCallbackQuery())
+    const ok = ctx.match[1] === 'ok'
+    const r = await decideBooking(repo, ctx.match[2]!, ok ? 'confirm' : 'reject')
+    if (!r.ok) return void (await ctx.answerCallbackQuery({ text: r.error, show_alert: true }))
+    const who = [ctx.from.first_name, ctx.from.last_name].filter(Boolean).join(' ')
+    const sent = await notifyClientDecision(ctx.api, repo, r.booking).catch(() => false)
+    await ctx.answerCallbackQuery({ text: ok ? 'Подтверждено' : 'Отклонено' })
+    const text = `${msg.text ?? ''}\n\n${ok ? '✅ Подтвердил' : '✖ Отклонил'}: ${who}${sent ? '. Клиенту отправлено сообщение.' : '. Клиент не в Telegram: свяжитесь вручную.'}`
+    await ctx.editMessageText(text, { reply_markup: undefined }).catch(() => undefined)
   })
 
   bot.command('stop', async (ctx) => {
