@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { NavLink, Navigate, Route, Routes } from 'react-router-dom'
 import { AuthGate, useAuth } from './auth'
 import ClientsPage from './pages/ClientsPage'
@@ -8,21 +9,37 @@ import FunnelsPage from './pages/FunnelsPage'
 import FunnelPage from './pages/FunnelPage'
 import TemplatesPage from './pages/TemplatesPage'
 import { Icon } from './ui/Icon'
+import wordmark from './assets/st96-wordmark.png'
+
+const RAIL_KEY = 'st96-admin-rail'
+const readMin = () => { try { return localStorage.getItem(RAIL_KEY) === 'min' } catch { return false } }
 
 function Shell() {
-  const { email, signOut } = useAuth()
+  const { signOut } = useAuth()
+  const [min, setMin] = useState(readMin)
+  const toggle = () => {
+    setMin(!min)
+    try { localStorage.setItem(RAIL_KEY, min ? 'max' : 'min') } catch { /* память браузера недоступна: меню просто не запомнится */ }
+  }
   const link = ({ isActive }: { isActive: boolean }) => (isActive ? 'on' : '')
+  const item = (to: string, icon: Parameters<typeof Icon>[0]['name'], label: string) => (
+    <NavLink to={to} className={link} title={min ? label : undefined} aria-label={label}><Icon name={icon} /><span>{label}</span></NavLink>
+  )
   return (
     <div className="app">
-      <nav className="rail" aria-label="Разделы">
-        <div className="brand"><span className="logo" aria-hidden="true">ST</span>96 · админка</div>
-        <NavLink to="/clients" className={link}><Icon name="clients" /><span>Клиенты</span></NavLink>
-        <NavLink to="/leads" className={link}><Icon name="leads" /><span>Заявки</span></NavLink>
-        <NavLink to="/funnels" className={link}><Icon name="funnels" /><span>Воронки</span></NavLink>
-        <NavLink to="/templates" className={link}><Icon name="templates" /><span>Шаблоны</span></NavLink>
-        <NavLink to="/notes" className={link}><Icon name="notes" /><span>Заметки</span></NavLink>
-        <button className="out" onClick={signOut}><Icon name="logout" /><span>Выйти</span></button>
-        <div className="who">{email}<br /><button className="btn small" onClick={signOut}>Выйти</button></div>
+      <nav className={`rail${min ? ' min' : ''}`} aria-label="Разделы">
+        <div className="brand">
+          {min ? <img className="mark" src="/favicon.svg" alt="ST96" width={36} height={36} /> : <span className="wm"><img src={wordmark} alt="ST96" /></span>}
+          <button type="button" className="fold" onClick={toggle} aria-expanded={!min} aria-label={min ? 'Развернуть меню' : 'Свернуть меню'} title={min ? 'Развернуть меню' : 'Свернуть меню'}>
+            <Icon name={min ? 'expand' : 'collapse'} size={18} />
+          </button>
+        </div>
+        {item('/clients', 'clients', 'Клиенты')}
+        {item('/leads', 'leads', 'Заявки')}
+        {item('/funnels', 'funnels', 'Воронки')}
+        {item('/templates', 'templates', 'Шаблоны')}
+        {item('/notes', 'notes', 'Заметки')}
+        <button className="out" onClick={signOut} title={min ? 'Выйти' : undefined} aria-label="Выйти"><Icon name="logout" /><span>Выйти</span></button>
       </nav>
       <main className="main">
         <div className="page">
