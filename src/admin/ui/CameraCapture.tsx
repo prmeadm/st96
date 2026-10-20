@@ -118,13 +118,18 @@ export function CameraCapture({ mode, maxMB, onDone, onClose, onFallback }: {
           <b>{mode === 'photo' ? 'Снять фото' : 'Снять видео'}</b><span className="sp" />
           <button type="button" className="ibtn" onClick={() => { stopRec(); stop(); onClose() }} aria-label="Закрыть" title="Закрыть"><Icon name="close" size={20} /></button>
         </div>
-        {devices.length > 1 && !shot && sec === null && (
+        {!shot && sec === null && ready && (devices.length > 1 ? (
           <label className="cam-pick"><span>Камера</span>
             <select value={deviceId || currentId.current} onChange={(e) => choose(e.target.value)} aria-label="Выбор камеры">
               {devices.map((d) => <option key={d.id} value={d.id}>{d.label}</option>)}
             </select>
           </label>
-        )}
+        ) : (
+          <div className="cam-one">
+            <div><span>Камера:</span> <b>{devices[0]?.label || 'не определена'}</b></div>
+            <div className="hint">Браузер показывает только эту камеру. Другую выберите в настройках браузера для сайта: в Chrome нажмите значок камеры справа в адресной строке, в Safari: Safari → Настройки → Веб-сайты → Камера. На Mac iPhone рядом подключается как камера: его можно отключить в настройках iPhone (Основные → AirPlay и Handoff → Непрерывность камеры).</div>
+          </div>
+        ))}
         <div className="cam-view">
           {err ? (
             <div className="cam-err" role="alert">
