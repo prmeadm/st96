@@ -6,6 +6,7 @@ import { MediaField } from '../ui/MediaField'
 import { Icon } from '../ui/Icon'
 import { TranslateButton } from '../ui/TranslateButton'
 import { KIND_OPTIONS, Seg } from '../ui/Seg'
+import { popularityScore, ratings, type TemplateStat } from '../../../server/usage'
 import './templates.css'
 
 const SAMPLE = { name: 'Анна', tg_username: 'anna', company: 'Студия «Лето»' }
@@ -23,17 +24,36 @@ export default function TemplatesPage() {
   const [f, setF] = useState<Filters>({ task: [], goal: [], service: [] })
   const [edit, setEdit] = useState<Draft | null>(null)
   const [sheet, setSheet] = useState(false)
+  const [sort, setSort] = useState<'new' | 'top'>('new')
+  const [stats, setStats] = useState<Record<string, TemplateStat>>({})
+  const viewed = useRef(new Set<string>())
 
   const load = () =>
     supabase.from('templates').select('*').order('updated_at', { ascending: false })
       .then(({ data, error: e }) => (e ? setError('Не удалось загрузить шаблоны') : setRows((data ?? []) as TemplateRow[])))
-  useEffect(() => { void load() }, [])
+  const loadStats = () =>
+    supabase.rpc('analytics_templates').then(({ data }) => {
+      const m: Record<string, TemplateStat> = {}
+      for (const r of (data ?? []) as { template_id: string; views: number; uses: number; funnels: number; broadcasts: number }[]) m[r.template_id] = { views: +r.views, uses: +r.uses, funnels: +r.funnels, broadcasts: +r.broadcasts }
+      setStats(m)
+    })
+  useEffect(() => { void load(); void loadStats() }, [])
+  // Просмотр шаблона (открыли карточку) попадает в «Аналитику»; один раз за посещение страницы
+  const openTpl = (t: TemplateRow) => {
+    setEdit({ ...t, body_en: t.body_en ?? '', media_url: t.media_url ?? '' })
+    if (!viewed.current.has(t.id)) { viewed.current.add(t.id); void supabase.from('template_events').insert({ template_id: t.id, kind: 'view' }) }
+  }
+  const rating = useMemo(() => {
+    const ids = (rows ?? []).map((t) => t.id)
+    const r = ratings(ids.map((id) => (stats[id] ? popularityScore(stats[id]!) : 0)))
+    return Object.fromEntries(ids.map((id, i) => [id, r[i]!]))
+  }, [rows, stats])
 
-  const list = useMemo(() => (rows ?? []).filter((t) =>
+  const list = useMemo(() => [...(rows ?? [])].sort((a, b) => (sort === 'top' ? (rating[b.id]?.pct ?? 0) - (rating[a.id]?.pct ?? 0) || b.used - a.used : 0)).filter((t) =>
     (!kinds.length || kinds.includes(t.kind)) && (!favOnly || t.fav)
     && (!f.task.length || f.task.includes(t.task)) && (!f.goal.length || f.goal.includes(t.goal))
     && (!f.service.length || t.services.some((s) => f.service.includes(s)))
-    && (!q.trim() || `${t.title} ${t.body}`.toLowerCase().includes(q.trim().toLowerCase()))), [rows, kinds, favOnly, f, q])
+    && (!q.trim() || `${t.title} ${t.body}`.toLowerCase().includes(q.trim().toLowerCase()))), [rows, kinds, favOnly, f, q, sort, rating])
   const nf = f.task.length + f.goal.length + f.service.length
   const reset = () => { setF({ task: [], goal: [], service: [] }); setKinds([]); setFavOnly(false); setQ('') }
 
@@ -87,8 +107,9 @@ export default function TemplatesPage() {
           </div>
           <div className="chips">
             <button className={!kinds.length && !favOnly ? 'on' : ''} onClick={() => { setKinds([]); setFavOnly(false) }}>Все</button>
-            {(Object.entries(TPL_KINDS) as [TemplateKind, string][]).map(([k, l]) => <button key={k} className={kinds.includes(k) ? 'on' : ''} onClick={() => setKinds(kinds.includes(k) ? kinds.filter((x) => x !== k) : [...kinds, k])}>{l}</button>)}
+            {KIND_OPTIONS.map((o) => <button key={o.value} className={kinds.includes(o.value) ? 'on' : ''} title={`Только: ${o.label}`} onClick={() => setKinds(kinds.includes(o.value) ? kinds.filter((x) => x !== o.value) : [...kinds, o.value])}>{o.icon && <Icon name={o.icon} size={16} />}{o.label} <small>{(rows ?? []).filter((t) => t.kind === o.value).length}</small></button>)}
             <button className={favOnly ? 'on' : ''} onClick={() => setFavOnly(!favOnly)}><Icon name="star" size={16} fill={favOnly} />Избранное</button>
+            <button className={sort === 'top' ? 'on' : ''} aria-pressed={sort === 'top'} title="Сначала самые популярные" onClick={() => setSort(sort === 'top' ? 'new' : 'top')}><Icon name="chart" size={16} />Популярные</button>
           </div>
           {rows === null && !error && <div className="empty">Загрузка…</div>}
           {rows && <div className="hint">Найдено: {list.length} из {rows.length}</div>}
@@ -96,16 +117,17 @@ export default function TemplatesPage() {
           {rows && rows.length > 0 && list.length === 0 && <div className="empty">Ничего не найдено. <button className="btn" onClick={reset}>Сбросить фильтры</button></div>}
           <div className="tgrid">
             {list.map((t) => (
-              <div key={t.id} className="tcard" role="button" tabIndex={0} onClick={() => setEdit({ ...t, body_en: t.body_en ?? '', media_url: t.media_url ?? '' })}
-                onKeyDown={(e) => e.key === 'Enter' && setEdit({ ...t, body_en: t.body_en ?? '', media_url: t.media_url ?? '' })}>
-                <div className="row"><span className="chip">{TPL_KINDS[t.kind]}</span><span className="sp" />
+              <div key={t.id} className="tcard" role="button" tabIndex={0} onClick={() => openTpl(t)}
+                onKeyDown={(e) => e.key === 'Enter' && openTpl(t)}>
+                <div className="row"><span className="chip kindchip">{KIND_OPTIONS.find((o) => o.value === t.kind)?.icon && <Icon name={KIND_OPTIONS.find((o) => o.value === t.kind)!.icon!} size={14} />}{TPL_KINDS[t.kind]}</span>
+                  {rating[t.id] && rating[t.id]!.stars > 0 && <span className="chip amber rate" title={`Рейтинг популярности ${rating[t.id]!.pct} из 100: отправки клиентам, добавления в воронки и рассылки, просмотры`}><Icon name="star" size={13} fill />{rating[t.id]!.pct}</span>}<span className="sp" />
                   <button className={`star ${t.fav ? 'on' : ''}`} aria-label="Избранное" onClick={(e) => { e.stopPropagation(); void toggleFav(t) }}><Icon name="star" size={20} fill={t.fav} /></button>
-                  <button type="button" className="ibtn sm" title="Изменить" aria-label="Изменить" onClick={(e) => { e.stopPropagation(); setEdit({ ...t, body_en: t.body_en ?? '', media_url: t.media_url ?? '' }) }}><Icon name="edit" size={18} /></button>
+                  <button type="button" className="ibtn sm" title="Изменить" aria-label="Изменить" onClick={(e) => { e.stopPropagation(); openTpl(t) }}><Icon name="edit" size={18} /></button>
                   <button type="button" className="ibtn sm danger" title="Удалить" aria-label="Удалить" onClick={(e) => { e.stopPropagation(); void remove({ ...t, body_en: t.body_en ?? '', media_url: t.media_url ?? '' }) }}><Icon name="trash" size={18} /></button></div>
                 <b>{t.title}</b>
                 <div className="tex">{preview(t.body)}</div>
                 <div className="chips tags"><span className="tg">{t.task}</span><span className="tg">{t.goal}</span>{t.services.map((s) => <span className="tg" key={s}>{s}</span>)}</div>
-                <div className="hint">Использован: {t.used} · {fmtDate(t.updated_at)}</div>
+                <div className="hint">Отправлен: {stats[t.id]?.uses ?? t.used} · в воронки: {stats[t.id]?.funnels ?? 0} · в рассылки: {stats[t.id]?.broadcasts ?? 0} · {fmtDate(t.updated_at)}</div>
               </div>
             ))}
           </div>

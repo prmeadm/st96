@@ -107,6 +107,8 @@ export interface Repo {
   listTemplates(): Promise<TemplateRow[]>
   getTemplate(id: string): Promise<TemplateRow | null>
   bumpTemplateUsed(id: string): Promise<void>
+  recordTemplateEvent(id: string, kind: 'view' | 'use' | 'funnel' | 'broadcast'): Promise<void>
+  insertLlmUsage(u: { model: string; feature: string; prompt_tokens: number; completion_tokens: number; total_tokens: number; estimated: boolean }): Promise<void>
   // рассылки
   listAudience(): Promise<AudienceClient[]>
   getBroadcast(id: string): Promise<BroadcastRow | null>
@@ -277,7 +279,14 @@ export function supabaseRepo(url: string, key: string): Repo {
     async getTemplate(id) {
       return (ok(await db.from('templates').select('*').eq('id', id).maybeSingle(), 'getTemplate') as TemplateRow | null) ?? null
     },
+    async recordTemplateEvent(id, kind) {
+      ok(await db.from('template_events').insert({ template_id: id, kind }), 'recordTemplateEvent')
+    },
+    async insertLlmUsage(u) {
+      ok(await db.from('llm_usage').insert(u), 'insertLlmUsage')
+    },
     async bumpTemplateUsed(id) {
+      await this.recordTemplateEvent(id, 'use').catch(() => undefined)
       const t = ok(await db.from('templates').select('used').eq('id', id).maybeSingle(), 'bumpTemplateUsed read') as { used: number } | null
       if (t) ok(await db.from('templates').update({ used: t.used + 1 }).eq('id', id), 'bumpTemplateUsed')
     },

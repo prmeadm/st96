@@ -16,11 +16,11 @@ export async function resolveLlm(repo: Repo, env: Record<string, string | undefi
     if (!custom) return fail('Выбранная модель удалена. Выберите другую на вкладке «Модель».')
     const key = env[custom.keyEnv]
     if (!key) return fail(`Не задан ключ ${custom.keyEnv} в настройках Vercel (после добавления нужен новый деплой)`)
-    return openAiCompatible({ apiKey: key, baseUrl: custom.baseUrl, model: custom.model })
+    return openAiCompatible({ apiKey: key, baseUrl: custom.baseUrl, model: custom.model, onUsage: (u) => repo.insertLlmUsage(u) })
   }
   const key = env.LLM_API_KEY
   if (!key) return fail('Не задан ключ LLM_API_KEY в настройках Vercel')
-  return openAiCompatible({ apiKey: key, baseUrl: env.LLM_BASE_URL, models: modelChain(selected, env.LLM_MODEL) })
+  return openAiCompatible({ apiKey: key, baseUrl: env.LLM_BASE_URL, models: modelChain(selected, env.LLM_MODEL), onUsage: (u) => repo.insertLlmUsage(u) })
 }
 
 export async function agentDeps(repo: Repo, api: Api | null, env: Record<string, string | undefined>): Promise<AgentDeps> {

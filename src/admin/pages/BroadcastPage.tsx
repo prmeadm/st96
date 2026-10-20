@@ -108,7 +108,10 @@ export default function BroadcastPage() {
   }
   const fromTemplate = (tid: string) => {
     const t = templates.find((x) => x.id === tid)
-    if (t) up({ kind: t.kind, body: t.body, body_en: t.body_en ?? '', media_url: t.media_url ?? '' })
+    if (t) {
+      up({ kind: t.kind, body: t.body, body_en: t.body_en ?? '', media_url: t.media_url ?? '' })
+      void supabase.from('template_events').insert({ template_id: t.id, kind: 'broadcast' }) // попадает в «Аналитику»
+    }
   }
   const pct = b.total ? Math.round(((b.sent + b.failed) / b.total) * 100) : 0
 

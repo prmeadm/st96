@@ -16,6 +16,8 @@ export type MemoryRepo = Repo & {
   events: { run_id: string; node_id: string; event: string; data?: Record<string, unknown> }[]
   tags: Map<string, Set<string>>
   templates: TemplateRow[]
+  templateEvents: { template_id: string; kind: string }[]
+  llmUsage: { model: string; feature: string; prompt_tokens: number; completion_tokens: number; total_tokens: number; estimated: boolean }[]
   broadcasts: BroadcastRow[]
   agentTasks: (AgentTask & { locked: boolean })[]
   settings: Map<string, string>
@@ -31,7 +33,7 @@ export function memoryRepo(): MemoryRepo {
   const id = (p: string) => `${p}${++seq}`
   const seen = new Set<number>()
   const r: MemoryRepo = {
-    clients: [], leads: [], notes: [], messages: [], funnels: [], runs: [], events: [], tags: new Map(), templates: [], broadcasts: [], agentTasks: [], settings: new Map(), bookings: [], clock: () => new Date(), recipients: [], jobs: [],
+    clients: [], leads: [], notes: [], messages: [], funnels: [], runs: [], events: [], tags: new Map(), templates: [], templateEvents: [], llmUsage: [], broadcasts: [], agentTasks: [], settings: new Map(), bookings: [], clock: () => new Date(), recipients: [], jobs: [],
     async claimUpdate(u) { if (seen.has(u)) return false; seen.add(u); return true },
     async findClient({ tgUserId, phone, username, topicId }) {
       if (topicId) return r.clients.find((c) => c.admin_topic_id === topicId) ?? null
@@ -93,7 +95,9 @@ export function memoryRepo(): MemoryRepo {
     async listTags(cid) { return [...(r.tags.get(cid) ?? [])] },
     async listTemplates() { return [...r.templates] },
     async getTemplate(tid) { return r.templates.find((t) => t.id === tid) ?? null },
-    async bumpTemplateUsed(tid) { const t = r.templates.find((x) => x.id === tid); if (t) t.used++ },
+    async bumpTemplateUsed(tid) { const t = r.templates.find((x) => x.id === tid); if (t) { t.used++; r.templateEvents.push({ template_id: tid, kind: 'use' }) } },
+    async recordTemplateEvent(tid, kind) { r.templateEvents.push({ template_id: tid, kind }) },
+    async insertLlmUsage(u) { r.llmUsage.push(u) },
     async listAudience() {
       return r.clients.filter((c) => c.tg_user_id && c.consent_at && !c.opted_out_at).map((c): AudienceClient => ({
         ...c,

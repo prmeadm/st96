@@ -33,7 +33,7 @@ const prompt = (ctx: ToolCtx, step: Step, shape: string) =>
   `Задание: ${ctx.task.text}\nТекущий шаг: ${step.text}\nУже сделано:\n${history(ctx)}\n\nВерни JSON вида ${shape}`
 
 async function askJson<T>(ctx: ToolCtx, step: Step, shape: string): Promise<T> {
-  return parseJson<T>(await ctx.ask({ system: SYSTEM, user: prompt(ctx, step, shape) }))
+  return parseJson<T>(await ctx.ask({ feature: `agent:${step.tool}`, system: SYSTEM, user: prompt(ctx, step, shape) }))
 }
 const str = (v: unknown, max: number) => (typeof v === 'string' ? v.trim().slice(0, max) : '')
 

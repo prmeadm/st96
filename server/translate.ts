@@ -30,7 +30,7 @@ export async function translateToEnglish(llm: Llm, text: string): Promise<string
   if (src.length > MAX_TRANSLATE_CHARS) throw new LlmError(`Текст длиннее ${MAX_TRANSLATE_CHARS} знаков`)
   let hint = ''
   for (let attempt = 0; attempt < 2; attempt++) {
-    const raw = await llm({ system: SYSTEM, user: `Текст для перевода:\n${src}${hint}` })
+    const raw = await llm({ feature: 'translate', system: SYSTEM, user: `Текст для перевода:\n${src}${hint}` })
     const out = (parseJson<{ text?: unknown }>(raw).text ?? '') as string
     const t = typeof out === 'string' ? out.trim() : ''
     if (!t) { hint = '\n\nВ прошлый раз ответ был пустым. Верни JSON с полем text.'; continue }

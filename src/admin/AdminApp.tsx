@@ -12,6 +12,7 @@ import BroadcastsPage from './pages/BroadcastsPage'
 import BroadcastPage from './pages/BroadcastPage'
 import AgentPage from './pages/AgentPage'
 import SettingsPage from './pages/SettingsPage'
+import AnalyticsPage from './pages/AnalyticsPage'
 import BookingPage from './pages/BookingPage'
 import { Icon } from './ui/Icon'
 import { QuickNav } from './ui/QuickNav'
@@ -55,6 +56,7 @@ function Shell() {
         {item('/booking', 'calendar', 'Запись')}
         {item('/templates', 'templates', 'Шаблоны')}
         {item('/agent', 'agent', 'Агент')}
+        {item('/analytics', 'chart', 'Аналитика')}
         {item('/notes', 'notes', 'Заметки')}
         <div className="rail-gap" />
         {item('/settings', 'settings', 'Настройки')}
@@ -76,6 +78,7 @@ function Shell() {
             <Route path="/templates" element={<TemplatesPage />} />
             <Route path="/agent" element={<AgentPage />} />
             <Route path="/agent/:id" element={<AgentPage />} />
+            <Route path="/analytics" element={<AnalyticsPage />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/notes" element={<NotesPage />} />
             <Route path="*" element={<Navigate to="/clients" replace />} />

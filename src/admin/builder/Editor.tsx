@@ -116,7 +116,7 @@ export function Editor({ node, patch, remove, duplicate, close }: { node: Node; 
     </div>
     <TemplatePicker onPick={(t) => {
       set({ parts: [...d.parts, { id: uid('p'), kind: t.kind === 'photo' ? 'image' : t.kind === 'voice' ? 'audio' : t.kind, text: t.body, en: t.body_en ?? '', url: t.media_url ?? '' }] })
-      void supabase.from('templates').update({ used: t.used + 1 }).eq('id', t.id)
+      void supabase.from('template_events').insert({ template_id: t.id, kind: 'funnel' })
     }} />
     <div className="hint">Загрузка файлов появится позже: пока вставляйте прямую ссылку на фото, видео или файл.</div>
     <div className="h2">Быстрые ответы</div>

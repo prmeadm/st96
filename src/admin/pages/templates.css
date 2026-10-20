@@ -30,3 +30,6 @@
   .tpl .ov { place-items: end center; padding: 0; }
   .tpl .modal { border-radius: 18px 18px 0 0; max-height: 92vh; max-height: 92dvh; }
 }
+.tpl .kindchip { display: inline-flex; align-items: center; gap: 5px; }
+.tpl .rate { display: inline-flex; align-items: center; gap: 4px; font-weight: 700; }
+.tpl .chips button .ic { vertical-align: -3px; margin-right: 5px; }

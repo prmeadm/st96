@@ -11,6 +11,7 @@ const ADMIN: L[] = [
   { href: '/admin/booking', label: 'Запись', icon: 'calendar' },
   { href: '/admin/templates', label: 'Шаблоны', icon: 'templates' },
   { href: '/admin/agent', label: 'Агент', icon: 'agent' },
+  { href: '/admin/analytics', label: 'Аналитика', icon: 'chart' },
   { href: '/admin/notes', label: 'Заметки', icon: 'notes' },
   { href: '/admin/settings', label: 'Настройки', icon: 'settings' },
 ]

@@ -62,7 +62,7 @@ async function makePlan(deps: AgentDeps, task: AgentTask, note?: string): Promis
   try {
     let plan: Step[] = []
     for (let attempt = 0; attempt < 2 && !plan.length; attempt++) {
-      const raw = parseJson<RawPlan>(await ask({ system: `Ты планировщик заданий для студии ST96. Доступные инструменты:\n${catalog()}\nНичего, кроме этих инструментов, ты делать не умеешь. Отвечай только JSON.`, user }))
+      const raw = parseJson<RawPlan>(await ask({ feature: 'agent:plan', system: `Ты планировщик заданий для студии ST96. Доступные инструменты:\n${catalog()}\nНичего, кроме этих инструментов, ты делать не умеешь. Отвечай только JSON.`, user }))
       plan = normalizePlan(raw)
       if (!plan.length && typeof raw.reason === 'string' && raw.reason.trim()) throw new LlmError(`Агент не может выполнить это задание: ${raw.reason.trim().slice(0, 600)}`)
     }
