@@ -39,3 +39,12 @@ export const demoGraph: Graph = {
     { source: 'a2', sourceHandle: 'out', target: 'm5' },
   ],
 }
+
+/** Новая воронка: запуск по /start и одно приветствие. Остальное добавляется в конструкторе. */
+export const blankGraph: Graph = {
+  nodes: [
+    { id: 'start', type: 'start', data: { triggers: [TRIGGER.start], keyword: '', once: false } },
+    { id: 'm1', type: 'message', data: { parts: [{ id: 'p1', kind: 'text', text: 'Здравствуйте, {имя}!', en: 'Hello, {имя}!' }], quick: [], links: [] } },
+  ],
+  edges: [{ source: 'start', target: 'm1' }],
+}

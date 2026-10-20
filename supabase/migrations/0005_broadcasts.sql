@@ -2,7 +2,7 @@
 create table if not exists public.broadcasts (
   id uuid primary key default gen_random_uuid(),
   title text not null,
-  kind text not null default 'text' check (kind in ('text','photo','video','audio','file')),
+  kind text not null default 'text' check (kind in ('text','photo','video','voice','audio','file')),
   body text not null default '',
   body_en text,
   media_url text,

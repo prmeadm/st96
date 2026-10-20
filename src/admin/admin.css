@@ -1,6 +1,6 @@
 /* Токены админки. Только светлая тема: рабочий инструмент, глаза не должны уставать. Брендовые Inter и синий акцент st96.by; тёмный ink/acid остаётся за сайтом. */
 :root {
-  --brand-ink: #09090b;
+  --brand-ink: #09090b; --brand-paper: #f5f4ef; --brand-acid: #d8ff3f;
   /* Типографика и размеры */
   --font-display: "Unbounded", "Inter", system-ui, sans-serif;
   --font-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -38,8 +38,8 @@ mark { background: var(--mark); color: inherit; border-radius: 3px; padding: 0 1
 .app { display: flex; height: 100%; }
 .rail { width: 220px; background: var(--card); border-right: 1px solid var(--line); display: flex; flex-direction: column; padding: 14px 10px; gap: 4px; flex: none; transition: width 0.18s ease; }
 .rail .brand { display: flex; align-items: center; gap: 6px; padding: 4px 4px 14px; min-height: 52px; }
-.rail .brand .wm { display: flex; align-items: center; background: var(--brand-ink); border-radius: 10px; padding: 8px 12px; }
-.rail .brand .wm img { display: block; height: 15px; width: auto; }
+.rail .brand .wm { display: inline-flex; align-items: center; background: var(--brand-ink); color: var(--brand-paper); border-radius: 999px; padding: 8px 16px; font-family: var(--font-display); font-weight: 700; font-size: var(--fs-lg); letter-spacing: -0.02em; line-height: 1; }
+.rail .brand .wm span { color: var(--brand-acid); }
 .rail .brand .mark { border-radius: 10px; display: block; }
 .rail .fold { margin-left: auto; border: 0; background: none; color: var(--mute); border-radius: 8px; padding: 6px; display: grid; place-items: center; }
 .rail .fold:hover { background: var(--bg); color: var(--ink); }
@@ -62,7 +62,7 @@ mark { background: var(--mark); color: inherit; border-radius: 3px; padding: 0 1
 .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .sp { flex: 1; }
 .hint { font-size: var(--fs-sm); color: var(--mute); line-height: 1.4; }
-.btn { border: 1px solid var(--line-strong); background: var(--card); border-radius: 10px; padding: 9px 14px; font-weight: 500; font-size: var(--fs-md); display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+.btn { border: 1px solid var(--line-strong); background: var(--card); border-radius: 999px; padding: 9px 14px; font-weight: 500; font-size: var(--fs-md); display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
 .btn:hover { background: var(--bg); }
 .btn.primary { background: var(--accent); border-color: var(--accent-edge); color: var(--on-accent); font-weight: 600; }
 .btn:disabled, .btn.primary:disabled { opacity: 1; background: var(--bg); border-color: var(--line); color: var(--mute); }

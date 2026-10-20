@@ -11,7 +11,6 @@ import TemplatesPage from './pages/TemplatesPage'
 import BroadcastsPage from './pages/BroadcastsPage'
 import BroadcastPage from './pages/BroadcastPage'
 import { Icon } from './ui/Icon'
-import wordmark from './assets/st96-wordmark.png'
 
 const RAIL_KEY = 'st96-admin-rail'
 const readMin = () => { try { return localStorage.getItem(RAIL_KEY) === 'min' } catch { return false } }
@@ -31,7 +30,7 @@ function Shell() {
     <div className="app">
       <nav className={`rail${min ? ' min' : ''}`} aria-label="Разделы">
         <div className="brand">
-          {min ? <img className="mark" src="/favicon.svg" alt="ST96" width={36} height={36} /> : <span className="wm"><img src={wordmark} alt="ST96" /></span>}
+          {min ? <img className="mark" src="/favicon.svg" alt="ST96" width={36} height={36} /> : <span className="wm" role="img" aria-label="ST96">ST<span>96</span></span>}
           <button type="button" className="fold" onClick={toggle} aria-expanded={!min} aria-label={min ? 'Развернуть меню' : 'Свернуть меню'} title={min ? 'Развернуть меню' : 'Свернуть меню'}>
             <Icon name={min ? 'expand' : 'collapse'} size={18} />
           </button>
