@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { supabase } from '../supabase'
 import { Icon, type IconName } from './Icon'
 import type { TemplateKind } from '../../../server/templates'
@@ -117,12 +117,14 @@ export function MediaField({ kind, value, onChange, folder, maxMB }: { kind: Exc
   const stopRec = () => recorder.current?.state === 'recording' && recorder.current.stop()
 
   const KIND_ICON: Record<typeof kind, IconName> = { photo: 'photo', video: 'video', voice: 'audio', audio: 'audio', file: 'file' }
-  const pickBtn = (label: string, icon: IconName, capture?: 'environment' | 'user') => (
+  // Круглая кнопка с короткой подписью под ней: «Снять», «Из галереи», «Записать»
+  const cap = (text: string, btn: ReactNode) => <div className="ibw">{btn}<span>{text}</span></div>
+  const pickBtn = (label: string, icon: IconName, caption: string, capture?: 'environment' | 'user') => cap(caption, (
     <label className="ibtn" title={label} aria-label={label} aria-disabled={busy}>
       <Icon name={icon} size={20} />
       <input type="file" hidden accept={ACCEPT[kind]} capture={capture} disabled={busy} onChange={(e) => { void pick(e.target.files?.[0]); e.target.value = '' }} />
     </label>
-  )
+  ))
   const mm = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`
   const hint = { photo: 'Перетащите фото сюда', video: 'Перетащите видео сюда', voice: 'Запишите голос или перетащите аудиофайл', audio: 'Перетащите аудиофайл сюда', file: 'Перетащите файл сюда' }[kind]
 
@@ -144,12 +146,12 @@ export function MediaField({ kind, value, onChange, folder, maxMB }: { kind: Exc
           <div className="drop-hint"><Icon name="upload" size={22} /><span>{busy ? 'Загружаю…' : hint}</span></div>
         )}
         <div className="ibtns">
-          {kind === 'photo' && pickBtn('Снять фото', 'camera', 'environment')}
-          {kind === 'video' && pickBtn('Снять видео', 'video', 'environment')}
-          {kind === 'voice' && !rec && <button type="button" className="ibtn rec-btn" title={value ? 'Записать заново' : 'Записать голос'} aria-label={value ? 'Записать заново' : 'Записать голос'} onClick={startRec} disabled={busy}><Icon name="voice" size={20} /></button>}
-          {kind === 'voice' && rec && <button type="button" className="ibtn stop-btn" title="Остановить запись" aria-label="Остановить запись" onClick={stopRec}><Icon name="stop" size={18} /></button>}
-          {!rec && pickBtn(kind === 'photo' ? 'Выбрать фото' : kind === 'video' ? 'Выбрать видео' : kind === 'file' ? 'Выбрать файл' : 'Выбрать аудиофайл', KIND_ICON[kind])}
-          {value && !rec && <button type="button" className="ibtn" title="Убрать файл" aria-label="Убрать файл" onClick={() => onChange('')}><Icon name="trash" size={18} /></button>}
+          {kind === 'photo' && pickBtn('Снять фото', 'camera', 'Снять', 'environment')}
+          {kind === 'video' && pickBtn('Снять видео', 'video', 'Снять', 'environment')}
+          {kind === 'voice' && !rec && cap(value ? 'Заново' : 'Записать', <button type="button" className="ibtn rec-btn" title={value ? 'Записать заново' : 'Записать голос'} aria-label={value ? 'Записать заново' : 'Записать голос'} onClick={startRec} disabled={busy}><Icon name="voice" size={20} /></button>)}
+          {kind === 'voice' && rec && cap('Стоп', <button type="button" className="ibtn stop-btn" title="Остановить запись" aria-label="Остановить запись" onClick={stopRec}><Icon name="stop" size={18} /></button>)}
+          {!rec && pickBtn(kind === 'photo' ? 'Выбрать фото' : kind === 'video' ? 'Выбрать видео' : kind === 'file' ? 'Выбрать файл' : 'Выбрать аудиофайл', KIND_ICON[kind], kind === 'photo' || kind === 'video' ? 'Из галереи' : 'Файл')}
+          {value && !rec && cap('Убрать', <button type="button" className="ibtn" title="Убрать файл" aria-label="Убрать файл" onClick={() => onChange('')}><Icon name="trash" size={18} /></button>)}
         </div>
       </div>
       {msg && !busy && <div className="hint" role="status">{msg}</div>}

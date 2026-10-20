@@ -17,3 +17,5 @@
   .lx-modal { border-radius: 18px 18px 0 0; max-height: 92dvh; }
   .lx-grid { grid-template-columns: 1fr; }
 }
+
+.lx-b > * { flex-shrink: 0; }

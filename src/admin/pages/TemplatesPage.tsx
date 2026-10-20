@@ -167,7 +167,7 @@ function Editor({ d: init, onSave, onClose, onDelete, onCopy }: { d: Draft; onSa
           <button className={`star ${d.fav ? 'on' : ''}`} onClick={() => up({ fav: !d.fav })} aria-label="Избранное"><Icon name="star" size={20} fill={d.fav} /></button>
           <button className="x" onClick={onClose} aria-label="Закрыть"><Icon name="close" size={18} /></button></div>
         <div className="mb">
-          <Seg label="Тип сообщения" iconOnly value={d.kind} options={KIND_OPTIONS} onChange={(k) => up({ kind: k })} />
+          <div className="fld"><label>Что отправляем: текст, фото, видео, голос, аудио или файл</label><Seg label="Тип сообщения" iconOnly value={d.kind} options={KIND_OPTIONS} onChange={(k) => up({ kind: k })} /></div>
           <div className="fld"><label>Название</label><input type="text" value={d.title} onChange={(e) => up({ title: e.target.value })} placeholder="Например, «Напоминание за час»" /></div>
           {d.kind !== 'text' && <div className="fld"><label>{d.kind === 'voice' ? 'Голосовое сообщение' : 'Файл'}</label><MediaField kind={d.kind} value={d.media_url} onChange={(url) => up({ media_url: url })} folder="templates" /></div>}
           <div className="fld"><label>{d.kind === 'text' ? 'Текст сообщения' : 'Подпись'}</label>

@@ -33,3 +33,5 @@
 .tpl .kindchip { display: inline-flex; align-items: center; gap: 5px; }
 .tpl .rate { display: inline-flex; align-items: center; gap: 4px; font-weight: 700; }
 .tpl .chips button .ic { vertical-align: -3px; margin-right: 5px; }
+
+.tpl .mb > * { flex-shrink: 0; }

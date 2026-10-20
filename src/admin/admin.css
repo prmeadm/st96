@@ -255,3 +255,9 @@ body { overflow-wrap: break-word; }
   .rail::-webkit-scrollbar { display: none; }
   .rail a, .rail .out { scroll-snap-align: center; }
 }
+
+/* Блоки в прокручиваемых окнах не сжимаются: переключатель типа и поля сохраняют свою высоту, лишнее прокручивается */
+.seg, .mfield, .drop, .fld { flex-shrink: 0; }
+.ibw { display: inline-flex; flex-direction: column; align-items: center; gap: 3px; }
+.ibw > span { font-size: var(--fs-xs); color: var(--mute); line-height: 1.1; }
+.ibtns { align-items: flex-start; }
