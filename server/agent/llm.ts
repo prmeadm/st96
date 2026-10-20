@@ -3,36 +3,38 @@
 export type Llm = (req: { system: string; user: string }) => Promise<string>
 
 export const DEFAULT_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/openai'
-export const DEFAULT_MODEL = 'gemini-2.5-flash'
+/** Бесплатные модели Google меняются: пробуем по порядку, пока не найдётся доступная. Жёстко задать можно через LLM_MODEL. */
+export const DEFAULT_MODELS = ['gemini-3.8-flash', 'gemini-3.5-flash-lite', 'gemini-3.6-flash', 'gemini-3.1-flash-lite']
 
 export class LlmError extends Error {}
 
 export function openAiCompatible(cfg: { apiKey: string; baseUrl?: string; model?: string }): Llm {
   const base = (cfg.baseUrl || DEFAULT_BASE_URL).replace(/\/$/, '')
+  const models = cfg.model ? [cfg.model] : DEFAULT_MODELS
+  const call = (model: string, system: string, user: string) =>
+    fetch(`${base}/chat/completions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${cfg.apiKey}` },
+      body: JSON.stringify({ model, temperature: 0.3, response_format: { type: 'json_object' }, messages: [{ role: 'system', content: system }, { role: 'user', content: user }] }),
+      signal: AbortSignal.timeout(25_000),
+    }).catch((e: unknown) => ({ ok: false, status: 0, text: async () => (e instanceof Error ? e.message : String(e)) }) as Response)
+
   return async ({ system, user }) => {
     let lastErr = ''
-    for (let attempt = 0; attempt < 2; attempt++) {
-      const r = await fetch(`${base}/chat/completions`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${cfg.apiKey}` },
-        body: JSON.stringify({
-          model: cfg.model || DEFAULT_MODEL,
-          temperature: 0.3,
-          response_format: { type: 'json_object' },
-          messages: [{ role: 'system', content: system }, { role: 'user', content: user }],
-        }),
-        signal: AbortSignal.timeout(25_000),
-      }).catch((e: unknown) => ({ ok: false, status: 0, text: async () => (e instanceof Error ? e.message : String(e)) }) as Response)
+    for (const model of models) {
+      const r = await call(model, system, user)
       if (r.ok) {
         const data = (await r.json()) as { choices?: { message?: { content?: string } }[] }
         const text = data.choices?.[0]?.message?.content
         if (text) return text
-        lastErr = 'пустой ответ модели'
-      } else {
-        lastErr = `${r.status} ${(await r.text()).slice(0, 160)}`
-        if (r.status === 401 || r.status === 403) throw new LlmError('Ключ LLM_API_KEY не подходит или у него нет доступа')
-        if (r.status === 429) throw new LlmError('Достигнут лимит бесплатного тарифа модели, повторите позже')
+        lastErr = `${model}: пустой ответ модели`
+        continue
       }
+      if (r.status === 401 || r.status === 403) throw new LlmError('Ключ LLM_API_KEY не подходит или у него нет доступа')
+      if (r.status === 429) throw new LlmError('Достигнут лимит бесплатного тарифа модели, повторите позже')
+      lastErr = `${model}: ${r.status} ${(await r.text()).replace(/\s+/g, ' ').slice(0, 120)}`
+      // 404 (модель недоступна) и 400 (модель не поддерживает запрос): пробуем следующую; прочие сбои дают одну повторную попытку ниже
+      if (r.status !== 404 && r.status !== 400 && r.status !== 0 && r.status < 500) break
     }
     throw new LlmError(`Модель недоступна: ${lastErr}`)
   }

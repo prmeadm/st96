@@ -152,3 +152,30 @@ test('сводка для агента не содержит персональ�
   assert.match(text, /Клиентов 1/)
   assert.ok(!/Иван|375291112233|ivan/.test(text))
 })
+
+test('слой модели: недоступную модель (404) пропускает и берёт следующую, на 429 и неверный ключ даёт понятные ошибки', async () => {
+  const { openAiCompatible } = await import('./llm')
+  const real = globalThis.fetch
+  const seen: string[] = []
+  const reply = (status: number, body: unknown) => new Response(JSON.stringify(body), { status })
+  try {
+    globalThis.fetch = (async (_u: unknown, init: { body: string }) => {
+      const model = JSON.parse(init.body).model as string
+      seen.push(model)
+      return model === 'gemini-3.8-flash' ? reply(404, { error: 'gone' }) : reply(200, { choices: [{ message: { content: '{"ok":1}' } }] })
+    }) as never
+    assert.equal(await openAiCompatible({ apiKey: 'k' })({ system: 's', user: 'u' }), '{"ok":1}')
+    assert.deepEqual(seen, ['gemini-3.8-flash', 'gemini-3.5-flash-lite'])
+
+    globalThis.fetch = (async () => reply(429, {})) as never
+    await assert.rejects(openAiCompatible({ apiKey: 'k' })({ system: 's', user: 'u' }), /лимит/)
+    globalThis.fetch = (async () => reply(403, {})) as never
+    await assert.rejects(openAiCompatible({ apiKey: 'k' })({ system: 's', user: 'u' }), /LLM_API_KEY/)
+    seen.length = 0
+    globalThis.fetch = (async (_u: unknown, init: { body: string }) => { seen.push(JSON.parse(init.body).model); return reply(404, {}) }) as never
+    await assert.rejects(openAiCompatible({ apiKey: 'k', model: 'my-model' })({ system: 's', user: 'u' }), /недоступна/)
+    assert.deepEqual(seen, ['my-model'], 'заданная LLM_MODEL не подменяется')
+  } finally {
+    globalThis.fetch = real
+  }
+})
