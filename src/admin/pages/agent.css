@@ -19,3 +19,17 @@
   .agent:not(.has-id) .detail-col { display: none; }
   .agent.has-id .back { display: inline-flex; }
 }
+.models { display: flex; flex-direction: column; gap: var(--s-3); }
+.mgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: var(--s-3); align-items: stretch; }
+.mcard { display: flex; flex-direction: column; gap: var(--s-2); background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: var(--s-4); box-shadow: var(--shadow); }
+.mcard.on { border-color: var(--accent-edge); box-shadow: inset 0 0 0 1px var(--accent-edge), var(--shadow); background: var(--accent-soft); }
+.mhead { display: flex; align-items: center; gap: var(--s-2); flex-wrap: wrap; }
+.mhead b { font-size: var(--fs-lg); }
+.mblurb { margin: 0; color: var(--ink); line-height: 1.45; font-size: var(--fs-md); }
+.mlist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; font-size: var(--fs-sm); }
+.mlist li { display: flex; align-items: flex-start; gap: 8px; line-height: 1.35; }
+.mlist li .ic { color: var(--green); margin-top: 1px; flex: none; }
+.mlist li.minus { color: var(--mute); }
+.mlist li.minus .ic { color: var(--mute); }
+.mact { display: flex; align-items: center; gap: var(--s-2); margin-top: auto; padding-top: var(--s-2); }
+.mcard .chip { max-width: 100%; white-space: normal; }

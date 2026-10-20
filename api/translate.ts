@@ -23,7 +23,7 @@ export default async function handler(req: Request) {
   } catch {
     return json({ error: 'Invalid JSON' }, 400)
   }
-  const deps = agentDeps(supabaseRepo(url, key), new Api(token), process.env)
+  const deps = await agentDeps(supabaseRepo(url, key), new Api(token), process.env)
   try {
     return json({ text: await translateToEnglish(deps.llm, body.text ?? '') })
   } catch (e) {

@@ -23,7 +23,7 @@ export default async function handler(req: Request) {
   } catch {
     return json({ error: 'Invalid JSON' }, 400)
   }
-  const deps = agentDeps(supabaseRepo(url, key), new Api(token), process.env)
+  const deps = await agentDeps(supabaseRepo(url, key), new Api(token), process.env)
   const id = b.id ?? ''
   const r =
     b.action === 'create' ? await createTask(deps, { title: b.title ?? '', text: b.text ?? '', attach: Array.isArray(b.attach) ? b.attach.filter((x) => typeof x === 'string') : [] })

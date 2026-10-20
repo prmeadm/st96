@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { supabase } from '../supabase'
 import { callApi } from '../api'
 import { fmtDate } from '../types'
@@ -7,6 +7,8 @@ import { RISK_LABEL, TASK_STATUS, type AgentTask, type Step, type TaskStatus } f
 import { BackLink } from '../ui/BackLink'
 import { Icon } from '../ui/Icon'
 import { RowActions } from '../ui/RowActions'
+import ModelPicker from './ModelPicker'
+import { Seg } from '../ui/Seg'
 import './agent.css'
 
 const STATUS_CHIP: Record<TaskStatus, string> = { planning: 'violet', approval: 'amber', running: 'blue', paused: 'red', done: 'green', rejected: '', failed: 'red' }
@@ -17,6 +19,8 @@ const LIVE: TaskStatus[] = ['planning', 'running', 'paused']
 export default function AgentPage() {
   const { id } = useParams()
   const nav = useNavigate()
+  const [sp, setSp] = useSearchParams()
+  const tab = sp.get('tab') === 'model' ? 'model' : 'tasks'
   const [tasks, setTasks] = useState<AgentTask[] | null>(null)
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
@@ -66,11 +70,13 @@ export default function AgentPage() {
 
   return (
     <div className={`wrap agent ${id ? 'has-id' : ''}`}>
-      <h1 className="h1">Задания агента <span className="chip">{tasks?.length ?? '…'}</span><span className="sp" /><button className="btn primary" onClick={() => { setShowForm(true); nav('/agent') }}><Icon name="plus" size={18} />Новое задание</button></h1>
-      <div className="hint">Опишите задачу обычным текстом. Агент составит план, вы его утвердите или поправите, и только потом он начнёт выполнять. Рассылки и другие опасные шаги запускаются только после вашего отдельного подтверждения.</div>
-      {error && <div className="err" role="alert">{error}</div>}
+      <h1 className="h1">Задания агента <span className="chip">{tasks?.length ?? '…'}</span><span className="sp" />{tab === 'tasks' && <button className="btn primary" onClick={() => { setShowForm(true); nav('/agent') }}><Icon name="plus" size={18} />Новое задание</button>}</h1>
+      <Seg label="Раздел" value={tab} options={[{ value: 'tasks', label: 'Задания', icon: 'agent' }, { value: 'model', label: 'Модель ИИ', icon: 'bolt' }]} onChange={(v) => setSp(v === 'model' ? { tab: 'model' } : {})} />
+      {tab === 'model' && <ModelPicker />}
+      {tab === 'tasks' && <div className="hint">Опишите задачу обычным текстом. Агент составит план, вы его утвердите или поправите, и только потом он начнёт выполнять. Рассылки и другие опасные шаги запускаются только после вашего отдельного подтверждения.</div>}
+      {tab === 'tasks' && error && <div className="err" role="alert">{error}</div>}
 
-      <div className="split">
+      {tab === 'tasks' && <div className="split">
         <div className="list-col">
           {showForm && (
             <div className="card" style={{ marginBottom: 8 }}>
@@ -166,7 +172,7 @@ export default function AgentPage() {
             </div>
           )}
         </div>
-      </div>
+      </div>}
     </div>
   )
 }

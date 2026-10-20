@@ -8,9 +8,9 @@ export const DEFAULT_MODELS = ['gemini-3.8-flash', 'gemini-3.5-flash-lite', 'gem
 
 export class LlmError extends Error {}
 
-export function openAiCompatible(cfg: { apiKey: string; baseUrl?: string; model?: string }): Llm {
+export function openAiCompatible(cfg: { apiKey: string; baseUrl?: string; model?: string; models?: string[] }): Llm {
   const base = (cfg.baseUrl || DEFAULT_BASE_URL).replace(/\/$/, '')
-  const models = cfg.model ? [cfg.model] : DEFAULT_MODELS
+  const models = cfg.models?.length ? cfg.models : cfg.model ? [cfg.model] : DEFAULT_MODELS
   const call = (model: string, system: string, user: string) =>
     fetch(`${base}/chat/completions`, {
       method: 'POST',
@@ -50,5 +50,17 @@ export function parseJson<T = unknown>(raw: string): T {
     const b = s.lastIndexOf('}')
     if (a >= 0 && b > a) return JSON.parse(s.slice(a, b + 1)) as T
     throw new LlmError('Модель вернула не JSON')
+  }
+}
+
+/** Проверка одной модели строго: отвечает ли она на этот ключ. Возвращает время ответа или понятную причину. */
+export async function testModel(cfg: { apiKey: string; baseUrl?: string }, model: string): Promise<{ ok: true; ms: number } | { ok: false; error: string }> {
+  const t0 = Date.now()
+  try {
+    await openAiCompatible({ ...cfg, model })({ system: 'Верни JSON {"ok": true}', user: 'проверка связи' })
+    return { ok: true, ms: Date.now() - t0 }
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e)
+    return { ok: false, error: /404/.test(msg) ? 'Недоступна для вашего ключа' : msg.replace(/^Модель недоступна: /, '').slice(0, 140) }
   }
 }

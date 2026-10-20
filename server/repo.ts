@@ -124,6 +124,9 @@ export interface Repo {
   agentStats(): Promise<AgentStats>
   insertTemplate(t: { title: string; kind: TemplateKind; body: string; task: string; goal: string; services: string[] }): Promise<{ id: string }>
   insertBroadcastDraft(b: { title: string; body: string; segment: Segment }): Promise<{ id: string }>
+  // настройки платформы
+  getSetting(key: string): Promise<string | null>
+  setSetting(key: string, value: string): Promise<void>
   // очередь отложенных шагов
   enqueueJob(kind: string, runAt: Date, payload: Record<string, unknown>): Promise<void>
   claimJobs(limit: number): Promise<JobRow[]>
@@ -337,6 +340,13 @@ export function supabaseRepo(url: string, key: string): Repo {
     },
     async insertBroadcastDraft(b) {
       return ok(await db.from('broadcasts').insert(b).select('id').single(), 'insertBroadcastDraft') as { id: string }
+    },
+    async getSetting(key) {
+      const r = ok(await db.from('app_settings').select('value').eq('key', key).maybeSingle(), 'getSetting') as { value: unknown } | null
+      return typeof r?.value === 'string' ? r.value : null
+    },
+    async setSetting(key, value) {
+      ok(await db.from('app_settings').upsert({ key, value, updated_at: new Date().toISOString() }, { onConflict: 'key' }), 'setSetting')
     },
     async enqueueJob(kind, runAt, payload) {
       ok(await db.from('jobs').insert({ kind, run_at: runAt.toISOString(), payload }), 'enqueueJob')

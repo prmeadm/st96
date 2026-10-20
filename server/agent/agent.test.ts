@@ -130,7 +130,7 @@ test('сбой модели при планировании: статус failed
 
 test('без ключа LLM_API_KEY задание не падает, а получает понятную ошибку', async () => {
   const repo = memoryRepo()
-  await createTask(agentDeps(repo, null, {}), input)
+  await createTask(await agentDeps(repo, null, {}), input)
   assert.equal(repo.agentTasks[0]!.status, 'failed')
   assert.match(repo.agentTasks[0]!.error ?? '', /LLM_API_KEY/)
 })
@@ -191,4 +191,43 @@ test('удаление: нельзя удалить идущее задание,
   assert.ok((await deleteTask(deps, id)).ok)
   assert.equal(repo.agentTasks.length, 0)
   assert.equal((await deleteTask(deps, id)).ok, false)
+})
+
+test('каталог моделей и цепочка запасных', async () => {
+  const { MODEL_IDS, modelChain, isKnownModel } = await import('./models')
+  assert.ok(MODEL_IDS.length >= 3)
+  assert.deepEqual(modelChain('auto'), MODEL_IDS)
+  const chain = modelChain('gemini-3.5-flash-lite')
+  assert.equal(chain[0], 'gemini-3.5-flash-lite')
+  assert.equal(new Set(chain).size, MODEL_IDS.length, 'без повторов, остальные идут запасными')
+  assert.equal(modelChain(null, 'my-env-model')[0], 'my-env-model')
+  assert.ok(isKnownModel('auto') && isKnownModel(MODEL_IDS[0]) && !isKnownModel('gpt-x'))
+})
+
+test('своя модель: проверка адреса, ключа и идентификатора', async () => {
+  const { validateCustom } = await import('./models')
+  const base = { name: 'Groq Llama', baseUrl: 'https://api.groq.com/openai/v1/', model: 'llama-3.3-70b-versatile', keyEnv: 'LLM_KEY_GROQ' }
+  const ok = validateCustom(base)
+  assert.ok(ok.ok && ok.value.baseUrl === 'https://api.groq.com/openai/v1')
+  for (const bad of [
+    { ...base, baseUrl: 'http://api.groq.com/v1' },
+    { ...base, baseUrl: 'https://localhost/v1' },
+    { ...base, baseUrl: 'https://192.168.1.5/v1' },
+    { ...base, baseUrl: 'https://user:pw@api.groq.com/v1' },
+    { ...base, keyEnv: 'SUPABASE_SERVICE_ROLE_KEY' },
+    { ...base, keyEnv: 'llm_key_groq' },
+    { ...base, model: 'bad model; rm' },
+    { ...base, name: '' },
+  ]) assert.equal(validateCustom(bad).ok, false, JSON.stringify(bad))
+})
+
+test('выбор модели: своя работает строго, без перехода на Google, и без ключа даёт понятную ошибку', async () => {
+  const { resolveLlm, MODEL_SETTING } = await import('./deps')
+  const { CUSTOM_SETTING } = await import('./models')
+  const repo = memoryRepo()
+  await repo.setSetting(CUSTOM_SETTING, JSON.stringify([{ id: 'custom:abc', name: 'G', baseUrl: 'https://api.groq.com/openai/v1', model: 'm1', keyEnv: 'LLM_KEY_GROQ' }]))
+  await repo.setSetting(MODEL_SETTING, 'custom:abc')
+  await assert.rejects((await resolveLlm(repo, { LLM_API_KEY: 'google' }))({ system: 's', user: 'u' }), /LLM_KEY_GROQ/)
+  await repo.setSetting(MODEL_SETTING, 'custom:gone')
+  await assert.rejects((await resolveLlm(repo, { LLM_KEY_GROQ: 'k' }))({ system: 's', user: 'u' }), /удалена/)
 })

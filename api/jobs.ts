@@ -41,7 +41,7 @@ export default async function handler(req: Request) {
   }
   let agent = { ran: 0 }
   try {
-    agent = await tickAgentTasks(agentDeps(repo, new Api(token), process.env))
+    agent = await tickAgentTasks(await agentDeps(repo, new Api(token), process.env))
   } catch (e) {
     console.error('agent tick failed', e instanceof Error ? e.message : e)
   }

@@ -17,6 +17,7 @@ export type MemoryRepo = Repo & {
   templates: TemplateRow[]
   broadcasts: BroadcastRow[]
   agentTasks: (AgentTask & { locked: boolean })[]
+  settings: Map<string, string>
   recipients: { broadcast_id: string; client_id: string; status: 'pending' | 'sending' | 'sent' | 'failed'; error?: string }[]
   jobs: (JobRow & { run_at: Date; done: boolean; error?: string })[]
 }
@@ -26,7 +27,7 @@ export function memoryRepo(): MemoryRepo {
   const id = (p: string) => `${p}${++seq}`
   const seen = new Set<number>()
   const r: MemoryRepo = {
-    clients: [], leads: [], notes: [], messages: [], funnels: [], runs: [], events: [], tags: new Map(), templates: [], broadcasts: [], agentTasks: [], recipients: [], jobs: [],
+    clients: [], leads: [], notes: [], messages: [], funnels: [], runs: [], events: [], tags: new Map(), templates: [], broadcasts: [], agentTasks: [], settings: new Map(), recipients: [], jobs: [],
     async claimUpdate(u) { if (seen.has(u)) return false; seen.add(u); return true },
     async findClient({ tgUserId, phone, username, topicId }) {
       if (topicId) return r.clients.find((c) => c.admin_topic_id === topicId) ?? null
@@ -148,6 +149,8 @@ export function memoryRepo(): MemoryRepo {
       r.broadcasts.push(row)
       return { id: row.id }
     },
+    async getSetting(key) { return r.settings.get(key) ?? null },
+    async setSetting(key, value) { r.settings.set(key, value) },
     async enqueueJob(kind, runAt, payload) { r.jobs.push({ id: ++seq, kind, payload, attempts: 0, run_at: runAt, done: false }) },
     async claimJobs(limit) {
       const due = r.jobs.filter((j) => !j.done && j.run_at.getTime() <= Date.now()).slice(0, limit)
