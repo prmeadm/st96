@@ -165,7 +165,7 @@ export default function ClientPage() {
       <div className="card">
         <h3>Заметки ({notes.length})</h3>
         <form onSubmit={addNote} className="row" style={{ alignItems: 'stretch' }}>
-          <textarea style={{ flex: 1, minHeight: 60 }} value={noteText} onChange={(e) => setNoteText(e.target.value)} placeholder="Заметка о клиенте: что обсуждали, что пообещали" />
+          <textarea style={{ flex: 1, minHeight: 60 }} value={noteText} onChange={(e) => setNoteText(e.target.value)} placeholder="Что обсуждали, что пообещали" />
           <button className="btn primary" disabled={!noteText.trim()}>Добавить</button>
         </form>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 10 }}>

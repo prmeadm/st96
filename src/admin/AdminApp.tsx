@@ -7,6 +7,7 @@ import NotesPage from './pages/NotesPage'
 import FunnelsPage from './pages/FunnelsPage'
 import FunnelPage from './pages/FunnelPage'
 import TemplatesPage from './pages/TemplatesPage'
+import { Icon } from './ui/Icon'
 
 function Shell() {
   const { email, signOut } = useAuth()
@@ -14,14 +15,14 @@ function Shell() {
   return (
     <div className="app">
       <nav className="rail" aria-label="Разделы">
-        <div className="brand">ST96 · админка</div>
-        <NavLink to="/clients" className={link}>👥 Клиенты</NavLink>
-        <NavLink to="/leads" className={link}>📥 Заявки</NavLink>
-        <NavLink to="/funnels" className={link}>🔀 Воронки</NavLink>
-        <NavLink to="/templates" className={link}>💬 Шаблоны</NavLink>
-        <NavLink to="/notes" className={link}>📝 Заметки</NavLink>
-        <button className="out" onClick={signOut}>⎋<span>Выйти</span></button>
-        <div className="who">{email}<br /><button className="btn" style={{ marginTop: 8, padding: '5px 10px' }} onClick={signOut}>Выйти</button></div>
+        <div className="brand"><span className="logo" aria-hidden="true">ST</span>96 · админка</div>
+        <NavLink to="/clients" className={link}><Icon name="clients" /><span>Клиенты</span></NavLink>
+        <NavLink to="/leads" className={link}><Icon name="leads" /><span>Заявки</span></NavLink>
+        <NavLink to="/funnels" className={link}><Icon name="funnels" /><span>Воронки</span></NavLink>
+        <NavLink to="/templates" className={link}><Icon name="templates" /><span>Шаблоны</span></NavLink>
+        <NavLink to="/notes" className={link}><Icon name="notes" /><span>Заметки</span></NavLink>
+        <button className="out" onClick={signOut}><Icon name="logout" /><span>Выйти</span></button>
+        <div className="who">{email}<br /><button className="btn small" onClick={signOut}>Выйти</button></div>
       </nav>
       <main className="main">
         <div className="page">
