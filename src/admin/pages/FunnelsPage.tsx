@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { blankGraph, demoGraph } from '../../../server/funnels/demo'
 import { supabase } from '../supabase'
 import { fmtDate } from '../types'
+import { Icon } from '../ui/Icon'
 import { RowActions } from '../ui/RowActions'
 
 type Row = { id: string; name: string; status: 'draft' | 'published' | 'archived'; updated_at: string; graph: { nodes?: unknown[] } }
@@ -33,7 +34,7 @@ export default function FunnelsPage() {
 
   return (
     <div className="wrap">
-      <h1 className="h1">Воронки <span className="chip">{rows?.length ?? '…'}</span><span className="sp" /><button className="btn" onClick={() => create('Пример: запись на консультацию', demoGraph)}>Взять пример</button><button className="btn primary" onClick={() => create('Новая воронка', blankGraph)}>+ Добавить воронку</button></h1>
+      <h1 className="h1">Воронки <span className="chip">{rows?.length ?? '…'}</span><span className="sp" /><button className="btn" onClick={() => create('Пример: запись на консультацию', demoGraph)}>Взять пример</button><button className="btn primary" onClick={() => create('Новая воронка', blankGraph)}><Icon name="plus" size={18} />Добавить воронку</button></h1>
       <div className="hint">Воронка ведёт клиента в Telegram-боте: сообщения с кнопками, условия, действия, паузы и передача человеку. Опубликованная воронка начинает работать сразу. Схема собирается из блоков в конструкторе; точная правка доступна на вкладке «JSON».</div>
       {error && <div className="err" role="alert">{error}</div>}
       {rows === null && !error && <div className="empty">Загрузка…</div>}

@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useRef, useState } from 'react'
 import type { Edge, Node } from '@xyflow/react'
-import { actText, condText, type D } from './catalog'
+import { P, actText, condText, type D } from './catalog'
+import { Ic } from './Nodes'
 
 type Item = { k: 'bot'; parts: D[]; links: D[] } | { k: 'sys'; t: string } | { k: 'me'; t: string }
 type Choice = { label: string; target?: string }
@@ -59,7 +60,7 @@ export function Preview({ nodes, edges, onClose }: { nodes: Node[]; edges: Edge[
     <div className="ov" onClick={onClose}>
       <div className="phone" onClick={(e) => e.stopPropagation()}>
         <div className="ph"><span className="av">ST96</span><div>ST96 Bot<div className="pill">предпросмотр воронки</div></div><span style={{ flex: 1 }} />
-          <button type="button" className="btn" onClick={start}>Заново</button><button type="button" className="btn icon" onClick={onClose}>✕</button></div>
+          <button type="button" className="btn" onClick={start}>Заново</button><button type="button" className="btn icon" onClick={onClose} aria-label="Закрыть" title="Закрыть"><Ic d={P.close} size={16} /></button></div>
         <div className="pchat">
           {log.map((m, i) => m.k === 'sys' ? <div className="sys" key={i}>{m.t}</div>
             : m.k === 'me' ? <div className="pmsg me" key={i}>{m.t}</div>

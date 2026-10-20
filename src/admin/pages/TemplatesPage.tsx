@@ -74,7 +74,7 @@ export default function TemplatesPage() {
 
   return (
     <div className="wrap tpl">
-      <h1 className="h1">Шаблоны <span className="chip">{rows?.length ?? '…'}</span><span className="sp" /><button className="btn primary" onClick={() => setEdit(blank())}>+ Новый шаблон</button></h1>
+      <h1 className="h1">Шаблоны <span className="chip">{rows?.length ?? '…'}</span><span className="sp" /><button className="btn primary" onClick={() => setEdit(blank())}><Icon name="plus" size={18} />Новый шаблон</button></h1>
       <div className="hint">Готовые сообщения для клиентов. В воронках выбираются в блоке «Сообщение», в теме диалога вызываются командой /t. Переменные: {TPL_VARS.join(', ')}.</div>
       {error && <div className="err" role="alert">{error}</div>}
       <div className="tplw">
@@ -87,7 +87,7 @@ export default function TemplatesPage() {
           <div className="chips">
             <button className={!kinds.length && !favOnly ? 'on' : ''} onClick={() => { setKinds([]); setFavOnly(false) }}>Все</button>
             {(Object.entries(TPL_KINDS) as [TemplateKind, string][]).map(([k, l]) => <button key={k} className={kinds.includes(k) ? 'on' : ''} onClick={() => setKinds(kinds.includes(k) ? kinds.filter((x) => x !== k) : [...kinds, k])}>{l}</button>)}
-            <button className={favOnly ? 'on' : ''} onClick={() => setFavOnly(!favOnly)}>★ Избранное</button>
+            <button className={favOnly ? 'on' : ''} onClick={() => setFavOnly(!favOnly)}><Icon name="star" size={16} fill={favOnly} />Избранное</button>
           </div>
           {rows === null && !error && <div className="empty">Загрузка…</div>}
           {rows && <div className="hint">Найдено: {list.length} из {rows.length}</div>}
@@ -98,7 +98,7 @@ export default function TemplatesPage() {
               <div key={t.id} className="tcard" role="button" tabIndex={0} onClick={() => setEdit({ ...t, body_en: t.body_en ?? '', media_url: t.media_url ?? '' })}
                 onKeyDown={(e) => e.key === 'Enter' && setEdit({ ...t, body_en: t.body_en ?? '', media_url: t.media_url ?? '' })}>
                 <div className="row"><span className="chip">{TPL_KINDS[t.kind]}</span><span className="sp" />
-                  <button className={`star ${t.fav ? 'on' : ''}`} aria-label="Избранное" onClick={(e) => { e.stopPropagation(); void toggleFav(t) }}>{t.fav ? '★' : '☆'}</button>
+                  <button className={`star ${t.fav ? 'on' : ''}`} aria-label="Избранное" onClick={(e) => { e.stopPropagation(); void toggleFav(t) }}><Icon name="star" size={20} fill={t.fav} /></button>
                   <button type="button" className="ibtn sm" title="Изменить" aria-label="Изменить" onClick={(e) => { e.stopPropagation(); setEdit({ ...t, body_en: t.body_en ?? '', media_url: t.media_url ?? '' }) }}><Icon name="edit" size={18} /></button>
                   <button type="button" className="ibtn sm danger" title="Удалить" aria-label="Удалить" onClick={(e) => { e.stopPropagation(); void remove({ ...t, body_en: t.body_en ?? '', media_url: t.media_url ?? '' }) }}><Icon name="trash" size={18} /></button></div>
                 <b>{t.title}</b>
@@ -114,7 +114,7 @@ export default function TemplatesPage() {
       {sheet && (
         <div className="ov" onClick={() => setSheet(false)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <div className="mh"><b>Фильтры</b><span className="sp" /><button className="x" onClick={() => setSheet(false)} aria-label="Закрыть">✕</button></div>
+            <div className="mh"><b>Фильтры</b><span className="sp" /><button className="x" onClick={() => setSheet(false)} aria-label="Закрыть"><Icon name="close" size={18} /></button></div>
             <div className="mb">{filters}</div>
             <div className="mf"><button className="btn primary" style={{ flex: 1 }} onClick={() => setSheet(false)}>Показать: {list.length}</button></div>
           </div>
@@ -141,8 +141,8 @@ function Editor({ d: init, onSave, onClose, onDelete, onCopy }: { d: Draft; onSa
     <div className="ov" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
         <div className="mh"><b>{d.id ? 'Шаблон' : 'Новый шаблон'}</b><span className="sp" />
-          <button className={`star ${d.fav ? 'on' : ''}`} onClick={() => up({ fav: !d.fav })} aria-label="Избранное">{d.fav ? '★' : '☆'}</button>
-          <button className="x" onClick={onClose} aria-label="Закрыть">✕</button></div>
+          <button className={`star ${d.fav ? 'on' : ''}`} onClick={() => up({ fav: !d.fav })} aria-label="Избранное"><Icon name="star" size={20} fill={d.fav} /></button>
+          <button className="x" onClick={onClose} aria-label="Закрыть"><Icon name="close" size={18} /></button></div>
         <div className="mb">
           <Seg label="Тип сообщения" iconOnly value={d.kind} options={KIND_OPTIONS} onChange={(k) => up({ kind: k })} />
           <div className="fld"><label>Название</label><input type="text" value={d.title} onChange={(e) => up({ title: e.target.value })} placeholder="Например, «Напоминание за час»" /></div>

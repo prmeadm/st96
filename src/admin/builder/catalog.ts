@@ -20,6 +20,7 @@ export const P = {
   plus: 'M12 5v14M5 12h14',
   trash: 'M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13',
   edit: 'M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4',
+  close: 'M6 6l12 12M18 6L6 18',
   copy: 'M9 9h11v11H9zM5 15V4h11',
   img: 'M4 5h16v14H4zM4 16l5-5 4 4 3-3 4 4',
   vid: 'M3 6h13v12H3zM16 10l5-3v10l-5-3z',

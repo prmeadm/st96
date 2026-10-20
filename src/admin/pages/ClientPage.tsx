@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
-import { Link, useParams, useSearchParams } from 'react-router-dom'
+import { useParams, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../auth'
 import { Highlight } from '../highlight'
 import { GROUP_LINK_ID, supabase } from '../supabase'
+import { BackLink } from '../ui/BackLink'
+import { Icon } from '../ui/Icon'
 import { TPL_KINDS, fillTemplate, type TemplateRow } from '../../../server/templates'
 import { SERVICES, SOURCES, STATUSES, WARNINGS, clientTitle, fmtDate, type Client, type Lead, type Msg, type Note } from '../types'
 
@@ -51,7 +53,7 @@ function SendTemplate({ client, onSent }: { client: Client; onSent: () => void }
           <div style={{ maxHeight: 280, overflow: 'auto', display: 'flex', flexDirection: 'column', gap: 4 }}>
             {list.map((t) => (
               <button key={t.id} className="btn" style={{ justifyContent: 'flex-start', flexDirection: 'column', alignItems: 'flex-start', textAlign: 'left' }} onClick={() => setPick(t)}>
-                <b>{t.fav ? '★ ' : ''}{t.title} <span className="hint">· {TPL_KINDS[t.kind]}</span></b>
+                <b>{t.fav && <Icon name="star" size={14} fill />} {t.title} <span className="hint">· {TPL_KINDS[t.kind]}</span></b>
                 <span className="hint" style={{ whiteSpace: 'normal' }}>{t.body.slice(0, 90)}</span>
               </button>
             ))}
@@ -128,7 +130,7 @@ export default function ClientPage() {
     setLeads((ls) => ls.map((x) => (x.id === lid ? { ...x, status } : x)))
   }
 
-  if (error && !client) return <div className="wrap"><Link to="/clients">← Клиенты</Link><div className="err">{error}</div></div>
+  if (error && !client) return <div className="wrap"><BackLink to="/clients">Клиенты</BackLink><div className="err">{error}</div></div>
   if (!client) return <div className="empty">Загрузка…</div>
 
   const topicUrl = client.admin_topic_id && GROUP_LINK_ID ? `https://t.me/c/${GROUP_LINK_ID}/${client.admin_topic_id}` : ''
@@ -136,7 +138,7 @@ export default function ClientPage() {
 
   return (
     <div className="wrap">
-      <Link to="/clients">← Клиенты</Link>
+      <BackLink to="/clients">Клиенты</BackLink>
       <h1 className="h1">{clientTitle(client)}
         {client.consent_at && !client.opted_out_at && <span className="chip green">рассылки: да</span>}
         {client.opted_out_at && <span className="chip red">отписан</span>}

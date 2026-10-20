@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { validateGraph } from '../../../server/funnels/validate'
 import type { Graph } from '../../../server/funnels/types'
 import { Builder } from '../builder/Builder'
+import { BackLink } from '../ui/BackLink'
 import { supabase } from '../supabase'
 import { FUNNEL_STATUS } from './FunnelsPage'
 
@@ -67,12 +68,12 @@ export default function FunnelPage() {
     else nav('/funnels')
   }
 
-  if (!f) return <div className="wrap"><Link to="/funnels">← Воронки</Link><div className={msg ? 'err' : 'empty'}>{msg || 'Загрузка…'}</div></div>
+  if (!f) return <div className="wrap"><BackLink to="/funnels">Воронки</BackLink><div className={msg ? 'err' : 'empty'}>{msg || 'Загрузка…'}</div></div>
 
   const builderOn = tab === 'builder' && graphOk
   return (
     <div className="wrap" style={builderOn ? { maxWidth: 'none' } : undefined}>
-      <Link to="/funnels">← Воронки</Link>
+      <BackLink to="/funnels">Воронки</BackLink>
       <h1 className="h1">{name || 'Воронка'} <span className={`chip ${status === 'published' ? 'green' : ''}`}>{FUNNEL_STATUS[status]}</span></h1>
       <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         <div className="fld"><label>Название</label><input value={name} onChange={(e) => setName(e.target.value)} /></div>

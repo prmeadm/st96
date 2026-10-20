@@ -165,3 +165,38 @@ fieldset.plain { border: 0; margin: 0; padding: 0; min-width: 0; display: flex; 
 .ibtn.sm { width: 36px; height: 36px; border-color: transparent; background: none; color: var(--mute); }
 .ibtn.sm:hover { background: var(--bg); border-color: var(--line-strong); color: var(--ink); text-decoration: none; }
 .ibtn.danger:hover { color: var(--red); border-color: var(--red); background: var(--red-soft); }
+
+/* ───────── Единый вид кнопок и элементов управления ───────── */
+.btn { min-height: 40px; padding: 0 16px; gap: 8px; transition: background 0.15s, border-color 0.15s, box-shadow 0.15s, transform 0.06s; }
+.btn:active:not(:disabled), .chips button:active, .ibtn:active:not([aria-disabled="true"]), .seg button:active { transform: translateY(1px); }
+.btn .ic { flex: none; }
+.btn.primary { box-shadow: 0 1px 2px rgba(35, 42, 59, 0.12); }
+.btn.primary:active:not(:disabled) { box-shadow: none; }
+.h1 .btn { font-size: var(--fs-md); }
+.chips button { min-height: 34px; transition: background 0.15s, border-color 0.15s, color 0.15s; }
+.chips button:hover:not(.on) { border-color: var(--ink); }
+.seg button:focus-visible { outline-offset: -3px; }
+.x, .star { display: inline-grid; place-items: center; width: 36px; height: 36px; padding: 0; border: 0; border-radius: 50%; background: none; color: var(--mute); transition: background 0.15s, color 0.15s; }
+.x:hover, .star:hover { background: var(--bg); color: var(--ink); }
+.star.on { color: var(--amber); }
+.fb .x:hover { background: var(--red-soft); color: var(--red); }
+.backlink { display: inline-flex; align-items: center; gap: 2px; align-self: flex-start; padding: 6px 12px 6px 6px; border-radius: 999px; color: var(--mute); font-weight: 500; transition: background 0.15s, color 0.15s; }
+.backlink:hover { background: var(--card); color: var(--ink); text-decoration: none; }
+.smark { display: inline-grid; place-items: center; width: 20px; height: 20px; flex: none; color: var(--mute); }
+.smark.done { color: var(--green); }
+.smark.failed { color: var(--red); }
+.smark.running { color: var(--blue); }
+.dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--accent-edge); }
+.btn .dot { margin-left: 2px; }
+.rail a, .rail .out { min-height: 44px; transition: background 0.15s, color 0.15s; }
+@media (max-width: 720px) {
+  .btn { min-height: 44px; }
+  .x, .star { width: 44px; height: 44px; }
+  .ibtn.sm { width: 40px; height: 40px; }
+  .rail a, .rail .out { min-height: 48px; }
+}
+@media (prefers-reduced-motion: reduce) { .btn, .chips button, .seg button { transition: none; transform: none !important; } }
+.fld label small { margin-left: 6px; color: var(--mute); font-weight: 400; font-size: var(--fs-xs); }
+textarea::placeholder, input::placeholder { color: var(--mute); opacity: 0.7; }
+.formnote { margin-top: var(--s-3); }
+@media (max-width: 720px) { .formbtns .btn { flex: 1 1 0; } }

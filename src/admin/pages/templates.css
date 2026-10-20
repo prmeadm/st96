@@ -13,9 +13,6 @@
 .tpl .tex { font-size: var(--fs-sm); color: var(--mute); line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; white-space: pre-wrap; }
 .tpl .tags { gap: 4px; }
 .tpl .tg { font-size: var(--fs-xs); padding: 2px 8px; border-radius: 999px; background: var(--bg); color: var(--mute); border: 1px solid var(--line); }
-.tpl .star { border: 0; background: none; font-size: var(--fs-xl); color: var(--mute); padding: 0 4px; }
-.tpl .star.on { color: var(--amber); }
-.tpl .x { border: 0; background: none; font-size: var(--fs-lg); color: var(--mute); padding: 4px 8px; }
 .tpl .btn.danger { color: var(--red); }
 .tpl .tgprev { background: var(--bg); border: 1px solid var(--line); border-radius: 14px 14px 14px 4px; padding: 10px 12px; line-height: 1.4; max-width: 92%; white-space: pre-wrap; }
 .tpl .ov { position: fixed; inset: 0; background: var(--overlay); z-index: 100; display: grid; place-items: center; padding: 12px; }

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../supabase'
 import { fmtDate } from '../types'
+import { Icon } from '../ui/Icon'
 import { RowActions } from '../ui/RowActions'
 import { BROADCAST_STATUS, type BroadcastRow } from '../../../server/broadcasts'
 
@@ -32,7 +33,7 @@ export default function BroadcastsPage() {
 
   return (
     <div className="wrap">
-      <h1 className="h1">Рассылки <span className="chip">{rows?.length ?? '…'}</span><span className="sp" /><button className="btn primary" onClick={create}>+ Новая рассылка</button></h1>
+      <h1 className="h1">Рассылки <span className="chip">{rows?.length ?? '…'}</span><span className="sp" /><button className="btn primary" onClick={create}><Icon name="plus" size={18} />Новая рассылка</button></h1>
       <div className="hint">Сообщение сразу многим клиентам в Telegram. Получают только те, кто дал согласие на рассылки и не отписался. В конце каждого сообщения автоматически добавляется «Отписаться: /stop».</div>
       {error && <div className="err" role="alert">{error}</div>}
       {rows === null && !error && <div className="empty">Загрузка…</div>}

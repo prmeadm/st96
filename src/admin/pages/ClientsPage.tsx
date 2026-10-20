@@ -92,7 +92,7 @@ export default function ClientsPage() {
             <option value="yes">Согласны на рассылки</option>
             <option value="no">Нет согласия или отписаны</option>
           </select>
-          <button className={`btn${filtersOn ? ' primary' : ''}`} onClick={() => setOpen(!open)}>Слова в заметках{filtersOn ? ' ●' : ''}</button>
+          <button className={`btn${filtersOn ? ' primary' : ''}`} onClick={() => setOpen(!open)}>Слова в заметках{filtersOn && <i className="dot" aria-label="фильтр включён" />}</button>
         </div>
         {open && (
           <div className="grid3">

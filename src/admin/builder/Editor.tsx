@@ -99,7 +99,7 @@ export function Editor({ node, patch, remove, duplicate, close }: { node: Node; 
     {d.parts.map((p: D) => (
       <div className="item" key={p.id}>
         <div className="ih"><span>{PART_NAMES[p.kind] ?? 'Блок'}</span>
-          <button type="button" className="x" onClick={() => set({ parts: d.parts.filter((x: D) => x.id !== p.id) })}>✕</button></div>
+          <button type="button" className="x" onClick={() => set({ parts: d.parts.filter((x: D) => x.id !== p.id) })} aria-label="Удалить" title="Удалить"><Ic d={P.close} size={14} /></button></div>
         {p.kind === 'text' ? (<>
           <textarea value={p.text ?? ''} placeholder="Текст сообщения. Можно {имя} и {компания}" onChange={(e) => set({ parts: d.parts.map((x: D) => x.id === p.id ? { ...x, text: e.target.value } : x) })} />
           <textarea className="en" value={p.en ?? ''} placeholder="English (необязательно, для клиентов с английским)" onChange={(e) => set({ parts: d.parts.map((x: D) => x.id === p.id ? { ...x, en: e.target.value } : x) })} />
@@ -121,21 +121,21 @@ export function Editor({ node, patch, remove, duplicate, close }: { node: Node; 
     <div className="hint">Каждый ответ получает свой выход: тяните связь к следующему блоку.</div>
     {d.quick.map((q: D) => (
       <div className="item" key={q.id}>
-        <div className="ih"><span>Ответ</span><button type="button" className="x" onClick={() => set({ quick: d.quick.filter((x: D) => x.id !== q.id) })}>✕</button></div>
+        <div className="ih"><span>Ответ</span><button type="button" className="x" onClick={() => set({ quick: d.quick.filter((x: D) => x.id !== q.id) })} aria-label="Удалить" title="Удалить"><Ic d={P.close} size={14} /></button></div>
         <input type="text" value={q.label ?? ''} placeholder="Название кнопки" onChange={(e) => set({ quick: d.quick.map((x: D) => x.id === q.id ? { ...x, label: e.target.value } : x) })} />
         <input type="text" value={q.en ?? ''} placeholder="English (необязательно)" onChange={(e) => set({ quick: d.quick.map((x: D) => x.id === q.id ? { ...x, en: e.target.value } : x) })} />
       </div>
     ))}
-    <div className="addrow"><button type="button" onClick={() => set({ quick: [...d.quick, { id: uid('q'), label: '' }] })}>+ Быстрый ответ</button></div>
+    <div className="addrow"><button type="button" onClick={() => set({ quick: [...d.quick, { id: uid('q'), label: '' }] })}><Ic d={P.plus} size={14} /> Быстрый ответ</button></div>
     <div className="h2">Кнопки-ссылки</div>
     {d.links.map((l: D) => (
       <div className="item" key={l.id}>
-        <div className="ih"><span>Ссылка</span><button type="button" className="x" onClick={() => set({ links: d.links.filter((x: D) => x.id !== l.id) })}>✕</button></div>
+        <div className="ih"><span>Ссылка</span><button type="button" className="x" onClick={() => set({ links: d.links.filter((x: D) => x.id !== l.id) })} aria-label="Удалить" title="Удалить"><Ic d={P.close} size={14} /></button></div>
         <input type="text" value={l.label ?? ''} placeholder="Название" onChange={(e) => set({ links: d.links.map((x: D) => x.id === l.id ? { ...x, label: e.target.value } : x) })} />
         <input type="url" value={l.url ?? ''} placeholder="https://" onChange={(e) => set({ links: d.links.map((x: D) => x.id === l.id ? { ...x, url: e.target.value } : x) })} />
       </div>
     ))}
-    <div className="addrow"><button type="button" onClick={() => set({ links: [...d.links, { id: uid('l'), label: '', url: '' }] })}>+ Кнопка-ссылка</button></div>
+    <div className="addrow"><button type="button" onClick={() => set({ links: [...d.links, { id: uid('l'), label: '', url: '' }] })}><Ic d={P.plus} size={14} /> Кнопка-ссылка</button></div>
   </>)
 
   if (type === 'condition') body = (<>
@@ -144,7 +144,7 @@ export function Editor({ node, patch, remove, duplicate, close }: { node: Node; 
       const upd = (p: D) => set({ rules: d.rules.map((x: D) => x.id === r.id ? { ...x, ...p } : x) })
       return (
         <div className="item" key={r.id}>
-          <div className="ih"><span>{COND_TYPES.find((c) => c.k === r.kind)?.n ?? r.kind}</span><button type="button" className="x" onClick={() => set({ rules: d.rules.filter((x: D) => x.id !== r.id) })}>✕</button></div>
+          <div className="ih"><span>{COND_TYPES.find((c) => c.k === r.kind)?.n ?? r.kind}</span><button type="button" className="x" onClick={() => set({ rules: d.rules.filter((x: D) => x.id !== r.id) })} aria-label="Удалить" title="Удалить"><Ic d={P.close} size={14} /></button></div>
           {r.kind === 'service'
             ? <select value={r.value} onChange={(e) => upd({ value: e.target.value })}><option value="">Выберите услугу</option>{SERVICES.map((s) => <option key={s}>{s}</option>)}</select>
             : r.kind === 'day'
@@ -161,7 +161,7 @@ export function Editor({ node, patch, remove, duplicate, close }: { node: Node; 
       const upd = (p: D) => set({ items: d.items.map((x: D) => x.id === a.id ? { ...x, ...p } : x) })
       return (
         <div className="item" key={a.id}>
-          <div className="ih"><span>{ACT_TYPES.find((c) => c.k === a.kind)?.n ?? a.kind}</span><button type="button" className="x" onClick={() => set({ items: d.items.filter((x: D) => x.id !== a.id) })}>✕</button></div>
+          <div className="ih"><span>{ACT_TYPES.find((c) => c.k === a.kind)?.n ?? a.kind}</span><button type="button" className="x" onClick={() => set({ items: d.items.filter((x: D) => x.id !== a.id) })} aria-label="Удалить" title="Удалить"><Ic d={P.close} size={14} /></button></div>
           <input type="text" value={a.value ?? ''} onChange={(e) => upd({ value: e.target.value })} placeholder={ACT_HINT[a.kind]} />
         </div>
       )
@@ -190,7 +190,7 @@ export function Editor({ node, patch, remove, duplicate, close }: { node: Node; 
   return (
     <div className="panel"><span className="sheet-grip" />
       <div className="ph"><span className="ic" style={{ width: 26, height: 26, borderRadius: 8, display: 'grid', placeItems: 'center', background: t.soft, color: t.color }}><Ic d={t.icon} size={14} /></span>{t.name}<span className="sp" />
-        <button type="button" className="x" onClick={close} title="Закрыть">✕</button></div>
+        <button type="button" className="x" onClick={close} title="Закрыть" aria-label="Закрыть"><Ic d={P.close} size={16} /></button></div>
       <div className="pb">{body}</div>
       {type !== 'start' && <div className="pf">
         <button type="button" className="btn" onClick={() => duplicate(node.id)}><Ic d={P.copy} size={14} /> Копия</button>

@@ -4,12 +4,14 @@ import { supabase } from '../supabase'
 import { callApi } from '../api'
 import { fmtDate } from '../types'
 import { RISK_LABEL, TASK_STATUS, type AgentTask, type Step, type TaskStatus } from '../../../server/agent/types'
+import { BackLink } from '../ui/BackLink'
+import { Icon } from '../ui/Icon'
 import { RowActions } from '../ui/RowActions'
 import './agent.css'
 
 const STATUS_CHIP: Record<TaskStatus, string> = { planning: 'violet', approval: 'amber', running: 'blue', paused: 'red', done: 'green', rejected: '', failed: 'red' }
 const RISK_CHIP: Record<Step['risk'], string> = { read: 'green', write: 'blue', send: 'amber', danger: 'red' }
-const STATE_MARK: Record<Step['state'], string> = { todo: '○', running: '◐', done: '✓', skipped: '–', failed: '✕' }
+const STATE_ICON: Record<Step['state'], 'circle' | 'clock' | 'check' | 'minus' | 'close'> = { todo: 'circle', running: 'clock', done: 'check', skipped: 'minus', failed: 'close' }
 const LIVE: TaskStatus[] = ['planning', 'running', 'paused']
 
 export default function AgentPage() {
@@ -64,7 +66,7 @@ export default function AgentPage() {
 
   return (
     <div className={`wrap agent ${id ? 'has-id' : ''}`}>
-      <h1 className="h1">Задания агента <span className="chip">{tasks?.length ?? '…'}</span><span className="sp" /><button className="btn primary" onClick={() => { setShowForm(true); nav('/agent') }}>+ Новое задание</button></h1>
+      <h1 className="h1">Задания агента <span className="chip">{tasks?.length ?? '…'}</span><span className="sp" /><button className="btn primary" onClick={() => { setShowForm(true); nav('/agent') }}><Icon name="plus" size={18} />Новое задание</button></h1>
       <div className="hint">Опишите задачу обычным текстом. Агент составит план, вы его утвердите или поправите, и только потом он начнёт выполнять. Рассылки и другие опасные шаги запускаются только после вашего отдельного подтверждения.</div>
       {error && <div className="err" role="alert">{error}</div>}
 
@@ -73,11 +75,11 @@ export default function AgentPage() {
           {showForm && (
             <div className="card" style={{ marginBottom: 8 }}>
               <h3>Новое задание</h3>
-              <div className="fld"><label>Название</label><input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Например, тексты для напоминаний" /></div>
-              <div className="fld"><label>Что нужно сделать</label><textarea value={form.text} onChange={(e) => setForm({ ...form, text: e.target.value })} placeholder="Подготовь 3 варианта напоминания за час до встречи и сохрани лучший как шаблон" /></div>
-              <div className="fld"><label>Ссылки на материалы (по одной в строке, необязательно)</label><textarea value={form.links} onChange={(e) => setForm({ ...form, links: e.target.value })} /></div>
-              <div className="row"><button className="btn primary" onClick={create} disabled={busy || !form.title.trim() || form.text.trim().length < 5}>{busy ? 'Агент думает…' : 'Поставить задание'}</button><button className="btn" onClick={() => setShowForm(false)} disabled={busy}>Отмена</button></div>
-              <div className="hint" style={{ marginTop: 6 }}>План появится через несколько секунд.</div>
+              <div className="fld"><label htmlFor="at-title">Название</label><input id="at-title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Тексты для напоминаний" /></div>
+              <div className="fld"><label htmlFor="at-text">Что нужно сделать</label><textarea id="at-text" rows={4} value={form.text} onChange={(e) => setForm({ ...form, text: e.target.value })} placeholder="Подготовь 3 варианта напоминания за час до встречи и сохрани лучший как шаблон" /></div>
+              <div className="fld"><label htmlFor="at-links">Ссылки на материалы <small>необязательно</small></label><textarea id="at-links" rows={2} value={form.links} onChange={(e) => setForm({ ...form, links: e.target.value })} placeholder="По одной ссылке в строке" /></div>
+              <div className="row formbtns"><button className="btn primary" onClick={create} disabled={busy || !form.title.trim() || form.text.trim().length < 5}>{busy ? 'Агент думает…' : 'Поставить задание'}</button><button className="btn" onClick={() => setShowForm(false)} disabled={busy}>Отмена</button></div>
+              <div className="hint formnote">План появится через несколько секунд.</div>
             </div>
           )}
           <div className="list">
@@ -100,7 +102,7 @@ export default function AgentPage() {
           {!task && !id && <div className="empty">Выберите задание слева или создайте новое.</div>}
           {task && (
             <div className="card">
-              <Link className="back btn" to="/agent">← Все задания</Link>
+              <BackLink className="back" to="/agent">Все задания</BackLink>
               <div className="row" style={{ marginTop: 6 }}><h3 style={{ margin: 0 }}>{task.title}</h3><span className={`chip ${STATUS_CHIP[task.status]}`}>{TASK_STATUS[task.status]}</span>{task.rev > 1 && <span className="chip">версия плана {task.rev}</span>}</div>
               <p style={{ whiteSpace: 'pre-wrap' }}>{task.text}</p>
               {task.attach.length > 0 && <div className="hint">{task.attach.map((a) => <div key={a}><a href={a} target="_blank" rel="noreferrer">{a}</a></div>)}</div>}
@@ -117,7 +119,7 @@ export default function AgentPage() {
                         <label>
                           {task.status === 'approval' && s.tool !== 'report'
                             ? <input type="checkbox" checked={isOn(s)} onChange={(e) => setOn({ ...on, [s.id]: e.target.checked })} aria-label={`Выполнять шаг: ${s.text}`} />
-                            : <span aria-hidden="true" style={{ width: 20, textAlign: 'center' }}>{STATE_MARK[s.state]}</span>}
+                            : <span className={`smark ${s.state}`} aria-hidden="true"><Icon name={STATE_ICON[s.state]} size={16} /></span>}
                           <span>{s.text}</span>
                         </label>
                         <div className="row"><span className={`chip ${RISK_CHIP[s.risk]}`}>{RISK_LABEL[s.risk]}</span>{task.status !== 'approval' && <span className="hint">{s.state === 'todo' ? 'в очереди' : s.state === 'running' ? 'выполняется' : s.state === 'done' ? 'готово' : s.state === 'skipped' ? 'пропущен' : 'ошибка'}</span>}</div>

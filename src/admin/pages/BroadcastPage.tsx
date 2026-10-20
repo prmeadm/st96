@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../supabase'
 import { callApi } from '../api'
 import { SERVICES, clientTitle, fmtDate } from '../types'
+import { BackLink } from '../ui/BackLink'
 import { MediaField } from '../ui/MediaField'
 import { KIND_OPTIONS, Seg } from '../ui/Seg'
 import { BROADCAST_STATUS, MEDIA_CAPTION_LIMIT, validateBroadcast, type BroadcastRow, type Segment } from '../../../server/broadcasts'
@@ -63,7 +64,7 @@ export default function BroadcastPage() {
     return () => window.clearTimeout(t)
   }, [segKey, b?.status]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (error && !b) return <div className="wrap"><Link to="/broadcasts">← Рассылки</Link><div className="err">{error}</div></div>
+  if (error && !b) return <div className="wrap"><BackLink to="/broadcasts">Рассылки</BackLink><div className="err">{error}</div></div>
   if (!b || !d) return <div className="empty">Загрузка…</div>
 
   const up = (p: Partial<Draft>) => setD({ ...d, ...p })
@@ -112,7 +113,7 @@ export default function BroadcastPage() {
 
   return (
     <div className="wrap">
-      <Link to="/broadcasts">← Рассылки</Link>
+      <BackLink to="/broadcasts">Рассылки</BackLink>
       <h1 className="h1">{b.title}<span className={`chip ${STATUS_CHIP[b.status]}`}>{BROADCAST_STATUS[b.status]}</span></h1>
       {error && <div className="err" role="alert">{error}</div>}
       {info && <div className="hint" role="status">{info}</div>}
