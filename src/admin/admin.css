@@ -116,7 +116,7 @@ code { background: var(--bg); border-radius: 5px; padding: 1px 5px; font-size: v
 .tbl th, .tbl td { text-align: left; padding: 7px 8px; border-bottom: 1px solid var(--line); }
 .tbl th { color: var(--mute); font-size: var(--fs-xs); font-weight: 600; }
 
-.media { display: flex; flex-direction: column; gap: var(--s-2); }
+.mfield { display: flex; flex-direction: column; gap: var(--s-2); }
 .media-prev { max-width: 100%; max-height: 220px; border-radius: 12px; border: 1px solid var(--line); object-fit: contain; background: var(--bg); }
 .media-audio { width: 100%; }
 .media-btn { cursor: pointer; }
@@ -127,6 +127,6 @@ code { background: var(--bg); border-radius: 5px; padding: 1px 5px; font-size: v
 .seg button.on { background: var(--card); box-shadow: var(--shadow-sm); font-weight: 600; }
 fieldset.plain { border: 0; margin: 0; padding: 0; min-width: 0; display: flex; flex-direction: column; gap: var(--s-3); }
 .card .tgprev { background: var(--bg); border: 1px solid var(--line); border-radius: 14px 14px 14px 4px; padding: 10px 12px; line-height: 1.4; max-width: 92%; white-space: pre-wrap; }
-.bar { height: 10px; background: var(--bg); border-radius: 999px; overflow: hidden; margin: 6px 0; }
-.bar i { display: block; height: 100%; background: var(--accent-edge); border-radius: 999px; transition: width 0.3s ease; }
+.progress { height: 10px; background: var(--bg); border-radius: 999px; overflow: hidden; margin: 6px 0; }
+.progress i { display: block; height: 100%; background: var(--accent-edge); border-radius: 999px; transition: width 0.3s ease; }
 .faillist { margin: 8px 0 0; padding-left: 18px; font-size: var(--fs-sm); color: var(--mute); }

@@ -119,7 +119,7 @@ export default function BroadcastPage() {
       {!draft && (
         <div className="card">
           <h3>Ход отправки</h3>
-          <div className="bar" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}><i style={{ width: `${pct}%` }} /></div>
+          <div className="progress" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}><i style={{ width: `${pct}%` }} /></div>
           <div className="hint">Отправлено {b.sent} из {b.total}{b.failed ? `, не доставлено ${b.failed}` : ''}{b.scheduled_at && b.status === 'scheduled' ? ` · старт ${fmtDate(b.scheduled_at)}` : ''}{b.finished_at ? ` · завершена ${fmtDate(b.finished_at)}` : ''}</div>
           {failed.length > 0 && <ul className="faillist">{failed.map((f, i) => <li key={i}><b>{f.name}</b>: {f.error}</li>)}</ul>}
           {(b.status === 'scheduled' || b.status === 'sending') && <div className="row" style={{ marginTop: 10 }}><button className="btn danger" onClick={cancel} disabled={busy}>Остановить рассылку</button></div>}

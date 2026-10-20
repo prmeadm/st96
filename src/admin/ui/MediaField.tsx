@@ -120,7 +120,7 @@ export function MediaField({ kind, value, onChange, folder }: { kind: Exclude<Te
   const mm = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`
 
   return (
-    <div className="media">
+    <div className="mfield">
       {value && kind === 'photo' && <img className="media-prev" src={value} alt="Выбранное фото" />}
       {value && kind === 'video' && <video className="media-prev" src={value} controls playsInline />}
       {value && (kind === 'voice' || kind === 'audio') && <audio className="media-audio" src={value} controls />}
