@@ -59,6 +59,9 @@ export function memoryRepo(): MemoryRepo {
       r.leads.push(row)
       return { id: row.id, client_id: row.client_id, created: true }
     },
+    async countLeads(cid) { return r.leads.filter((l) => l.client_id === cid).length },
+    async getLead(lid) { return r.leads.find((l) => l.id === lid) ?? null },
+    async updateLead(lid, patch) { Object.assign(r.leads.find((l) => l.id === lid)!, patch) },
     async findLeadByMessage(chat, msg) {
       const x = r.leads.find((l) => l.tg_chat_id === chat && l.tg_message_id === msg)
       return x ? { id: x.id, client_id: x.client_id } : null

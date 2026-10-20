@@ -2,6 +2,10 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../supabase'
 import { SERVICES, SOURCES, STATUSES, WARNINGS, fmtDate, type Lead } from '../types'
+import { Icon } from '../ui/Icon'
+import { RowActions } from '../ui/RowActions'
+import { LeadEditor } from './LeadEditor'
+import './leads.css'
 
 type Row = Lead & { clients: { id: string; name: string | null; tg_username: string | null } | null }
 
@@ -10,11 +14,20 @@ export default function LeadsPage() {
   const [status, setStatus] = useState('')
   const [source, setSource] = useState('')
   const [error, setError] = useState('')
+  const [edit, setEdit] = useState<Lead | 'new' | null>(null)
+  const [info, setInfo] = useState('')
 
-  useEffect(() => {
+  const load = () =>
     supabase.from('leads').select('*, clients(id, name, tg_username)').order('created_at', { ascending: false }).limit(500)
       .then(({ data, error: e }) => (e ? setError('Не удалось загрузить заявки') : setRows((data ?? []) as unknown as Row[])))
-  }, [])
+  useEffect(() => { void load() }, [])
+
+  const remove = async (l: Lead) => {
+    if (!window.confirm('Удалить заявку? Клиент останется в базе.')) return
+    const { error: e } = await supabase.from('leads').delete().eq('id', l.id)
+    if (e) setError('Не удалось удалить заявку')
+    else { setError(''); setRows((r) => r && r.filter((x) => x.id !== l.id)) }
+  }
 
   const setLeadStatus = async (id: string, s: Lead['status']) => {
     const prev = rows
@@ -28,7 +41,8 @@ export default function LeadsPage() {
 
   return (
     <div className="wrap">
-      <h1 className="h1">Заявки <span className="chip">{rows ? list.length : '…'}</span></h1>
+      <h1 className="h1">Заявки <span className="chip">{rows ? list.length : '…'}</span><span className="sp" /><button type="button" className="btn primary" onClick={() => setEdit('new')}><Icon name="plus" size={18} />Добавить заявку</button></h1>
+      {info && <div className="hint" role="status">{info}</div>}
       <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         <div className="chips">
           <button className={!status ? 'on' : ''} onClick={() => setStatus('')}>Все</button>
@@ -36,7 +50,7 @@ export default function LeadsPage() {
         </div>
         <div className="chips">
           <button className={!source ? 'on' : ''} onClick={() => setSource('')}>Все источники</button>
-          {Object.entries(SOURCES).filter(([k]) => k !== 'bot' && k !== 'manual').map(([k, v]) => <button key={k} className={source === k ? 'on' : ''} onClick={() => setSource(k)}>{v}</button>)}
+          {Object.entries(SOURCES).filter(([k]) => k !== 'bot').map(([k, v]) => <button key={k} className={source === k ? 'on' : ''} onClick={() => setSource(k)}>{v}</button>)}
         </div>
       </div>
       {error && <div className="err" role="alert">{error}</div>}
@@ -44,11 +58,12 @@ export default function LeadsPage() {
       {rows && list.length === 0 && <div className="empty">Заявок нет</div>}
       {list.map((l) => (
         <div key={l.id} className="item">
-          <div className="row">
+          <div className="lead-top">
             <b>{SERVICES[l.service_key ?? ''] ?? l.title ?? 'Заявка'}{l.topic ? `: ${l.topic}` : ''}</b>
             <span className="chip">{SOURCES[l.source] ?? l.source}</span>
             <span className="sp" />
             <span className="hint">{fmtDate(l.created_at)}</span>
+            <RowActions onEdit={() => setEdit(l)} onDelete={() => remove(l)} />
           </div>
           <div style={{ marginTop: 6 }}>
             {l.clients ? <Link to={`/clients/${l.clients.id}`}>{l.clients.name || (l.clients.tg_username ? `@${l.clients.tg_username}` : 'Клиент')}</Link> : <span className="muted">клиент не определён</span>}
@@ -65,6 +80,14 @@ export default function LeadsPage() {
           </div>
         </div>
       ))}
+      {edit && (
+        <LeadEditor lead={edit === 'new' ? null : edit} onClose={() => setEdit(null)}
+          onSaved={(r, edited) => {
+            setEdit(null)
+            setInfo(`${edited ? 'Заявка сохранена' : 'Заявка создана'}. ${r.clientId ? `${r.clientCreated ? 'Создан новый клиент' : 'Клиент найден'}, заявок у клиента: ${r.leadsOfClient}.` : 'Контактов нет, клиент не создан.'}`)
+            void load()
+          }} />
+      )}
     </div>
   )
 }

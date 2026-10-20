@@ -78,6 +78,9 @@ export interface Repo {
   updateClient(id: string, patch: Partial<ClientRow>): Promise<void>
   /** Вставка заявки; если заявка с этим сообщением Telegram уже есть, вернёт её */
   insertLead(l: LeadInsert): Promise<{ id: string; client_id: string | null; created: boolean }>
+  countLeads(clientId: string): Promise<number>
+  getLead(id: string): Promise<(LeadInsert & { id: string }) | null>
+  updateLead(id: string, patch: Partial<LeadInsert> & { status?: string }): Promise<void>
   findLeadByMessage(chatId: number, messageId: number): Promise<{ id: string; client_id: string | null } | null>
   findLeadByContact(by: { phone?: string; username?: string }): Promise<{ id: string; client_id: string | null } | null>
   insertNote(n: NoteInsert): Promise<void>
@@ -201,6 +204,15 @@ export function supabaseRepo(url: string, key: string): Repo {
       }
       const d = ok(r, 'insertLead') as { id: string; client_id: string | null }
       return { ...d, created: true }
+    },
+    async countLeads(clientId) {
+      return (await db.from('leads').select('id', { count: 'exact', head: true }).eq('client_id', clientId)).count ?? 0
+    },
+    async getLead(id) {
+      return ok(await db.from('leads').select('*').eq('id', id).maybeSingle(), 'getLead') as (LeadInsert & { id: string }) | null
+    },
+    async updateLead(id, patch) {
+      ok(await db.from('leads').update(patch).eq('id', id), 'updateLead')
     },
     async findLeadByMessage(chatId, messageId) {
       return ok(await db.from('leads').select('id, client_id').eq('tg_chat_id', chatId).eq('tg_message_id', messageId).limit(1).maybeSingle(), 'findLeadByMessage')
