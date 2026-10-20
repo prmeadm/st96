@@ -150,7 +150,7 @@ export function MediaField({ kind, value, onChange, folder, maxMB }: { kind: Exc
           {kind === 'video' && pickBtn('Снять видео', 'video', 'Снять', 'environment')}
           {kind === 'voice' && !rec && cap(value ? 'Заново' : 'Записать', <button type="button" className="ibtn rec-btn" title={value ? 'Записать заново' : 'Записать голос'} aria-label={value ? 'Записать заново' : 'Записать голос'} onClick={startRec} disabled={busy}><Icon name="voice" size={20} /></button>)}
           {kind === 'voice' && rec && cap('Стоп', <button type="button" className="ibtn stop-btn" title="Остановить запись" aria-label="Остановить запись" onClick={stopRec}><Icon name="stop" size={18} /></button>)}
-          {!rec && pickBtn(kind === 'photo' ? 'Выбрать фото' : kind === 'video' ? 'Выбрать видео' : kind === 'file' ? 'Выбрать файл' : 'Выбрать аудиофайл', KIND_ICON[kind], kind === 'photo' || kind === 'video' ? 'Из галереи' : 'Файл')}
+          {!rec && pickBtn(kind === 'photo' ? 'Выбрать фото' : kind === 'video' ? 'Выбрать видео' : kind === 'file' ? 'Выбрать файл' : 'Выбрать аудиофайл', kind === 'photo' || kind === 'video' ? 'upload' : KIND_ICON[kind], kind === 'photo' || kind === 'video' ? 'Из галереи' : 'Файл')}
           {value && !rec && cap('Убрать', <button type="button" className="ibtn" title="Убрать файл" aria-label="Убрать файл" onClick={() => onChange('')}><Icon name="trash" size={18} /></button>)}
         </div>
       </div>
