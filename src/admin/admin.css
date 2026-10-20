@@ -136,8 +136,8 @@ code { background: var(--bg); border-radius: 5px; padding: 1px 5px; font-size: v
 .recline .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--red); animation: pulse 1.2s ease-in-out infinite; }
 @keyframes pulse { 50% { opacity: 0.3; } }
 .ibtns { display: flex; gap: var(--s-2); margin-left: auto; }
-.ibtn { display: inline-grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--line-strong); background: var(--card); color: var(--ink); cursor: pointer; padding: 0; transition: background 0.15s, border-color 0.15s; }
-.ibtn:hover { background: var(--bg); border-color: var(--ink); }
+.ibtn { display: inline-grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--accent-edge); background: var(--accent); color: var(--on-accent); cursor: pointer; padding: 0; transition: background 0.15s, border-color 0.15s; }
+.ibtn:hover { background: var(--accent-hover); border-color: var(--accent-edge); }
 .ibtn[aria-disabled="true"], .ibtn:disabled { opacity: 0.5; pointer-events: none; }
 .ibtn.rec-btn { background: var(--accent); border-color: var(--accent-edge); }
 .ibtn.rec-btn:hover { background: var(--accent-hover); border-color: var(--accent-edge); }
