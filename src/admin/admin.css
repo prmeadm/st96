@@ -232,7 +232,8 @@ input[type="checkbox"]:disabled { opacity: 0.5; cursor: default; }
 .qn-title { font-size: var(--fs-xs); font-weight: 600; color: var(--mute); text-transform: uppercase; letter-spacing: 0.05em; padding: 8px 10px 4px; }
 .qn-link { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 10px; border-radius: 12px; color: var(--ink); font-weight: 500; }
 .qn-link:hover { background: var(--accent-soft); text-decoration: none; }
-.qn-link span { flex: 1; }
+.qn-link > span:not(.qn-dot) { flex: 1; }
+.qn-dot { flex: none; }
 .qn-link .ic:last-child { color: var(--mute); }
 .qn-dot { width: 18px; height: 18px; display: grid; place-items: center; }
 .qn-dot::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--line-strong); }
