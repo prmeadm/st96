@@ -23,7 +23,7 @@
 - `server/funnels/`: `types.ts`, `engine.ts`, `triggers.ts`, `validate.ts`, `demo.ts`.
 - `api/`: `telegram.ts`, `lead.ts` (форма сайта), `ingest.ts` (заявки из других проектов), `jobs.ts` (отложенные шаги).
 - `src/admin/` + `admin/index.html`: админка `/admin` (без GTM и аналитики, noindex, no-store).
-- `supabase/migrations/0001..0003`: применены в Supabase. `0004_templates.sql` написана, НЕ применена (см. Статус).
+- `supabase/migrations/0001..0003`: применены в Supabase. `0004_templates.sql` применена 2026-10-20.
 - `admin-prototype/index.html`: кликабельный прототип (воронки, расписание, задания агента, шаблоны) для порта.
 
 ## Как это работает
