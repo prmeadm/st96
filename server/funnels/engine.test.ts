@@ -217,13 +217,13 @@ test('проверка схемы: демо без ошибок, битая сх
 
 
 test('запись из воронки: подтверждение продолжает по выходу «подтвердил», отклонение передаёт человеку', async () => {
-  const graph = g([start(), { id: 'b', type: 'booking', data: { services: ['Ретушь'], formats: ['Видеозвонок'], message: 'Запишитесь, {имя}' } }, msg('ok', 'Ждём вас!'), msg('no', 'Подберём другое время')], [E('start', 'out', 'b'), E('b', 'confirmed', 'ok'), E('b', 'declined', 'no')])
+  const graph = g([start(), { id: 'b', type: 'booking', data: { services: ['Продакшн'], formats: ['Видеозвонок'], message: 'Запишитесь, {имя}' } }, msg('ok', 'Ждём вас!'), msg('no', 'Подберём другое время')], [E('start', 'out', 'b'), E('b', 'confirmed', 'ok'), E('b', 'declined', 'no')])
   const a = setup(graph)
   const client = await a.clientP
   assert.equal(await startFunnel(a.env, a.funnel, client), 'waiting_input')
   const first = only(a.calls, 'text')[0]!
   assert.match(first.text!, /Запишитесь, Мария/)
-  assert.match(JSON.stringify(first.buttons), /s=retouch&f=video&r=/, 'одна услуга и один формат попадают в ссылку')
+  assert.match(JSON.stringify(first.buttons), /s=production&f=video&r=/, 'одна услуга и один формат попадают в ссылку')
   const runId = a.repo.runs[0].id
   assert.equal(await resumeBooking(a.env, runId, 'confirmed'), 'resumed')
   assert.ok(only(a.calls, 'text').some((c) => /Ждём вас/.test(c.text!)))
@@ -248,7 +248,7 @@ test('условия записи: «есть свободные слоты» и
   await startFunnel(a.env, a.funnel, client)
   assert.match(only(a.calls, 'text')[0]!.text!, new RegExp(`Запишитесь: https://st96.by/book\\?c=${client.id}`))
   // записываем клиента: условие «записан» становится истинным
-  a.repo.bookings.push({ id: 'b1', client_id: client.id, run_id: null, run_node: null, service: 'retouch', format: 'call', starts_at: '2026-10-22T08:00:00.000Z', ends_at: '2026-10-22T08:30:00.000Z', name: 'М', company: null, telegram: null, phone: null, goal: null, comment: null, status: 'pending', meet_url: null, source: 'site', reminded_at: null, created_at: '', decided_at: null })
+  a.repo.bookings.push({ id: 'b1', client_id: client.id, run_id: null, run_node: null, service: 'production', format: 'call', starts_at: '2026-10-22T08:00:00.000Z', ends_at: '2026-10-22T08:30:00.000Z', name: 'М', company: null, telegram: null, phone: null, goal: null, comment: null, status: 'pending', meet_url: null, source: 'site', reminded_at: null, created_at: '', decided_at: null })
   a.calls.length = 0
   const f2: Funnel = { ...a.funnel, id: 'f2' }
   await startFunnel(a.env, f2, client)

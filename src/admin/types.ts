@@ -1,3 +1,5 @@
+import { SITE_SERVICES } from '../../server/catalog'
+
 export type Client = {
   id: string
   tg_user_id: number | null
@@ -45,9 +47,8 @@ export type Note = {
 
 export type Msg = { id: number; direction: 'in' | 'out' | 'admin'; kind: string; text: string | null; created_at: string }
 
-export const SERVICES: Record<string, string> = {
-  neurophoto: 'Нейрофотосессия', retouch: 'Retouch Studio', digital_office: 'Цифровой офис', production: 'Продакшн', other: 'Другое',
-}
+/** Услуги только с сайта (src/data/services.ts): ключ → название */
+export const SERVICES: Record<string, string> = Object.fromEntries(SITE_SERVICES.map((s) => [s.key, s.ru]))
 export const STATUSES: Record<Lead['status'], string> = { new: 'Новая', in_progress: 'В работе', won: 'Выиграна', lost: 'Проиграна', spam: 'Спам' }
 export const SOURCES: Record<string, string> = { site_form: 'Сайт', stand_form: 'Стенд', tg_group: 'Группа', bot: 'Бот', manual: 'Вручную' }
 export const WARNINGS: Record<string, string> = {

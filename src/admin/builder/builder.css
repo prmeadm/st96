@@ -1,7 +1,8 @@
 /* Конструктор воронок. Всё под .fb, чтобы не задевать остальную админку. */
 .fb {
   display: flex; flex-direction: column; gap: 8px;
-  height: max(560px, calc(100dvh - 250px));
+  /* над конструктором: шапка, название и переключатель режима (~380px) — холст целиком помещается в окно */
+  height: max(440px, calc(100dvh - 380px));
 }
 .fb .bar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; flex: none; }
 .fb .btn.icon { padding: 8px; }

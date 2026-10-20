@@ -3,8 +3,11 @@
 // в «Имя» попадает телефон, имени нет, ник в Telegram без @. Парсер сначала читает поля
 // как есть, потом определяет тип каждого значения и раскладывает его правильно.
 
+import { detectServiceKey } from '../catalog'
+
 export type LeadOrigin = 'site' | 'stand' | 'unknown'
-export type ServiceKey = 'neurophoto' | 'retouch' | 'digital_office' | 'production' | 'other'
+// Ключ услуги: slug услуги сайта (src/data/services.ts) или 'other', если услуга не определена
+export type ServiceKey = string
 
 export type ParsedLead = {
   isLead: boolean
@@ -72,14 +75,7 @@ const looksPhone = (v: string) => {
 const looksEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.trim())
 const looksHandle = (v: string) => /^@[A-Za-z][A-Za-z0-9_]{4,31}$/.test(v.trim()) || /(?:t\.me|telegram\.me)\//i.test(v)
 
-function detectService(title: string): ServiceKey {
-  const t = title.toLowerCase()
-  if (/нейрофото|neuro/.test(t)) return 'neurophoto'
-  if (/ретуш|retouch/.test(t)) return 'retouch'
-  if (/цифров.* офис|supaoffice|digital office/.test(t)) return 'digital_office'
-  if (/продакшн|продакшен|production|ролик/.test(t)) return 'production'
-  return 'other'
-}
+const detectService = (title: string): ServiceKey => detectServiceKey(title)
 
 export function parseLead(raw: string): ParsedLead {
   const out: ParsedLead = {

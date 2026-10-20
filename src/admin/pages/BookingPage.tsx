@@ -8,13 +8,18 @@ import { Seg } from '../ui/Seg'
 import { MonthGrid, type CellInfo } from '../../booking/MonthGrid'
 import '../../booking/monthgrid.css'
 import {
-  DOW, FORMAT_KEYS, FORMAT_LABEL, HOLIDAYS_BY, SERVICE_KEYS, SERVICE_LABEL, addDays, dayInfo, defaultSchedule, dowOf, minskNow, normalizeSchedule, toLocal, whenLabel,
+  DOW, FORMAT_KEYS, FORMAT_LABEL, HOLIDAYS_BY, SERVICE_KEYS, SERVICE_LABEL, addDays, dayInfo, defaultSchedule, dowOf, minskNow, normalizeSchedule, pad, toLocal, whenLabel,
   type DayBooking, type FormatKey, type Override, type Schedule, type ServiceKey, type Win,
 } from '../../../server/booking/schedule'
 import { BOOKING_STATUS, type BookingRow, type BookingStatus } from '../../../server/booking/types'
 import './booking.css'
 
 const CHIP: Record<BookingStatus, string> = { pending: 'amber', confirmed: 'green', rejected: 'red', canceled: '' }
+/** Цвет услуги на календаре: дополнительные цвета бренда ST96 по порядку услуг на сайте */
+const SVC_COLORS = ['#8b6bff', '#ff5fa8', '#1fbfa5', '#4d7bff', '#ff8a3d']
+const svcColor = (k: string) => SVC_COLORS[Math.max(0, SERVICE_KEYS.indexOf(k)) % SVC_COLORS.length]!
+const hhmm = (m: number) => `${pad(Math.floor(m / 60))}:${pad(m % 60)}`
+const active = (b: BookingRow) => b.status === 'pending' || b.status === 'confirmed'
 type Tab = 'requests' | 'schedule' | 'link'
 
 export default function BookingPage() {
@@ -43,7 +48,7 @@ export default function BookingPage() {
       <Seg label="Раздел" value={tab} onChange={setTab} options={[{ value: 'requests', label: 'Заявки', icon: 'notes' }, { value: 'schedule', label: 'Расписание', icon: 'clock' }, { value: 'link', label: 'Ссылка', icon: 'external' }]} />
       {error && <div className="err" role="alert">{error}</div>}
       {tab === 'requests' && <Requests rows={rows} reload={load} />}
-      {tab === 'schedule' && sched && <ScheduleTab initial={sched} rows={rows ?? []} onSaved={setSched} />}
+      {tab === 'schedule' && sched && <ScheduleTab initial={sched} rows={rows ?? []} onSaved={setSched} onBooked={load} />}
       {tab === 'link' && <LinkTab />}
     </div>
   )
@@ -103,7 +108,7 @@ function Requests({ rows, reload }: { rows: BookingRow[] | null; reload: () => P
             <dt>Контакты</dt><dd>{[b.telegram, b.phone].filter(Boolean).join(' · ') || '—'}</dd>
             {b.goal && <><dt>Цель</dt><dd>{b.goal}</dd></>}
             {b.comment && <><dt>Комментарий</dt><dd>{b.comment}</dd></>}
-            <dt>Источник</dt><dd>{{ site: 'Сайт', funnel: 'Воронка', link: 'Личная ссылка' }[b.source] ?? b.source} · создана {fmtDate(b.created_at)}</dd>
+            <dt>Источник</dt><dd>{{ site: 'Сайт', funnel: 'Воронка', link: 'Личная ссылка', admin: 'Админка' }[b.source] ?? b.source} · создана {fmtDate(b.created_at)}</dd>
           </dl>
           {b.format === 'video' && (b.status === 'pending' || b.status === 'confirmed') && (
             <div className="meetrow">
@@ -127,7 +132,7 @@ const TimeRange = ({ w, onChange, onDel }: { w: Win; onChange: (w: Win) => void;
   </div>
 )
 
-function ScheduleTab({ initial, rows, onSaved }: { initial: Schedule; rows: BookingRow[]; onSaved: (s: Schedule) => void }) {
+function ScheduleTab({ initial, rows, onSaved, onBooked }: { initial: Schedule; rows: BookingRow[]; onSaved: (s: Schedule) => void; onBooked: () => void }) {
   const [S, setS] = useState(initial)
   const [dirty, setDirty] = useState(false)
   const [msg, setMsg] = useState('')
@@ -136,7 +141,8 @@ function ScheduleTab({ initial, rows, onSaved }: { initial: Schedule; rows: Book
   const today = minskNow(now).date
   const [month, setMonth] = useState(today.slice(0, 7))
   const [sel, setSel] = useState(today)
-  const [svc, setSvc] = useState<ServiceKey>('retouch')
+  const [pick, setPick] = useState('')
+  const [nb, setNb] = useState({ service: SERVICE_KEYS[0]!, format: 'call' as FormatKey, name: '', phone: '', telegram: '', comment: '' })
   const [range, setRange] = useState({ from: '', to: '', reason: 'Отпуск' })
   const [blk, setBlk] = useState<Win>({ from: '14:00', to: '16:00' })
   const R = S.rules
@@ -158,17 +164,37 @@ function ScheduleTab({ initial, rows, onSaved }: { initial: Schedule; rows: Book
   const bookedBy = useMemo(() => {
     const m = new Map<string, DayBooking[]>()
     for (const b of rows) {
-      if (b.status !== 'pending' && b.status !== 'confirmed') continue
+      if (!active(b)) continue
       const a = toLocal(b.starts_at)
       const e = toLocal(b.ends_at)
       m.set(a.date, [...(m.get(a.date) ?? []), { startMin: a.min, endMin: e.date > a.date ? 1440 : e.min }])
     }
     return m
   }, [rows])
-  const info = (d: string) => dayInfo(d, S, bookedBy.get(d) ?? [], svc, null, now)
+  // Встречи по дням и услугам: видно на календаре, сколько встреч и по каким услугам назначено
+  const meetingsBy = useMemo(() => {
+    const m = new Map<string, BookingRow[]>()
+    for (const b of rows) if (active(b)) { const d = toLocal(b.starts_at).date; m.set(d, [...(m.get(d) ?? []), b]) }
+    for (const list of m.values()) list.sort((a, b) => a.starts_at.localeCompare(b.starts_at))
+    return m
+  }, [rows])
+  const info = (d: string) => dayInfo(d, S, bookedBy.get(d) ?? [], null, now)
   const cell = (d: string): CellInfo => {
     const i = info(d)
-    return { cls: i.past || i.far ? 'dis' : i.closed ? 'closed' : 'open', dot: !!S.overrides[d], badge: bookedBy.get(d)?.length ?? 0, title: i.closed ? i.why : `Свободно слотов: ${i.free}` }
+    const list = meetingsBy.get(d) ?? []
+    const per = SERVICE_KEYS.map((k) => ({ k, n: list.filter((b) => b.service === k).length })).filter((x) => x.n)
+    const marks = per.map((x) => ({ color: svcColor(x.k), n: x.n, label: SERVICE_LABEL[x.k]?.ru ?? x.k }))
+    const what = marks.map((x) => `${x.label}: ${x.n}`).join(', ')
+    return { cls: i.past || i.far ? 'dis' : i.closed ? 'closed' : 'open', dot: !!S.overrides[d], marks, title: [i.closed ? i.why : `Свободно слотов: ${i.free}`, what && `Встречи: ${what}`].filter(Boolean).join('. ') }
+  }
+  const book = async () => {
+    if (!nb.name.trim() || (!nb.phone.trim() && !nb.telegram.trim())) return setMsg('Укажите имя клиента и телефон или Telegram')
+    setBusy(true)
+    const r = await callApi<{ notified: boolean }>('/api/booking-admin', { action: 'create', booking: { ...nb, date: sel, time: pick } })
+    setBusy(false)
+    if (!r.ok) return setMsg(r.error)
+    setMsg(`Встреча ${pick} забронирована и подтверждена${r.data.notified ? ', клиенту отправлено сообщение' : ''}.`)
+    setPick(''); setNb({ ...nb, name: '', phone: '', telegram: '', comment: '' }); onBooked()
   }
   const di = info(sel)
   const ov = S.overrides[sel] ?? {}
@@ -234,13 +260,10 @@ function ScheduleTab({ initial, rows, onSaved }: { initial: Schedule; rows: Book
               <div className="fld"><label>Буфер между встречами</label><select value={R.buffer} onChange={(e) => upR({ buffer: +e.target.value })}>{[0, 5, 10, 15, 30].map((x) => <option key={x} value={x}>{x} мин</option>)}</select></div>
               <div className="fld"><label>Записаться не раньше чем за, ч</label><input type="number" min={0} value={R.minNotice} onChange={(e) => upR({ minNotice: +e.target.value })} /></div>
               <div className="fld"><label>Горизонт записи, дней</label><input type="number" min={1} max={365} value={R.horizon} onChange={(e) => upR({ horizon: +e.target.value })} /></div>
+              <div className="fld"><label>Длительность встречи</label><select value={R.duration} onChange={(e) => upR({ duration: +e.target.value })}>{[15, 30, 45, 60, 90, 120].map((x) => <option key={x} value={x}>{x} мин</option>)}</select></div>
               <div className="fld"><label>Максимум встреч в день</label><input type="number" min={1} value={R.maxPerDay} onChange={(e) => upR({ maxPerDay: +e.target.value })} /></div>
             </div>
-            <div className="h2">Длительность по услугам</div>
-            <div className="fgrid">
-              {SERVICE_KEYS.map((k) => <div className="fld" key={k}><label>{SERVICE_LABEL[k].ru}</label>
-                <select value={R.durations[k]} onChange={(e) => upR({ durations: { ...R.durations, [k]: +e.target.value } })}>{[15, 30, 45, 60, 90, 120].map((x) => <option key={x} value={x}>{x} мин</option>)}</select></div>)}
-            </div>
+            <div className="hint">Расписание и слоты общие для всех услуг. Услугу указывают при бронировании.</div>
           </div>
           <div className="card">
             <h3>Офлайн-встречи</h3>
@@ -251,9 +274,10 @@ function ScheduleTab({ initial, rows, onSaved }: { initial: Schedule; rows: Book
 
         <div className="col">
           <div className="card">
-            <h3>Календарь: открытые и закрытые дни</h3>
-            <div className="legend"><span><i className="sw open" />открыт</span><span><i className="sw closed" />закрыт</span><span><i className="mg-dot lg" />исключение</span><span><i className="mg-bdg lg">2</i>заявки</span></div>
-            <MonthGrid month={month} onMonth={setMonth} selected={sel} cell={cell} onPick={(d) => { setSel(d); if (d.slice(0, 7) !== month) setMonth(d.slice(0, 7)) }} />
+            <h3>Календарь встреч</h3>
+            <div className="legend"><span><i className="sw open" />открыт</span><span><i className="sw closed" />закрыт</span><span><i className="sw we" />суббота, воскресенье</span><span><i className="mg-dot lg" />исключение</span></div>
+            <div className="legend">{SERVICE_KEYS.map((k) => <span key={k}><i className="svcdot" style={{ background: svcColor(k) }} />{SERVICE_LABEL[k]!.ru}</span>)}</div>
+            <MonthGrid month={month} onMonth={setMonth} selected={sel} cell={cell} onPick={(d) => { setSel(d); setPick(''); if (d.slice(0, 7) !== month) setMonth(d.slice(0, 7)) }} />
             <div className="rangebox">
               <div className="h2">Закрыть период</div>
               <div className="rangerow">
@@ -290,13 +314,30 @@ function ScheduleTab({ initial, rows, onSaved }: { initial: Schedule; rows: Book
                     {(ov.blocks ?? []).map((b, k) => <div className="blockrow" key={k}><span>{b.from}–{b.to}{b.reason && <span className="hint"> · {b.reason}</span>}</span><button type="button" className="x" aria-label="Убрать" onClick={() => setOv(sel, { blocks: ov.blocks!.filter((_, j) => j !== k) })}><Icon name="close" size={16} /></button></div>)}
                     <div className="row"><TimeRange w={blk} onChange={setBlk} />
                       <button type="button" className="btn" onClick={() => blk.to > blk.from ? setOv(sel, { blocks: [...(ov.blocks ?? []), { ...blk, reason: 'Закрыто вручную' }] }) : setMsg('Время «до» должно быть позже «с»')}>Закрыть</button></div>
-                    <div className="h2 row">Слоты для услуги
-                      <select value={svc} onChange={(e) => setSvc(e.target.value as ServiceKey)} aria-label="Услуга для предпросмотра">{SERVICE_KEYS.map((k) => <option key={k} value={k}>{SERVICE_LABEL[k].ru}</option>)}</select></div>
+                    <div className="h2">Встречи дня</div>
+                    {(meetingsBy.get(sel) ?? []).map((b) => <div className="meetrow" key={b.id}><i className="svcdot" style={{ background: svcColor(b.service) }} /><b>{hhmm(toLocal(b.starts_at).min)}</b><span>{SERVICE_LABEL[b.service]?.ru ?? b.service}</span><span className="hint">{b.name}</span><span className={`chip ${CHIP[b.status]}`}>{BOOKING_STATUS[b.status]}</span></div>)}
+                    {!meetingsBy.get(sel)?.length && <div className="hint">Встреч пока нет.</div>}
+                    <div className="h2">Свободное время</div>
                     <div className="slotsrow">
-                      {di.slots.map((s) => <span key={s.t} className={`slotchip ${s.free ? '' : 'off'}`} title={s.why}>{s.t}</span>)}
+                      {di.slots.map((s) => s.free
+                        ? <button type="button" key={s.t} className={`slotchip ${pick === s.t ? 'on' : ''}`} aria-pressed={pick === s.t} onClick={() => setPick(pick === s.t ? '' : s.t)}>{s.t}</button>
+                        : <span key={s.t} className="slotchip off" title={s.why}>{s.t}</span>)}
                       {!di.slots.length && <span className="hint">Нет слотов</span>}
                     </div>
-                    <div className="hint">Серые слоты заняты или закрыты: наведите, чтобы увидеть причину.</div>
+                    {pick ? (
+                      <div className="bookform">
+                        <div className="h2">Забронировать {pick} на {R.duration} мин</div>
+                        <div className="fgrid">
+                          <div className="fld"><label>Услуга</label><select value={nb.service} onChange={(e) => setNb({ ...nb, service: e.target.value })}>{SERVICE_KEYS.map((k) => <option key={k} value={k}>{SERVICE_LABEL[k]!.ru}</option>)}</select></div>
+                          <div className="fld"><label>Формат</label><select value={nb.format} onChange={(e) => setNb({ ...nb, format: e.target.value as FormatKey })}>{FORMAT_KEYS.map((k) => <option key={k} value={k}>{FORMAT_LABEL[k].ru}</option>)}</select></div>
+                          <div className="fld"><label>Имя клиента</label><input value={nb.name} onChange={(e) => setNb({ ...nb, name: e.target.value })} /></div>
+                          <div className="fld"><label>Телефон</label><input type="tel" value={nb.phone} onChange={(e) => setNb({ ...nb, phone: e.target.value })} /></div>
+                          <div className="fld"><label>Telegram</label><input value={nb.telegram} onChange={(e) => setNb({ ...nb, telegram: e.target.value })} placeholder="@ник" /></div>
+                          <div className="fld"><label>Комментарий</label><input value={nb.comment} onChange={(e) => setNb({ ...nb, comment: e.target.value })} /></div>
+                        </div>
+                        <div className="row"><button type="button" className="btn primary" disabled={busy} onClick={book}>{busy ? 'Бронирую…' : 'Забронировать'}</button><button type="button" className="btn" onClick={() => setPick('')}>Отмена</button></div>
+                      </div>
+                    ) : <div className="hint">Нажмите на свободное время, чтобы забронировать встречу и выбрать услугу. Серые слоты заняты или закрыты: наведите, чтобы увидеть причину.</div>}
                   </>
                 )}
               </>

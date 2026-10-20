@@ -13,3 +13,11 @@
 .mg-cell.sel { background: var(--mg-sel, #d8ff3f); border-color: var(--mg-sel-edge, #b3d414); color: var(--mg-sel-ink, #09090b); font-weight: 700; opacity: 1; }
 .mg-bdg { position: absolute; top: 2px; right: 3px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 8px; background: var(--mg-sel, #d8ff3f); color: var(--mg-sel-ink, #09090b); font-size: 10px; font-style: normal; font-weight: 700; display: grid; place-items: center; }
 .mg-dot { position: absolute; bottom: 4px; width: 5px; height: 5px; border-radius: 50%; background: var(--mg-dot, #e8890c); }
+/* Суббота и воскресенье: отдельный тон */
+.mg-dn.we { color: var(--mg-we-ink, #c2410c); font-weight: 600; }
+.mg-cell.we:not(.sel) { background: var(--mg-we-bg, rgba(255, 138, 61, 0.12)); }
+.mg-cell.we.open:not(.sel) { background: linear-gradient(var(--mg-we-bg, rgba(255, 138, 61, 0.12)), var(--mg-we-bg, rgba(255, 138, 61, 0.12))), var(--mg-open-bg, rgba(60, 170, 60, 0.12)); }
+/* Встречи по услугам: цветной счётчик на каждую услугу */
+.mg-marks { position: absolute; left: 2px; right: 2px; bottom: 3px; display: flex; justify-content: center; gap: 2px; flex-wrap: wrap; }
+.mg-marks i { min-width: 14px; height: 14px; padding: 0 3px; border-radius: 7px; color: #fff; font-size: 9px; font-style: normal; font-weight: 700; line-height: 14px; text-align: center; }
+.mg-cell:has(.mg-marks) > span:first-child { transform: translateY(-5px); }

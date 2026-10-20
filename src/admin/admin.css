@@ -239,3 +239,16 @@ input[type="checkbox"]:disabled { opacity: 0.5; cursor: default; }
 .qn-dot::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--line-strong); }
 .qn-note { padding: 8px 10px 4px; }
 @media (max-width: 720px) { .topbar { padding: 8px 12px 0; } }
+
+/* Ширина: длинные ссылки и слова не раздвигают страницу. Без этого iOS увеличивает шрифт в «широком» блоке, и интерфейс съезжает */
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+body { overflow-wrap: break-word; }
+.main, .page, .two > *, .split > *, .col, .tmain, .fgrid > *, .detail-col, .list-col { min-width: 0; }
+.agent .detail-col p, .agent .detail-col a, .agent .step label span, .agent .report { overflow-wrap: anywhere; }
+.savebar .btn, .formbtns .btn { white-space: nowrap; }
+@media (max-width: 720px) {
+  /* Нижняя навигация прокручивается: края затухают, чтобы было видно продолжение */
+  .rail { scroll-snap-type: x proximity; scrollbar-width: none; -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 14px, #000 calc(100% - 14px), transparent 100%); mask-image: linear-gradient(90deg, transparent 0, #000 14px, #000 calc(100% - 14px), transparent 100%); }
+  .rail::-webkit-scrollbar { display: none; }
+  .rail a, .rail .out { scroll-snap-align: center; }
+}

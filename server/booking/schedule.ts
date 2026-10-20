@@ -1,15 +1,12 @@
 // Расчёт свободных слотов: правила -> закрытые дни -> блоки -> существующие заявки -> лимиты.
 // Часовой пояс Минск (UTC+3, без перехода на летнее время): даты и время считаем строками «ГГГГ-ММ-ДД» и минутами от полуночи.
+import { SERVICE_SLUGS, SITE_SERVICES } from '../catalog'
+
 export const TZ_OFFSET_MIN = 180
-export const SERVICE_KEYS = ['neurophoto', 'retouch', 'digital_office', 'production', 'other'] as const
-export type ServiceKey = (typeof SERVICE_KEYS)[number]
-export const SERVICE_LABEL: Record<ServiceKey, { ru: string; en: string }> = {
-  neurophoto: { ru: 'Нейрофотосессия', en: 'AI photoshoot' },
-  retouch: { ru: 'Ретушь', en: 'Retouching' },
-  digital_office: { ru: 'Цифровой офис', en: 'Digital office' },
-  production: { ru: 'Продакшн', en: 'Production' },
-  other: { ru: 'Другое', en: 'Other' },
-}
+// Услуги берутся только с сайта (server/catalog.ts ← src/data/services.ts)
+export const SERVICE_KEYS: readonly string[] = SERVICE_SLUGS
+export type ServiceKey = string
+export const SERVICE_LABEL: Record<ServiceKey, { ru: string; en: string }> = Object.fromEntries(SITE_SERVICES.map((s) => [s.key, { ru: s.ru, en: s.en }]))
 export const FORMAT_KEYS = ['call', 'video', 'offline'] as const
 export type FormatKey = (typeof FORMAT_KEYS)[number]
 export const FORMAT_LABEL: Record<FormatKey, { ru: string; en: string }> = {
@@ -22,7 +19,7 @@ export const DOW = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс']
 export type Win = { from: string; to: string }
 export type Block = Win & { reason?: string }
 export type Override = { closed?: boolean; open?: boolean; reason?: string; windows?: Win[]; blocks?: Block[] }
-export type Rules = { step: number; buffer: number; minNotice: number; horizon: number; maxPerDay: number; durations: Record<ServiceKey, number>; offlineDays: number[] }
+export type Rules = { step: number; buffer: number; minNotice: number; horizon: number; maxPerDay: number; /** длительность встречи, мин: общая для всех услуг */ duration: number; offlineDays: number[] }
 export type Schedule = { week: Record<number, { on: boolean; windows: Win[] }>; overrides: Record<string, Override>; rules: Rules }
 /** Занятое время дня в минутах от полуночи */
 export type DayBooking = { startMin: number; endMin: number }
@@ -36,7 +33,7 @@ export function defaultSchedule(): Schedule {
   week[6] = { on: false, windows: [{ from: '11:00', to: '15:00' }] }
   return {
     week, overrides: {},
-    rules: { step: 30, buffer: 15, minNotice: 3, horizon: 45, maxPerDay: 5, durations: { neurophoto: 60, retouch: 30, digital_office: 45, production: 60, other: 30 }, offlineDays: [1, 3] },
+    rules: { step: 30, buffer: 15, minNotice: 3, horizon: 45, maxPerDay: 5, duration: 60, offlineDays: [1, 3] },
   }
 }
 
@@ -100,22 +97,21 @@ export function normalizeSchedule(raw: unknown): Schedule {
     if (Object.keys(ov).length) overrides[k] = ov
   }
   const rr = (r.rules ?? {}) as Partial<Rules>
-  const durations = { ...base.rules.durations }
-  for (const k of SERVICE_KEYS) durations[k] = clampInt(rr.durations?.[k], 10, 240, base.rules.durations[k])
   const rules: Rules = {
     step: [15, 30, 60].includes(rr.step as number) ? (rr.step as number) : base.rules.step,
     buffer: clampInt(rr.buffer, 0, 120, base.rules.buffer),
     minNotice: clampInt(rr.minNotice, 0, 720, base.rules.minNotice),
     horizon: clampInt(rr.horizon, 1, 365, base.rules.horizon),
     maxPerDay: clampInt(rr.maxPerDay, 1, 50, base.rules.maxPerDay),
-    durations,
+    duration: clampInt(rr.duration, 10, 240, base.rules.duration),
     offlineDays: Array.isArray(rr.offlineDays) ? [...new Set(rr.offlineDays.filter((x): x is number => Number.isInteger(x) && x >= 0 && x <= 6))] : base.rules.offlineDays,
   }
   return { week, overrides, rules }
 }
 
 // ───────── слоты дня ─────────
-export function dayInfo(date: string, S: Schedule, booked: DayBooking[], service: ServiceKey, format: FormatKey | null, now: Date): DayInfo {
+// Расписание общее для всех услуг: услуга влияет только на подпись встречи, не на слоты
+export function dayInfo(date: string, S: Schedule, booked: DayBooking[], format: FormatKey | null, now: Date): DayInfo {
   const R = S.rules
   const today = minskNow(now)
   if (date < today.date) return { closed: true, why: 'Прошедший день', slots: [], free: 0, past: true }
@@ -126,7 +122,7 @@ export function dayInfo(date: string, S: Schedule, booked: DayBooking[], service
   if (format === 'offline' && !R.offlineDays.includes(dow)) return { closed: true, why: 'Офлайн-встречи в этот день не проводятся', slots: [], free: 0 }
   const wins = ov.windows?.length ? ov.windows : ov.open ? [{ from: '10:00', to: '18:00' }] : S.week[dow]?.on ? S.week[dow]!.windows : []
   if (!wins.length) return { closed: true, why: 'Выходной по расписанию', slots: [], free: 0 }
-  const dur = R.durations[service] ?? 30
+  const dur = R.duration
   const busy: [number, number, string][] = []
   for (const b of ov.blocks ?? []) busy.push([tm(b.from), tm(b.to), b.reason || 'Закрыто вручную'])
   for (const b of booked) busy.push([b.startMin - R.buffer, b.endMin + R.buffer, 'Уже есть заявка'])
@@ -146,8 +142,8 @@ export function dayInfo(date: string, S: Schedule, booked: DayBooking[], service
 }
 
 /** Свободно ли конкретное время (проверка перед записью на сервере) */
-export function slotAvailable(date: string, time: string, S: Schedule, booked: DayBooking[], service: ServiceKey, format: FormatKey | null, now: Date): { ok: true } | { ok: false; why: string } {
-  const info = dayInfo(date, S, booked, service, format, now)
+export function slotAvailable(date: string, time: string, S: Schedule, booked: DayBooking[], format: FormatKey | null, now: Date): { ok: true } | { ok: false; why: string } {
+  const info = dayInfo(date, S, booked, format, now)
   if (info.closed) return { ok: false, why: info.why ?? 'День закрыт' }
   const s = info.slots.find((x) => x.t === time)
   if (!s) return { ok: false, why: 'Такого времени нет в расписании' }

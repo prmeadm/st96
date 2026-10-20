@@ -1,4 +1,5 @@
 import { bookingUrl } from './booking/schedule'
+import { SITE_SERVICES } from './catalog'
 // Шаблоны сообщений: общие типы и константы для админки и бота.
 export type TemplateKind = 'text' | 'photo' | 'video' | 'voice' | 'audio' | 'file'
 export type TemplateRow = {
@@ -19,7 +20,9 @@ export type TemplateRow = {
 export const TPL_KINDS: Record<TemplateKind, string> = { text: 'Текст', photo: 'Фото', video: 'Видео', voice: 'Голос', audio: 'Аудио', file: 'Файл' }
 export const TPL_TASKS = ['Первое касание', 'Напоминание', 'Дожим', 'После встречи', 'Ответ на вопрос', 'Рассылка']
 export const TPL_GOALS = ['Привлечь заявку', 'Прогреть', 'Записать на встречу', 'Вернуть клиента', 'Собрать отзыв', 'Информировать']
-export const TPL_SERVICES = ['Общее', 'Нейрофотосессия', 'Ретушь', 'Цветокоррекция', 'Съёмка', 'Цифровой офис', 'Продакшн']
+/** «Общее» — для любой услуги; остальные названия услуг берутся с сайта */
+export const TPL_GENERAL = 'Общее'
+export const TPL_SERVICES = [TPL_GENERAL, ...SITE_SERVICES.map((s) => s.ru)]
 export const TPL_VARS = ['{имя}', '{компания}', '{ник}', '{запись}']
 
 /** Подстановка переменных клиента; та же, что в воронках */

@@ -3,7 +3,7 @@ import { MonthGrid, shiftMonth } from '../booking/MonthGrid'
 import { POLICY_PATH } from '../data/privacy'
 
 type Lang = 'ru' | 'en'
-type Cfg = { services: { key: string; ru: string; en: string; minutes: number }[]; formats: { key: string; ru: string; en: string }[]; offlineDays: number[]; today: string; horizon: number }
+type Cfg = { services: { key: string; ru: string; en: string; infoRu: string; infoEn: string; url: string; urlEn: string; minutes: number }[]; formats: { key: string; ru: string; en: string }[]; offlineDays: number[]; today: string; horizon: number }
 type Slot = { t: string; free: boolean }
 
 const T = {
@@ -14,7 +14,7 @@ const T = {
     contactHint: 'Достаточно телефона или Telegram', consentPre: 'Согласен на обработку персональных данных:', consentLink: 'политика конфиденциальности',
     send: 'Отправить заявку', sending: 'Отправляю…', missing: 'Заполните', mService: 'услугу', mFormat: 'формат', mDate: 'дату', mTime: 'время', mName: 'имя', mContact: 'телефон или Telegram', mConsent: 'согласие',
     doneTitle: 'Заявка отправлена', doneText: 'Мы подтвердим время и напишем вам. Чтобы получить подтверждение сразу в Telegram и быстро связаться с менеджером, откройте нашего бота.',
-    openTg: 'Перейти в Telegram', again: 'Новая запись', when: 'Когда', offline: 'Офлайн-встречи проходят по дням', video: 'Ссылку на видеозвонок пришлём после подтверждения.', min: 'мин', err: 'Не удалось отправить. Попробуйте ещё раз.',
+    openTg: 'Перейти в Telegram', again: 'Новая запись', when: 'Когда', offline: 'Офлайн-встречи проходят по дням', video: 'Ссылку на видеозвонок пришлём после подтверждения.', min: 'мин', more: 'Подробнее на сайте', err: 'Не удалось отправить. Попробуйте ещё раз.',
     dows: ['пн', 'вт', 'ср', 'чт', 'пт', 'сб', 'вс'], minsk: 'время по Минску',
   },
   en: {
@@ -24,7 +24,7 @@ const T = {
     contactHint: 'A phone or Telegram is enough', consentPre: 'I agree to the processing of personal data:', consentLink: 'privacy policy',
     send: 'Send request', sending: 'Sending…', missing: 'Please fill in', mService: 'service', mFormat: 'format', mDate: 'date', mTime: 'time', mName: 'name', mContact: 'phone or Telegram', mConsent: 'consent',
     doneTitle: 'Request sent', doneText: 'We will confirm the time and message you. To get the confirmation right in Telegram and reach a manager faster, open our bot.',
-    openTg: 'Open Telegram', again: 'New booking', when: 'When', offline: 'In-person meetings take place on', video: 'We will send the video call link after confirmation.', min: 'min', err: 'Could not send. Please try again.',
+    openTg: 'Open Telegram', again: 'New booking', when: 'When', offline: 'In-person meetings take place on', video: 'We will send the video call link after confirmation.', min: 'min', more: 'More on the site', err: 'Could not send. Please try again.',
     dows: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], minsk: 'Minsk time',
   },
 } as const
@@ -115,6 +115,7 @@ export default function BookPage() {
             <section className="bk-card">
               <h2>{t.service}</h2>
               <div className="bk-chips">{cfg?.services.map((s) => <button key={s.key} type="button" className={service === s.key ? 'on' : ''} aria-pressed={service === s.key} onClick={() => { setService(s.key); setTime('') }}>{s[lang]}<small>{s.minutes} {t.min}</small></button>)}</div>
+              {svc && <p className="bk-dim">{lang === 'en' ? svc.infoEn : svc.infoRu} <a href={lang === 'en' ? svc.urlEn : svc.url} target="_blank" rel="noreferrer">{t.more}</a></p>}
               <h2>{t.format}</h2>
               <div className="bk-chips">{cfg?.formats.map((x) => <button key={x.key} type="button" className={format === x.key ? 'on' : ''} aria-pressed={format === x.key} onClick={() => { setFormat(x.key); setDate(''); setTime('') }}>{x[lang]}</button>)}</div>
               {format === 'offline' && cfg && <p className="bk-dim">{t.offline}: {cfg.offlineDays.map((i) => t.dows[i]).join(', ')}.</p>}

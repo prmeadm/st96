@@ -2,7 +2,8 @@ import { Api } from 'grammy'
 import { json } from '../server/adminAuth'
 import { buildIcs } from '../server/booking/ics'
 import { notifyAdminsNewBooking } from '../server/booking/notify'
-import { FORMAT_KEYS, FORMAT_LABEL, SERVICE_KEYS, SERVICE_LABEL, isDate, minskNow, type FormatKey, type ServiceKey } from '../server/booking/schedule'
+import { FORMAT_KEYS, FORMAT_LABEL, SERVICE_KEYS, isDate, minskNow, type FormatKey, type ServiceKey } from '../server/booking/schedule'
+import { SITE_SERVICES } from '../server/catalog'
 import { createBooking, daySlots, loadSchedule, monthAvailability } from '../server/booking/service'
 import { supabaseRepo } from '../server/repo'
 
@@ -38,18 +39,18 @@ export default async function handler(req: Request) {
 
   if (b.action === 'config') {
     return json({
-      services: SERVICE_KEYS.map((k) => ({ key: k, ru: SERVICE_LABEL[k].ru, en: SERVICE_LABEL[k].en, minutes: S.rules.durations[k] })),
+      services: SITE_SERVICES.map((x) => ({ key: x.key, ru: x.ru, en: x.en, infoRu: x.infoRu, infoEn: x.infoEn, url: x.url, urlEn: x.urlEn, minutes: S.rules.duration })),
       formats: FORMAT_KEYS.map((k) => ({ key: k, ru: FORMAT_LABEL[k].ru, en: FORMAT_LABEL[k].en })),
       offlineDays: S.rules.offlineDays, today: minskNow(now).date, horizon: S.rules.horizon,
     })
   }
   if (b.action === 'month') {
     if (!service || typeof b.month !== 'string' || !/^\d{4}-\d{2}$/.test(b.month)) return json({ error: 'Неверный запрос' }, 400)
-    return json({ days: await monthAvailability(repo, S, b.month, service, format, now) })
+    return json({ days: await monthAvailability(repo, S, b.month, format, now) })
   }
   if (b.action === 'day') {
     if (!service || !isDate(b.date)) return json({ error: 'Неверный запрос' }, 400)
-    const d = await daySlots(repo, S, b.date, service, format, now)
+    const d = await daySlots(repo, S, b.date, format, now)
     return json({ closed: d.closed, why: d.why, slots: d.slots.map((s) => ({ t: s.t, free: s.free })) })
   }
   if (b.action === 'create') {

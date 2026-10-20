@@ -9,62 +9,63 @@ import { createBooking, decideBooking, monthAvailability, saveSchedule, loadSche
 
 const NOW = new Date('2026-10-20T06:00:00Z') // вторник 09:00 по Минску
 const S = defaultSchedule()
+const S30 = { ...S, rules: { ...S.rules, duration: 30 } }
 const times = (d: ReturnType<typeof dayInfo>) => d.slots.filter((s) => s.free).map((s) => s.t)
 
 test('обычный рабочий день: окна с перерывом, шаг 30 минут', () => {
-  const d = dayInfo('2026-10-21', S, [], 'retouch', null, NOW) // среда
+  const d = dayInfo('2026-10-21', S30, [], null, NOW) // среда
   assert.equal(d.free, 14)
   assert.deepEqual(times(d).slice(0, 2), ['10:00', '10:30'])
   assert.ok(!times(d).includes('13:00'), 'перерыв 13-14 закрыт')
-  assert.equal(dayInfo('2026-10-21', S, [], 'neurophoto', null, NOW).free, 12, 'для часовой услуги слотов меньше')
+  assert.equal(dayInfo('2026-10-21', S, [], null, NOW).free, 12, 'при часовой встрече слотов меньше')
 })
 
 test('сегодня: запись не раньше чем за 3 часа; прошедшие, выходные и дальние дни закрыты', () => {
-  const today = dayInfo('2026-10-20', S, [], 'retouch', null, NOW)
+  const today = dayInfo('2026-10-20', S, [], null, NOW)
   assert.equal(today.slots.find((s) => s.t === '11:30')?.why, 'Слишком скоро')
   assert.equal(today.slots.find((s) => s.t === '12:00')?.free, true)
-  assert.equal(dayInfo('2026-10-19', S, [], 'retouch', null, NOW).past, true)
-  assert.equal(dayInfo('2026-10-25', S, [], 'retouch', null, NOW).why, 'Выходной по расписанию') // воскресенье
-  assert.equal(dayInfo('2026-12-30', S, [], 'retouch', null, NOW).far, true)
+  assert.equal(dayInfo('2026-10-19', S, [], null, NOW).past, true)
+  assert.equal(dayInfo('2026-10-25', S, [], null, NOW).why, 'Выходной по расписанию') // воскресенье
+  assert.equal(dayInfo('2026-12-30', S, [], null, NOW).far, true)
 })
 
 test('исключения: закрытый день, особые окна и закрытая часть дня', () => {
   const s = normalizeSchedule({ ...S, overrides: { '2026-10-21': { closed: true, reason: 'Отпуск' }, '2026-10-22': { blocks: [{ from: '14:00', to: '16:00', reason: 'Съёмка' }] }, '2026-10-25': { open: true } } })
-  assert.equal(dayInfo('2026-10-21', s, [], 'retouch', null, NOW).why, 'Отпуск')
-  const thu = dayInfo('2026-10-22', s, [], 'retouch', null, NOW)
+  assert.equal(dayInfo('2026-10-21', s, [], null, NOW).why, 'Отпуск')
+  const thu = dayInfo('2026-10-22', s, [], null, NOW)
   assert.equal(thu.slots.find((x) => x.t === '14:30')?.why, 'Съёмка')
   assert.equal(thu.slots.find((x) => x.t === '16:00')?.free, true)
-  assert.ok(dayInfo('2026-10-25', s, [], 'retouch', null, NOW).free > 0, 'воскресенье открыли вручную')
+  assert.ok(dayInfo('2026-10-25', s, [], null, NOW).free > 0, 'воскресенье открыли вручную')
 })
 
 test('офлайн-встречи только в заданные дни', () => {
-  assert.equal(dayInfo('2026-10-21', S, [], 'retouch', 'offline', NOW).closed, true) // среда
-  assert.equal(dayInfo('2026-10-22', S, [], 'retouch', 'offline', NOW).closed, false) // четверг
-  assert.equal(dayInfo('2026-10-21', S, [], 'retouch', 'video', NOW).closed, false)
+  assert.equal(dayInfo('2026-10-21', S, [], 'offline', NOW).closed, true) // среда
+  assert.equal(dayInfo('2026-10-22', S, [], 'offline', NOW).closed, false) // четверг
+  assert.equal(dayInfo('2026-10-21', S, [], 'video', NOW).closed, false)
 })
 
 test('буфер между встречами и лимит встреч в день', () => {
   const booked: DayBooking[] = [{ startMin: 14 * 60, endMin: 14 * 60 + 30 }]
-  const d = dayInfo('2026-10-21', S, booked, 'retouch', null, NOW)
+  const d = dayInfo('2026-10-21', S30, booked, null, NOW)
   assert.deepEqual(['12:30', '14:00', '14:30', '15:00'].map((t) => d.slots.find((s) => s.t === t)!.free), [true, false, false, true], 'буфер 15 мин с обеих сторон занятого времени')
     const five = Array.from({ length: 5 }, (_, i) => ({ startMin: 600 + i * 60, endMin: 630 + i * 60 }))
-  assert.equal(dayInfo('2026-10-21', S, five, 'retouch', null, NOW).free, 0)
-  assert.equal(slotAvailable('2026-10-21', '12:00', S, five, 'retouch', null, NOW).ok, false)
+  assert.equal(dayInfo('2026-10-21', S, five, null, NOW).free, 0)
+  assert.equal(slotAvailable('2026-10-21', '12:00', S, five, null, NOW).ok, false)
 })
 
 test('нормализация расписания отбрасывает мусор и держится в границах', () => {
-  const s = normalizeSchedule({ week: { 0: { on: true, windows: [{ from: '18:00', to: '10:00' }, { from: 'x', to: '12:00' }] } }, overrides: { 'не дата': { closed: true }, '2026-11-01': { closed: true, reason: 'x'.repeat(200) } }, rules: { step: 7, buffer: 9999, horizon: -5, durations: { retouch: 5 }, offlineDays: [1, 9, 'a'] } })
+  const s = normalizeSchedule({ week: { 0: { on: true, windows: [{ from: '18:00', to: '10:00' }, { from: 'x', to: '12:00' }] } }, overrides: { 'не дата': { closed: true }, '2026-11-01': { closed: true, reason: 'x'.repeat(200) } }, rules: { step: 7, buffer: 9999, horizon: -5, duration: 5, offlineDays: [1, 9, 'a'] } })
   assert.deepEqual(s.week[0]!.windows, defaultSchedule().week[0]!.windows, 'неверные окна заменены умолчанием')
   assert.deepEqual(Object.keys(s.overrides), ['2026-11-01'])
   assert.equal(s.overrides['2026-11-01']!.reason!.length, 80)
   assert.equal(s.rules.step, 30)
   assert.equal(s.rules.buffer, 120)
   assert.equal(s.rules.horizon, 1)
-  assert.equal(s.rules.durations.retouch, 10)
+  assert.equal(s.rules.duration, 10)
   assert.deepEqual(s.rules.offlineDays, [1])
 })
 
-const input = { service: 'retouch', format: 'video', date: '2026-10-21', time: '11:00', name: 'Анна', phone: '+375 29 111-22-33', telegram: '@anna_photo', goal: 'Обсудить ретушь' }
+const input = { service: 'production', format: 'video', date: '2026-10-21', time: '11:00', name: 'Анна', phone: '+375 29 111-22-33', telegram: '@anna_photo', goal: 'Обсудить съёмку' }
 
 test('запись: создаётся клиент и заявка, время занимается, второй клиент на то же время получает отказ', async () => {
   const repo = memoryRepo()
@@ -73,7 +74,7 @@ test('запись: создаётся клиент и заявка, время 
   if (!r.ok) return
   assert.equal(r.booking.status, 'pending')
   assert.equal(r.booking.starts_at, '2026-10-21T08:00:00.000Z', '11:00 Минск = 08:00 UTC')
-  assert.equal(Date.parse(r.booking.ends_at) - Date.parse(r.booking.starts_at), 30 * 60_000)
+  assert.equal(Date.parse(r.booking.ends_at) - Date.parse(r.booking.starts_at), 60 * 60_000, 'длительность общая для всех услуг')
   assert.equal(repo.clients.length, 1)
   assert.equal(repo.clients[0]!.phone, '+375291112233')
   const second = await createBooking(repo, { ...input, name: 'Игорь', phone: '+375 33 555-44-33', telegram: undefined }, NOW)
@@ -96,8 +97,8 @@ test('запись: обязательные поля, свой клиент п�
   const c = await repo.insertClient({ name: 'Из бота', tg_user_id: 7, source: 'bot' })
   const ok = await createBooking(repo, { ...input, clientId: c.id, time: '12:00' }, NOW)
   assert.ok(ok.ok && ok.booking.client_id === c.id && repo.clients.length === 1)
-  await createBooking(repo, { ...input, clientId: c.id, time: '15:00' }, NOW)
-  await createBooking(repo, { ...input, clientId: c.id, time: '16:00' }, NOW)
+  await createBooking(repo, { ...input, clientId: c.id, time: '14:00' }, NOW)
+  await createBooking(repo, { ...input, clientId: c.id, time: '15:30' }, NOW)
   const spam = await createBooking(repo, { ...input, clientId: c.id, time: '17:00' }, NOW)
   assert.equal(spam.ok, false)
   if (!spam.ok) assert.equal(spam.status, 429)
@@ -157,11 +158,11 @@ test('уведомления: администраторам с кнопками
 })
 
 test('файл календаря: время в UTC, название и описание', () => {
-  const b = { id: 'x', service: 'retouch', format: 'video', starts_at: toInstant('2026-10-21', '14:00').toISOString(), ends_at: toInstant('2026-10-21', '14:30').toISOString(), goal: 'Цель, важная; да', meet_url: 'https://meet.example/a' } as never
+  const b = { id: 'x', service: 'production', format: 'video', starts_at: toInstant('2026-10-21', '14:00').toISOString(), ends_at: toInstant('2026-10-21', '14:30').toISOString(), goal: 'Цель, важная; да', meet_url: 'https://meet.example/a' } as never
   const ics = buildIcs(b)
   assert.match(ics, /DTSTART:20261021T110000Z/)
   assert.match(ics, /DTEND:20261021T113000Z/)
-  assert.match(ics, /SUMMARY:Встреча со студией ST96: Ретушь/)
+  assert.match(ics, /SUMMARY:Встреча со студией ST96: Продакшн/)
   assert.ok(ics.includes(String.raw`Цель: Цель\, важная\; да`), 'запятая и точка с запятой экранированы')
   assert.equal(whenLabel('2026-10-21T11:00:00Z', 'en'), 'Wed, Oct 21, 14:00 (Minsk)')
 })
@@ -173,10 +174,10 @@ test('расписание хранится в настройках, месяц 
   const s = await loadSchedule(repo)
   assert.equal(s.rules.step, 60)
   await createBooking(repo, input, NOW)
-  const m = await monthAvailability(repo, s, '2026-10', 'retouch', null, NOW)
+  const m = await monthAvailability(repo, s, '2026-10', null, NOW)
   assert.equal(Object.keys(m).length, 31)
   assert.equal(m['2026-10-25']!.free, 0)
-  assert.ok(m['2026-10-21']!.free > 0 && m['2026-10-21']!.free < dayInfo('2026-10-21', s, [], 'retouch', null, NOW).free)
+  assert.ok(m['2026-10-21']!.free > 0 && m['2026-10-21']!.free < dayInfo('2026-10-21', s, [], null, NOW).free)
   assert.equal(m['2026-10-19']!.why, 'Прошедший день')
 })
 

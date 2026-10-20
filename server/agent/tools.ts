@@ -2,7 +2,8 @@
 import type { Api } from 'grammy'
 import { startBroadcast, type Segment } from '../broadcasts'
 import type { Repo } from '../repo'
-import { TPL_GOALS, TPL_SERVICES, TPL_TASKS } from '../templates'
+import { SITE_SERVICES, UNKNOWN_SERVICE, servicesBrief } from '../catalog'
+import { TPL_GENERAL, TPL_GOALS, TPL_SERVICES, TPL_TASKS } from '../templates'
 import { emptyStats, importSlice, MAX_EXPORT_BYTES, parseExport, planImport, summarize, totalOf, type ImportStats } from './groupImport'
 import { parseJson, type Llm } from './llm'
 import type { AgentStats, AgentTask, Risk, Step } from './types'
@@ -21,8 +22,11 @@ export type ToolCtx = {
 export type ToolResult = { text: string; ref?: string; partial?: { cursor: number; carry: Record<string, unknown> } }
 export type Tool = { name: string; risk: Risk; describe: string; run: (ctx: ToolCtx, step: Step) => Promise<ToolResult> }
 
-const SERVICE_KEYS: Record<string, string> = { neurophoto: 'Нейрофотосессия', retouch: 'Ретушь (Retouch Studio)', digital_office: 'Цифровой офис', production: 'Продакшн', other: 'Другое' }
-const SYSTEM = 'Ты помощник студии ST96 (ретушь, нейрофотосессия, съёмка, цифровой офис, продакшн). Пишешь по-русски, коротко и по делу, без выдуманных фактов, цен и сроков. Отвечай только JSON без пояснений.'
+// Услуги и их описание только с сайта (server/catalog.ts)
+const SERVICE_KEYS: Record<string, string> = Object.fromEntries(SITE_SERVICES.map((s) => [s.key, s.ru]))
+const SYSTEM = `Ты помощник студии ST96 (st96.by). Услуги студии — только эти, с описанием с сайта:
+${servicesBrief('ru')}
+Не придумывай другие услуги, цены, сроки и факты, которых нет выше. Пишешь по-русски, коротко и по делу. Отвечай только JSON без пояснений.`
 
 const history = (ctx: ToolCtx) => ctx.done.filter((s) => s.result).map((s) => `• ${s.text}: ${s.result!.slice(0, 1200)}`).join('\n') || '(ещё ничего не сделано)'
 const prompt = (ctx: ToolCtx, step: Step, shape: string) =>
@@ -34,7 +38,7 @@ async function askJson<T>(ctx: ToolCtx, step: Step, shape: string): Promise<T> {
 const str = (v: unknown, max: number) => (typeof v === 'string' ? v.trim().slice(0, max) : '')
 
 export function formatStats(s: AgentStats): string {
-  const byService = Object.entries(s.leads30).map(([k, n]) => `${SERVICE_KEYS[k] ?? k}: ${n}`).join(', ') || 'нет заявок'
+  const byService = Object.entries(s.leads30).map(([k, n]) => `${SERVICE_KEYS[k] ?? (k === UNKNOWN_SERVICE ? 'не указана' : k)}: ${n}`).join(', ') || 'нет заявок'
   const byStatus = Object.entries(s.leadStatus).map(([k, n]) => `${k}: ${n}`).join(', ') || 'нет'
   return `Клиентов ${s.clients}, согласны на рассылки ${s.consented}, отписались ${s.optedOut}. Заявок за 30 дней по услугам: ${byService}; по статусам: ${byStatus}; за 7 дней: ${s.newLeads7}. Воронок ${s.funnels} (опубликовано ${s.publishedFunnels}), шаблонов ${s.templates}, рассылок ${s.broadcasts}.`
 }
@@ -71,7 +75,7 @@ export const TOOLS: Tool[] = [
       const services = (Array.isArray(r.services) ? r.services : []).filter((x) => TPL_SERVICES.includes(x))
       const t = await ctx.repo.insertTemplate({
         title: `[Агент] ${title}`, kind: 'text', body,
-        task: TPL_TASKS.includes(r.task ?? '') ? r.task! : TPL_TASKS[0]!, goal: TPL_GOALS.includes(r.goal ?? '') ? r.goal! : TPL_GOALS[0]!, services: services.length ? services : ['Общее'],
+        task: TPL_TASKS.includes(r.task ?? '') ? r.task! : TPL_TASKS[0]!, goal: TPL_GOALS.includes(r.goal ?? '') ? r.goal! : TPL_GOALS[0]!, services: services.length ? services : [TPL_GENERAL],
       })
       return { text: `Сохранён шаблон «[Агент] ${title}»`, ref: t.id }
     },

@@ -1,5 +1,6 @@
 // Исполнитель воронок: проводит клиента по схеме. Логика повторяет предпросмотр в конструкторе.
-import { bookingUrl, FORMAT_KEYS, SERVICE_KEYS, type FormatKey, type ServiceKey } from '../booking/schedule'
+import { bookingUrl, FORMAT_KEYS, type FormatKey, type ServiceKey } from '../booking/schedule'
+import { serviceByLabel } from '../catalog'
 import { hasFreeSlots } from '../booking/service'
 import type { ClientRow, Repo } from '../repo'
 import {
@@ -24,10 +25,6 @@ const MAX_STEPS = 60
 const HUMAN_MUTE_MS = 12 * 3600_000
 const nowOf = (env: Env) => (env.now ? env.now() : new Date())
 
-const SERVICE_ALIASES: Record<string, string> = {
-  ретушь: 'retouch', 'retouch studio': 'retouch', нейрофотосессия: 'neurophoto', 'цифровой офис': 'digital_office', продакшн: 'production', съёмка: 'production', другое: 'other',
-}
-
 /** Время и день недели по Минску */
 function minskNow(d: Date) {
   const parts = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Minsk', hour: '2-digit', minute: '2-digit', weekday: 'short', year: 'numeric', month: '2-digit', day: '2-digit', hour12: false }).formatToParts(d)
@@ -44,7 +41,8 @@ const hm = (s: string) => {
 type CondCtx = { client: ClientRow; tags: string[]; services: string[]; vars: Record<string, unknown>; now: Date; slotFree: boolean; booked: boolean }
 
 const FORMAT_BY_LABEL: Record<string, FormatKey> = { 'телефонный звонок': 'call', видеозвонок: 'video', 'офлайн встреча': 'offline' }
-const serviceKeyOf = (label: string): ServiceKey | undefined => { const k = SERVICE_ALIASES[label.toLowerCase()] ?? label.toLowerCase(); return (SERVICE_KEYS as readonly string[]).includes(k) ? (k as ServiceKey) : undefined }
+// Услуга в блоке и условии: название с сайта (рус/англ) или его ключ
+const serviceKeyOf = (label: string): ServiceKey | undefined => serviceByLabel(label)
 const formatKeyOf = (label: string): FormatKey | undefined => FORMAT_BY_LABEL[label.toLowerCase()] ?? ((FORMAT_KEYS as readonly string[]).includes(label) ? (label as FormatKey) : undefined)
 
 function evalRule(r: Rule, c: CondCtx): boolean {
@@ -52,7 +50,7 @@ function evalRule(r: Rule, c: CondCtx): boolean {
   switch (r.kind) {
     case 'tag': return !!v && c.tags.some((t) => t.toLowerCase() === v.toLowerCase())
     case 'service': {
-      const key = SERVICE_ALIASES[v.toLowerCase()] ?? v.toLowerCase()
+      const key = serviceKeyOf(v) ?? v.toLowerCase()
       return c.services.includes(key) || str(c.vars.service).toLowerCase() === v.toLowerCase()
     }
     case 'field': {

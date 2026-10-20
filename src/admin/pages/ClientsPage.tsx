@@ -119,7 +119,7 @@ export default function ClientsPage() {
             </div>
             <div className="hint" style={{ marginTop: 4 }}>{[c.company, c.phone].filter(Boolean).join(' · ') || '—'}</div>
             <div className="chips" style={{ marginTop: 8 }}>
-              {svcs.map((s) => <span key={s} className="chip blue">{SERVICES[s] ?? s}</span>)}
+              {svcs.filter((s) => SERVICES[s]).map((s) => <span key={s} className="chip blue">{SERVICES[s]}</span>)}
               {c.consent_at && !c.opted_out_at && <span className="chip green">рассылки: да</span>}
               {c.opted_out_at && <span className="chip red">отписан</span>}
               {c.tg_user_id && <span className="chip">пишет боту</span>}

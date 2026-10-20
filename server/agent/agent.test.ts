@@ -14,8 +14,8 @@ function mockLlm(planJson: string): Llm {
   return async ({ system, user }) => {
     if (system.includes('планировщик')) return planJson
     if (user.includes('"report"')) return JSON.stringify({ report: 'Всё сделано.' })
-    if (user.includes('"body": "текст сообщения клиенту')) return JSON.stringify({ title: 'Напоминание', body: 'Здравствуйте, {имя}! Ждём вас.', task: 'Напоминание', goal: 'Информировать', services: ['Ретушь', 'Неизвестная'] })
-    if (user.includes('ключи услуг')) return JSON.stringify({ title: 'Акция', body: 'Скидка на ретушь!', services: ['retouch', 'bogus'], language: 'ru' })
+    if (user.includes('"body": "текст сообщения клиенту')) return JSON.stringify({ title: 'Напоминание', body: 'Здравствуйте, {имя}! Ждём вас.', task: 'Напоминание', goal: 'Информировать', services: ['Продакшн', 'Неизвестная'] })
+    if (user.includes('ключи услуг')) return JSON.stringify({ title: 'Акция', body: 'Скидка на съёмку!', services: ['production', 'bogus'], language: 'ru' })
     if (user.includes('сообщение администраторам')) return JSON.stringify({ text: 'Готово' })
     return JSON.stringify({ text: 'Вариант 1. Привет!' })
   }
@@ -59,7 +59,7 @@ test('задание: план ждёт согласования, после у�
   assert.equal(t.status, 'done')
   assert.equal(t.report, 'Всё сделано.')
   assert.equal(repo.templates[0]!.title, '[Агент] Напоминание')
-  assert.deepEqual(repo.templates[0]!.services, ['Ретушь'])
+  assert.deepEqual(repo.templates[0]!.services, ['Продакшн'])
   assert.ok(!JSON.stringify(t.plan).includes('Секретное Имя'), 'имена клиентов не попадают в результаты')
 })
 
@@ -80,7 +80,7 @@ test('отключённые шаги пропускаются, без вклю�
 test('запуск рассылки ждёт подтверждения и без него не выполняется', async () => {
   const { repo, deps, sent } = setup(plan('draft_broadcast', 'start_broadcast'))
   const anna = await repo.insertClient({ tg_user_id: 7, name: 'Анна', language: 'ru', consent_at: 'x' })
-  await repo.insertLead({ client_id: anna.id, source: 'bot', service_key: 'retouch', title: null, topic: null, name: null, phone: null, telegram: null, email: null, company: null, comment: null, interest: null, lang: null, landing: null, utm: null, warnings: [], raw_text: null, tg_chat_id: null, tg_message_id: null })
+  await repo.insertLead({ client_id: anna.id, source: 'bot', service_key: 'production', title: null, topic: null, name: null, phone: null, telegram: null, email: null, company: null, comment: null, interest: null, lang: null, landing: null, utm: null, warnings: [], raw_text: null, tg_chat_id: null, tg_message_id: null })
   await createTask(deps, input)
   await approveTask(deps, repo.agentTasks[0]!.id, {})
   await tickAgentTasks(deps, { maxSteps: 10 })
@@ -88,7 +88,7 @@ test('запуск рассылки ждёт подтверждения и бе�
   assert.equal(repo.broadcasts.length, 1)
   assert.equal(repo.broadcasts[0]!.status, 'draft')
   assert.equal(sent.length, 0)
-  assert.deepEqual(repo.broadcasts[0]!.segment, { services: ['retouch'], language: 'ru' })
+  assert.deepEqual(repo.broadcasts[0]!.segment, { services: ['production'], language: 'ru' })
 
   const wrong = await confirmStep(deps, repo.agentTasks[0]!.id, 'нет-такого')
   assert.equal(wrong.ok, false)
@@ -232,7 +232,7 @@ test('выбор модели: своя работает строго, без п
   await assert.rejects((await resolveLlm(repo, { LLM_KEY_GROQ: 'k' }))({ system: 's', user: 'u' }), /удалена/)
 })
 
-const leadText = (name: string, phone: string, extra = '') => `🆕 Новая заявка с сайта ST96\nИмя: ${name}\nКонтакт: ${phone}\nИнтересует: Ретушь\nСообщение: Хочу ретушь портретов${extra}\nЯзык сайта: Русский (RU)\nИсточник: прямой заход`
+const leadText = (name: string, phone: string, extra = '') => `🆕 Новая заявка с сайта ST96\nИмя: ${name}\nКонтакт: ${phone}\nИнтересует: Продакшн\nСообщение: Хочу ретушь портретов${extra}\nЯзык сайта: Русский (RU)\nИсточник: прямой заход`
 const exportJson = (extra: object[] = []) => ({
   name: 'Лиды ST96', type: 'private_supergroup', id: 1001,
   messages: [

@@ -4,12 +4,10 @@
 //   «//текст» в теме         -> внутренняя заметка, клиенту не уходит;
 //   «/close» в теме          -> диалог закрыт, тема закрывается.
 import { InlineKeyboard, type Api } from 'grammy'
+import { UNKNOWN_SERVICE, serviceLabel } from '../catalog'
 import type { ClientRow, Repo } from '../repo'
 import { TPL_KINDS, fillTemplate, type TemplateKind, type TemplateRow } from '../templates'
 
-const SERVICE_NAMES: Record<string, string> = {
-  neurophoto: 'Нейрофотосессия', retouch: 'Retouch Studio', digital_office: 'Цифровой офис', production: 'Продакшн', other: 'Другое',
-}
 
 const threadGone = (e: unknown) => /message thread not found|TOPIC_DELETED|TOPIC_ID_INVALID|TOPIC_NOT_MODIFIED/i.test(e instanceof Error ? e.message : String(e))
 
@@ -27,7 +25,7 @@ export async function cardText(repo: Repo, c: ClientRow) {
     `Язык: ${c.language === 'en' ? 'English' : 'Русский'} · источник: ${c.source ?? '—'}`,
     `Рассылки: ${c.opted_out_at ? 'отписан' : c.consent_at ? 'согласен' : 'согласия нет'}`,
     leads.length ? '\nЗаявки:' : '\nЗаявок пока нет.',
-    ...leads.map((l) => `• ${SERVICE_NAMES[l.service_key ?? ''] ?? l.service_key ?? 'заявка'}${l.company ? `, ${l.company}` : ''}${l.comment ? `: ${l.comment.slice(0, 160)}` : ''}`),
+    ...leads.map((l) => `• ${l.service_key && l.service_key !== UNKNOWN_SERVICE ? serviceLabel(l.service_key) : 'заявка'}${l.company ? `, ${l.company}` : ''}${l.comment ? `: ${l.comment.slice(0, 160)}` : ''}`),
     '\nПишите в этой теме, и клиент получит сообщение от студии. Строка с «//» в начале останется внутренней заметкой. /close закрывает диалог.',
   ]
   return lines.filter(Boolean).join('\n')

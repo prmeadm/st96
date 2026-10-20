@@ -5,7 +5,7 @@ import { ingestGroupMessage, ingestLead, type GroupMessage } from './ingest'
 import { parseLead } from './parse'
 
 const LEAD = [
-  '\u{1F195} Заявка: Нейрофотосессия', 'Имя: Александра', 'Telegram: @Alex_Balashova', 'Компания: Фотограф/Видеограф',
+  '\u{1F195} Заявка: Продакшн', 'Имя: Александра', 'Telegram: @Alex_Balashova', 'Компания: Фотограф/Видеограф',
   'Комментарий: возможно сервис по ретуши', 'Источник: стенд, форма в памятке сотрудника',
 ].join('\n')
 
@@ -22,7 +22,7 @@ test('заявка создаёт клиента и заявку, повтор �
   assert.equal(a.clientId, b.clientId)
   assert.equal(repo.clients[0].tg_username, 'Alex_Balashova')
   assert.equal(repo.leads[0].source, 'stand_form')
-  assert.equal(repo.leads[0].service_key, 'neurophoto')
+  assert.equal(repo.leads[0].service_key, 'production')
 })
 
 test('клиент находится по нику, пустые поля дополняются', async () => {

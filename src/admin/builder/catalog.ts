@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { MarkerType, type Edge, type Node } from '@xyflow/react'
 import { TRIGGER, type Graph } from '../../../server/funnels/types'
+import { SITE_SERVICES } from '../../../server/catalog'
 
 export type D = any
 export const uid = (p = 'id') => p + Math.random().toString(36).slice(2, 8)
@@ -63,7 +64,8 @@ export const ACT_TYPES = [
   { k: 'setvar', n: 'Установить переменную', g: 'Данные' },
   { k: 'conv', n: 'Записать конверсию', g: 'Данные' },
 ]
-export const SERVICES = ['Ретушь', 'Нейрофотосессия', 'Цифровой офис', 'Продакшн', 'Другое']
+/** Названия услуг с сайта (src/data/services.ts) */
+export const SERVICES = SITE_SERVICES.map((s) => s.ru)
 export const FORMATS = ['Телефонный звонок', 'Видеозвонок', 'Офлайн встреча']
 export const DAYS = ['пн', 'вт', 'ср', 'чт', 'пт', 'сб', 'вс']
 export const TRIGGERS = [TRIGGER.start, TRIGGER.site, TRIGGER.keyword, TRIGGER.any] as string[]
@@ -97,7 +99,7 @@ export function newData(type: string): D {
     message: { parts: [{ id: uid('p'), kind: 'text', text: '' }], quick: [], links: [] },
     condition: { mode: 'all', rules: [] },
     action: { items: [] },
-    booking: { services: SERVICES.slice(0, 3), formats: FORMATS, meet: true, message: '', messageEn: '' },
+    booking: { services: [...SERVICES], formats: FORMATS, meet: true, message: '', messageEn: '' },
     handoff: { message: 'Передаю ваш вопрос администратору, он ответит в ближайшее время.', notify: true },
     note: { text: '' },
   } as Record<string, D>)[type] ?? {}

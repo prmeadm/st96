@@ -32,7 +32,7 @@ const byDate = (rows: BookingRow[]) => {
 }
 
 /** Свободные слоты за месяц: для календаря клиента и админки (одно обращение к базе). */
-export async function monthAvailability(repo: Repo, S: Schedule, month: string, service: ServiceKey, format: FormatKey | null, now: Date): Promise<Record<string, { free: number; why?: string }>> {
+export async function monthAvailability(repo: Repo, S: Schedule, month: string, format: FormatKey | null, now: Date): Promise<Record<string, { free: number; why?: string }>> {
   const first = `${month}-01`
   if (!isDate(first)) return {}
   const next = new Date(Date.UTC(Number(month.slice(0, 4)), Number(month.slice(5, 7)), 1)).toISOString().slice(0, 10)
@@ -40,15 +40,15 @@ export async function monthAvailability(repo: Repo, S: Schedule, month: string, 
   const booked = byDate(await repo.listActiveBookings(first, last))
   const out: Record<string, { free: number; why?: string }> = {}
   for (let d = first; d <= last; d = addDays(d, 1)) {
-    const i = dayInfo(d, S, booked.get(d) ?? [], service, format, now)
+    const i = dayInfo(d, S, booked.get(d) ?? [], format, now)
     out[d] = i.closed ? { free: 0, why: i.why } : { free: i.free }
   }
   return out
 }
 
-export async function daySlots(repo: Repo, S: Schedule, date: string, service: ServiceKey, format: FormatKey | null, now: Date): Promise<DayInfo> {
+export async function daySlots(repo: Repo, S: Schedule, date: string, format: FormatKey | null, now: Date): Promise<DayInfo> {
   const booked = byDate(await repo.listActiveBookings(date, date)).get(date) ?? []
-  return dayInfo(date, S, booked, service, format, now)
+  return dayInfo(date, S, booked, format, now)
 }
 
 export type BookingInput = {
@@ -88,10 +88,10 @@ export async function createBooking(repo: Repo, input: BookingInput, now = new D
 
   const S = await loadSchedule(repo)
   const booked = byDate(await repo.listActiveBookings(date, date)).get(date) ?? []
-  const check = slotAvailable(date, time, S, booked, service, format, now)
+  const check = slotAvailable(date, time, S, booked, format, now)
   if (!check.ok) return { ok: false, error: 'Это время недоступно. Выберите другое', status: 409 }
 
-  const dur = S.rules.durations[service]
+  const dur = S.rules.duration
   const starts = toInstant(date, time)
   const client = await clientFor(repo, input.clientId, name, phone, telegram ? telegram.replace(/^@/, '') : null, txt(input.company, 80))
   const res = await repo.insertBooking({
@@ -131,11 +131,11 @@ export async function setMeetUrl(repo: Repo, id: string, meetUrl: string): Promi
 export { BOOK_ORIGIN, bookingUrl, minskNow, tm }
 
 /** Есть ли хоть один свободный слот в ближайшее время (для условия воронки «Есть свободные слоты»). */
-export async function hasFreeSlots(repo: Repo, now: Date, service: ServiceKey = 'retouch'): Promise<boolean> {
+export async function hasFreeSlots(repo: Repo, now: Date): Promise<boolean> {
   const S = await loadSchedule(repo)
   const today = minskNow(now).date
   for (const month of [today.slice(0, 7), addDays(today, 31).slice(0, 7)]) {
-    const days = await monthAvailability(repo, S, month, service, null, now)
+    const days = await monthAvailability(repo, S, month, null, now)
     if (Object.values(days).some((d) => d.free > 0)) return true
   }
   return false

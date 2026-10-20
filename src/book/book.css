@@ -40,3 +40,4 @@ h2:first-child { margin-top: 0; }
 .bk-link { background: none; border: 0; color: var(--dim); text-decoration: underline; font: inherit; font-size: 13px; margin-top: 12px; cursor: pointer; }
 :focus-visible { outline: 2px solid var(--acid); outline-offset: 2px; }
 .mg { margin: 4px 0 8px; }
+.bk-dim a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
