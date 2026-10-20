@@ -6,7 +6,7 @@ import { SERVICES, clientTitle, fmtDate } from '../types'
 import { BackLink } from '../ui/BackLink'
 import { MediaField } from '../ui/MediaField'
 import { TranslateButton } from '../ui/TranslateButton'
-import { KIND_OPTIONS, Seg } from '../ui/Seg'
+import { PICK_KINDS, Seg, pickKind } from '../ui/Seg'
 import { BROADCAST_STATUS, MEDIA_CAPTION_LIMIT, validateBroadcast, type BroadcastRow, type Segment } from '../../../server/broadcasts'
 import { TPL_VARS, fillTemplate, type TemplateKind, type TemplateRow } from '../../../server/templates'
 import { STATUS_CHIP } from './BroadcastsPage'
@@ -140,7 +140,7 @@ export default function BroadcastPage() {
             <div className="fld"><label>Взять из шаблона</label>
               <select value="" onChange={(e) => fromTemplate(e.target.value)} aria-label="Шаблон"><option value="">Выберите шаблон…</option>{templates.map((t) => <option key={t.id} value={t.id}>{t.title}</option>)}</select></div>
           )}
-          <Seg label="Тип сообщения" iconOnly value={d.kind} options={KIND_OPTIONS} onChange={(k) => up({ kind: k })} />
+          <Seg label="Тип сообщения" iconOnly value={pickKind(d.kind)} options={PICK_KINDS} onChange={(k) => up({ kind: k })} />
           {d.kind !== 'text' && <div className="fld"><label>{d.kind === 'voice' ? 'Голосовое сообщение' : 'Файл'}</label><MediaField kind={d.kind} value={d.media_url} onChange={(url) => up({ media_url: url })} folder="broadcasts" /></div>}
           <div className="fld"><label>{d.kind === 'text' ? 'Текст' : 'Подпись'}{d.kind !== 'text' ? ` (до ${MEDIA_CAPTION_LIMIT} знаков)` : ''}</label>
             <div className="chips">{TPL_VARS.map((v) => <button type="button" key={v} onClick={() => up({ body: `${d.body}${v}` })}>{v}</button>)}</div>

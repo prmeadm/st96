@@ -5,7 +5,7 @@ import { TPL_GOALS, TPL_KINDS, TPL_SERVICES, TPL_TASKS, TPL_VARS, type TemplateK
 import { MediaField } from '../ui/MediaField'
 import { Icon } from '../ui/Icon'
 import { TranslateButton } from '../ui/TranslateButton'
-import { KIND_OPTIONS, Seg } from '../ui/Seg'
+import { KIND_OPTIONS, PICK_KINDS, Seg, pickKind } from '../ui/Seg'
 import { popularityScore, ratings, type TemplateStat } from '../../../server/usage'
 import './templates.css'
 
@@ -50,7 +50,7 @@ export default function TemplatesPage() {
   }, [rows, stats])
 
   const list = useMemo(() => [...(rows ?? [])].sort((a, b) => (sort === 'top' ? (rating[b.id]?.pct ?? 0) - (rating[a.id]?.pct ?? 0) || b.used - a.used : 0)).filter((t) =>
-    (!kinds.length || kinds.includes(t.kind)) && (!favOnly || t.fav)
+    (!kinds.length || kinds.includes(pickKind(t.kind))) && (!favOnly || t.fav)
     && (!f.task.length || f.task.includes(t.task)) && (!f.goal.length || f.goal.includes(t.goal))
     && (!f.service.length || t.services.some((s) => f.service.includes(s)))
     && (!q.trim() || `${t.title} ${t.body}`.toLowerCase().includes(q.trim().toLowerCase()))), [rows, kinds, favOnly, f, q, sort, rating])
@@ -107,7 +107,7 @@ export default function TemplatesPage() {
           </div>
           <div className="chips">
             <button className={!kinds.length && !favOnly ? 'on' : ''} onClick={() => { setKinds([]); setFavOnly(false) }}>Все</button>
-            {KIND_OPTIONS.map((o) => <button key={o.value} className={kinds.includes(o.value) ? 'on' : ''} title={`Только: ${o.label}`} onClick={() => setKinds(kinds.includes(o.value) ? kinds.filter((x) => x !== o.value) : [...kinds, o.value])}>{o.icon && <Icon name={o.icon} size={16} />}{o.label} <small>{(rows ?? []).filter((t) => t.kind === o.value).length}</small></button>)}
+            {PICK_KINDS.map((o) => <button key={o.value} className={kinds.includes(o.value) ? 'on' : ''} title={`Только: ${o.label}`} onClick={() => setKinds(kinds.includes(o.value) ? kinds.filter((x) => x !== o.value) : [...kinds, o.value])}>{o.icon && <Icon name={o.icon} size={16} />}{o.label} <small>{(rows ?? []).filter((t) => pickKind(t.kind) === o.value).length}</small></button>)}
             <button className={favOnly ? 'on' : ''} onClick={() => setFavOnly(!favOnly)}><Icon name="star" size={16} fill={favOnly} />Избранное</button>
             <button className={sort === 'top' ? 'on' : ''} aria-pressed={sort === 'top'} title="Сначала самые популярные" onClick={() => setSort(sort === 'top' ? 'new' : 'top')}><Icon name="chart" size={16} />Популярные</button>
           </div>
@@ -167,7 +167,7 @@ function Editor({ d: init, onSave, onClose, onDelete, onCopy }: { d: Draft; onSa
           <button className={`star ${d.fav ? 'on' : ''}`} onClick={() => up({ fav: !d.fav })} aria-label="Избранное"><Icon name="star" size={20} fill={d.fav} /></button>
           <button className="x" onClick={onClose} aria-label="Закрыть"><Icon name="close" size={18} /></button></div>
         <div className="mb">
-          <div className="fld"><label>Что отправляем: текст, фото, видео, голос, аудио или файл</label><Seg label="Тип сообщения" iconOnly value={d.kind} options={KIND_OPTIONS} onChange={(k) => up({ kind: k })} /></div>
+          <div className="fld"><label>Что отправляем: текст, фото, видео, голос (запись или аудиофайл) или файл</label><Seg label="Тип сообщения" iconOnly value={pickKind(d.kind)} options={PICK_KINDS} onChange={(k) => up({ kind: k })} /></div>
           <div className="fld"><label>Название</label><input type="text" value={d.title} onChange={(e) => up({ title: e.target.value })} placeholder="Например, «Напоминание за час»" /></div>
           {d.kind !== 'text' && <div className="fld"><label>{d.kind === 'voice' ? 'Голосовое сообщение' : 'Файл'}</label><MediaField kind={d.kind} value={d.media_url} onChange={(url) => up({ media_url: url })} folder="templates" /></div>}
           <div className="fld"><label>{d.kind === 'text' ? 'Текст сообщения' : 'Подпись'}</label>

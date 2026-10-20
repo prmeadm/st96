@@ -25,3 +25,7 @@ export const KIND_OPTIONS: SegOption<'text' | 'photo' | 'video' | 'voice' | 'aud
   { value: 'audio', label: 'Аудио', icon: 'audio' },
   { value: 'file', label: 'Файл', icon: 'file' },
 ]
+
+/** Что можно выбрать в списках: «Аудио» отдельно не нужно, аудиофайл прикладывается в «Голос» (запись или файл); старые шаблоны с типом «аудио» продолжают работать. */
+export const PICK_KINDS = KIND_OPTIONS.filter((o) => o.value !== 'audio')
+export const pickKind = <T extends string>(k: T): T | 'voice' => (k === 'audio' ? 'voice' : k)
