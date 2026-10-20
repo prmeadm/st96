@@ -244,6 +244,9 @@ input[type="checkbox"]:disabled { opacity: 0.5; cursor: default; }
 html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 body { overflow-wrap: break-word; }
 .main, .page, .two > *, .split > *, .col, .tmain, .fgrid > *, .detail-col, .list-col { min-width: 0; }
+/* Высота: прокручивается .page, а не вся колонка. Без min-height: 0 на узком экране (column-reverse) верх страницы уходил за край и был недоступен */
+.app { overflow: hidden; }
+.main, .page { min-height: 0; }
 .agent .detail-col p, .agent .detail-col a, .agent .step label span, .agent .report { overflow-wrap: anywhere; }
 .savebar .btn, .formbtns .btn { white-space: nowrap; }
 @media (max-width: 720px) {

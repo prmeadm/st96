@@ -278,7 +278,7 @@ function ScheduleTab({ initial, rows, onSaved, onBooked }: { initial: Schedule; 
           <div className="card">
             <h3>Календарь встреч</h3>
             <div className="legend"><span><i className="sw open" />открыт</span><span><i className="sw closed" />закрыт</span><span><i className="sw we" />суббота, воскресенье</span><span><i className="mg-dot lg" />исключение</span></div>
-            <div className="legend">{SERVICE_KEYS.map((k) => <span key={k}><i className="svcdot" style={{ background: svcColor(k) }} />{SERVICE_LABEL[k]!.ru}</span>)}</div>
+            <div className="legend">{SERVICE_KEYS.map((k) => <span key={k}><i className="svcdot" style={{ background: svcColor(k) }} />{SERVICE_LABEL[k]!.ru}</span>)}{rows.some((b) => active(b) && !SERVICE_KEYS.includes(b.service)) && <span><i className="svcdot" style={{ background: svcColor(UNKNOWN_SERVICE) }} />{serviceLabel(UNKNOWN_SERVICE)}</span>}</div>
             <MonthGrid month={month} onMonth={setMonth} selected={sel} cell={cell} onPick={(d) => { setSel(d); setPick(''); if (d.slice(0, 7) !== month) setMonth(d.slice(0, 7)) }} />
             <div className="rangebox">
               <div className="h2">Закрыть период</div>
