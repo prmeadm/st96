@@ -1,0 +1,143 @@
+// Запись на встречу: создание заявки, решение администратора, публичная доступность слотов.
+import { normalizePhone, normalizeTelegram } from '../leads/parse'
+import type { ClientRow, Repo } from '../repo'
+import { FORMAT_KEYS, SERVICE_KEYS, addDays, dayInfo, defaultSchedule, isDate, isTime, minskNow, normalizeSchedule, slotAvailable, tm, toInstant, toLocal, type DayBooking, type DayInfo, type FormatKey, type Schedule, type ServiceKey } from './schedule'
+import type { BookingRow } from './types'
+
+export const SCHEDULE_SETTING = 'booking_schedule'
+export const BOOK_ORIGIN = 'https://st96.by'
+
+export async function loadSchedule(repo: Repo): Promise<Schedule> {
+  const raw = await repo.getSetting(SCHEDULE_SETTING).catch(() => null)
+  try {
+    return raw ? normalizeSchedule(JSON.parse(raw)) : defaultSchedule()
+  } catch {
+    return defaultSchedule()
+  }
+}
+export async function saveSchedule(repo: Repo, raw: unknown): Promise<Schedule> {
+  const s = normalizeSchedule(raw)
+  await repo.setSetting(SCHEDULE_SETTING, JSON.stringify(s))
+  return s
+}
+
+const toDay = (b: BookingRow): DayBooking & { date: string } => {
+  const a = toLocal(b.starts_at)
+  const e = toLocal(b.ends_at)
+  return { date: a.date, startMin: a.min, endMin: e.date > a.date ? 1440 : e.min }
+}
+const byDate = (rows: BookingRow[]) => {
+  const m = new Map<string, DayBooking[]>()
+  for (const b of rows) { const d = toDay(b); m.set(d.date, [...(m.get(d.date) ?? []), { startMin: d.startMin, endMin: d.endMin }]) }
+  return m
+}
+
+/** Свободные слоты за месяц: для календаря клиента и админки (одно обращение к базе). */
+export async function monthAvailability(repo: Repo, S: Schedule, month: string, service: ServiceKey, format: FormatKey | null, now: Date): Promise<Record<string, { free: number; why?: string }>> {
+  const first = `${month}-01`
+  if (!isDate(first)) return {}
+  const next = new Date(Date.UTC(Number(month.slice(0, 4)), Number(month.slice(5, 7)), 1)).toISOString().slice(0, 10)
+  const last = addDays(next, -1)
+  const booked = byDate(await repo.listActiveBookings(first, last))
+  const out: Record<string, { free: number; why?: string }> = {}
+  for (let d = first; d <= last; d = addDays(d, 1)) {
+    const i = dayInfo(d, S, booked.get(d) ?? [], service, format, now)
+    out[d] = i.closed ? { free: 0, why: i.why } : { free: i.free }
+  }
+  return out
+}
+
+export async function daySlots(repo: Repo, S: Schedule, date: string, service: ServiceKey, format: FormatKey | null, now: Date): Promise<DayInfo> {
+  const booked = byDate(await repo.listActiveBookings(date, date)).get(date) ?? []
+  return dayInfo(date, S, booked, service, format, now)
+}
+
+export type BookingInput = {
+  service: unknown; format: unknown; date: unknown; time: unknown
+  name?: unknown; company?: unknown; telegram?: unknown; phone?: unknown; goal?: unknown; comment?: unknown
+  clientId?: unknown; runId?: string | null; runNode?: string | null; source?: string
+}
+export type Result<T> = ({ ok: true } & T) | { ok: false; error: string; status: number }
+const txt = (v: unknown, max: number) => (typeof v === 'string' ? v.trim().slice(0, max) : '')
+
+async function clientFor(repo: Repo, ref: unknown, name: string, phone: string | null, tg: string | null, company: string): Promise<ClientRow> {
+  if (typeof ref === 'string' && ref) {
+    const c = await repo.findClientById(ref).catch(() => null)
+    if (c) return c
+  }
+  const found = (phone ? await repo.findClient({ phone }) : null) ?? (tg ? await repo.findClient({ username: tg }) : null)
+  if (found) return found
+  return repo.insertClient({ name, phone, tg_username: tg, company: company || null, language: 'ru', source: 'booking' })
+}
+
+export async function createBooking(repo: Repo, input: BookingInput, now = new Date()): Promise<Result<{ booking: BookingRow; client: ClientRow }>> {
+  const service = input.service as ServiceKey
+  const format = input.format as FormatKey
+  if (!SERVICE_KEYS.includes(service)) return { ok: false, error: 'Выберите услугу', status: 422 }
+  if (!FORMAT_KEYS.includes(format)) return { ok: false, error: 'Выберите формат встречи', status: 422 }
+  if (!isDate(input.date) || !isTime(input.time)) return { ok: false, error: 'Выберите дату и время', status: 422 }
+  const name = txt(input.name, 80)
+  const phone = txt(input.phone, 40) ? normalizePhone(txt(input.phone, 40)) : null
+  const telegram = txt(input.telegram, 40) ? normalizeTelegram(txt(input.telegram, 40)) : null
+  if (!name) return { ok: false, error: 'Укажите имя', status: 422 }
+  if (!phone && !telegram) return { ok: false, error: 'Укажите телефон или Telegram, чтобы мы могли подтвердить время', status: 422 }
+  const date = input.date
+  const time = input.time
+
+  const recent = await repo.countRecentBookings({ phone, telegram }, new Date(now.getTime() - 3600_000).toISOString())
+  if (recent >= 3) return { ok: false, error: 'Слишком много заявок за час. Подождите или напишите нам в Telegram', status: 429 }
+
+  const S = await loadSchedule(repo)
+  const booked = byDate(await repo.listActiveBookings(date, date)).get(date) ?? []
+  const check = slotAvailable(date, time, S, booked, service, format, now)
+  if (!check.ok) return { ok: false, error: 'Это время недоступно. Выберите другое', status: 409 }
+
+  const dur = S.rules.durations[service]
+  const starts = toInstant(date, time)
+  const client = await clientFor(repo, input.clientId, name, phone, telegram ? telegram.replace(/^@/, '') : null, txt(input.company, 80))
+  const res = await repo.insertBooking({
+    client_id: client.id, run_id: input.runId ?? null, run_node: input.runNode ?? null, service, format,
+    starts_at: starts.toISOString(), ends_at: new Date(starts.getTime() + dur * 60_000).toISOString(),
+    name, company: txt(input.company, 80) || null, telegram, phone, goal: txt(input.goal, 300) || null, comment: txt(input.comment, 500) || null,
+    source: input.source ?? 'site',
+  })
+  if (!res.ok) return { ok: false, error: 'Это время только что заняли. Выберите другое', status: 409 }
+  return { ok: true, booking: res.booking, client }
+}
+
+/** Решение администратора. Подтверждённую можно позже отменить. Возвращает обновлённую заявку. */
+export async function decideBooking(repo: Repo, id: string, decision: 'confirm' | 'reject' | 'cancel', meetUrl?: string): Promise<Result<{ booking: BookingRow }>> {
+  const b = await repo.getBooking(id)
+  if (!b) return { ok: false, error: 'Заявка не найдена', status: 404 }
+  const from: Record<typeof decision, BookingRow['status'][]> = { confirm: ['pending'], reject: ['pending'], cancel: ['confirmed', 'pending'] }
+  if (!from[decision].includes(b.status)) return { ok: false, error: 'Эту заявку уже обработали', status: 409 }
+  const url = (meetUrl ?? '').trim()
+  if (url && !/^https:\/\/[^\s]+$/.test(url)) return { ok: false, error: 'Ссылка на встречу должна начинаться с https://', status: 422 }
+  const status = decision === 'confirm' ? 'confirmed' : decision === 'reject' ? 'rejected' : 'canceled'
+  await repo.updateBooking(id, { status, decided_at: new Date().toISOString(), ...(decision === 'confirm' && url ? { meet_url: url } : {}) })
+  // Воронка, ждавшая записи, продолжается по выходу «подтвердил» или «отклонил»
+  if (b.run_id && decision !== 'cancel') await repo.enqueueJob('booking_resume', new Date(), { runId: b.run_id, handle: decision === 'confirm' ? 'confirmed' : 'declined', bookingId: id })
+  return { ok: true, booking: { ...b, status, meet_url: url || b.meet_url } }
+}
+
+export async function setMeetUrl(repo: Repo, id: string, meetUrl: string): Promise<Result<{ booking: BookingRow }>> {
+  const b = await repo.getBooking(id)
+  if (!b) return { ok: false, error: 'Заявка не найдена', status: 404 }
+  const url = meetUrl.trim()
+  if (url && !/^https:\/\/[^\s]+$/.test(url)) return { ok: false, error: 'Ссылка на встречу должна начинаться с https://', status: 422 }
+  await repo.updateBooking(id, { meet_url: url || null })
+  return { ok: true, booking: { ...b, meet_url: url || null } }
+}
+
+/** Личная ссылка на запись: клиент, пришедший по ней, привязывается к своей карточке. */
+export function bookingUrl(clientId?: string | null, opts: { service?: ServiceKey; format?: FormatKey; run?: string; node?: string } = {}): string {
+  const q = new URLSearchParams()
+  if (clientId) q.set('c', clientId)
+  if (opts.service) q.set('s', opts.service)
+  if (opts.format) q.set('f', opts.format)
+  if (opts.run) q.set('r', opts.run)
+  if (opts.node) q.set('n', opts.node)
+  const s = q.toString()
+  return `${BOOK_ORIGIN}/book${s ? `?${s}` : ''}`
+}
+export { minskNow, tm }

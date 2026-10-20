@@ -20,6 +20,8 @@ export type MemoryRepo = Repo & {
   agentTasks: (AgentTask & { locked: boolean })[]
   settings: Map<string, string>
   bookings: BookingRow[]
+  /** часы для тестов: время создания заявок */
+  clock: () => Date
   recipients: { broadcast_id: string; client_id: string; status: 'pending' | 'sending' | 'sent' | 'failed'; error?: string }[]
   jobs: (JobRow & { run_at: Date; done: boolean; error?: string })[]
 }
@@ -29,7 +31,7 @@ export function memoryRepo(): MemoryRepo {
   const id = (p: string) => `${p}${++seq}`
   const seen = new Set<number>()
   const r: MemoryRepo = {
-    clients: [], leads: [], notes: [], messages: [], funnels: [], runs: [], events: [], tags: new Map(), templates: [], broadcasts: [], agentTasks: [], settings: new Map(), bookings: [], recipients: [], jobs: [],
+    clients: [], leads: [], notes: [], messages: [], funnels: [], runs: [], events: [], tags: new Map(), templates: [], broadcasts: [], agentTasks: [], settings: new Map(), bookings: [], clock: () => new Date(), recipients: [], jobs: [],
     async claimUpdate(u) { if (seen.has(u)) return false; seen.add(u); return true },
     async findClient({ tgUserId, phone, username, topicId }) {
       if (topicId) return r.clients.find((c) => c.admin_topic_id === topicId) ?? null
@@ -154,7 +156,7 @@ export function memoryRepo(): MemoryRepo {
     async insertBooking(b: BookingInsert) {
       const overlap = r.bookings.some((x) => (x.status === 'pending' || x.status === 'confirmed') && Date.parse(b.starts_at) < Date.parse(x.ends_at) && Date.parse(b.ends_at) > Date.parse(x.starts_at))
       if (overlap) return { ok: false as const, conflict: true as const }
-      const row: BookingRow = { ...b, id: id('bk'), status: 'pending', meet_url: null, reminded_at: null, decided_at: null, created_at: new Date().toISOString() }
+      const row: BookingRow = { ...b, id: id('bk'), status: 'pending', meet_url: null, reminded_at: null, decided_at: null, created_at: r.clock().toISOString() }
       r.bookings.push(row)
       return { ok: true as const, booking: row }
     },
