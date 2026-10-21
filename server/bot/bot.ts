@@ -82,6 +82,23 @@ export function createBot(token: string, repo: Repo, opts: { groupChatId: number
     }
   })
 
+  // Команды в любом регистре и с опечаткой раскладки: iOS ставит заглавную («/Start»), русская раскладка даёт «/старт».
+  // Библиотека различает регистр, и такое сообщение уходило бы как обычный текст, а воронка не запускалась.
+  bot.use(async (ctx, next) => {
+    const m = ctx.message
+    if (m?.text && ctx.chat?.type === 'private') {
+      const t = m.text.trim()
+      const sl = t.match(/^\/(start|stop|старт|стоп)(@\w+)?(\s[\s\S]*)?$/i)
+      const bare = /^(start|старт)$/i.test(t) // слово без слэша тоже считаем запуском
+      const cmd = sl ? (/^(start|старт)$/i.test(sl[1]!) ? 'start' : 'stop') : bare ? 'start' : null
+      if (cmd) {
+        m.text = `/${cmd}${sl?.[3] ?? ''}`
+        m.entities = [{ type: 'bot_command', offset: 0, length: cmd.length + 1 }]
+      }
+    }
+    await next()
+  })
+
   bot.command('start', async (ctx) => {
     if (ctx.chat.type !== 'private' || !ctx.from) return
     const rawPayload = ctx.match?.trim().slice(0, 64) || undefined

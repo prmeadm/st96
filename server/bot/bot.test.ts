@@ -45,6 +45,16 @@ test('/start создаёт клиента и пишет приветствие 
   assert.doesNotMatch(String(reply.payload.text), /согласие|Политика/)
 })
 
+test('/Start, /START, /старт и слово «старт» запускают бота так же, как /start', async () => {
+  for (const text of ['/Start', '/START', '/старт', 'старт', 'Start']) {
+    const { repo, calls, send } = setup()
+    publish(repo)
+    await send(msg(text, text.startsWith('/') ? { entities: [{ type: 'bot_command', offset: 0, length: text.length }] } : {}))
+    assert.equal(repo.runs.length, 1, `${text}: воронка запущена`)
+    assert.ok(calls.some((c) => c.method === 'sendMessage' && c.payload.chat_id === 555 && /Здравствуйте, Мария!/.test(String(c.payload.text))), `${text}: приветствие отправлено`)
+  }
+})
+
 test('/start привязывает к клиенту из заявки по нику', async () => {
   const { repo, send } = setup()
   await repo.insertClient({ tg_username: 'Maria_Photo', phone: '+375291112233', source: 'stand' })
