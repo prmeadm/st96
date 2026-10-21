@@ -28,7 +28,7 @@ export async function cardText(repo: Repo, c: ClientRow) {
     `Рассылки: ${c.opted_out_at ? 'отписан' : c.consent_at ? 'согласен' : 'согласия нет'}`,
     leads.length ? '\nЗаявки:' : '\nЗаявок пока нет.',
     ...leads.map((l) => `• ${l.service_key && l.service_key !== UNKNOWN_SERVICE ? serviceLabel(l.service_key) : 'заявка'}${l.company ? `, ${l.company}` : ''}${l.comment ? `: ${l.comment.slice(0, 160)}` : ''}`),
-    '\nПишите в этой теме, и клиент получит сообщение от студии. Строка с «//» в начале останется внутренней заметкой. /close закрывает диалог.',
+    '\nПишите в этой теме, и клиент получит сообщение от студии. Строка с «//» в начале останется внутренней заметкой. /shablon открывает шаблоны, /close закрывает диалог.',
   ]
   return lines.filter(Boolean).join('\n')
 }
@@ -95,7 +95,7 @@ export async function handleTopicMessage(api: Api, repo: Repo, groupChatId: numb
     }
     return 'note'
   }
-  if (/^\/t(@\w+)?$/i.test(text)) {
+  if (/^\/shablon(@\w+)?$/i.test(text)) {
     await showTemplateMenu(api, repo, groupChatId, m.threadId)
     return 'ignored'
   }
@@ -127,7 +127,7 @@ export async function notifyTopic(api: Api, repo: Repo, groupChatId: number, cli
 
 const TEMPLATE_MENU_LIMIT = 30
 
-/** /t в теме клиента: список шаблонов кнопками (сначала избранные и частые). */
+/** /shablon в теме клиента: список шаблонов кнопками (сначала избранные и частые). */
 export async function showTemplateMenu(api: Api, repo: Repo, groupChatId: number, threadId: number) {
   const list = (await repo.listTemplates()).slice(0, TEMPLATE_MENU_LIMIT)
   if (!list.length) {

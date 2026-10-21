@@ -96,7 +96,7 @@ export default function TemplatesPage() {
   return (
     <div className="wrap tpl">
       <h1 className="h1">Шаблоны <span className="chip">{rows?.length ?? '…'}</span><span className="sp" /><button className="btn primary" onClick={() => setEdit(blank())}><Icon name="plus" size={18} />Новый шаблон</button></h1>
-      <div className="hint">Готовые сообщения для клиентов. В воронках выбираются в блоке «Сообщение», в теме диалога вызываются командой /t. Переменные: {TPL_VARS.join(', ')}.</div>
+      <div className="hint">Готовые сообщения для клиентов. В воронках выбираются в блоке «Сообщение», в теме диалога вызываются командой /shablon. Переменные: {TPL_VARS.join(', ')}.</div>
       {error && <div className="err" role="alert">{error}</div>}
       <div className="tplw">
         <aside className="tfil">{filters}{(nf > 0 || kinds.length > 0 || favOnly) && <button className="btn" onClick={reset}>Сбросить фильтры</button>}</aside>

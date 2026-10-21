@@ -126,7 +126,7 @@ export function createBot(token: string, repo: Repo, opts: { groupChatId: number
     if (r === 'ok') await ctx.editMessageReplyMarkup({ reply_markup: undefined }).catch(() => undefined)
   })
 
-  // Кнопка шаблона в теме клиента (после /t): отправляем шаблон тому, чья это тема
+  // Кнопка шаблона в теме клиента (после /shablon): отправляем шаблон тому, чья это тема
   bot.callbackQuery(/^tpl:([0-9a-f-]{36})$/, async (ctx) => {
     const msg = ctx.callbackQuery.message
     if (!opts.groupChatId || !msg || msg.chat.id !== opts.groupChatId || !msg.message_thread_id) return void (await ctx.answerCallbackQuery())
