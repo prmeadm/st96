@@ -64,6 +64,9 @@ export const ui = {
       openTg: 'Перейти в Telegram',
       tgHint: 'Подробности и самая быстрая связь с менеджером ждут вас в Telegram.',
       again: 'Заполнить ещё раз',
+      redirecting: 'Переходим в Telegram через',
+      sec: 'сек',
+      stay: 'Остаться на сайте',
       orEmail: 'Или напишите напрямую на',
     },
     cookie: {
@@ -148,6 +151,9 @@ export const ui = {
       openTg: 'Open Telegram',
       tgHint: 'Details and the fastest way to reach a manager are waiting for you in Telegram.',
       again: 'Fill in again',
+      redirecting: 'Taking you to Telegram in',
+      sec: 's',
+      stay: 'Stay on the site',
       orEmail: 'Or write to us directly at',
     },
     cookie: {

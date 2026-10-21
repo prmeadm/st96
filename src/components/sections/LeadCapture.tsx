@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { ArrowUpRight, Check, Mail, Phone, Send, ShieldCheck, Timer } from 'lucide-react'
@@ -36,8 +36,21 @@ export default function LeadCapture({ service, title, text }: Props) {
   const [consent, setConsent] = useState(true)
   const [status, setStatus] = useState<'idle' | 'sent'>('idle')
   const [tgRef, setTgRef] = useState<string | null>(null)
+  const [redirectIn, setRedirectIn] = useState<number | null>(null) // секунды до автоперехода к боту; null = не переходить
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
+
+  const botUrl = `https://t.me/${CONTACTS.botName}?start=${tgRef ? `site_${tgRef}` : 'site'}`
+  // После отправки заявки через 3 секунды открываем бота, чтобы клиент сразу запустил диалог и подтвердил связь
+  useEffect(() => {
+    if (status !== 'sent' || redirectIn === null) return
+    if (redirectIn <= 0) {
+      window.location.assign(botUrl)
+      return
+    }
+    const timer = setTimeout(() => setRedirectIn((n) => (n === null ? n : n - 1)), 1000)
+    return () => clearTimeout(timer)
+  }, [status, redirectIn, botUrl])
 
   const accentSolid = service?.accent.solid ?? '#d8ff3f'
 
@@ -81,6 +94,7 @@ export default function LeadCapture({ service, title, text }: Props) {
       setTgRef(typeof ok?.ref === 'string' && /^[0-9a-f-]{36}$/.test(ok.ref) ? ok.ref : null)
       trackLead(eventId, lang)
       setStatus('sent')
+      setRedirectIn(3)
     } catch {
       setError(l.errSend)
     } finally {
@@ -279,7 +293,7 @@ export default function LeadCapture({ service, title, text }: Props) {
                     </p>
                     <p className="max-w-xs text-sm text-paper-dim">{l.tgHint}</p>
                     <a
-                      href={`https://t.me/${CONTACTS.botName}?start=${tgRef ? `site_${tgRef}` : 'site'}`}
+                      href={botUrl}
                       target="_blank"
                       rel="noreferrer"
                       data-cursor-hover
@@ -288,8 +302,16 @@ export default function LeadCapture({ service, title, text }: Props) {
                       <Send className="h-4 w-4" />
                       {l.openTg}
                     </a>
+                    {redirectIn !== null && (
+                      <p className="text-sm text-paper-dim" role="status" aria-live="polite">
+                        {l.redirecting} {Math.max(redirectIn, 1)} {l.sec}…{' '}
+                        <button onClick={() => setRedirectIn(null)} className="underline underline-offset-4">
+                          {l.stay}
+                        </button>
+                      </p>
+                    )}
                     <button
-                      onClick={() => setStatus('idle')}
+                      onClick={() => { setRedirectIn(null); setStatus('idle') }}
                       className="text-xs text-paper-dim underline underline-offset-4"
                     >
                       {l.again}
