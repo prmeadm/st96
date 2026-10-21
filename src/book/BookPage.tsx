@@ -211,7 +211,7 @@ export default function BookPage() {
                   <div className="bk-chips bk-topics" role="group" aria-label={t.topics}>
                     {SERVICE_OPTIONS[service]!.map((o) => {
                       const on = topics.includes(o.ru)
-                      return <button key={o.ru} type="button" className={on ? 'on' : ''} aria-pressed={on} onClick={() => setTopics(on ? topics.filter((x) => x !== o.ru) : [...topics, o.ru])}>{on && <span aria-hidden="true">✓ </span>}{lang === 'en' ? o.en : o.ru}</button>
+                      return <button key={o.ru} type="button" className={on ? 'on' : ''} aria-pressed={on} onClick={() => setTopics((cur) => (cur.includes(o.ru) ? cur.filter((x) => x !== o.ru) : [...cur, o.ru]))}>{on && <span aria-hidden="true">✓ </span>}{lang === 'en' ? o.en : o.ru}</button>
                     })}
                   </div>
                 </>
