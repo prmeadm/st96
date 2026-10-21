@@ -18,6 +18,25 @@ export default async function handler(req: Request) {
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY
   if (!token || !url || !key) return new Response('Server not configured', { status: 500 })
 
+  // Работа (рассылка, шаги агента с вызовами модели) может занять больше 25 с, а edge-функция обязана начать ответ раньше:
+  // отдаём ответ сразу, пробел в начале JSON допустим, результат дописываем по окончании.
+  const enc = new TextEncoder()
+  const stream = new ReadableStream<Uint8Array>({
+    async start(controller) {
+      controller.enqueue(enc.encode(' '))
+      try {
+        controller.enqueue(enc.encode(JSON.stringify(await runTick(token, url, key))))
+      } catch (e) {
+        console.error('jobs tick failed', e instanceof Error ? e.message : e)
+        controller.enqueue(enc.encode(JSON.stringify({ error: 'tick failed' })))
+      }
+      controller.close()
+    },
+  })
+  return new Response(stream, { headers: { 'Content-Type': 'application/json' } })
+}
+
+async function runTick(token: string, url: string, key: string) {
   const repo = supabaseRepo(url, key)
   const env = { repo, out: telegramOut(new Api(token), repo, process.env.TELEGRAM_CHAT_ID ? Number(process.env.TELEGRAM_CHAT_ID) : null) }
   const jobs = await repo.claimJobs(20)
@@ -53,5 +72,5 @@ export default async function handler(req: Request) {
   } catch (e) {
     console.error('agent tick failed', e instanceof Error ? e.message : e)
   }
-  return new Response(JSON.stringify({ claimed: jobs.length, done, failed, broadcast, agent, reminders }), { headers: { 'Content-Type': 'application/json' } })
+  return { claimed: jobs.length, done, failed, broadcast, agent, reminders }
 }

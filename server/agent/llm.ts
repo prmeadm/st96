@@ -24,16 +24,21 @@ async function record(onUsage: ((u: UsageRow) => Promise<void> | void) | undefin
   } catch { /* учёт необязателен */ }
 }
 
-export function openAiCompatible(cfg: { apiKey: string; baseUrl?: string; model?: string; models?: string[]; onUsage?: (u: UsageRow) => Promise<void> | void }): Llm {
+export function openAiCompatible(cfg: { apiKey: string; baseUrl?: string; model?: string; models?: string[]; onUsage?: (u: UsageRow) => Promise<void> | void; deadlineMs?: number }): Llm {
+  // Общий срок на все обращения этого клиента: edge-функция должна ответить за 25 с, иначе платформа обрывает её без внятной ошибки
+  const deadline = cfg.deadlineMs ? Date.now() + cfg.deadlineMs : null
   const base = (cfg.baseUrl || DEFAULT_BASE_URL).replace(/\/$/, '')
   const models = cfg.models?.length ? cfg.models : cfg.model ? [cfg.model] : DEFAULT_MODELS
-  const call = (model: string, system: string, user: string) =>
-    fetch(`${base}/chat/completions`, {
+  const call = (model: string, system: string, user: string) => {
+    const left = deadline ? deadline - Date.now() : 25_000
+    if (left < 1500) return Promise.resolve({ ok: false, status: 0, text: async () => 'время ожидания ответа истекло' } as Response)
+    return fetch(`${base}/chat/completions`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${cfg.apiKey}` },
       body: JSON.stringify({ model, temperature: 0.3, response_format: { type: 'json_object' }, messages: [{ role: 'system', content: system }, { role: 'user', content: user }] }),
-      signal: AbortSignal.timeout(25_000),
+      signal: AbortSignal.timeout(Math.min(25_000, left)),
     }).catch((e: unknown) => ({ ok: false, status: 0, text: async () => (e instanceof Error ? e.message : String(e)) }) as Response)
+  }
 
   return async ({ system, user, feature }) => {
     let lastErr = ''
