@@ -49,3 +49,48 @@ test('шаблоны и рассылки: видео-шаблон со ссыл�
   assert.deepEqual(calls.map((c) => c.m), ['sendMessage'])
   assert.match(String(calls[0].args[1]), /Смотрите, Анна\nhttps:\/\/www\.youtube\.com/)
 })
+
+import { canonicalVideoUrl, firstVideoUrl } from './media'
+
+test('canonicalVideoUrl чистит ссылки YouTube от лишнего и оставляет время старта', () => {
+  assert.equal(canonicalVideoUrl('https://youtu.be/dQw4w9WgXcQ?si=abc123'), 'https://www.youtube.com/watch?v=dQw4w9WgXcQ')
+  assert.equal(canonicalVideoUrl('https://www.youtube.com/watch?v=dQw4w9WgXcQ&feature=share&utm_source=x'), 'https://www.youtube.com/watch?v=dQw4w9WgXcQ')
+  assert.equal(canonicalVideoUrl('https://youtu.be/dQw4w9WgXcQ?t=42'), 'https://www.youtube.com/watch?v=dQw4w9WgXcQ&t=42')
+  assert.equal(canonicalVideoUrl('https://m.youtube.com/shorts/dQw4w9WgXcQ'), 'https://www.youtube.com/watch?v=dQw4w9WgXcQ')
+  assert.equal(canonicalVideoUrl('https://vimeo.com/123'), 'https://vimeo.com/123')
+  assert.equal(canonicalVideoUrl('https://www.youtube.com/watch?v=bad'), 'https://www.youtube.com/watch?v=bad')
+})
+
+test('firstVideoUrl находит ссылку на видео в тексте и не трогает обычные ссылки', () => {
+  assert.equal(firstVideoUrl('Смотрите: https://youtu.be/dQw4w9WgXcQ, это важно'), 'https://youtu.be/dQw4w9WgXcQ')
+  assert.equal(firstVideoUrl('Наш сайт https://st96.by и всё'), null)
+})
+
+test('текст со ссылкой на YouTube уходит с предпросмотром плеера, обычный текст без предпросмотра', async () => {
+  const { calls, api } = fakeApi()
+  const out = telegramOut(api, {} as Repo, null, { sleep: async () => undefined })
+  await out.sendText(1, 'Ролик: https://youtu.be/dQw4w9WgXcQ?si=zz')
+  await out.sendText(1, 'Сайт https://st96.by')
+  const opt = (i: number) => (calls[i].args[2] as { link_preview_options: Record<string, unknown> }).link_preview_options
+  assert.equal(opt(0).url, 'https://www.youtube.com/watch?v=dQw4w9WgXcQ')
+  assert.equal(opt(0).is_disabled, undefined)
+  assert.equal(opt(1).is_disabled, true)
+})
+
+test('Telegram 429 («подождите N секунд»): бот ждёт и повторяет, сообщение не теряется', async () => {
+  const calls: number[] = []
+  const waits: number[] = []
+  const api = { sendMessage: async () => {
+    calls.push(1)
+    if (calls.length === 1) throw Object.assign(new Error("Call to 'sendMessage' failed! (429: Too Many Requests: retry after 8)"), { error_code: 429, parameters: { retry_after: 8 } })
+    return { message_id: 1 }
+  } } as unknown as Api
+  await telegramOut(api, {} as Repo, null, { sleep: async (ms) => { waits.push(ms) } }).sendText(1, 'Привет')
+  assert.equal(calls.length, 2)
+  assert.ok(waits.some((w) => w >= 8000 && w <= 9000), `ждали ${waits.join(', ')} мс`)
+})
+
+test('на 429 не зацикливаемся: после двух повторов ошибка выходит наружу', async () => {
+  const api = { sendMessage: async () => { throw Object.assign(new Error('429'), { error_code: 429, parameters: { retry_after: 1 } }) } } as unknown as Api
+  await assert.rejects(telegramOut(api, {} as Repo, null, { sleep: async () => undefined }).sendText(1, 'x'), /429/)
+})

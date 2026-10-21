@@ -72,7 +72,7 @@ function MessageNode({ id, data, selected }: any) {
     <Shell id={id} type="message" selected={selected} data={data}>
       {data.parts.map((p: D) => p.kind === 'text'
         ? (String(p.text ?? '').trim() ? <div className="bubble" key={p.id}>{p.text}</div> : <div className="dash" key={p.id}>Введите текст</div>)
-        : <div className="media" key={p.id}><Ic d={(MEDIA[p.kind] ?? MEDIA.file)[0]} size={14} />{p.name || (p.url ? (MEDIA[p.kind] ?? MEDIA.file)[1] : `${(MEDIA[p.kind] ?? MEDIA.file)[1]}: нет ссылки`)}</div>)}
+        : <div className="media" key={p.id}><Ic d={(MEDIA[p.kind] ?? MEDIA.file)[0]} size={14} />{p.name || (p.url ? `${(MEDIA[p.kind] ?? MEDIA.file)[1]}: ${String(p.url).replace(/^https?:\/\/(www\.)?/i, '').slice(0, 38)}` : `${(MEDIA[p.kind] ?? MEDIA.file)[1]}: нет ссылки`)}</div>)}
       {data.links.map((l: D) => <div className="rw link" key={l.id}><span>↗ {l.label || 'Кнопка-ссылка'}</span></div>)}
       {data.quick.map((q: D) => (
         <div className={`rw ${String(q.label ?? '').trim() ? '' : 'err'}`} key={q.id}>

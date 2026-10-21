@@ -16,3 +16,34 @@ export function isVideoPageUrl(raw: string): boolean {
 export const NOT_A_FILE_ERROR = /wrong type of the web page content|failed to get HTTP URL content|wrong file identifier|wrong HTTP URL|wrong remote file identifier|IMAGE_PROCESS_FAILED/i
 
 export const errorText = (e: unknown) => (e instanceof Error ? e.message : String(e))
+
+/** Первая ссылка на видеосервис внутри текста (для предпросмотра плеера). */
+export function firstVideoUrl(text: string): string | null {
+  for (const m of text.matchAll(/https?:\/\/[^\s<>"']+/gi)) {
+    const url = m[0].replace(/[.,;:!?)\]]+$/, '')
+    if (isVideoPageUrl(url)) return url
+  }
+  return null
+}
+
+/** Ссылка YouTube без лишнего (si=, feature=, utm_*): остаются видео и время старта. Остальные адреса не меняем. */
+export function canonicalVideoUrl(raw: string): string {
+  try {
+    const u = new URL(raw.trim())
+    const host = u.hostname.replace(/^(www\.|m\.|music\.)/i, '').toLowerCase()
+    let id = ''
+    if (host === 'youtu.be') id = u.pathname.split('/')[1] ?? ''
+    else if (host === 'youtube.com' || host === 'youtube-nocookie.com') {
+      if (u.pathname === '/watch') id = u.searchParams.get('v') ?? ''
+      else {
+        const m = u.pathname.match(/^\/(shorts|embed|live|v)\/([\w-]{11})/)
+        if (m) id = m[2]!
+      }
+    }
+    if (!/^[\w-]{11}$/.test(id)) return raw.trim()
+    const t = u.searchParams.get('t') ?? u.searchParams.get('start')
+    return `https://www.youtube.com/watch?v=${id}${t && /^\d+s?$/.test(t) ? `&t=${t}` : ''}`
+  } catch {
+    return raw.trim()
+  }
+}
