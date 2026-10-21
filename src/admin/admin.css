@@ -292,3 +292,16 @@ body { overflow-wrap: break-word; }
 /* Телефон с маской страны (PhoneField) */
 .fld .pf-sel { color: var(--ink); background: var(--card); border: 1px solid var(--line-strong); border-radius: 12px; min-height: 44px; font-size: var(--fs-md); }
 .fld .pf-sel:focus-within { outline: 2px solid var(--accent-edge); outline-offset: 1px; }
+
+/* Кнопка сохранения: крутилка, галочка с рисованием штриха, цветовая подсказка результата */
+.save-btn { transition: background-color 0.2s, border-color 0.2s, color 0.2s; }
+.save-btn.saving { cursor: progress; }
+.save-btn.done, .save-btn.done:disabled { background: var(--green); border-color: var(--green); color: #fff; }
+.save-btn.fail, .save-btn.fail:disabled { background: var(--red); border-color: var(--red); color: #fff; }
+.save-spin { width: 14px; height: 14px; border-radius: 50%; border: 2px solid currentColor; border-right-color: transparent; animation: save-rot 0.7s linear infinite; }
+.save-check path { stroke-dasharray: 24; stroke-dashoffset: 24; animation: save-draw 0.35s ease-out 0.05s forwards; }
+.save-check { animation: save-pop 0.35s ease-out; }
+@keyframes save-rot { to { transform: rotate(360deg); } }
+@keyframes save-draw { to { stroke-dashoffset: 0; } }
+@keyframes save-pop { 0% { transform: scale(0.4); } 60% { transform: scale(1.25); } 100% { transform: scale(1); } }
+@media (prefers-reduced-motion: reduce) { .save-spin, .save-check, .save-check path { animation: none; stroke-dashoffset: 0; } }

@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { useReducedMotion } from 'framer-motion'
 import { ArrowLeft, ArrowRight, ArrowUpRight } from 'lucide-react'
 import { accents } from '../../data/services'
 import { aiServiceItems, aiServicesIntro } from '../../data/aiServices'
 import { useLang } from '../../lib/i18n'
 import HeroVideo from '../ui/HeroVideo'
+import { AgentSceneCard } from '../ui/AgentScene'
 import MagneticButton from '../ui/MagneticButton'
 import Reveal from '../ui/Reveal'
 
@@ -12,6 +14,9 @@ export default function AiServices() {
   const t = aiServicesIntro[lang]
   const accent = accents.ai
   const track = useRef<HTMLDivElement>(null)
+  const reduced = useReducedMotion()
+  const [inView, setInView] = useState(false)
+  const [hold, setHold] = useState(false)
   const [state, setState] = useState({ first: 1, perView: 1, atStart: true, atEnd: false })
 
   const update = useCallback(() => {
@@ -34,13 +39,34 @@ export default function AiServices() {
     return () => window.removeEventListener('resize', update)
   }, [update])
 
-  const go = (dir: 1 | -1) => {
+  const go = (dir: 1 | -1, count = state.perView) => {
     const el = track.current
     const slide = el?.firstElementChild as HTMLElement | null
     if (!el || !slide) return
     const step = slide.offsetWidth + parseFloat(getComputedStyle(el).columnGap || '0')
-    el.scrollBy({ left: dir * step * state.perView, behavior: 'smooth' })
+    el.scrollBy({ left: dir * step * count, behavior: 'smooth' })
   }
+
+  // autoplay: one card every few seconds; pauses on hover/focus/touch, off-screen and with reduced motion
+  useEffect(() => {
+    const el = track.current
+    if (!el) return
+    const io = new IntersectionObserver(([e]) => setInView(e.isIntersecting), { threshold: 0.3 })
+    io.observe(el)
+    return () => io.disconnect()
+  }, [])
+
+  useEffect(() => {
+    if (reduced || hold || !inView) return
+    const id = setInterval(() => {
+      const el = track.current
+      if (!el || document.hidden) return
+      if (el.scrollLeft + el.clientWidth >= el.scrollWidth - 4) el.scrollTo({ left: 0, behavior: 'smooth' })
+      else go(1, 1)
+    }, 4500)
+    return () => clearInterval(id)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reduced, hold, inView])
 
   const total = aiServiceItems.length
   const last = Math.min(total, state.first + state.perView - 1)
@@ -63,6 +89,12 @@ export default function AiServices() {
         <div
           ref={track}
           onScroll={update}
+          onPointerEnter={() => setHold(true)}
+          onPointerLeave={() => setHold(false)}
+          onFocus={() => setHold(true)}
+          onBlur={() => setHold(false)}
+          onTouchStart={() => setHold(true)}
+          onTouchEnd={() => setTimeout(() => setHold(false), 6000)}
           role="region"
           aria-roledescription="carousel"
           aria-label={t.title}
@@ -72,18 +104,24 @@ export default function AiServices() {
           {aiServiceItems.map((s, i) => (
             <article
               key={s.slug}
-              className="w-full shrink-0 snap-start md:w-[calc((100%-3rem)/3)]"
+              className="group flex w-full shrink-0 snap-start flex-col overflow-hidden rounded-2xl border border-ink-line bg-ink-soft transition-colors duration-300 hover:border-paper-dim/50 md:w-[calc((100%-3rem)/3)]"
               aria-label={`${i + 1} / ${total}`}
             >
-              <HeroVideo
-                src={`/video/ai-services/${s.slug}-${lang}.mp4`}
-                poster={`/video/ai-services/${s.slug}-${lang}.jpg`}
-                accent={accent}
-                audio
-                glow={false}
-                label={s.slug}
-              />
-              <div className="mt-5 flex items-start gap-4">
+              <div className="p-3 pb-0">
+                {s.slug === 'ai-agents' ? (
+                  <AgentSceneCard lang={lang} />
+                ) : (
+                  <HeroVideo
+                    src={`/video/ai-services/${s.slug}-${lang}.mp4`}
+                    poster={`/video/ai-services/${s.slug}-${lang}.jpg`}
+                    accent={accent}
+                    audio
+                    glow={false}
+                    label={s.slug}
+                  />
+                )}
+              </div>
+              <div className="relative flex flex-1 items-start gap-4 p-6">
                 <span className="font-display text-sm font-semibold" style={{ color: accent.solid }}>
                   {pad(i + 1)}
                 </span>
@@ -91,6 +129,10 @@ export default function AiServices() {
                   <h3 className="font-display text-lg leading-snug font-semibold sm:text-xl">{s.title[lang]}</h3>
                   <p className="mt-2 text-sm text-paper-dim">{s.text[lang]}</p>
                 </div>
+                <div
+                  className="absolute inset-x-0 bottom-0 h-0.5 origin-left scale-x-0 transition-transform duration-500 group-hover:scale-x-100"
+                  style={{ background: `linear-gradient(90deg, ${accent.from}, ${accent.to})` }}
+                />
               </div>
             </article>
           ))}

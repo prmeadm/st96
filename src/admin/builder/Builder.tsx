@@ -8,6 +8,7 @@ import '@xyflow/react/dist/style.css'
 import './builder.css'
 import type { Graph } from '../../../server/funnels/types'
 import { MENU, TYPES, autoLayout, edgeStyle, fromFlow, newData, problems, toFlow, uid } from './catalog'
+import { SaveButton } from '../ui/SaveButton'
 import { Editor } from './Editor'
 import { edgeTypes } from './Edges'
 import { CountsCtx, Ic, NodeActionsCtx, nodeTypes } from './Nodes'
@@ -17,7 +18,7 @@ import { P } from './catalog'
 const isMobile = () => typeof window !== 'undefined' && window.matchMedia('(max-width:720px)').matches
 type Snap = { nodes: Node[]; edges: Edge[] }
 
-type Props = { graph: Graph; onChange: (g: Graph) => void; counts: Record<string, number>; onSave?: () => void; saveDisabled?: boolean; saveMsg?: string }
+type Props = { graph: Graph; onChange: (g: Graph) => void; counts: Record<string, number>; onSave?: () => Promise<boolean | void> | boolean | void; saveDisabled?: boolean; saveMsg?: string }
 
 function Inner({ graph, onChange, counts, full, setFull, onSave, saveDisabled, saveMsg }: Props & { full: boolean; setFull: (v: boolean) => void }) {
   const init = useMemo(() => toFlow(graph), []) // eslint-disable-line react-hooks/exhaustive-deps
@@ -156,7 +157,7 @@ function Inner({ graph, onChange, counts, full, setFull, onSave, saveDisabled, s
         {allProblems > 0 && <span className="warn" style={{ color: 'var(--red)', background: 'var(--red-soft)' }}>Не заполнено: {allProblems}</span>}
         <span className="sp" />
         {full && saveMsg && <span className="hint" role="status">{saveMsg}</span>}
-        {full && onSave && <button type="button" className="btn primary" disabled={saveDisabled} onClick={onSave}>Сохранить</button>}
+        {full && onSave && <SaveButton className="primary" disabled={saveDisabled} onSave={onSave}>Сохранить</SaveButton>}
         <button type="button" className="btn" onClick={() => setFull(!full)} aria-pressed={full} title={full ? 'Свернуть (Esc)' : 'Развернуть на весь экран'} aria-label={full ? 'Свернуть' : 'Развернуть на весь экран'}>
           <Ic d={full ? P.shrink : P.expand} size={16} /><span className="hide-s"> {full ? 'Свернуть' : 'На весь экран'}</span>
         </button>

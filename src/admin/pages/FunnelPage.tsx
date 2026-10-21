@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { validateGraph } from '../../../server/funnels/validate'
 import type { Graph } from '../../../server/funnels/types'
 import { Builder } from '../builder/Builder'
+import { SaveButton } from '../ui/SaveButton'
 import { BackLink } from '../ui/BackLink'
 import { supabase } from '../supabase'
 import { FUNNEL_STATUS } from './FunnelsPage'
@@ -50,15 +51,17 @@ export default function FunnelPage() {
   const counts = useMemo(() => Object.fromEntries(stats.map((s) => [s.node, s.enter])), [stats])
   const showTab = (t: 'builder' | 'json') => { if (t === 'builder') setBkey((k) => k + 1); setTab(t) }
 
-  const save = async (nextStatus: Funnel['status']) => {
-    if (!f || !parsed.graph) return
-    if (nextStatus === 'published' && invalid) return setMsg('Опубликовать нельзя: исправьте ошибки схемы')
+  /** Возвращает true, если сохранено: кнопка по этому показывает галочку или ошибку. */
+  const save = async (nextStatus: Funnel['status']): Promise<boolean> => {
+    if (!f || !parsed.graph) return false
+    if (nextStatus === 'published' && invalid) { setMsg('Опубликовать нельзя: исправьте ошибки схемы'); return false }
     setMsg('')
     const { error } = await supabase.from('funnels').update({ name: name.trim() || f.name, graph: parsed.graph, status: nextStatus, version: f.version + 1 }).eq('id', f.id)
-    if (error) return setMsg('Не удалось сохранить')
+    if (error) { setMsg('Не удалось сохранить'); return false }
     setStatus(nextStatus)
     setF({ ...f, version: f.version + 1 })
     setMsg(nextStatus === 'published' ? 'Сохранено и опубликовано: воронка работает' : 'Сохранено')
+    return true
   }
 
   const remove = async () => {
@@ -83,9 +86,9 @@ export default function FunnelPage() {
             <button type="button" className={tab === 'json' ? 'on' : ''} onClick={() => showTab('json')}>JSON</button>
           </div>
           <span className="sp" />
-          <button className="btn" disabled={!!parsed.error} onClick={() => save(status === 'published' ? 'published' : 'draft')}>Сохранить</button>
+          <SaveButton disabled={!!parsed.error} onSave={() => save(status === 'published' ? 'published' : 'draft')}>Сохранить</SaveButton>
           {status !== 'published'
-            ? <button className="btn primary" disabled={invalid} onClick={() => save('published')}>Сохранить и опубликовать</button>
+            ? <SaveButton className="primary" doneLabel="Опубликовано" disabled={invalid} onSave={() => save('published')}>Сохранить и опубликовать</SaveButton>
             : <button className="btn" onClick={() => save('draft')}>Снять с публикации</button>}
         </div>
         {builderOn
