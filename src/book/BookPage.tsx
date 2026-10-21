@@ -1,3 +1,4 @@
+import { BOOKING_GOALS } from '../data/bookingGoals'
 import { PhoneField } from '../components/ui/PhoneField'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { MonthGrid, shiftMonth } from '../booking/MonthGrid'
@@ -15,7 +16,7 @@ const T = {
     contactHint: 'Достаточно телефона или Telegram', consentPre: 'Согласен на обработку персональных данных:', consentLink: 'политика конфиденциальности',
     send: 'Отправить заявку', sending: 'Отправляю…', missing: 'Заполните', mService: 'услугу', mFormat: 'формат', mDate: 'дату', mTime: 'время', mName: 'имя', mContact: 'телефон или Telegram', mConsent: 'согласие',
     doneTitle: 'Заявка отправлена', doneText: 'Мы подтвердим время и напишем вам. Чтобы получить подтверждение сразу в Telegram и быстро связаться с менеджером, откройте нашего бота.',
-    openTg: 'Перейти в Telegram', again: 'Новая запись', when: 'Когда', offline: 'Офлайн-встречи проходят по дням', video: 'Ссылку на видеозвонок пришлём после подтверждения.', min: 'мин', tgBtn: 'Из Telegram', tgWaiting: 'Жду…', tgBtnHint: 'Подставить ник из вашего Telegram', tgOpen: 'Откройте Telegram и нажмите «Запустить» у бота. Ник подставится сам.', tgDone: 'Ник подставлен из Telegram.', tgNoName: 'В вашем Telegram нет публичного ника: задайте его в настройках Telegram или укажите телефон.', tgTimeout: 'Не дождались ответа. Попробуйте ещё раз или впишите ник вручную.', prefilled: 'Мы подставили контакты, которые вы оставляли в заявке. Проверьте и при необходимости исправьте.', pickDay: 'Выберите день: у каждого дня своё свободное время.', freeSlots: 'свободных времён', duration: 'Длительность встречи', more: 'Подробнее на сайте', err: 'Не удалось отправить. Попробуйте ещё раз.',
+    openTg: 'Перейти в Telegram', again: 'Новая запись', when: 'Когда', offline: 'Офлайн-встречи проходят по дням', video: 'Ссылку на видеозвонок пришлём после подтверждения.', min: 'мин', goalPick: 'Выберите цель встречи', tgBtn: 'Из Telegram', tgWaiting: 'Жду…', tgBtnHint: 'Подставить ник из вашего Telegram', tgOpen: 'Откройте Telegram и нажмите «Запустить» у бота. Ник подставится сам.', tgDone: 'Ник подставлен из Telegram.', tgNoName: 'В вашем Telegram нет публичного ника: задайте его в настройках Telegram или укажите телефон.', tgTimeout: 'Не дождались ответа. Попробуйте ещё раз или впишите ник вручную.', prefilled: 'Мы подставили контакты, которые вы оставляли в заявке. Проверьте и при необходимости исправьте.', pickDay: 'Выберите день: у каждого дня своё свободное время.', freeSlots: 'свободных времён', duration: 'Длительность встречи', more: 'Подробнее на сайте', err: 'Не удалось отправить. Попробуйте ещё раз.',
     dows: ['пн', 'вт', 'ср', 'чт', 'пт', 'сб', 'вс'], minsk: 'время по Минску',
   },
   en: {
@@ -25,7 +26,7 @@ const T = {
     contactHint: 'A phone or Telegram is enough', consentPre: 'I agree to the processing of personal data:', consentLink: 'privacy policy',
     send: 'Send request', sending: 'Sending…', missing: 'Please fill in', mService: 'service', mFormat: 'format', mDate: 'date', mTime: 'time', mName: 'name', mContact: 'phone or Telegram', mConsent: 'consent',
     doneTitle: 'Request sent', doneText: 'We will confirm the time and message you. To get the confirmation right in Telegram and reach a manager faster, open our bot.',
-    openTg: 'Open Telegram', again: 'New booking', when: 'When', offline: 'In-person meetings take place on', video: 'We will send the video call link after confirmation.', min: 'min', tgBtn: 'From Telegram', tgWaiting: 'Waiting…', tgBtnHint: 'Fill in your Telegram username', tgOpen: 'Open Telegram and tap Start in the bot. Your username will be filled in automatically.', tgDone: 'Username filled in from Telegram.', tgNoName: 'Your Telegram has no public username: set one in Telegram settings or enter your phone.', tgTimeout: 'No answer received. Try again or type the username manually.', prefilled: 'We filled in the contacts you left in your request. Please check and edit if needed.', pickDay: 'Pick a day: every day has its own free times.', freeSlots: 'free times', duration: 'Meeting length', more: 'More on the site', err: 'Could not send. Please try again.',
+    openTg: 'Open Telegram', again: 'New booking', when: 'When', offline: 'In-person meetings take place on', video: 'We will send the video call link after confirmation.', min: 'min', goalPick: 'Choose the goal of the meeting', tgBtn: 'From Telegram', tgWaiting: 'Waiting…', tgBtnHint: 'Fill in your Telegram username', tgOpen: 'Open Telegram and tap Start in the bot. Your username will be filled in automatically.', tgDone: 'Username filled in from Telegram.', tgNoName: 'Your Telegram has no public username: set one in Telegram settings or enter your phone.', tgTimeout: 'No answer received. Try again or type the username manually.', prefilled: 'We filled in the contacts you left in your request. Please check and edit if needed.', pickDay: 'Pick a day: every day has its own free times.', freeSlots: 'free times', duration: 'Meeting length', more: 'More on the site', err: 'Could not send. Please try again.',
     dows: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], minsk: 'Minsk time',
   },
 } as const
@@ -204,7 +205,12 @@ export default function BookPage() {
                 </div>
               </div>
               <p className="bk-dim">{t.contactHint}</p>
-              {input('goal', t.goal)}
+              <label className="bk-fld"><span>{t.goal}</span>
+                <select value={f.goal} onChange={(e) => setF({ ...f, goal: e.target.value })}>
+                  <option value="">{t.goalPick}</option>
+                  {BOOKING_GOALS.map((g) => <option key={g.ru} value={g.ru}>{lang === 'en' ? g.en : g.ru}</option>)}
+                </select>
+              </label>
               <label className="bk-fld"><span>{t.comment}</span><textarea rows={3} value={f.comment} onChange={(e) => setF({ ...f, comment: e.target.value })} /></label>
               <input className="bk-hp" tabIndex={-1} autoComplete="off" aria-hidden="true" value={f.website} onChange={(e) => setF({ ...f, website: e.target.value })} />
               <label className="bk-check-row"><input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} /><span>{t.consentPre} <a href={POLICY_PATH} target="_blank" rel="noreferrer">{t.consentLink}</a></span></label>
