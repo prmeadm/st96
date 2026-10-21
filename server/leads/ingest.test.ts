@@ -82,3 +82,20 @@ test('сотрудник вставил заявку вручную в груп�
   assert.equal(r.kind, 'lead')
   assert.equal(repo.leads[0].tg_message_id, 77)
 })
+
+test('заявка с сайта (consent) даёт клиенту согласие на рассылки; отписавшегося не возвращает', async () => {
+  const repo = memoryRepo()
+  const text = ['Новая заявка с сайта ST96', 'Имя: Анна', 'Контакт: +375291112233'].join('\n')
+  await ingestLead(repo, parseLead(text), { source: 'site_form', consent: true })
+  assert.ok(repo.clients[0].consent_at, 'согласие проставлено')
+  assert.equal(repo.clients[0].opted_out_at, null)
+
+  const repo2 = memoryRepo()
+  await repo2.insertClient({ name: 'Анна', phone: '+375291112233', source: 'bot', opted_out_at: '2026-10-01T00:00:00Z' })
+  await ingestLead(repo2, parseLead(text), { source: 'site_form', consent: true })
+  assert.equal(repo2.clients[0].consent_at ?? null, null, 'отписавшийся не получает согласие обратно')
+
+  const repo3 = memoryRepo()
+  await ingestLead(repo3, parseLead(text), { source: 'site_form' })
+  assert.equal(repo3.clients[0].consent_at ?? null, null, 'без consent согласие не ставится')
+})

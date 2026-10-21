@@ -1,4 +1,4 @@
-import { Bot, InlineKeyboard, type Context } from 'grammy'
+import { Bot, type Context } from 'grammy'
 import type { ClientRow, MessageInsert, Repo } from '../repo'
 import { ingestGroupMessage } from '../leads/ingest'
 import { handleTopicMessage, relayToAdmins, sendTemplate } from './dialog'
@@ -101,18 +101,16 @@ export function createBot(token: string, repo: Repo, opts: { groupChatId: number
     const { client } = await ensureClient(repo, ctx.from, payload ? `bot:${payload}` : 'bot')
     const t = T[client.language]
     await repo.insertMessage({ client_id: client.id, direction: 'in', kind: 'text', text: ctx.message?.text ?? '/start', tg_chat_id: ctx.chat.id, tg_message_id: ctx.message?.message_id ?? null })
-    const kb = new InlineKeyboard().text(t.agree, 'consent:yes').text(t.decline, 'consent:no')
     // Явный /start начинает всё заново: диалог у человека и прежняя воронка закрываются
     if (isMuted(client)) await repo.updateClient(client.id, { human_until: null })
     const active = await repo.findActiveRun(client.id)
     if (active) await repo.updateRun(active.id, { status: 'stopped', finished_at: new Date().toISOString() })
     const funnel = pickFunnel(await repo.listPublishedFunnels(), { kind: 'start', payload })
     if (funnel) {
-      // Приветствие даёт воронка, поэтому сначала короткий запрос согласия, затем воронка
-      await ctx.reply(t.consentAsk, { reply_markup: kb, link_preview_options: { is_disabled: true } })
+      // Согласие на рассылки клиент уже дал в форме заявки на сайте, отдельный запрос в боте не нужен
       await startFunnel(envFor(ctx.api), funnel, { ...client, human_until: null })
     } else {
-      await ctx.reply(t.welcome, { reply_markup: kb, link_preview_options: { is_disabled: true } })
+      await ctx.reply(t.welcome, { link_preview_options: { is_disabled: true } })
     }
   })
 
@@ -166,6 +164,7 @@ export function createBot(token: string, repo: Repo, opts: { groupChatId: number
     await ctx.reply(T[client.language].stopped)
   })
 
+  // Кнопки согласия из старых сообщений бота (теперь бот их не присылает) продолжают работать
   bot.callbackQuery(/^consent:(yes|no)$/, async (ctx) => {
     const { client } = await ensureClient(repo, ctx.from)
     const t = T[client.language]

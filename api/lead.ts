@@ -105,6 +105,7 @@ export default async function handler(req: Request) {
         )
         const ingested = await ingestLead(supabaseRepo(url, key), parseLead(text), {
           source: 'site_form',
+          consent: true, // согласие дано в форме (обязательная галочка), отдельный запрос в боте не нужен
           tgChatId: messageId ? Number(chatId) : null,
           tgMessageId: messageId,
           rawText: text,

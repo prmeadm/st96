@@ -8,6 +8,8 @@ export type IngestCtx = {
   tgMessageId?: number | null
   rawText?: string
   utm?: Record<string, string> | null
+  /** Человек сам отправил форму с согласием (форма сайта): это согласие и на рассылки */
+  consent?: boolean
 }
 
 const stripAt = (t: string) => t.replace(/^@/, '')
@@ -52,6 +54,7 @@ export async function ingestLead(repo: Repo, p: ParsedLead, ctx: IngestCtx = {})
     if (ex) return { leadId: ex.id, clientId: ex.client_id, created: false }
   }
   const client = await upsertClientFromLead(repo, p, p.origin === 'unknown' ? source : p.origin)
+  if (ctx.consent && client && !client.consent_at && !client.opted_out_at) await repo.updateClient(client.id, { consent_at: new Date().toISOString() })
   const lead = await repo.insertLead({
     client_id: client?.id ?? null, source, service_key: p.service, title: p.title || null, topic: p.topic || null,
     name: p.name || null, phone: p.phone || null, telegram: p.telegram || null, email: p.email || null, company: p.company || null,

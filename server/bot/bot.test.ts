@@ -33,7 +33,7 @@ const user = { id: 555, is_bot: false, first_name: 'Мария', username: 'mari
 const priv = { id: 555, type: 'private' as const, first_name: 'Мария' }
 const msg = (text: string, extra: object = {}) => ({ message: { message_id: 1, date: 1, chat: priv, from: user, text, ...extra } })
 
-test('/start создаёт клиента, пишет приветствие с кнопками согласия', async () => {
+test('/start создаёт клиента и пишет приветствие без запроса согласия', async () => {
   const { repo, calls, send } = setup()
   await send(msg('/start stand', { entities: [{ type: 'bot_command', offset: 0, length: 6 }] }))
   assert.equal(repo.clients.length, 1)
@@ -41,7 +41,8 @@ test('/start создаёт клиента, пишет приветствие с
   assert.equal(repo.clients[0].source, 'bot:stand')
   const reply = calls.find((c) => c.method === 'sendMessage')!
   assert.match(String(reply.payload.text), /ST96/)
-  assert.match(JSON.stringify(reply.payload.reply_markup), /consent:yes/)
+  assert.doesNotMatch(JSON.stringify(reply.payload.reply_markup ?? ''), /consent/)
+  assert.doesNotMatch(String(reply.payload.text), /согласие|Политика/)
 })
 
 test('/start привязывает к клиенту из заявки по нику', async () => {
@@ -174,15 +175,15 @@ const publish = (repo: ReturnType<typeof setup>['repo'], graph = demoGraph) =>
   repo.funnels.push({ id: 'f1', name: 'Демо', status: 'published', graph, ai_enabled: false, version: 1 })
 const START_ENT = { entities: [{ type: 'bot_command', offset: 0, length: 6 }] }
 
-test('воронка: /start присылает запрос согласия и приветствие воронки с кнопками', async () => {
+test('воронка: /start присылает только приветствие воронки с кнопками, без запроса согласия', async () => {
   const { repo, calls, send } = setup()
   publish(repo)
   await send(msg('/start', START_ENT))
   const toClient = calls.filter((c) => c.method === 'sendMessage' && c.payload.chat_id === 555)
-  assert.equal(toClient.length, 2)
-  assert.match(String(toClient[0].payload.text), /согласие/)
-  assert.match(String(toClient[1].payload.text), /Здравствуйте, Мария!/)
-  assert.match(JSON.stringify(toClient[1].payload.reply_markup), /fb:[0-9a-f-]{36}:q1/)
+  assert.equal(toClient.length, 1)
+  assert.match(String(toClient[0].payload.text), /Здравствуйте, Мария!/)
+  assert.doesNotMatch(String(toClient[0].payload.text), /согласие/)
+  assert.match(JSON.stringify(toClient[0].payload.reply_markup), /fb:[0-9a-f-]{36}:q1/)
   assert.equal(repo.runs[0].status, 'waiting')
 })
 
