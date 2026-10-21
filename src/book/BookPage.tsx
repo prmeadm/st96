@@ -13,7 +13,7 @@ const T = {
   ru: {
     title: 'Запись на встречу', sub: 'Выберите услугу, формат и удобное время. Мы подтвердим встречу и напишем вам.',
     service: 'Услуга', format: 'Формат встречи', date: 'Дата', time: 'Время', noSlots: 'На этот день свободного времени нет',
-    contacts: 'Ваши контакты', name: 'Имя', phone: 'Телефон', telegram: 'Telegram', company: 'Компания', goal: 'Цель встречи', comment: 'Сообщение', commentPh: 'Кратко о задаче, сроках, бюджете', topics: 'Что именно нужно',
+    contacts: 'Ваши контакты', name: 'Имя', phone: 'Телефон', telegram: 'Telegram', company: 'Компания', goal: 'Цель встречи', comment: 'Сообщение', commentPh: 'Кратко о задаче, сроках, бюджете', topics: 'Что именно нужно', pickNeeded: 'Выберите нужные вам',
     contactHint: 'Достаточно телефона или Telegram', consentPre: 'Согласен на обработку персональных данных:', consentLink: 'политика конфиденциальности',
     send: 'Отправить заявку', sending: 'Отправляю…', missing: 'Заполните', mService: 'услугу', mFormat: 'формат', mDate: 'дату', mTime: 'время', mName: 'имя', mContact: 'телефон или Telegram', mConsent: 'согласие',
     doneTitle: 'Заявка отправлена', doneText: 'Мы подтвердим время и напишем вам. Чтобы получить подтверждение сразу в Telegram и быстро связаться с менеджером, откройте нашего бота.',
@@ -23,7 +23,7 @@ const T = {
   en: {
     title: 'Book a meeting', sub: 'Pick a service, format and a convenient time. We will confirm the meeting and message you.',
     service: 'Service', format: 'Meeting format', date: 'Date', time: 'Time', noSlots: 'No free time on this day',
-    contacts: 'Your contacts', name: 'Name', phone: 'Phone', telegram: 'Telegram', company: 'Company', goal: 'Meeting goal', comment: 'Message', commentPh: 'Briefly: task, timing, budget', topics: 'What exactly do you need',
+    contacts: 'Your contacts', name: 'Name', phone: 'Phone', telegram: 'Telegram', company: 'Company', goal: 'Meeting goal', comment: 'Message', commentPh: 'Briefly: task, timing, budget', topics: 'What exactly do you need', pickNeeded: 'Pick the ones you need',
     contactHint: 'A phone or Telegram is enough', consentPre: 'I agree to the processing of personal data:', consentLink: 'privacy policy',
     send: 'Send request', sending: 'Sending…', missing: 'Please fill in', mService: 'service', mFormat: 'format', mDate: 'date', mTime: 'time', mName: 'name', mContact: 'phone or Telegram', mConsent: 'consent',
     doneTitle: 'Request sent', doneText: 'We will confirm the time and message you. To get the confirmation right in Telegram and reach a manager faster, open our bot.',
@@ -207,14 +207,19 @@ export default function BookPage() {
               <h2><span className="bk-n">3</span>{t.service}</h2>
               <div className="bk-chips">{services.map((s) => <button key={s.key} type="button" className={service === s.key ? 'on' : ''} aria-pressed={service === s.key} onClick={() => { setService(s.key); setTopics([]) }}>{s[lang]}</button>)}</div>
               {service && SERVICE_OPTIONS[service] && (
-                <>
-                  <div className="bk-chips bk-topics" style={{ marginTop: 18 }} role="group" aria-label={t.topics}>
+                <div className="bk-topicsbox">
+                  <p className="bk-topichint">{t.pickNeeded}</p>
+                  <div className="bk-chips bk-topics" role="group" aria-label={t.topics}>
                     {SERVICE_OPTIONS[service]!.map((o) => {
                       const on = topics.includes(o.ru)
-                      return <button key={o.ru} type="button" className={on ? 'on' : ''} aria-pressed={on} onClick={() => setTopics((cur) => (cur.includes(o.ru) ? cur.filter((x) => x !== o.ru) : [...cur, o.ru]))}>{on && <span aria-hidden="true">✓ </span>}{lang === 'en' ? o.en : o.ru}</button>
+                      return (
+                        <button key={o.ru} type="button" className={on ? 'on' : ''} aria-pressed={on} onClick={() => setTopics((cur) => (cur.includes(o.ru) ? cur.filter((x) => x !== o.ru) : [...cur, o.ru]))}>
+                          <i className="bk-box" aria-hidden="true">{on ? '✓' : ''}</i>{lang === 'en' ? o.en : o.ru}
+                        </button>
+                      )
                     })}
                   </div>
-                </>
+                </div>
               )}
               {svc && <p className="bk-dim bk-svcinfo">{lang === 'en' ? svc.infoEn : svc.infoRu} <a href={lang === 'en' ? svc.urlEn : svc.url} target="_blank" rel="noreferrer">{t.more}</a></p>}
             </section>

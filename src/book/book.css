@@ -58,3 +58,10 @@ h2:first-child { margin-top: 0; }
 .bk-topics button.on { background: var(--acid, #d8ff3f); color: #09090b; border-color: var(--acid, #d8ff3f); font-weight: 600; }
 .bk-svcinfo { margin-top: 18px; }
 .bk-topics button { flex-direction: row; gap: 6px; text-align: left; padding-top: 6px; padding-bottom: 6px; }
+/* Пункты услуги: отдельная панель с квадратными отметками, чтобы не путать с кнопками услуг */
+.bk-topicsbox { margin-top: 18px; padding: 14px; border: 1px dashed #4a4a52; border-radius: 16px; background: rgba(255, 255, 255, 0.03); }
+.bk-topichint { margin: 0 0 10px; font-size: 13px; color: var(--dim); }
+.bk-topics { margin-top: 0 !important; }
+.bk-topics button { border-radius: 10px; padding-left: 10px; background: rgba(255, 255, 255, 0.04); }
+.bk-box { flex: none; width: 18px; height: 18px; border: 1.5px solid #6a6a72; border-radius: 5px; display: inline-grid; place-items: center; font-style: normal; font-size: 12px; line-height: 1; }
+.bk-topics button.on .bk-box { background: #09090b; border-color: #09090b; color: var(--acid, #d8ff3f); }
