@@ -57,3 +57,4 @@ h2:first-child { margin-top: 0; }
 .bk-topics button { text-align: left; }
 .bk-topics button.on { background: var(--acid, #d8ff3f); color: #09090b; border-color: var(--acid, #d8ff3f); font-weight: 600; }
 .bk-svcinfo { margin-top: 18px; }
+.bk-topics button { flex-direction: row; gap: 6px; text-align: left; padding-top: 6px; padding-bottom: 6px; }
