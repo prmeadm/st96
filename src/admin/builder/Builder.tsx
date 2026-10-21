@@ -9,6 +9,7 @@ import './builder.css'
 import type { Graph } from '../../../server/funnels/types'
 import { MENU, TYPES, autoLayout, edgeStyle, fromFlow, newData, problems, toFlow, uid } from './catalog'
 import { Editor } from './Editor'
+import { edgeTypes } from './Edges'
 import { CountsCtx, Ic, NodeActionsCtx, nodeTypes } from './Nodes'
 import { Preview } from './Preview'
 import { P } from './catalog'
@@ -162,7 +163,7 @@ function Inner({ graph, onChange, counts, full, setFull, onSave, saveDisabled, s
       </div>
       <div className="stage" ref={wrap}>
         <ReactFlow
-          nodes={nodes} edges={edges} nodeTypes={nodeTypes} onNodesChange={onNodesChange} onEdgesChange={onEdgesChange} onConnect={onConnect}
+          nodes={nodes} edges={edges} nodeTypes={nodeTypes} edgeTypes={edgeTypes} onNodesChange={onNodesChange} onEdgesChange={onEdgesChange} onConnect={onConnect}
           onNodeDragStart={() => commit(true)}
           onPaneClick={() => { setMenu(false); setEditId(null); setNodes((ns) => ns.some((n) => n.selected) ? ns.map((n) => ({ ...n, selected: false })) : ns) }}
           fitView fitViewOptions={{ padding: 0.2 }} minZoom={0.2} maxZoom={1.6}

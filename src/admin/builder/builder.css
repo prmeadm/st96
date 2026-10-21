@@ -140,3 +140,8 @@
   .fb.full .bar .btn { flex: none; min-height: 40px; padding: 8px 10px; }
   .fb.full .bar .hint { display: none; }
 }
+
+/* Кнопка «Отвязать» на связи */
+.fb .edge-x { position: absolute; pointer-events: all; display: grid; place-items: center; width: 22px; height: 22px; padding: 0; border-radius: 50%; border: 1px solid var(--line); background: var(--card); color: var(--mute); cursor: pointer; box-shadow: var(--shadow); }
+.fb .edge-x:hover, .fb .edge-x.sel { background: var(--red-soft); border-color: var(--red); color: var(--red); }
+@media (max-width: 720px) { .fb .edge-x { width: 32px; height: 32px; } }
