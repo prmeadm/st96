@@ -88,6 +88,7 @@ export function problems(type: string, d: D): string[] {
   if (type === 'message') {
     if (!(d.parts ?? []).some((x: D) => (x.kind === 'text' ? String(x.text ?? '').trim() : x.url))) p.push('Пустое сообщение')
     if ((d.quick ?? []).some((q: D) => !String(q.label ?? '').trim())) p.push('У быстрого ответа нет названия')
+    if ((d.links ?? []).some((l: D) => !String(l.label ?? '').trim() || !/^(https?:\/\/|tg:\/\/)\S+$/i.test(String(l.url ?? '').trim()))) p.push('У кнопки-ссылки нет названия или адреса https://…')
   }
   if (type === 'condition' && !(d.rules ?? []).length) p.push('Условие не задано')
   if (type === 'action' && !(d.items ?? []).length) p.push('Действие не задано')

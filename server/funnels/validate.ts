@@ -31,6 +31,9 @@ export function validateGraph(g: unknown): { errors: Issue[]; warnings: Issue[] 
       if (!parts.some((p) => (p.kind === 'text' ? str(p.text).trim() : p.url))) errors.push({ node: n.id, text: 'Пустое сообщение' })
       for (const p of parts) if (p.kind !== 'text' && !p.url) warnings.push({ node: n.id, text: `Вложение «${p.name ?? p.kind}» без ссылки на файл будет пропущено` })
       if (asArray<{ label: string }>(d.quick).some((q) => !str(q.label).trim())) errors.push({ node: n.id, text: 'У быстрого ответа нет названия' })
+      for (const l of asArray<{ label: string; url: string }>(d.links)) {
+        if (!str(l.label).trim() || !/^(https?:\/\/|tg:\/\/)\S+$/i.test(str(l.url).trim())) errors.push({ node: n.id, text: 'Кнопка-ссылка без названия или без адреса вида https://… (Telegram такие кнопки не принимает)' })
+      }
     }
     if (n.type === 'condition' && !asArray(d.rules).length) errors.push({ node: n.id, text: 'Условие не задано' })
     if (n.type === 'action') {

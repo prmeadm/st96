@@ -202,7 +202,7 @@ export async function advance(env: Env, funnel: Funnel, client: ClientRow, run: 
       const links = asArray<Link>(d.links)
       const kb: Btn[][] = [
         ...quick.map((q) => [{ text: lang === 'en' && q.en ? q.en : q.label, callback_data: `fb:${run.id}:${q.id}` }]),
-        ...links.map((l) => [{ text: l.label, url: l.url }]),
+        ...links.filter((l) => str(l.label).trim() && /^(https?:\/\/|tg:\/\/)\S+$/i.test(str(l.url).trim())).map((l) => [{ text: l.label, url: l.url.trim() }]),
       ]
       const sendable = parts.filter((p) => (p.kind === 'text' ? !!str(lang === 'en' && p.en ? p.en : p.text).trim() : !!p.url))
       if (chat && sendable.length && mayPush) {
