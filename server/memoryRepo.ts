@@ -61,6 +61,7 @@ export function memoryRepo(): MemoryRepo {
       r.leads.push(row)
       return { id: row.id, client_id: row.client_id, created: true }
     },
+    async leadContacts(cid) { return r.leads.filter((l) => l.client_id === cid).reverse().map((l) => ({ name: l.name, phone: l.phone, telegram: l.telegram, company: l.company })) },
     async countLeads(cid) { return r.leads.filter((l) => l.client_id === cid).length },
     async getLead(lid) { return r.leads.find((l) => l.id === lid) ?? null },
     async updateLead(lid, patch) { Object.assign(r.leads.find((l) => l.id === lid)!, patch) },

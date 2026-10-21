@@ -4,7 +4,7 @@ import { buildIcs } from '../server/booking/ics'
 import { notifyAdminsNewBooking } from '../server/booking/notify'
 import { FORMAT_KEYS, FORMAT_LABEL, isDate, minskNow, type FormatKey } from '../server/booking/schedule'
 import { SITE_SERVICES } from '../server/catalog'
-import { createBooking, daySlots, loadSchedule, monthAvailability } from '../server/booking/service'
+import { clientContacts, createBooking, daySlots, loadSchedule, monthAvailability } from '../server/booking/service'
 import { supabaseRepo } from '../server/repo'
 
 export const config = { runtime: 'edge' }
@@ -46,9 +46,7 @@ export default async function handler(req: Request) {
   // Личная ссылка записи: контакты клиента подставляются в форму из его карточки (id клиента в ссылке известен только ему; почта и прочие данные не отдаются)
   if (b.action === 'client') {
     const id = typeof b.id === 'string' && /^[A-Za-z0-9-]{8,64}$/.test(b.id) ? b.id : null
-    const c = id ? await repo.findClientById(id).catch(() => null) : null
-    if (!c) return json({ client: null })
-    return json({ client: { name: c.name ?? '', company: c.company ?? '', phone: c.phone ?? '', telegram: c.tg_username ? `@${c.tg_username}` : '' } })
+    return json({ client: id ? await clientContacts(repo, id) : null })
   }
   if (b.action === 'month') {
     if (typeof b.month !== 'string' || !/^\d{4}-\d{2}$/.test(b.month)) return json({ error: 'Неверный запрос' }, 400)

@@ -105,6 +105,16 @@ export async function createBooking(repo: Repo, input: BookingInput, now = new D
 }
 
 /** Решение администратора. Подтверждённую можно позже отменить. Возвращает обновлённую заявку. */
+/** Контакты клиента для формы записи: из карточки, а чего не хватает (ник Telegram, телефон, имя, компания), берём из его последних заявок */
+export async function clientContacts(repo: Repo, id: string): Promise<{ name: string; company: string; phone: string; telegram: string } | null> {
+  const c = await repo.findClientById(id).catch(() => null)
+  if (!c) return null
+  const leads = await repo.leadContacts(c.id).catch(() => [])
+  const pick = (own: string | null | undefined, from: (l: (typeof leads)[number]) => string | null) => (own?.trim() ? own.trim() : (leads.map(from).find((v) => v && v.trim()) ?? '').trim())
+  const tg = pick(c.tg_username ? `@${c.tg_username.replace(/^@/, '')}` : '', (l) => l.telegram)
+  return { name: pick(c.name, (l) => l.name), company: pick(c.company, (l) => l.company), phone: pick(c.phone, (l) => l.phone), telegram: tg && !tg.startsWith('@') ? `@${tg}` : tg }
+}
+
 export const MEET_SETTING = 'booking_meet_default'
 const isHttps = (u: string) => /^https:\/\/[^\s]+$/.test(u)
 /** Ссылка на видеозвонок по умолчанию (постоянная комната Google Meet): подставляется в видеозвонки при подтверждении */

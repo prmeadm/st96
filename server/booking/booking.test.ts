@@ -5,7 +5,7 @@ import { memoryRepo } from '../memoryRepo'
 import { buildIcs } from './ics'
 import { notifyAdminsNewBooking, notifyClientDecision, tickBookingReminders, whenLabel } from './notify'
 import { dayInfo, defaultSchedule, normalizeSchedule, slotAvailable, toInstant, type DayBooking } from './schedule'
-import { MEET_SETTING, createBooking, decideBooking, loadMeetDefault, monthAvailability, saveMeetDefault, saveSchedule, loadSchedule } from './service'
+import { MEET_SETTING, clientContacts, createBooking, decideBooking, loadMeetDefault, monthAvailability, saveMeetDefault, saveSchedule, loadSchedule } from './service'
 
 const NOW = new Date('2026-10-20T06:00:00Z') // вторник 09:00 по Минску
 const S = defaultSchedule()
@@ -226,4 +226,16 @@ test('видеозвонок получает общую ссылку Meet пр�
   const d3 = await decideBooking(repo, c.booking.id, 'confirm', 'https://meet.example/own')
   assert.ok(d3.ok && d3.booking.meet_url === 'https://meet.example/own', 'своя ссылка сильнее общей')
   assert.equal(MEET_SETTING, 'booking_meet_default')
+})
+
+test('форма записи по личной ссылке: ник, телефон и имя берутся из карточки, а недостающее из заявок клиента', async () => {
+  const repo = memoryRepo()
+  const c = await repo.insertClient({ name: null, phone: '+375291112233', source: 'site' })
+  await repo.insertLead({ client_id: c.id, source: 'site_form', service_key: 'ai', title: null, topic: null, name: 'Анна', phone: '+375291112233', telegram: '@anna_photo', email: null, company: 'Студия', comment: null, interest: null, lang: null, landing: null, utm: null, warnings: [], raw_text: null, tg_chat_id: null, tg_message_id: null })
+  assert.deepEqual(await clientContacts(repo, c.id), { name: 'Анна', company: 'Студия', phone: '+375291112233', telegram: '@anna_photo' })
+  await repo.updateClient(c.id, { tg_username: 'anna_real', name: 'Анна П.' })
+  const c2 = await clientContacts(repo, c.id)
+  assert.equal(c2?.telegram, '@anna_real', 'карточка главнее заявки')
+  assert.equal(c2?.name, 'Анна П.')
+  assert.equal(await clientContacts(repo, 'нет-такого'), null)
 })

@@ -79,6 +79,8 @@ export interface Repo {
   /** Вставка заявки; если заявка с этим сообщением Telegram уже есть, вернёт её */
   insertLead(l: LeadInsert): Promise<{ id: string; client_id: string | null; created: boolean }>
   countLeads(clientId: string): Promise<number>
+  /** Контакты из последних заявок клиента: для случаев, когда в карточке чего-то не хватает */
+  leadContacts(clientId: string): Promise<{ name: string | null; phone: string | null; telegram: string | null; company: string | null }[]>
   getLead(id: string): Promise<(LeadInsert & { id: string }) | null>
   updateLead(id: string, patch: Partial<LeadInsert> & { status?: string }): Promise<void>
   findLeadByMessage(chatId: number, messageId: number): Promise<{ id: string; client_id: string | null } | null>
@@ -206,6 +208,9 @@ export function supabaseRepo(url: string, key: string): Repo {
       }
       const d = ok(r, 'insertLead') as { id: string; client_id: string | null }
       return { ...d, created: true }
+    },
+    async leadContacts(clientId) {
+      return (ok(await db.from('leads').select('name, phone, telegram, company').eq('client_id', clientId).order('created_at', { ascending: false }).limit(10), 'leadContacts') ?? []) as { name: string | null; phone: string | null; telegram: string | null; company: string | null }[]
     },
     async countLeads(clientId) {
       return (await db.from('leads').select('id', { count: 'exact', head: true }).eq('client_id', clientId)).count ?? 0
