@@ -8,7 +8,7 @@ import {
   useSpring,
   useTransform,
 } from 'framer-motion'
-import { Check, Database, FileText, Mail, MessageCircle, Maximize2, Package, Phone, X } from 'lucide-react'
+import { Check, Database, Play, FileText, Mail, MessageCircle, Maximize2, Package, Phone, X } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import type { Lang } from '../../lib/i18n'
 import { reachGoal } from '../../lib/analytics'
@@ -40,6 +40,7 @@ const COPY = {
     seconds: 'за секунды',
     expand: 'Увеличить',
     close: 'Закрыть',
+    play: 'Запустить анимацию',
     aria: 'Анимация: AI-агент принимает запросы и выполняет задачи в CRM, на складе и в почте',
   },
   en: {
@@ -59,12 +60,22 @@ const COPY = {
     seconds: 'in seconds',
     expand: 'Expand',
     close: 'Close',
+    play: 'Play animation',
     aria: 'Animation: an AI agent receives requests and performs tasks in CRM, stock and email',
   },
 } as const
 
 const ACID = '#d8ff3f'
 const CYCLE_MS = 2700
+const MOTION_KEY = 'st96-allow-motion'
+
+function readAllowMotion() {
+  try {
+    return localStorage.getItem(MOTION_KEY) === '1'
+  } catch {
+    return false
+  }
+}
 
 type Live = { id: number; ev: number }
 
@@ -176,7 +187,10 @@ function Packet({ copy, ev, onDone }: { copy: (typeof COPY)['ru'] | (typeof COPY
 
 export default function AgentScene({ lang, className = '' }: { lang: Lang; className?: string }) {
   const copy = COPY[lang]
-  const reduced = useReducedMotion()
+  const reducedPref = useReducedMotion()
+  // "Reduce motion" is on in the OS/browser: stay still until the visitor opts in once (remembered)
+  const [allowMotion, setAllowMotion] = useState(readAllowMotion)
+  const reduced = Boolean(reducedPref) && !allowMotion
   const root = useRef<HTMLDivElement>(null)
   const [active, setActive] = useState(false)
   const [live, setLive] = useState<Live[]>([])
@@ -391,6 +405,25 @@ export default function AgentScene({ lang, className = '' }: { lang: Lang; class
             </AnimatePresence>
           </span>
         </div>
+        {reduced && (
+          <button
+            type="button"
+            onClick={() => {
+              try {
+                localStorage.setItem(MOTION_KEY, '1')
+              } catch {
+                /* storage unavailable */
+              }
+              setAllowMotion(true)
+            }}
+            data-cursor-hover
+            className="absolute z-30 inline-flex items-center rounded-full font-semibold"
+            style={{ left: '3cqw', bottom: '3cqw', gap: '1.2cqw', padding: '1.3cqw 2.6cqw', fontSize: '2.5cqw', whiteSpace: 'nowrap', background: ACID, color: '#09090b', boxShadow: '0 0.8cqw 2.4cqw rgba(9,9,11,0.35)' }}
+          >
+            <Play style={{ width: '2.4cqw', height: '2.4cqw' }} fill="#09090b" />
+            {copy.play}
+          </button>
+        )}
         <div className="absolute flex justify-start" style={{ bottom: '3cqw', left: '3cqw', width: '60%', height: '5.4cqw' }}>
           <AnimatePresence mode="wait">
             {log && (
