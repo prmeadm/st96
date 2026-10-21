@@ -5,6 +5,7 @@
 //   «/close» в теме          -> диалог закрыт, тема закрывается.
 import { InlineKeyboard, type Api } from 'grammy'
 import { UNKNOWN_SERVICE, serviceLabel } from '../catalog'
+import { clickablePhone } from '../leads/parse'
 import { NOT_A_FILE_ERROR, errorText, isVideoPageUrl } from '../media'
 import type { ClientRow, Repo } from '../repo'
 import { TPL_KINDS, fillTemplate, type TemplateKind, type TemplateRow } from '../templates'
@@ -21,7 +22,7 @@ export async function cardText(repo: Repo, c: ClientRow) {
   const leads = await repo.listLeads(c.id)
   const lines = [
     `Клиент: ${c.name ?? '—'}${c.tg_username ? ` (@${c.tg_username})` : ''}`,
-    c.phone && `Телефон: ${c.phone}`,
+    c.phone && `Телефон: ${clickablePhone(c.phone)}`,
     c.company && `Компания: ${c.company}`,
     `Язык: ${c.language === 'en' ? 'English' : 'Русский'} · источник: ${c.source ?? '—'}`,
     `Рассылки: ${c.opted_out_at ? 'отписан' : c.consent_at ? 'согласен' : 'согласия нет'}`,

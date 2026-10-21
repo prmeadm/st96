@@ -1,5 +1,5 @@
 import { ingestLead } from '../server/leads/ingest'
-import { parseLead } from '../server/leads/parse'
+import { clickablePhone, parseLead } from '../server/leads/parse'
 import { supabaseRepo } from '../server/repo'
 
 export const config = { runtime: 'edge' }
@@ -65,7 +65,7 @@ export default async function handler(req: Request) {
   const text = [
     '\u{1F195} Новая заявка с сайта ST96',
     `Имя: ${name}`,
-    `Контакт: ${contact}`,
+    `Контакт: ${contact.includes('@') ? contact : clickablePhone(contact)}`,
     body.interest?.trim() && `Интересует: ${body.interest.trim()}`,
     body.message?.trim() && `Сообщение: ${body.message.trim()}`,
     `Язык сайта: ${body.lang === 'en' ? 'English (EN)' : 'Русский (RU)'}`,

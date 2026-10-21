@@ -60,6 +60,12 @@ export function normalizePhone(raw: string): string | null {
   return '+' + d
 }
 
+/** Вид номера для сообщений в Telegram: «+375291234567» Telegram превращает в нажимаемую ссылку (звонок, добавить в контакты), а номера с пробелами, скобками и «8» в начале часто нет. Текст с чем-то кроме номера не трогаем. */
+export function clickablePhone(raw: string): string {
+  const t = raw.trim()
+  return /^[+\d\s().-]{7,25}$/.test(t) ? (normalizePhone(t) ?? t) : raw
+}
+
 export function normalizeTelegram(raw: string): string | null {
   const v = raw.trim()
   const link = v.match(/(?:https?:\/\/)?(?:t\.me|telegram\.me)\/(\w+)/i)

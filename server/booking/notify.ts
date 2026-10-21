@@ -1,4 +1,5 @@
 // Уведомления о записи: администраторам (с кнопками решения) и клиенту (подтверждение с файлом календаря, напоминание).
+import { clickablePhone } from '../leads/parse'
 import { InlineKeyboard, InputFile, type Api } from 'grammy'
 import { serviceLabel } from '../catalog'
 import type { ClientRow, Repo } from '../repo'
@@ -16,7 +17,7 @@ export function adminText(b: BookingRow): string {
     `Когда: ${whenLabel(b.starts_at)}, ${minutes(b)} мин`,
     `Услуга: ${serviceLabel(b.service, 'ru')} · ${FORMAT_LABEL[b.format].ru}`,
     `Клиент: ${b.name}${b.company ? `, ${b.company}` : ''}`,
-    `Контакты: ${[b.telegram, b.phone].filter(Boolean).join(' · ') || '—'}`,
+    `Контакты: ${[b.telegram, b.phone && clickablePhone(b.phone)].filter(Boolean).join(' · ') || '—'}`,
     b.goal && `Цель: ${b.goal}`,
     b.comment && `Комментарий: ${b.comment}`,
   ].filter(Boolean).join('\n')

@@ -103,3 +103,12 @@ test('услуги определяются только по названиям
   assert.equal(site('Ретушь'), 'other')
   assert.equal(parseLead(stand('Продакшн: email-рассылка', ['Имя: Олег', 'Телефон: +375291112233'])).service, 'production')
 })
+
+test('clickablePhone: номер приводится к виду +код..., который Telegram делает нажимаемым', async () => {
+  const { clickablePhone } = await import('./parse')
+  assert.equal(clickablePhone('+375 (29) 123-45-67'), '+375291234567')
+  assert.equal(clickablePhone('8 029 123 45 67'), '+375291234567')
+  assert.equal(clickablePhone('+7 912 345-67-89'), '+79123456789')
+  assert.equal(clickablePhone('позвонить после 18:00 +375291234567'), 'позвонить после 18:00 +375291234567')
+  assert.equal(clickablePhone('12'), '12')
+})
