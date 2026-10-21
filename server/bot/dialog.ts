@@ -5,6 +5,7 @@
 //   «/close» в теме          -> диалог закрыт, тема закрывается.
 import { InlineKeyboard, type Api } from 'grammy'
 import { UNKNOWN_SERVICE, serviceLabel } from '../catalog'
+import { bookingUrl } from '../booking/schedule'
 import { clickablePhone } from '../leads/parse'
 import { NOT_A_FILE_ERROR, errorText, isVideoPageUrl } from '../media'
 import type { ClientRow, Repo } from '../repo'
@@ -28,7 +29,7 @@ export async function cardText(repo: Repo, c: ClientRow) {
     `Рассылки: ${c.opted_out_at ? 'отписан' : c.consent_at ? 'согласен' : 'согласия нет'}`,
     leads.length ? '\nЗаявки:' : '\nЗаявок пока нет.',
     ...leads.map((l) => `• ${l.service_key && l.service_key !== UNKNOWN_SERVICE ? serviceLabel(l.service_key) : 'заявка'}${l.company ? `, ${l.company}` : ''}${l.comment ? `: ${l.comment.slice(0, 160)}` : ''}`),
-    '\nПишите в этой теме, и клиент получит сообщение от студии. Строка с «//» в начале останется внутренней заметкой. /shablon открывает шаблоны, /close закрывает диалог.',
+    '\nПишите в этой теме, и клиент получит сообщение от студии. Строка с «//» в начале останется внутренней заметкой. /shablon открывает шаблоны, /book отправляет клиенту ссылку на запись, /close закрывает диалог.',
   ]
   return lines.filter(Boolean).join('\n')
 }
@@ -94,6 +95,27 @@ export async function handleTopicMessage(api: Api, repo: Repo, groupChatId: numb
       await react('✍')
     }
     return 'note'
+  }
+  if (/^\/book(@\w+)?$/i.test(text)) {
+    // личная ссылка на запись: клиенту уходит приглашение, в теме остаётся ссылка (её можно скопировать)
+    const url = bookingUrl(client.id)
+    if (!client.tg_user_id) {
+      await api.sendMessage(groupChatId, `Клиент не писал боту, отправить ему нечего. Личная ссылка на запись:\n${url}`, { message_thread_id: m.threadId, link_preview_options: { is_disabled: true } })
+      return 'ignored'
+    }
+    const en = client.language === 'en'
+    const invite = en ? `Pick a convenient time for a meeting with the ST96 studio: ${url}` : `Выберите удобное время для встречи со студией ST96: ${url}`
+    try {
+      await api.sendMessage(client.tg_user_id, invite, { link_preview_options: { is_disabled: true } })
+    } catch (e) {
+      const why = e instanceof Error ? e.message : String(e)
+      await api.sendMessage(groupChatId, `Не доставлено клиенту: ${/blocked|deactivated|chat not found/i.test(why) ? 'клиент заблокировал бота или удалил чат' : why.slice(0, 200)}\nЛичная ссылка на запись:\n${url}`, { message_thread_id: m.threadId, link_preview_options: { is_disabled: true } }).catch(() => undefined)
+      return 'failed'
+    }
+    await repo.insertMessage({ client_id: client.id, direction: 'admin', kind: 'text', text: invite, tg_chat_id: client.tg_user_id, tg_message_id: null })
+    await react('👍')
+    await api.sendMessage(groupChatId, `Ссылка на запись отправлена клиенту:\n${url}`, { message_thread_id: m.threadId, link_preview_options: { is_disabled: true } }).catch(() => undefined)
+    return 'sent'
   }
   if (/^\/shablon(@\w+)?$/i.test(text)) {
     await showTemplateMenu(api, repo, groupChatId, m.threadId)

@@ -244,6 +244,18 @@ test('/shablon без шаблонов подсказывает, где их с�
   assert.ok(calls.some((c) => c.method === 'sendMessage' && /Шаблонов пока нет/.test(String(c.payload.text))))
 })
 
+test('/book в теме отправляет клиенту личную ссылку на запись и оставляет её в теме', async () => {
+  const { repo, calls, send } = setup()
+  await send(msg('Здравствуйте'))
+  const client = repo.clients[0]
+  await send(topicMsg(client.admin_topic_id!, '/book', 22))
+  const toClient = calls.filter((c) => c.method === 'sendMessage' && c.payload.chat_id === 555).pop()!
+  assert.match(String(toClient.payload.text), new RegExp(`Выберите удобное время.*https://st96\\.by/book\\?c=${client.id}`))
+  const inTopic = calls.filter((c) => c.method === 'sendMessage' && c.payload.chat_id === GROUP).pop()!
+  assert.match(String(inTopic.payload.text), /Ссылка на запись отправлена клиенту/)
+  assert.ok(repo.messages.some((m) => m.direction === 'admin' && /book\?c=/.test(String(m.text))))
+})
+
 test('/start site_<id> привязывает Telegram к клиенту из заявки с сайта без дубля', async () => {
   const { repo, send } = setup()
   const lead = await repo.insertClient({ name: 'Анна', phone: '+375291112233', source: 'site' })
