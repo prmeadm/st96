@@ -79,6 +79,8 @@ export interface Repo {
   /** Вставка заявки; если заявка с этим сообщением Telegram уже есть, вернёт её */
   insertLead(l: LeadInsert): Promise<{ id: string; client_id: string | null; created: boolean }>
   countLeads(clientId: string): Promise<number>
+  saveTgLink(token: string, v: { tg_user_id: number; username: string | null; first_name: string | null }): Promise<void>
+  getTgLink(token: string): Promise<{ username: string | null; first_name: string | null } | null>
   /** Контакты из последних заявок клиента: для случаев, когда в карточке чего-то не хватает */
   leadContacts(clientId: string): Promise<{ name: string | null; phone: string | null; telegram: string | null; company: string | null }[]>
   getLead(id: string): Promise<(LeadInsert & { id: string }) | null>
@@ -211,6 +213,13 @@ export function supabaseRepo(url: string, key: string): Repo {
     },
     async leadContacts(clientId) {
       return (ok(await db.from('leads').select('name, phone, telegram, company').eq('client_id', clientId).order('created_at', { ascending: false }).limit(10), 'leadContacts') ?? []) as { name: string | null; phone: string | null; telegram: string | null; company: string | null }[]
+    },
+    async saveTgLink(token, v) {
+      await db.from('tg_links').delete().lt('created_at', new Date(Date.now() - 86_400_000).toISOString()) // чистим старые
+      ok(await db.from('tg_links').upsert({ token, ...v, created_at: new Date().toISOString() }), 'saveTgLink')
+    },
+    async getTgLink(token) {
+      return ok(await db.from('tg_links').select('username, first_name').eq('token', token).gte('created_at', new Date(Date.now() - 3_600_000).toISOString()).maybeSingle(), 'getTgLink') as { username: string | null; first_name: string | null } | null
     },
     async countLeads(clientId) {
       return (await db.from('leads').select('id', { count: 'exact', head: true }).eq('client_id', clientId)).count ?? 0

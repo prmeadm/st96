@@ -1,5 +1,5 @@
 import { PhoneField } from '../components/ui/PhoneField'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { MonthGrid, shiftMonth } from '../booking/MonthGrid'
 import { POLICY_PATH } from '../data/privacy'
 
@@ -15,7 +15,7 @@ const T = {
     contactHint: 'Достаточно телефона или Telegram', consentPre: 'Согласен на обработку персональных данных:', consentLink: 'политика конфиденциальности',
     send: 'Отправить заявку', sending: 'Отправляю…', missing: 'Заполните', mService: 'услугу', mFormat: 'формат', mDate: 'дату', mTime: 'время', mName: 'имя', mContact: 'телефон или Telegram', mConsent: 'согласие',
     doneTitle: 'Заявка отправлена', doneText: 'Мы подтвердим время и напишем вам. Чтобы получить подтверждение сразу в Telegram и быстро связаться с менеджером, откройте нашего бота.',
-    openTg: 'Перейти в Telegram', again: 'Новая запись', when: 'Когда', offline: 'Офлайн-встречи проходят по дням', video: 'Ссылку на видеозвонок пришлём после подтверждения.', min: 'мин', prefilled: 'Мы подставили контакты, которые вы оставляли в заявке. Проверьте и при необходимости исправьте.', pickDay: 'Выберите день: у каждого дня своё свободное время.', freeSlots: 'свободных времён', duration: 'Длительность встречи', more: 'Подробнее на сайте', err: 'Не удалось отправить. Попробуйте ещё раз.',
+    openTg: 'Перейти в Telegram', again: 'Новая запись', when: 'Когда', offline: 'Офлайн-встречи проходят по дням', video: 'Ссылку на видеозвонок пришлём после подтверждения.', min: 'мин', tgBtn: 'Из Telegram', tgWaiting: 'Жду…', tgBtnHint: 'Подставить ник из вашего Telegram', tgOpen: 'Откройте Telegram и нажмите «Запустить» у бота. Ник подставится сам.', tgDone: 'Ник подставлен из Telegram.', tgNoName: 'В вашем Telegram нет публичного ника: задайте его в настройках Telegram или укажите телефон.', tgTimeout: 'Не дождались ответа. Попробуйте ещё раз или впишите ник вручную.', prefilled: 'Мы подставили контакты, которые вы оставляли в заявке. Проверьте и при необходимости исправьте.', pickDay: 'Выберите день: у каждого дня своё свободное время.', freeSlots: 'свободных времён', duration: 'Длительность встречи', more: 'Подробнее на сайте', err: 'Не удалось отправить. Попробуйте ещё раз.',
     dows: ['пн', 'вт', 'ср', 'чт', 'пт', 'сб', 'вс'], minsk: 'время по Минску',
   },
   en: {
@@ -25,7 +25,7 @@ const T = {
     contactHint: 'A phone or Telegram is enough', consentPre: 'I agree to the processing of personal data:', consentLink: 'privacy policy',
     send: 'Send request', sending: 'Sending…', missing: 'Please fill in', mService: 'service', mFormat: 'format', mDate: 'date', mTime: 'time', mName: 'name', mContact: 'phone or Telegram', mConsent: 'consent',
     doneTitle: 'Request sent', doneText: 'We will confirm the time and message you. To get the confirmation right in Telegram and reach a manager faster, open our bot.',
-    openTg: 'Open Telegram', again: 'New booking', when: 'When', offline: 'In-person meetings take place on', video: 'We will send the video call link after confirmation.', min: 'min', prefilled: 'We filled in the contacts you left in your request. Please check and edit if needed.', pickDay: 'Pick a day: every day has its own free times.', freeSlots: 'free times', duration: 'Meeting length', more: 'More on the site', err: 'Could not send. Please try again.',
+    openTg: 'Open Telegram', again: 'New booking', when: 'When', offline: 'In-person meetings take place on', video: 'We will send the video call link after confirmation.', min: 'min', tgBtn: 'From Telegram', tgWaiting: 'Waiting…', tgBtnHint: 'Fill in your Telegram username', tgOpen: 'Open Telegram and tap Start in the bot. Your username will be filled in automatically.', tgDone: 'Username filled in from Telegram.', tgNoName: 'Your Telegram has no public username: set one in Telegram settings or enter your phone.', tgTimeout: 'No answer received. Try again or type the username manually.', prefilled: 'We filled in the contacts you left in your request. Please check and edit if needed.', pickDay: 'Pick a day: every day has its own free times.', freeSlots: 'free times', duration: 'Meeting length', more: 'More on the site', err: 'Could not send. Please try again.',
     dows: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], minsk: 'Minsk time',
   },
 } as const
@@ -87,8 +87,32 @@ export default function BookPage() {
     return () => { alive = false }
   }, [format, date])
 
+  // «Из Telegram»: открываем бота с одноразовым токеном; человек нажимает «Запустить», бот запоминает ник, страница его забирает
+  const [tgWait, setTgWait] = useState(false)
+  const [tgMsg, setTgMsg] = useState('')
+  const poll = useRef<number | undefined>(undefined)
+  useEffect(() => () => window.clearInterval(poll.current), [])
+  const fetchTelegram = () => {
+    const bytes = crypto.getRandomValues(new Uint8Array(12))
+    const token = [...bytes].map((b) => b.toString(16).padStart(2, '0')).join('')
+    window.open(`https://t.me/${BOT}?start=bk_${token}`, '_blank', 'noopener')
+    setTgWait(true)
+    setTgMsg(t.tgOpen)
+    let tries = 0
+    window.clearInterval(poll.current)
+    poll.current = window.setInterval(async () => {
+      tries++
+      const r = await api<{ ready?: boolean; username?: string; name?: string }>({ action: 'tg_poll', token }).catch(() => ({ ready: false } as { ready?: boolean; username?: string; name?: string }))
+      if (r.ready) {
+        window.clearInterval(poll.current)
+        setTgWait(false)
+        if (r.username) { setF((x) => ({ ...x, telegram: r.username!, name: x.name || r.name || '' })); setTgMsg(t.tgDone) } else setTgMsg(t.tgNoName)
+      } else if (tries > 90) { window.clearInterval(poll.current); setTgWait(false); setTgMsg(t.tgTimeout) }
+    }, 2000)
+  }
+
   const svc = cfg?.services.find((s) => s.key === service)
-  const missing = useMemo(() => [!date && t.mDate, !time && t.mTime, !service && t.mService, !format && t.mFormat, !f.name.trim() && t.mName, !f.phone.trim() && !f.telegram.trim() && t.mContact, !consent && t.mConsent].filter(Boolean) as string[], [service, format, date, time, f, consent, t])
+  const missing = useMemo(() => [!format && t.mFormat, !date && t.mDate, !time && t.mTime, !service && t.mService, !f.name.trim() && t.mName, !f.phone.trim() && !f.telegram.trim() && t.mContact, !consent && t.mConsent].filter(Boolean) as string[], [service, format, date, time, f, consent, t])
   const dayLabel = (d: string) => new Date(`${d}T12:00:00+03:00`).toLocaleDateString(lang === 'en' ? 'en-GB' : 'ru-RU', { timeZone: 'Europe/Minsk', weekday: 'long', day: 'numeric', month: 'long' })
   const dateLabel = (iso: string) => new Date(iso).toLocaleString(lang === 'en' ? 'en-GB' : 'ru-RU', { timeZone: 'Europe/Minsk', day: 'numeric', month: 'long', weekday: 'short', hour: '2-digit', minute: '2-digit' })
 
@@ -132,7 +156,14 @@ export default function BookPage() {
         ) : (
           <>
             <section className="bk-card">
-              <h2><span className="bk-n">1</span>{t.date}</h2>
+              <h2><span className="bk-n">1</span>{t.format}</h2>
+              <div className="bk-chips">{cfg?.formats.map((x) => <button key={x.key} type="button" className={format === x.key ? 'on' : ''} aria-pressed={format === x.key} onClick={() => setFormat(x.key)}>{x[lang]}</button>)}</div>
+              {format === 'offline' && cfg && <p className="bk-dim">{t.offline}: {cfg.offlineDays.map((i) => t.dows[i]).join(', ')}.</p>}
+              {format === 'video' && <p className="bk-dim">{t.video}</p>}
+            </section>
+
+            <section className="bk-card">
+              <h2><span className="bk-n">2</span>{t.date}</h2>
               {month && (
                 <MonthGrid lang={lang} month={month} onMonth={(m) => { setMonth(m); setDays({}) }} selected={date}
                   cell={(d) => { const x = days[d]; const ok = !!x && x.free > 0; return { disabled: !ok, cls: ok ? 'open' : 'dis', title: x?.why ?? (ok ? `${x.free} ${t.freeSlots}` : undefined) } }}
@@ -152,16 +183,9 @@ export default function BookPage() {
             </section>
 
             <section className="bk-card">
-              <h2><span className="bk-n">2</span>{t.service}</h2>
+              <h2><span className="bk-n">3</span>{t.service}</h2>
               <div className="bk-chips">{cfg?.services.map((s) => <button key={s.key} type="button" className={service === s.key ? 'on' : ''} aria-pressed={service === s.key} onClick={() => setService(s.key)}>{s[lang]}</button>)}</div>
               {svc && <p className="bk-dim">{lang === 'en' ? svc.infoEn : svc.infoRu} <a href={lang === 'en' ? svc.urlEn : svc.url} target="_blank" rel="noreferrer">{t.more}</a></p>}
-            </section>
-
-            <section className="bk-card">
-              <h2><span className="bk-n">3</span>{t.format}</h2>
-              <div className="bk-chips">{cfg?.formats.map((x) => <button key={x.key} type="button" className={format === x.key ? 'on' : ''} aria-pressed={format === x.key} onClick={() => setFormat(x.key)}>{x[lang]}</button>)}</div>
-              {format === 'offline' && cfg && <p className="bk-dim">{t.offline}: {cfg.offlineDays.map((i) => t.dows[i]).join(', ')}.</p>}
-              {format === 'video' && <p className="bk-dim">{t.video}</p>}
             </section>
 
             <section className="bk-card">
@@ -171,7 +195,13 @@ export default function BookPage() {
                 {input('name', `${t.name} *`, { autoComplete: 'name' })}
                 {input('company', t.company, { autoComplete: 'organization' })}
                 <div className="bk-fld"><span>{t.phone}</span><PhoneField lang={lang} value={f.phone} onChange={(v) => setF((x) => ({ ...x, phone: v }))} inputClassName="bk-phone" /></div>
-                {input('telegram', t.telegram, { autoCapitalize: 'none', placeholder: '@username' })}
+                <div className="bk-fld"><span>{t.telegram}</span>
+                  <div className="bk-tg">
+                    <input value={f.telegram} onChange={(e) => setF({ ...f, telegram: e.target.value })} autoCapitalize="none" placeholder="@username" />
+                    <button type="button" className="bk-tgbtn" onClick={fetchTelegram} disabled={tgWait} title={t.tgBtnHint}>{tgWait ? t.tgWaiting : t.tgBtn}</button>
+                  </div>
+                  {tgMsg && <small className="bk-dim" role="status">{tgMsg}</small>}
+                </div>
               </div>
               <p className="bk-dim">{t.contactHint}</p>
               {input('goal', t.goal)}

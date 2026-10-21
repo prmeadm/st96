@@ -85,6 +85,16 @@ export function createBot(token: string, repo: Repo, opts: { groupChatId: number
   bot.command('start', async (ctx) => {
     if (ctx.chat.type !== 'private' || !ctx.from) return
     const rawPayload = ctx.match?.trim().slice(0, 64) || undefined
+    // Кнопка «Из Telegram» на странице записи: запоминаем ник под одноразовым токеном и сразу сообщаем человеку, без воронки и запроса согласия
+    const bk = rawPayload?.match(/^bk_([a-f0-9]{16,32})$/)?.[1]
+    if (bk) {
+      const en = langOf(ctx.from) === 'en'
+      await repo.saveTgLink(bk, { tg_user_id: ctx.from.id, username: ctx.from.username ?? null, first_name: ctx.from.first_name ?? null })
+      await ctx.reply(ctx.from.username
+        ? (en ? `✅ Done: @${ctx.from.username}. Go back to the booking page, your Telegram username will be filled in automatically.` : `✅ Готово: @${ctx.from.username}. Вернитесь на страницу записи, ник подставится сам.`)
+        : (en ? 'You have no public Telegram username. Set one in Telegram: Settings → Username, then tap the button on the booking page again. Or enter your phone number.' : 'У вас в Telegram нет публичного ника. Задайте его в Telegram: Настройки → Имя пользователя, затем снова нажмите кнопку на странице записи. Или укажите телефон.'))
+      return
+    }
     const leadRef = rawPayload?.match(/^site_([A-Za-z0-9-]{1,40})$/)?.[1]
     const payload = leadRef ? 'site' : rawPayload
     if (leadRef) await linkLeadClient(repo, ctx.from, leadRef)

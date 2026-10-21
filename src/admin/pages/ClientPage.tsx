@@ -5,6 +5,7 @@ import { Highlight } from '../highlight'
 import { GROUP_LINK_ID, supabase } from '../supabase'
 import { deleteClient } from '../clientDelete'
 import { BackLink } from '../ui/BackLink'
+import { ContactLinks } from '../ui/ContactLinks'
 import { Icon } from '../ui/Icon'
 import { PhoneField } from '../../components/ui/PhoneField'
 
@@ -138,7 +139,6 @@ export default function ClientPage() {
   if (!client) return <div className="empty">Загрузка…</div>
 
   const topicUrl = client.admin_topic_id && GROUP_LINK_ID ? `https://t.me/c/${GROUP_LINK_ID}/${client.admin_topic_id}` : ''
-  const tg = client.tg_username ? `https://t.me/${client.tg_username}` : ''
 
   return (
     <div className="wrap">
@@ -154,7 +154,7 @@ export default function ClientPage() {
         }}><Icon name="trash" size={20} /></button>
       </h1>
       <div className="row hint">
-        {tg && <a href={tg} target="_blank" rel="noreferrer">@{client.tg_username}</a>}
+        {(client.tg_username || client.phone || client.email) && <span><ContactLinks telegram={client.tg_username} phone={client.phone} email={client.email} /></span>}
         {topicUrl && <a href={topicUrl} target="_blank" rel="noreferrer">Тема диалога в Telegram</a>}
         <span>Источник: {client.source ?? '—'} · язык {client.language.toUpperCase()} · создан {fmtDate(client.created_at)}</span>
       </div>

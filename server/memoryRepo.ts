@@ -17,6 +17,7 @@ export type MemoryRepo = Repo & {
   tags: Map<string, Set<string>>
   templates: TemplateRow[]
   templateEvents: { template_id: string; kind: string }[]
+  tgLinks: Map<string, { username: string | null; first_name: string | null }>
   llmUsage: { model: string; feature: string; prompt_tokens: number; completion_tokens: number; total_tokens: number; estimated: boolean }[]
   broadcasts: BroadcastRow[]
   agentTasks: (AgentTask & { locked: boolean })[]
@@ -33,7 +34,7 @@ export function memoryRepo(): MemoryRepo {
   const id = (p: string) => `${p}${++seq}`
   const seen = new Set<number>()
   const r: MemoryRepo = {
-    clients: [], leads: [], notes: [], messages: [], funnels: [], runs: [], events: [], tags: new Map(), templates: [], templateEvents: [], llmUsage: [], broadcasts: [], agentTasks: [], settings: new Map(), bookings: [], clock: () => new Date(), recipients: [], jobs: [],
+    clients: [], leads: [], notes: [], messages: [], funnels: [], runs: [], events: [], tags: new Map(), templates: [], templateEvents: [], tgLinks: new Map(), llmUsage: [], broadcasts: [], agentTasks: [], settings: new Map(), bookings: [], clock: () => new Date(), recipients: [], jobs: [],
     async claimUpdate(u) { if (seen.has(u)) return false; seen.add(u); return true },
     async findClient({ tgUserId, phone, username, topicId }) {
       if (topicId) return r.clients.find((c) => c.admin_topic_id === topicId) ?? null
@@ -62,6 +63,8 @@ export function memoryRepo(): MemoryRepo {
       return { id: row.id, client_id: row.client_id, created: true }
     },
     async leadContacts(cid) { return r.leads.filter((l) => l.client_id === cid).reverse().map((l) => ({ name: l.name, phone: l.phone, telegram: l.telegram, company: l.company })) },
+    async saveTgLink(token, v) { r.tgLinks.set(token, { username: v.username, first_name: v.first_name }) },
+    async getTgLink(token) { return r.tgLinks.get(token) ?? null },
     async countLeads(cid) { return r.leads.filter((l) => l.client_id === cid).length },
     async getLead(lid) { return r.leads.find((l) => l.id === lid) ?? null },
     async updateLead(lid, patch) { Object.assign(r.leads.find((l) => l.id === lid)!, patch) },

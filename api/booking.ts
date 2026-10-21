@@ -48,6 +48,12 @@ export default async function handler(req: Request) {
     const id = typeof b.id === 'string' && /^[A-Za-z0-9-]{8,64}$/.test(b.id) ? b.id : null
     return json({ client: id ? await clientContacts(repo, id) : null })
   }
+  // Ник из Telegram для формы: страница опрашивает, пока человек не нажмёт «Запустить» в боте (токен одноразовый, id не отдаётся)
+  if (b.action === 'tg_poll') {
+    const token = typeof b.token === 'string' && /^[a-f0-9]{16,32}$/.test(b.token) ? b.token : null
+    const v = token ? await repo.getTgLink(token).catch(() => null) : null
+    return json(v ? { ready: true, username: v.username ? `@${v.username}` : '', name: v.first_name ?? '' } : { ready: false })
+  }
   if (b.action === 'month') {
     if (typeof b.month !== 'string' || !/^\d{4}-\d{2}$/.test(b.month)) return json({ error: 'Неверный запрос' }, 400)
     return json({ days: await monthAvailability(repo, S, b.month, format, now) })

@@ -4,6 +4,7 @@ import { supabase } from '../supabase'
 import { callApi } from '../api'
 import { fmtDate } from '../types'
 import { Icon } from '../ui/Icon'
+import { ContactLinks } from '../ui/ContactLinks'
 import { PhoneField } from '../../components/ui/PhoneField'
 
 import { Seg } from '../ui/Seg'
@@ -112,7 +113,7 @@ function Requests({ rows, reload }: { rows: BookingRow[] | null; reload: () => P
             <dt>Услуга</dt><dd>{serviceLabel(b.service, 'ru')} · {Math.round((Date.parse(b.ends_at) - Date.parse(b.starts_at)) / 60000)} мин</dd>
             <dt>Формат</dt><dd>{FORMAT_LABEL[b.format].ru}</dd>
             <dt>Клиент</dt><dd>{b.client_id ? <Link to={`/clients/${b.client_id}`}>{b.name}</Link> : b.name}{b.company ? `, ${b.company}` : ''}</dd>
-            <dt>Контакты</dt><dd>{[b.telegram, b.phone].filter(Boolean).join(' · ') || '—'}</dd>
+            <dt>Контакты</dt><dd><ContactLinks telegram={b.telegram} phone={b.phone} /></dd>
             {b.goal && <><dt>Цель</dt><dd>{b.goal}</dd></>}
             {b.comment && <><dt>Комментарий</dt><dd>{b.comment}</dd></>}
             <dt>Источник</dt><dd>{{ site: 'Сайт', funnel: 'Воронка', link: 'Личная ссылка', admin: 'Админка' }[b.source] ?? b.source} · создана {fmtDate(b.created_at)}</dd>

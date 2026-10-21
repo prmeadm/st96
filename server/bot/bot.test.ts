@@ -256,3 +256,25 @@ test('/start site_<id> привязывает Telegram к клиенту из з
   await send(msg(`/start site_${lead.id}`, { entities: [{ type: 'bot_command', offset: 0, length: 6 }] }))
   assert.equal(repo.clients.length, 1)
 })
+
+test('/start bk_<токен> из страницы записи: ник сохраняется под токеном, клиент и воронка не создаются', async () => {
+  const { repo, calls, send } = setup()
+  const token = 'a1b2c3d4e5f60718'
+  await send(msg(`/start bk_${token}`, { entities: [{ type: 'bot_command', offset: 0, length: 6 }] }))
+  assert.deepEqual(await repo.getTgLink(token), { username: 'maria_photo', first_name: 'Мария' })
+  assert.equal(repo.clients.length, 0, 'клиент не создаётся: человек только подтягивает ник в форму')
+  const replies = calls.filter((c) => c.method === 'sendMessage')
+  assert.equal(replies.length, 1)
+  assert.match(String(replies[0]!.payload.text), /@maria_photo/)
+  assert.doesNotMatch(JSON.stringify(replies[0]!.payload.reply_markup ?? ''), /consent/)
+  assert.equal(await repo.getTgLink('ffffffffffffffff'), null)
+})
+
+test('/start bk_<токен> без публичного ника: просим задать его, ник пустой', async () => {
+  const { repo, calls, send } = setup()
+  const token = '0123456789abcdef'
+  const noName = { ...user, username: undefined }
+  await send({ message: { message_id: 1, date: 1, chat: priv, from: noName, text: `/start bk_${token}`, entities: [{ type: 'bot_command', offset: 0, length: 6 }] } })
+  assert.equal((await repo.getTgLink(token))?.username, null)
+  assert.match(String(calls.find((c) => c.method === 'sendMessage')!.payload.text), /нет публичного ника/)
+})

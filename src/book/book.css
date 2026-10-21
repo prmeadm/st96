@@ -45,3 +45,7 @@ h2:first-child { margin-top: 0; }
 .bk-sub2 { font-size: 16px; margin: 18px 0 8px; text-transform: capitalize; }
 .bk-fld .pf-sel { color: var(--ink); background: var(--bg); border: 1px solid #34343a; border-radius: 14px; min-height: 48px; font-size: 16px; }
 .bk-fld .pf-sel:focus-within { outline: 2px solid var(--acid); outline-offset: 1px; }
+.bk-tg { display: flex; gap: 8px; align-items: stretch; }
+.bk-tg input { flex: 1 1 auto; min-width: 0; }
+.bk-tgbtn { flex: none; font: inherit; font-size: 14px; font-weight: 600; color: #09090b; background: var(--acid, #d8ff3f); border: 0; border-radius: 14px; padding: 0 14px; min-height: 48px; cursor: pointer; white-space: nowrap; }
+.bk-tgbtn:disabled { opacity: 0.6; cursor: default; }

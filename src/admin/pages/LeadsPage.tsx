@@ -4,6 +4,7 @@ import { supabase } from '../supabase'
 import { SERVICES, SOURCES, STATUSES, WARNINGS, fmtDate, type Lead } from '../types'
 import { Icon } from '../ui/Icon'
 import { RowActions } from '../ui/RowActions'
+import { ContactLinks } from '../ui/ContactLinks'
 import { LeadEditor } from './LeadEditor'
 import './leads.css'
 
@@ -67,7 +68,7 @@ export default function LeadsPage() {
           </div>
           <div style={{ marginTop: 6 }}>
             {l.clients ? <Link to={`/clients/${l.clients.id}`}>{l.clients.name || (l.clients.tg_username ? `@${l.clients.tg_username}` : 'Клиент')}</Link> : <span className="muted">клиент не определён</span>}
-            <span className="hint"> · {[l.company, l.phone, l.telegram, l.email].filter(Boolean).join(' · ') || 'контактов нет'}</span>
+            <span className="hint"> · <ContactLinks before={[l.company ?? '']} telegram={l.telegram} phone={l.phone} email={l.email} /></span>
           </div>
           {l.comment && <div className="note" style={{ marginTop: 8 }}>{l.comment}</div>}
           {l.warnings.length > 0 && <div className="chips" style={{ marginTop: 8 }}>{l.warnings.map((w) => <span key={w} className="chip amber">{WARNINGS[w] ?? w}</span>)}</div>}
