@@ -1,0 +1,1947 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#2f5bff">
+<title>ST96 — конструктор воронок (прототип)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/reactflow@11.11.4/dist/style.css">
+<style>
+:root{
+  --bg:#f5f6f8; --card:#fff; --ink:#14171f; --mute:#6b7280; --line:#e3e6ec;
+  --blue:#2f5bff; --blue-soft:#eaf0ff; --green:#19a463; --green-soft:#e6f6ee;
+  --amber:#e8890c; --amber-soft:#fff3e1; --violet:#7c4dff; --violet-soft:#efe9ff;
+  --red:#e5484d; --red-soft:#fdecec; --teal:#0f9aa8; --teal-soft:#e2f5f7;
+  --shadow:0 1px 2px rgba(20,23,31,.06),0 6px 18px rgba(20,23,31,.06);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0f1115; --card:#181b22; --ink:#eceef3; --mute:#98a1b3; --line:#2a2f3a;
+    --blue:#6c8cff; --blue-soft:#1c2748; --green:#3ecb8a; --green-soft:#12301f;
+    --amber:#f2a33a; --amber-soft:#35260d; --violet:#9d7dff; --violet-soft:#241d44;
+    --red:#ff6b70; --red-soft:#3a1618; --teal:#37c3d1; --teal-soft:#10303a;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 6px 18px rgba(0,0,0,.35);
+  }
+}
+*{box-sizing:border-box}
+html,body,#root{height:100%;margin:0}
+body{font-family:Inter,system-ui,sans-serif;background:var(--bg);color:var(--ink);font-size:14px;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;cursor:pointer}
+input,textarea,select{font:inherit;color:inherit}
+/* поля без своего класса: цвета темы (нулевая специфичность, классы переопределяют) */
+:where(input:not([type=checkbox]):not([type=radio]):not([type=file]):not([type=range]),textarea,select){background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+::placeholder{color:var(--mute);opacity:.75}
+select option{background:var(--card);color:var(--ink)}
+.app{display:flex;height:100%}
+.rail{width:56px;background:var(--card);border-right:1px solid var(--line);display:flex;flex-direction:column;align-items:center;padding:10px 0;gap:6px;flex:none}
+.rail .logo{width:34px;height:34px;border-radius:10px;background:var(--ink);color:var(--card);display:grid;place-items:center;font-weight:700;font-size:12px;margin-bottom:8px}
+.rail button{width:38px;height:38px;border-radius:10px;border:0;background:none;display:grid;place-items:center;color:var(--mute)}
+.rail button:hover{background:var(--bg)}
+.rail button.on{background:var(--blue-soft);color:var(--blue)}
+.main{flex:1;display:flex;flex-direction:column;min-width:0}
+.top{height:56px;background:var(--card);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px;padding:0 16px;flex:none}
+.top input.name{border:1px solid transparent;background:none;font-size:16px;font-weight:600;padding:6px 8px;border-radius:8px;min-width:120px;width:300px;max-width:30vw}
+.top input.name:hover,.top input.name:focus{border-color:var(--line);outline:none}
+.sp{flex:1}
+.btn{border:1px solid var(--line);background:var(--card);border-radius:10px;padding:8px 12px;font-weight:500;display:inline-flex;align-items:center;gap:6px}
+.btn:hover{background:var(--bg)}
+.btn.primary{background:var(--blue);border-color:var(--blue);color:#fff}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn:disabled{opacity:.4;cursor:default}
+.btn.icon{padding:8px}
+.pill{font-size:12px;color:var(--mute)}
+.switch{display:inline-flex;align-items:center;gap:8px;padding:5px 10px 5px 6px;border:1px solid var(--line);border-radius:999px;background:var(--card);cursor:pointer;user-select:none}
+.switch .trk{width:34px;height:20px;border-radius:999px;background:var(--line);position:relative;transition:.15s}
+.switch .trk::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:.15s;box-shadow:0 1px 2px rgba(0,0,0,.3)}
+.switch.on .trk{background:var(--violet)}
+.switch.on .trk::after{left:16px}
+.switch b{font-weight:600}
+.stage{flex:1;position:relative;min-height:0}
+.react-flow{background:var(--bg)}
+.react-flow__attribution{display:none}
+.react-flow__edge-path{stroke:#aab1c0;stroke-width:1.6}
+.react-flow__edge.selected .react-flow__edge-path{stroke:var(--blue);stroke-width:2.2}
+.react-flow__handle{width:12px;height:12px;background:var(--card);border:2px solid #aab1c0}
+.react-flow__handle.connectionindicator:hover{border-color:var(--blue)}
+.react-flow__handle-right{right:-7px}
+.react-flow__handle-left{left:-7px}
+.react-flow__controls{box-shadow:var(--shadow);border-radius:10px;overflow:hidden}
+.react-flow__controls-button{background:var(--card);border-color:var(--line);fill:var(--ink)}
+.react-flow__minimap{border-radius:10px;overflow:hidden;box-shadow:var(--shadow);background:var(--card)}
+.react-flow__background pattern circle{fill:var(--line)}
+
+/* nodes */
+.node{width:270px;background:var(--card);border:1.5px solid transparent;border-radius:16px;box-shadow:var(--shadow);position:relative}
+.node.sel{border-color:var(--blue)}
+.node.bad{border-color:var(--red)}
+.node.ghost{opacity:.55}
+.node .hd{display:flex;align-items:center;gap:8px;padding:10px 12px 8px;font-weight:600}
+.node .hd .ic{width:24px;height:24px;border-radius:7px;display:grid;place-items:center;flex:none}
+.node .hd .cnt{margin-left:auto;font-size:12px;font-weight:500;color:var(--mute);display:flex;align-items:center;gap:3px}
+.node .bd{padding:0 10px 10px;display:flex;flex-direction:column;gap:6px}
+.bubble{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:8px 10px;font-size:13px;line-height:1.35;white-space:pre-wrap;word-break:break-word}
+.media{display:flex;align-items:center;gap:8px;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:7px 10px;font-size:12.5px;color:var(--mute)}
+.dash{border:1.5px dashed var(--line);border-radius:12px;padding:8px;text-align:center;color:var(--mute);font-size:12.5px}
+.row{position:relative;display:flex;align-items:center;justify-content:space-between;gap:8px;border:1px solid var(--line);border-radius:999px;padding:7px 12px;font-size:13px;background:var(--card)}
+.row small{color:var(--mute);font-size:11px}
+.row.link{border-radius:10px;color:var(--blue)}
+.row.err{border-color:var(--red);color:var(--red);background:var(--red-soft)}
+.out{position:relative;display:flex;justify-content:flex-end;align-items:center;font-size:12px;color:var(--mute);padding:2px 4px;min-height:20px}
+.out.yes{color:var(--green)}
+.out.no{color:var(--red)}
+.chip{display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:2px 7px;border-radius:999px;background:var(--violet-soft);color:var(--violet);font-weight:600}
+.warn{font-size:12px;color:var(--amber);background:var(--amber-soft);border-radius:8px;padding:5px 8px}
+.errline{font-size:12px;color:var(--red)}
+.note{width:240px;background:#efe3ff;border-radius:12px;padding:10px 12px;font-size:13px;box-shadow:var(--shadow);min-height:60px;white-space:pre-wrap;border:1.5px solid transparent;color:#2b1d4d}
+.note.sel{border-color:var(--violet)}
+.note.empty{opacity:.7}
+.startnode{width:270px}
+.startnode .tag{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;background:var(--card);border-radius:10px;padding:4px 10px;margin:0 0 -4px 6px;box-shadow:var(--shadow)}
+
+/* panel */
+.panel{position:absolute;top:12px;right:12px;bottom:12px;width:360px;background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);display:flex;flex-direction:column;z-index:20}
+.panel .ph{display:flex;align-items:center;gap:8px;padding:14px 16px;border-bottom:1px solid var(--line);font-weight:600;font-size:15px}
+.panel .pb{padding:14px 16px;overflow:auto;flex:1;display:flex;flex-direction:column;gap:14px}
+.panel .pf{padding:12px 16px;border-top:1px solid var(--line);display:flex;gap:8px}
+.fld label{display:block;font-size:12px;color:var(--mute);margin-bottom:5px;font-weight:500}
+.fld input[type=text],.fld textarea,.fld select,.fld input[type=number],.fld input[type=url]{width:100%;border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:var(--card)}
+.fld textarea{resize:vertical;min-height:84px}
+.fld input:focus,.fld textarea:focus,.fld select:focus{outline:2px solid var(--blue-soft);border-color:var(--blue)}
+.seg{display:flex;background:var(--bg);border-radius:10px;padding:3px;gap:3px}
+.seg button{flex:1;border:0;background:none;border-radius:8px;padding:6px 8px;font-size:13px}
+.seg button.on{background:var(--card);box-shadow:0 1px 2px rgba(0,0,0,.12);font-weight:600}
+.item{border:1px solid var(--line);border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:8px;background:var(--card)}
+.item .ih{display:flex;align-items:center;justify-content:space-between;font-size:12px;color:var(--mute);font-weight:600;text-transform:uppercase;letter-spacing:.03em}
+.x{border:0;background:none;color:var(--mute);padding:2px 6px;border-radius:6px}
+.x:hover{background:var(--red-soft);color:var(--red)}
+.addrow{display:flex;flex-wrap:wrap;gap:6px}
+.addrow button{border:1px dashed var(--line);background:none;border-radius:10px;padding:6px 10px;font-size:13px;color:var(--ink)}
+.addrow button:hover{border-color:var(--blue);color:var(--blue)}
+.h2{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--mute);font-weight:600}
+.hint{font-size:12px;color:var(--mute);line-height:1.4}
+.aibox{background:var(--violet-soft);color:var(--violet);border-radius:12px;padding:10px 12px;font-size:12.5px;line-height:1.4}
+
+/* add menu */
+.dock{position:absolute;left:50%;bottom:18px;transform:translateX(-50%);z-index:15;display:flex;gap:8px;align-items:center}
+.menu{position:absolute;bottom:56px;left:50%;transform:translateX(-50%);width:330px;background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:8px;z-index:30}
+.menu button{display:flex;gap:10px;align-items:flex-start;text-align:left;border:0;background:none;width:100%;padding:8px;border-radius:10px}
+.menu button:hover{background:var(--bg)}
+.menu .ic{width:28px;height:28px;border-radius:8px;display:grid;place-items:center;flex:none}
+.menu b{display:block;font-weight:600}
+.menu span.d{font-size:12px;color:var(--mute);line-height:1.3}
+.menu .sep{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--mute);padding:8px 8px 2px;font-weight:600}
+.legend{position:absolute;left:12px;top:12px;z-index:10;display:flex;gap:8px}
+
+/* preview */
+.ov{position:fixed;inset:0;background:rgba(10,12,18,.55);z-index:100;display:grid;place-items:center}
+.phone{width:380px;max-width:94vw;height:min(720px,92vh);background:var(--card);border-radius:28px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.4)}
+.phone .ph{padding:14px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--line);font-weight:600}
+.phone .av{width:32px;height:32px;border-radius:50%;background:var(--ink);color:var(--card);display:grid;place-items:center;font-size:11px;font-weight:700}
+.chat{flex:1;overflow:auto;padding:14px;display:flex;flex-direction:column;gap:8px;background:var(--bg)}
+.msg{max-width:84%;background:var(--card);border:1px solid var(--line);border-radius:16px 16px 16px 4px;padding:9px 12px;line-height:1.38;white-space:pre-wrap;align-self:flex-start}
+.msg.me{align-self:flex-end;background:var(--blue);color:#fff;border-color:var(--blue);border-radius:16px 16px 4px 16px}
+.msg .lnk{display:block;margin-top:6px;border:1px solid var(--line);border-radius:10px;padding:6px 10px;color:var(--blue);text-align:center;font-weight:500}
+.sys{align-self:center;font-size:12px;color:var(--mute);background:var(--card);border:1px solid var(--line);border-radius:999px;padding:3px 10px}
+.opts{padding:10px 12px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:6px;max-height:40%;overflow:auto}
+.opts button{border:1px solid var(--blue);color:var(--blue);background:var(--card);border-radius:12px;padding:9px 12px;font-weight:500}
+.opts button:hover{background:var(--blue-soft)}
+.booking{align-self:flex-start;width:84%;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px;display:flex;flex-direction:column;gap:6px;font-size:13px}
+.toast{position:absolute;left:50%;top:14px;transform:translateX(-50%);background:var(--ink);color:var(--card);padding:8px 14px;border-radius:10px;z-index:50;font-size:13px}
+@media (max-width:820px){.panel{left:8px;right:8px;width:auto;top:auto;height:55%}.top .hide-s{display:none}}
+
+/* schedule */
+.pagebody{flex:1;overflow:auto;padding:18px}
+.two{display:grid;grid-template-columns:minmax(360px,1fr) minmax(380px,1fr);gap:16px;max-width:1240px;margin:0 auto}
+.col{display:flex;flex-direction:column;gap:16px;min-width:0}
+@media (max-width:1000px){.two{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;box-shadow:var(--shadow)}
+.card h3{margin:0 0 12px;font-size:15px}
+.wrow{display:flex;gap:12px;align-items:flex-start;padding:9px 0;border-top:1px solid var(--line)}
+.wrow:first-of-type{border-top:0}
+.tin{border:1px solid var(--line);border-radius:10px;padding:6px 8px;background:var(--card)}
+.lnk{border:0;background:none;color:var(--blue);padding:0;font-size:12.5px;text-align:left}
+.lnk:hover{text-decoration:underline}
+.fgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chips button{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:6px 12px;font-size:13px}
+.chips button.on{background:var(--blue);border-color:var(--blue);color:#fff}
+.mhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.g7{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.dn{text-align:center;font-size:11px;color:var(--mute);padding:4px 0;font-weight:600}
+.cell{position:relative;aspect-ratio:1/0.82;border:1px solid var(--line);border-radius:10px;background:var(--card);display:grid;place-items:center;font-weight:500;padding:0}
+.cell.open{background:var(--green-soft);border-color:transparent;color:var(--green)}
+.cell.closed{background:repeating-linear-gradient(45deg,var(--bg),var(--bg) 5px,var(--line) 5px,var(--line) 6px);color:var(--mute)}
+.cell.dis{background:var(--bg);color:var(--mute);opacity:.55;border-color:transparent}
+.cell.out{opacity:.35}
+.cell.sel{outline:2px solid var(--blue);outline-offset:1px;opacity:1}
+.cell:disabled{cursor:default}
+.dot{position:absolute;top:5px;right:5px;width:6px;height:6px;border-radius:50%;background:var(--blue);display:inline-block}
+.bdg{position:absolute;bottom:3px;right:4px;font-style:normal;font-size:10px;background:var(--blue);color:#fff;border-radius:999px;min-width:16px;text-align:center;padding:0 4px;display:inline-block}
+.legend2{display:flex;gap:14px;font-size:12px;color:var(--mute);margin:-4px 0 10px;flex-wrap:wrap;align-items:center}
+.legend2 span{display:inline-flex;align-items:center;gap:6px}
+.legend2 .dot,.legend2 .bdg{position:static}
+.sw{width:14px;height:14px;border-radius:4px;display:inline-block}
+.sw.open{background:var(--green-soft);border:1px solid var(--green)}
+.sw.closed{background:var(--line)}
+.rangebox{margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}
+.slots{display:flex;flex-wrap:wrap;gap:6px}
+.slot{border:1px solid var(--green);background:var(--green-soft);color:var(--green);border-radius:8px;padding:5px 10px;font-size:13px;font-weight:500}
+.slot.off{border-color:var(--line);background:var(--bg);color:var(--mute);text-decoration:line-through;cursor:default}
+.slot.pick{background:var(--blue);border-color:var(--blue);color:#fff}
+.kv{display:grid;grid-template-columns:100px 1fr;gap:6px 12px;margin-top:12px;font-size:13px}
+.kv span{color:var(--mute)}
+.kv b{font-weight:500}
+.wcard{max-width:520px;margin:0 auto;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:20px;box-shadow:var(--shadow)}
+.rail .rl,.sheet-grip,.show-s{display:none}
+.act{justify-content:center}
+/* templates */
+.tplw{flex:1;min-height:0;display:grid;grid-template-columns:270px 1fr}
+.tfil{border-right:1px solid var(--line);overflow:auto;padding:16px;background:var(--card);display:flex;flex-direction:column;gap:18px}
+.tmain{overflow:auto;padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.tmain>*{flex:none}
+.fld label.btn{display:flex;font-size:14px;color:var(--ink);margin:0;font-weight:500;justify-content:center;width:100%}
+.tbar{display:flex;gap:8px}
+.tsearch{flex:1;min-width:0;border:1px solid var(--line);border-radius:10px;padding:9px 12px;background:var(--card)}
+.tsearch:focus{outline:2px solid var(--blue-soft);border-color:var(--blue)}
+.fbtn{display:none}
+.tgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.tcard{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px;display:flex;flex-direction:column;gap:8px;cursor:pointer;box-shadow:var(--shadow);text-align:left}
+.tcard:hover{border-color:var(--blue)}
+.tex{font-size:13px;color:var(--mute);line-height:1.4;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.tg{font-size:11px;padding:2px 8px;border-radius:999px;background:var(--bg);color:var(--mute);border:1px solid var(--line)}
+.tmedia{aspect-ratio:16/9;border-radius:12px;display:flex;flex-direction:column;gap:6px;align-items:center;justify-content:center;color:#fff}
+.tmedia.sm{aspect-ratio:auto;height:90px;margin-bottom:8px}
+.tn2{font-size:12px;opacity:.9}
+.tgprev{background:var(--bg);border:1px solid var(--line);border-radius:14px 14px 14px 4px;padding:10px 12px;line-height:1.4;max-width:92%}
+.tscroll{flex-wrap:wrap}
+.sheetov{display:none}
+
+/* agent tasks */
+.agent{flex:1;min-height:0;display:grid;grid-template-columns:340px 1fr}
+.alist{border-right:1px solid var(--line);overflow:auto;padding:12px;display:flex;flex-direction:column;gap:8px;background:var(--bg)}
+.atask{text-align:left;border:1px solid var(--line);background:var(--card);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:8px;width:100%}
+.atask.on{border-color:var(--blue);box-shadow:0 0 0 2px var(--blue-soft)}
+.adetail{overflow:auto;padding:18px 18px 0;display:flex;flex-direction:column;gap:14px;min-width:0}
+.adetail>*{max-width:820px;width:100%;margin-left:auto;margin-right:auto;flex:none}
+.adetail>.card[style*="margin:auto"]{margin:auto}
+.step{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-top:1px solid var(--line)}
+.step:first-of-type{border-top:0}
+.step .n{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:600;background:var(--bg);flex:none;margin-top:2px}
+.step.done .n{background:var(--green-soft);color:var(--green)}
+.step.run .n{background:var(--blue-soft);color:var(--blue)}
+.step.off,.step.skipped{opacity:.5}
+.step .stx{width:100%;border:1px solid transparent;background:none;border-radius:8px;padding:4px 6px;margin-left:-6px;resize:none;overflow:hidden;line-height:1.4;min-height:0!important}
+.step .stx:hover,.step .stx:focus{border-color:var(--line);outline:none;background:var(--card)}
+.pbar{height:8px;border-radius:8px;background:var(--bg);overflow:hidden}
+.pbar i{display:block;height:100%;background:var(--blue);transition:width .4s}
+.actbar{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.actbar.sticky{position:sticky;bottom:0;padding:12px 0 14px;background:linear-gradient(transparent,var(--bg) 22%)}
+.logl{font-size:12.5px;color:var(--mute);display:flex;gap:8px}
+.logl time{flex:none;font-variant-numeric:tabular-nums}
+.spin{width:12px;height:12px;border:2px solid var(--violet-soft);border-top-color:var(--violet);border-radius:50%;animation:sp .8s linear infinite;display:inline-block}
+@keyframes sp{to{transform:rotate(360deg)}}
+.back{display:none}
+.modal{width:min(640px,94vw);max-height:92vh;background:var(--card);border-radius:20px;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.4);overflow:hidden}
+.mh{display:flex;align-items:center;gap:8px;padding:14px 16px;border-bottom:1px solid var(--line)}
+.mb{padding:14px 16px;overflow:auto;display:flex;flex-direction:column;gap:12px;flex:1}
+.mf{padding:12px 16px;border-top:1px solid var(--line);display:flex;gap:8px;justify-content:flex-end}
+.tb{display:flex;gap:4px;flex-wrap:wrap;padding:6px;border:1px solid var(--line);border-bottom:0;border-radius:10px 10px 0 0;background:var(--bg)}
+.tb button,.tbb{border:0;background:var(--card);border-radius:8px;padding:6px 10px;font-size:13px;display:inline-flex;align-items:center;gap:4px;cursor:pointer;color:var(--ink);margin:0!important}
+.tb button:hover,.tbb:hover{background:var(--blue-soft);color:var(--blue)}
+.thumbs{display:flex;gap:8px;flex-wrap:wrap}
+.thumb{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:12px;padding:4px 6px 4px 4px;background:var(--bg);max-width:100%}
+.thumb img{width:40px;height:40px;object-fit:cover;border-radius:8px}
+.thumb .ti{width:40px;height:40px;display:grid;place-items:center;color:var(--mute)}
+.thumb .tn{font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:180px}
+
+.stickbar{margin-top:12px}
+
+/* ───── mobile (phones) ───── */
+@media (max-width:720px){
+  html,body,#root{height:100dvh}
+  body{font-size:15px;-webkit-text-size-adjust:100%;overscroll-behavior:none}
+  .app{flex-direction:column-reverse;height:100dvh;overflow:hidden}
+  .main{min-height:0;flex:1 1 0}
+  .rail{flex:none}
+  /* нижняя навигация вместо левой колонки */
+  .rail{width:auto;flex-direction:row;justify-content:space-around;align-items:stretch;gap:0;border-right:0;border-top:1px solid var(--line);padding:4px 4px calc(4px + env(safe-area-inset-bottom))}
+  .rail .logo{display:none}
+  .rail button{flex:1;width:auto;height:52px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border-radius:12px}
+  .rail .rl{display:block;font-size:10px;line-height:1;font-weight:500}
+  /* верхняя панель в две строки */
+  .top{height:auto;flex-wrap:wrap;gap:8px;padding:8px 12px;row-gap:8px}
+  .top>*{order:3}.top .sp{display:none}.top>b{order:1}
+  .top input.name{order:1;flex:1 1 calc(100% - 150px);min-width:0;width:auto;max-width:none;font-size:17px;min-height:40px}
+  .top .seg{order:9;flex:1 0 100%;margin-left:0!important}
+  .top .seg button{min-height:40px;padding:6px 2px;font-size:13px;white-space:nowrap}
+  .hide-s{display:none!important}
+  .show-s{display:inline-flex}
+  .btn{min-height:44px;padding:8px 14px}
+  .btn.icon{min-width:44px;justify-content:center}
+  .switch{min-height:44px;padding:5px 12px 5px 8px}
+  .top .btn.primary{order:2;margin-left:0;flex:none}
+  .top>.switch{margin-right:auto}
+  /* поля: 16px, чтобы iOS не зумил при фокусе */
+  input,select,textarea,.fld input[type=text],.fld input[type=number],.fld input[type=url],.fld textarea,.fld select{font-size:16px!important;min-height:44px}
+  .fld textarea{min-height:84px}
+  input[type=checkbox],input[type=radio]{width:22px;height:22px;min-height:0;flex:none}
+  .tin{min-height:44px;flex:1;min-width:0}
+  .x{min-width:44px;min-height:44px;font-size:16px}
+  .lnk{padding:8px 0;font-size:14px}
+  .chips button,.slot{min-height:44px;padding:8px 14px;font-size:14px}
+  .seg button{min-height:40px}
+  .seg.scroll{overflow-x:auto;max-width:100%;scrollbar-width:none}
+  .seg.scroll button{flex:none;white-space:nowrap}
+  /* холст воронок */
+  .react-flow__controls,.react-flow__minimap{display:none}
+  .react-flow__handle{width:20px;height:20px}
+  .react-flow__handle-right{right:-11px}.react-flow__handle-left{left:-11px}
+  .dock{bottom:14px;left:0;right:0;transform:none;justify-content:center;white-space:nowrap}
+  .dock .btn{white-space:nowrap}
+  .dock.hid{display:none}
+  .dock .btn.primary{min-height:48px;box-shadow:var(--shadow)}
+  .menu{left:12px;right:12px;width:auto;transform:none;max-height:58vh;overflow:auto;bottom:62px;white-space:normal}
+  .menu button{padding:12px 8px}
+  .legend{left:8px;right:8px;top:8px;flex-wrap:wrap}
+  /* редактор блока = нижняя шторка */
+  .panel{left:0;right:0;bottom:0;top:auto;width:auto;height:72%;border-radius:20px 20px 0 0;border-bottom:0;box-shadow:0 -8px 30px rgba(0,0,0,.25)}
+  .sheet-grip{display:block;position:absolute;top:6px;left:50%;width:40px;height:4px;margin-left:-20px;border-radius:4px;background:var(--line)}
+  .panel .ph{padding:18px 16px 12px}
+  .panel .pf{padding-bottom:calc(12px + env(safe-area-inset-bottom))}
+  .panel .pf .btn{flex:1;justify-content:center}
+  /* превью — на весь экран */
+  .ov{display:block}
+  .phone{width:100vw;max-width:none;height:100dvh;border-radius:0}
+  .phone .ph{padding-top:calc(14px + env(safe-area-inset-top))}
+  .opts{padding-bottom:calc(12px + env(safe-area-inset-bottom));max-height:50%}
+  .opts button{min-height:46px}
+  /* расписание и заявки */
+  .pagebody{padding:12px 12px 20px}
+  .two{gap:12px}.col{gap:12px}
+  .card{padding:14px;border-radius:14px}
+  .wrow{flex-wrap:wrap;gap:8px 12px;align-items:center}
+  .wrow>div:last-child{flex:1 1 100%!important}
+  .fgrid{grid-template-columns:1fr 1fr}
+  .rangebox .fld{flex:1 1 40%}
+  .rangebox .btn{flex:1 1 40%;justify-content:center}
+  .cell{aspect-ratio:1/1;border-radius:9px;font-size:15px}
+  .mhead .btn{min-width:44px}
+  .kv{grid-template-columns:84px 1fr}
+  .card .act{flex:1 1 40%}
+  .wcard{padding:16px;border-radius:16px}
+  .wcard .fgrid{grid-template-columns:1fr}
+  .stickbar{position:sticky;bottom:-16px;margin:12px -16px -16px;padding:10px 16px 16px;background:var(--card);border-top:1px solid var(--line);border-radius:0 0 16px 16px}
+  .wcard .stick{min-height:50px}
+  .toast{max-width:92vw;text-align:center}
+
+  /* задания агента: список → карточка */
+  .agent{grid-template-columns:1fr}
+  .alist{border-right:0}
+  .agent.has-open .alist{display:none}
+  .agent:not(.has-open) .adetail{display:none}
+  .adetail{padding:12px 12px 0;gap:12px}
+  .back{display:inline-flex}
+  .atask{padding:14px}
+  .actbar.sticky{margin:0 -12px;padding:10px 12px 12px;background:var(--card);border-top:1px solid var(--line)}
+  .actbar.sticky .btn{flex:1 1 40%;justify-content:center}
+  .actbar.sticky{gap:6px}
+  .actbar.sticky .btn{min-height:42px}
+  .actbar.sticky .btn.primary{flex:1 1 100%;order:-1;min-height:48px}
+  .actbar .btn{flex:1 1 40%;justify-content:center}
+  .step .stx{padding:8px 8px}
+  .modal{width:100vw;max-height:none;height:100dvh;border-radius:0}
+  .mh{padding-top:calc(14px + env(safe-area-inset-top))}
+  .mf{padding-bottom:calc(12px + env(safe-area-inset-bottom))}
+  .mf .btn{flex:1;justify-content:center}
+  .tb{gap:3px;padding:5px}
+  .tbb,.tb button{min-height:44px;min-width:40px;padding:6px;justify-content:center}
+  .thumb .tn{max-width:130px}
+
+  /* шаблоны */
+  .tplw{grid-template-columns:1fr}
+  .tfil{display:none}
+  .fbtn{display:inline-flex}
+  .tmain{padding:12px}
+  .tbar{position:sticky;top:-12px;background:var(--bg);padding:0 0 4px;z-index:5}
+  .tsearch{min-height:44px;font-size:16px}
+  .tscroll{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin:0 -12px;padding:0 12px}
+  .tscroll button{flex:none;white-space:nowrap}
+  .tgrid{grid-template-columns:1fr}
+  .sheetov{display:flex;align-items:flex-end}
+  .sheetf{width:100%;max-height:85dvh;background:var(--card);border-radius:20px 20px 0 0;display:flex;flex-direction:column;overflow:hidden}
+  .sheetf .mb{gap:18px}
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/reactflow@11.11.4/dist/umd/index.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.24.7/babel.min.js"></script>
+
+<script type="text/babel" data-presets="react">
+const { useState, useRef, useEffect, useMemo, useCallback, createContext, useContext } = React;
+const RFmod = window.ReactFlow;
+const RF = RFmod.default || RFmod;
+const { Handle, Position, MarkerType, Background, Controls, MiniMap, ReactFlowProvider,
+        useReactFlow, useUpdateNodeInternals, applyNodeChanges, applyEdgeChanges, addEdge } = RFmod;
+
+const uid = (p='id') => p + Math.random().toString(36).slice(2, 8);
+const Ctx = createContext({ aiEnabled: true });
+
+/* ───────── icons ───────── */
+const P = {
+  home:'M3 11l9-8 9 8v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z',
+  flow:'M4 4h6v6H4zM14 14h6v6h-6zM10 7h4a3 3 0 0 1 3 3v4',
+  users:'M16 11a4 4 0 1 0-8 0M3 21a7 7 0 0 1 18 0',
+  send:'M22 2L11 13M22 2l-7 20-4-9-9-4z',
+  cal:'M4 6h16v14H4zM4 10h16M8 3v4M16 3v4',
+  tpl:'M4 4h16v6H4zM4 14h7v6H4zM15 14h5v6h-5z',
+  gear:'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19 12a7 7 0 0 0-.1-1.3l2-1.5-2-3.4-2.3 1a7 7 0 0 0-2.2-1.3L14 3h-4l-.4 2.5a7 7 0 0 0-2.2 1.3l-2.3-1-2 3.4 2 1.5A7 7 0 0 0 5 12c0 .4 0 .9.1 1.3l-2 1.5 2 3.4 2.3-1a7 7 0 0 0 2.2 1.3L10 21h4l.4-2.5a7 7 0 0 0 2.2-1.3l2.3 1 2-3.4-2-1.5c.1-.4.1-.9.1-1.3z',
+  msg:'M21 12a8 8 0 0 1-11.6 7.1L3 21l1.9-6.4A8 8 0 1 1 21 12z',
+  filter:'M3 4h18l-7 8v7l-4 2v-9z',
+  bolt:'M13 2L4 14h7l-1 8 9-12h-7z',
+  note:'M4 4h16v12l-4 4H4zM16 20v-4h4',
+  ai:'M12 3l1.8 4.7L18.5 9.5 13.8 11.3 12 16l-1.8-4.7L5.5 9.5l4.7-1.8zM19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z',
+  cal2:'M4 6h16v14H4zM4 10h16M8 3v4M16 3v4M9 15l2 2 4-4',
+  hand:'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21a8 8 0 0 1 16 0',
+  play:'M6 4l14 8-14 8z',
+  undo:'M9 14L4 9l5-5M4 9h10a6 6 0 0 1 0 12h-3',
+  redo:'M15 14l5-5-5-5M20 9H10a6 6 0 0 0 0 12h3',
+  grid:'M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z',
+  plus:'M12 5v14M5 12h14',
+  trash:'M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13',
+  copy:'M9 9h11v11H9zM5 15V4h11',
+  img:'M4 5h16v14H4zM4 16l5-5 4 4 3-3 4 4',
+  vid:'M3 6h13v12H3zM16 10l5-3v10l-5-3z',
+  aud:'M9 18V6l10-2v12M9 18a3 3 0 1 1-3-3 3 3 0 0 1 3 3zM19 16a3 3 0 1 1-3-3 3 3 0 0 1 3 3z',
+  file:'M6 3h8l4 4v14H6zM14 3v4h4',
+  user:'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21a8 8 0 0 1 16 0',
+  flag:'M5 21V4M5 4h12l-2 4 2 4H5',
+};
+const Ic = ({ d, size = 16, sw = 1.8 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round"><path d={d}/></svg>
+);
+
+/* ───────── block catalog ───────── */
+const TYPES = {
+  start:   { name:'Старт',               color:'var(--ink)',    soft:'var(--bg)',          icon:P.flag },
+  message: { name:'Сообщение',           color:'var(--blue)',   soft:'var(--blue-soft)',   icon:P.msg,   d:'Текст, фото, видео, аудио, файл, кнопки и быстрые ответы' },
+  condition:{name:'Условие',             color:'var(--green)',  soft:'var(--green-soft)',  icon:P.filter,d:'Ветвление по тегам, услуге, времени, данным клиента' },
+  action:  { name:'Действие',            color:'var(--amber)',  soft:'var(--amber-soft)',  icon:P.bolt,  d:'Задержка, теги, переменные, уведомление, HTTP-запрос' },
+  booking: { name:'Запись на встречу',   color:'var(--teal)',   soft:'var(--teal-soft)',   icon:P.cal2,  d:'Календарь: услуга, слот, формат. Ждёт подтверждения админа' },
+  handoff: { name:'Передать человеку',   color:'var(--red)',    soft:'var(--red-soft)',    icon:P.hand,  d:'Остановить бота и уведомить администратора' },
+  ai:      { name:'ИИ-ответ',            color:'var(--violet)', soft:'var(--violet-soft)', icon:P.ai,    d:'Необязательный шаг: Claude отвечает по базе знаний' },
+  note:    { name:'Заметка',             color:'var(--violet)', soft:'var(--violet-soft)', icon:P.note,  d:'Комментарий на схеме, клиент его не видит' },
+};
+const MENU = [
+  { sep:'Основные' }, 'message','condition','action','booking','handoff',
+  { sep:'Дополнительно' }, 'ai','note',
+];
+
+const COND_TYPES = [
+  { k:'tag',     n:'Назначенные теги',     g:'Клиент' },
+  { k:'service', n:'Выбранная услуга',     g:'Клиент' },
+  { k:'field',   n:'Данные контакта',      g:'Клиент' },
+  { k:'var',     n:'Значение переменной',  g:'Клиент' },
+  { k:'booked',  n:'Есть запись на встречу', g:'Запись' },
+  { k:'format',  n:'Формат встречи',       g:'Запись' },
+  { k:'slot',    n:'Есть свободные слоты', g:'Запись' },
+  { k:'time',    n:'Время',                g:'Время' },
+  { k:'day',     n:'День недели',          g:'Время' },
+  { k:'date',    n:'Дата',                 g:'Время' },
+];
+const SERVICES = ['Ретушь', 'Нейрофотосессия', 'Съёмка', 'Цветокоррекция', 'Другое'];
+const ACT_TYPES = [
+  { k:'delay',  n:'Задержка',               g:'Популярные' },
+  { k:'notify', n:'Уведомление админу в Telegram', g:'Популярные' },
+  { k:'addtag', n:'Добавить теги',          g:'Теги' },
+  { k:'deltag', n:'Удалить теги',           g:'Теги' },
+  { k:'segment',n:'Добавить в сегмент рассылки', g:'Теги' },
+  { k:'collect',n:'Сбор данных контакта',   g:'Данные' },
+  { k:'setvar', n:'Установить переменную',  g:'Данные' },
+  { k:'conv',   n:'Записать конверсию',     g:'Данные' },
+  { k:'http',   n:'HTTP-запрос (вебхук)',   g:'Интеграции' },
+  { k:'goto',   n:'Запустить другую воронку', g:'Сценарии' },
+  { k:'task',   n:'Поставить задачу админу', g:'Сценарии' },
+];
+const TEMPLATES = [
+  { n:'Приветствие + меню услуг', t:'Здравствуйте! Это студия ST96. Чем могу помочь?' },
+  { n:'Прайс — ретушь', t:'Ретушь: от 15 руб. за кадр. Присылайте фото — рассчитаем точнее.' },
+  { n:'Напоминание о встрече', t:'Напоминаем: завтра у нас встреча. Если планы изменились — сообщите заранее.' },
+];
+
+/* ───────── helpers ───────── */
+const condText = c => {
+  const t = COND_TYPES.find(x => x.k === c.kind)?.n || 'Условие';
+  return c.value ? `${t}: ${c.value}` : t;
+};
+const actText = a => {
+  const t = ACT_TYPES.find(x => x.k === a.kind)?.n || 'Действие';
+  return a.value ? `${t}: ${a.value}` : t;
+};
+function problems(n, aiEnabled) {
+  const d = n.data, p = [];
+  if (n.type === 'start' && !d.triggers.length) p.push('Не выбран триггер запуска');
+  if (n.type === 'message') {
+    const hasContent = d.parts.some(x => x.kind === 'text' ? x.text.trim() : x.name);
+    if (!hasContent) p.push('Пустое сообщение');
+    if (d.quick.some(q => !q.label.trim())) p.push('У быстрого ответа нет названия');
+  }
+  if (n.type === 'condition' && !d.rules.length) p.push('Условие не задано');
+  if (n.type === 'action' && !d.items.length) p.push('Действие не задано');
+  if (n.type === 'booking' && !d.services.length) p.push('Не выбраны услуги');
+  return p;
+}
+const edgeStyle = { type:'default', markerEnd:{ type:MarkerType.ArrowClosed, color:'#aab1c0', width:16, height:16 } };
+
+/* ───────── demo funnel ───────── */
+function demo() {
+  const nodes = [
+    { id:'start', type:'start', position:{ x:0, y:200 }, deletable:false,
+      data:{ triggers:['Команда /start','Кнопка «Написать в Telegram» на сайте'], keyword:'', once:false } },
+    { id:'m1', type:'message', position:{ x:380, y:0 }, data:{
+      parts:[{ id:'p1', kind:'text', text:'Здравствуйте! Это студия ST96. Чем могу помочь?' }],
+      quick:[{ id:'q1', label:'Услуги и цены' },{ id:'q2', label:'Записаться на встречу' },{ id:'q3', label:'Задать вопрос' },{ id:'q4', label:'Связаться с админом' }],
+      links:[], count:128 } },
+    { id:'m2', type:'message', position:{ x:800, y:-60 }, data:{
+      parts:[{ id:'p1', kind:'text', text:'Наши услуги: ретушь, нейрофотосессия, съёмка, цветокоррекция.' }],
+      quick:[], links:[{ id:'l1', label:'Открыть st96.by', url:'https://st96.by' }], count:74 } },
+    { id:'b1', type:'booking', position:{ x:800, y:240 }, data:{
+      services:['Ретушь','Нейрофотосессия','Съёмка'], formats:['Телефонный звонок','Видеозвонок','Офлайн встреча'],
+      required:['Компания','Имя','Telegram','Телефон','Цель встречи'], meet:true, count:51 } },
+    { id:'a1', type:'action', position:{ x:1190, y:120 }, data:{ items:[{ id:'x1', kind:'addtag', value:'записан' },{ id:'x2', kind:'notify', value:'Новая запись — ждёт подтверждения' }], count:44 } },
+    { id:'m3', type:'message', position:{ x:1190, y:350 }, data:{
+      parts:[{ id:'p1', kind:'text', text:'Администратор студии принял время и дату. Просим не опаздывать!' }],
+      quick:[], links:[], count:37 } },
+    { id:'m4', type:'message', position:{ x:1190, y:540 }, data:{
+      parts:[{ id:'p1', kind:'text', text:'К сожалению, это время занято. Выберите другое — мы подберём вместе.' }],
+      quick:[], links:[], count:7 } },
+    { id:'ai1', type:'ai', position:{ x:800, y:580 }, data:{
+      mode:'kb', goal:'Ответить на вопрос и предложить запись', maxTurns:3, fallback:'handoff', count:29 } },
+    { id:'h1', type:'handoff', position:{ x:800, y:860 }, data:{ message:'Передаю ваш вопрос администратору, он ответит в ближайшее время.', notify:true, count:12 } },
+    { id:'n1', type:'note', position:{ x:380, y:460 }, data:{ text:'Здесь можно добавить проверку «новый клиент или нет» перед приветствием' } },
+  ];
+  const E = (s, sh, t) => ({ id:`${s}-${sh}-${t}`, source:s, sourceHandle:sh, target:t, targetHandle:'in', ...edgeStyle });
+  const edges = [
+    E('start','out','m1'),
+    E('m1','qr-q1','m2'), E('m1','qr-q2','b1'), E('m1','qr-q3','ai1'), E('m1','qr-q4','h1'),
+    E('m2','out','b1'),
+    E('b1','confirmed','a1'), E('b1','declined','m4'),
+    E('a1','out','m3'),
+    E('ai1','out','b1'),
+  ];
+  return { nodes, edges, name:'Запись на консультацию', aiEnabled:true };
+}
+
+/* ───────── node components ───────── */
+function Shell({ id, type, selected, data, children, extraErr, wide }) {
+  const { aiEnabled, nodesRef } = useContext(Ctx);
+  const t = TYPES[type];
+  const node = { type, data };
+  const errs = problems(node, aiEnabled).concat(extraErr || []);
+  const ghost = type === 'ai' && !aiEnabled;
+  const upd = useUpdateNodeInternals();
+  useEffect(() => { upd(id); }, [JSON.stringify(data), aiEnabled]);
+  return (
+    <div className={`node ${selected ? 'sel' : ''} ${errs.length && !ghost ? 'bad' : ''} ${ghost ? 'ghost' : ''}`}>
+      {type !== 'start' && <Handle id="in" type="target" position={Position.Left} style={{ top:22 }} />}
+      <div className="hd">
+        <span className="ic" style={{ background:t.soft, color:t.color }}><Ic d={t.icon} size={14} /></span>
+        <span>{t.name}</span>
+        {type === 'ai' && <span className="chip">необязательно</span>}
+        {data.count != null && <span className="cnt" title="Прошли блок"><Ic d={P.user} size={12} />{data.count}</span>}
+      </div>
+      <div className="bd">
+        {ghost && <div className="warn">ИИ выключен для этой воронки — шаг будет пропущен</div>}
+        {children}
+        {errs.length > 0 && !ghost && type !== 'condition' && errs.map((e, i) => <div className="errline" key={i}>● {e}</div>)}
+      </div>
+    </div>
+  );
+}
+const OutHandle = ({ id, label, cls, top }) => (
+  <div className={`out ${cls || ''}`}>{label}<Handle id={id} type="source" position={Position.Right} style={{ top: top || '50%' }} /></div>
+);
+
+function StartNode({ id, data, selected }) {
+  return (
+    <div className="startnode">
+      <div className="tag"><Ic d={P.flag} size={13} /> Начало</div>
+      <Shell id={id} type="start" selected={selected} data={data}>
+        {data.triggers.length === 0 && <div className="dash">Выберите триггер</div>}
+        {data.triggers.map(t => <div className="row" key={t}><span>{t}</span></div>)}
+        {data.keyword && <div className="media">Ключевые слова: {data.keyword}</div>}
+        <OutHandle id="out" label="" />
+      </Shell>
+    </div>
+  );
+}
+function MessageNode({ id, data, selected }) {
+  return (
+    <Shell id={id} type="message" selected={selected} data={data}>
+      {data.parts.map(p => p.kind === 'text'
+        ? (p.text.trim() ? <div className="bubble" key={p.id}>{p.text}</div> : <div className="dash" key={p.id}>Введите текст</div>)
+        : <div className="media" key={p.id}><Ic d={{ image:P.img, video:P.vid, audio:P.aud, file:P.file }[p.kind]} size={14} />{p.name || `${{ image:'Фото', video:'Видео', audio:'Аудио', file:'Файл' }[p.kind]} не загружено`}</div>)}
+      {data.links.map(l => <div className="row link" key={l.id}><span>↗ {l.label || 'Кнопка-ссылка'}</span></div>)}
+      {data.quick.map(q => (
+        <div className={`row ${q.label.trim() ? '' : 'err'}`} key={q.id}>
+          <span>{q.label || 'Введите название'}</span><small>ответ</small>
+          <Handle id={`qr-${q.id}`} type="source" position={Position.Right} />
+        </div>
+      ))}
+      <OutHandle id="out" label={data.quick.length ? 'Если клиент написал другое' : 'Дальше'} />
+    </Shell>
+  );
+}
+function ConditionNode({ id, data, selected }) {
+  return (
+    <Shell id={id} type="condition" selected={selected} data={data}>
+      {data.rules.length === 0 && <div className="row err"><span>Условие не задано</span></div>}
+      {data.rules.length > 0 && <div className="hint" style={{ padding:'0 2px' }}>Соответствует {data.mode === 'all' ? 'всем' : 'любому из'} условий</div>}
+      {data.rules.map(r => <div className="row" key={r.id}><span>{condText(r)}</span></div>)}
+      <OutHandle id="yes" label="Соответствует" cls="yes" />
+      <OutHandle id="no" label="Не соответствует" cls="no" />
+    </Shell>
+  );
+}
+function ActionNode({ id, data, selected }) {
+  return (
+    <Shell id={id} type="action" selected={selected} data={data}>
+      {data.items.length === 0 && <div className="dash">Добавить действие</div>}
+      {data.items.map(a => <div className="row" key={a.id}><span>{actText(a)}</span></div>)}
+      <OutHandle id="out" label="Дальше" />
+    </Shell>
+  );
+}
+function BookingNode({ id, data, selected }) {
+  return (
+    <Shell id={id} type="booking" selected={selected} data={data}>
+      <div className="bubble">Услуги: {data.services.join(', ') || '—'}</div>
+      <div className="media">{data.formats.join(' · ') || 'Форматы не выбраны'}</div>
+      {data.meet && <div className="media">Видеозвонок → ссылка Google Meet</div>}
+      <OutHandle id="confirmed" label="Админ подтвердил" cls="yes" />
+      <OutHandle id="declined" label="Админ отклонил / другое время" cls="no" />
+    </Shell>
+  );
+}
+function HandoffNode({ id, data, selected }) {
+  return (
+    <Shell id={id} type="handoff" selected={selected} data={data}>
+      <div className="bubble">{data.message || 'Сообщение клиенту не задано'}</div>
+      {data.notify && <div className="media">Уведомление админу в Telegram</div>}
+    </Shell>
+  );
+}
+function AiNode({ id, data, selected }) {
+  const { aiEnabled } = useContext(Ctx);
+  return (
+    <Shell id={id} type="ai" selected={selected} data={data}>
+      <div className="bubble">{data.mode === 'kb' ? 'Ответ по базе знаний студии' : 'Свободный диалог до цели'}</div>
+      {data.goal && <div className="media">Цель: {data.goal}</div>}
+      <div className="media">До {data.maxTurns} реплик · потом: {data.fallback === 'handoff' ? 'передать человеку' : 'идти дальше'}</div>
+      <OutHandle id="out" label="Цель достигнута / лимит" />
+    </Shell>
+  );
+}
+function NoteNode({ data, selected }) {
+  return <div className={`note ${selected ? 'sel' : ''} ${data.text ? '' : 'empty'}`}>{data.text || 'Введите заметку'}</div>;
+}
+const nodeTypes = { start:StartNode, message:MessageNode, condition:ConditionNode, action:ActionNode, booking:BookingNode, handoff:HandoffNode, ai:AiNode, note:NoteNode };
+
+function newNode(type, position) {
+  const base = { message:{ parts:[{ id:uid('p'), kind:'text', text:'' }], quick:[], links:[], count:0 },
+    condition:{ mode:'all', rules:[], count:0 },
+    action:{ items:[], count:0 },
+    booking:{ services:['Ретушь','Нейрофотосессия','Съёмка'], formats:['Телефонный звонок','Видеозвонок','Офлайн встреча'], required:['Компания','Имя','Telegram','Телефон','Цель встречи'], meet:true, count:0 },
+    handoff:{ message:'Передаю ваш вопрос администратору, он ответит в ближайшее время.', notify:true, count:0 },
+    ai:{ mode:'kb', goal:'', maxTurns:3, fallback:'handoff', count:0 },
+    note:{ text:'' } }[type];
+  return { id:uid('n'), type, position, data:base };
+}
+
+/* ───────── editor panel ───────── */
+const Field = ({ label, children }) => <div className="fld"><label>{label}</label>{children}</div>;
+const Seg = ({ value, options, onChange }) => (
+  <div className="seg">{options.map(([v, l]) => <button key={v} className={value === v ? 'on' : ''} onClick={() => onChange(v)}>{l}</button>)}</div>
+);
+const Check = ({ checked, onChange, children }) => (
+  <label style={{ display:'flex', gap:8, alignItems:'center', fontSize:13 }}>
+    <input type="checkbox" checked={checked} onChange={e => onChange(e.target.checked)} />{children}
+  </label>
+);
+function Grouped({ items, onPick, label }) {
+  const [open, setOpen] = useState(false);
+  const groups = [...new Set(items.map(i => i.g))];
+  return (
+    <div style={{ position:'relative' }}>
+      <button className="btn" style={{ width:'100%', justifyContent:'center' }} onClick={() => setOpen(!open)}><Ic d={P.plus} size={14} /> {label}</button>
+      {open && (
+        <div className="menu" style={{ bottom:'auto', top:44, left:0, transform:'none', width:'100%', maxHeight:320, overflow:'auto' }}>
+          {groups.map(g => (
+            <div key={g}><div className="sep">{g}</div>
+              {items.filter(i => i.g === g).map(i => <button key={i.k} onClick={() => { onPick(i.k); setOpen(false); }}><b style={{ fontWeight:500 }}>{i.n}</b></button>)}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Editor({ node, patch, remove, duplicate, close, aiEnabled }) {
+  const d = node.data, t = TYPES[node.type];
+  const set = (p) => patch(node.id, p);
+  const upFile = (partId, e) => {
+    const f = e.target.files[0]; if (!f) return;
+    set({ parts: d.parts.map(p => p.id === partId ? { ...p, name:f.name } : p) });
+  };
+  let body = null;
+
+  if (node.type === 'start') body = (<>
+    <div className="h2">Когда запускать воронку</div>
+    {['Команда /start','Кнопка «Написать в Telegram» на сайте','Новая заявка из группы','Ключевое слово','Любое сообщение','Завершённая запись на встречу','По расписанию'].map(x => (
+      <Check key={x} checked={d.triggers.includes(x)} onChange={v => set({ triggers: v ? [...d.triggers, x] : d.triggers.filter(y => y !== x) })}>{x}</Check>
+    ))}
+    {d.triggers.includes('Ключевое слово') && <Field label="Ключевые слова (через запятую)"><input type="text" value={d.keyword} onChange={e => set({ keyword:e.target.value })} placeholder="цена, прайс, запись" /></Field>}
+    <Check checked={d.once} onChange={v => set({ once:v })}>Запретить повторный запуск для одного клиента</Check>
+  </>);
+
+  if (node.type === 'message') body = (<>
+    <div className="h2">Содержимое</div>
+    {d.parts.map((p, i) => (
+      <div className="item" key={p.id}>
+        <div className="ih"><span>{{ text:'Текст', image:'Фото', video:'Видео', audio:'Аудио', file:'Файл PDF' }[p.kind]}</span>
+          <button className="x" onClick={() => set({ parts: d.parts.filter(x => x.id !== p.id) })}>✕</button></div>
+        {p.kind === 'text'
+          ? <textarea value={p.text} placeholder="Текст сообщения. Можно использовать {имя}" onChange={e => set({ parts: d.parts.map(x => x.id === p.id ? { ...x, text:e.target.value } : x) })} />
+          : <input type="file" onChange={e => upFile(p.id, e)} accept={{ image:'image/*', video:'video/*', audio:'audio/*', file:'application/pdf' }[p.kind]} />}
+        {p.kind !== 'text' && p.name && <div className="hint">Выбрано: {p.name}</div>}
+      </div>
+    ))}
+    <div className="addrow">
+      {[['text','+ Текст'],['image','+ Фото'],['video','+ Видео'],['audio','+ Аудио'],['file','+ Файл']].map(([k, l]) =>
+        <button key={k} onClick={() => set({ parts:[...d.parts, { id:uid('p'), kind:k, text:'', name:'' }] })}>{l}</button>)}
+    </div>
+    <Field label="Вставить шаблон из библиотеки">
+      <select value="" onChange={e => { const tpl = TEMPLATES[e.target.value]; if (tpl) set({ parts:[...d.parts, { id:uid('p'), kind:'text', text:tpl.t }] }); }}>
+        <option value="">Выбрать шаблон…</option>
+        {TEMPLATES.map((x, i) => <option key={i} value={i}>{x.n}</option>)}
+      </select>
+    </Field>
+    <div className="h2">Быстрые ответы</div>
+    <div className="hint">Каждый ответ получает свой выход — тяните связь к следующему блоку.</div>
+    {d.quick.map(q => (
+      <div className="item" key={q.id}>
+        <div className="ih"><span>Ответ</span><button className="x" onClick={() => set({ quick: d.quick.filter(x => x.id !== q.id) })}>✕</button></div>
+        <input type="text" value={q.label} placeholder="Название кнопки" onChange={e => set({ quick: d.quick.map(x => x.id === q.id ? { ...x, label:e.target.value } : x) })} />
+      </div>
+    ))}
+    <div className="addrow"><button onClick={() => set({ quick:[...d.quick, { id:uid('q'), label:'' }] })}>+ Быстрый ответ</button></div>
+    <div className="h2">Кнопки-ссылки</div>
+    {d.links.map(l => (
+      <div className="item" key={l.id}>
+        <div className="ih"><span>Ссылка</span><button className="x" onClick={() => set({ links: d.links.filter(x => x.id !== l.id) })}>✕</button></div>
+        <input type="text" value={l.label} placeholder="Название" onChange={e => set({ links: d.links.map(x => x.id === l.id ? { ...x, label:e.target.value } : x) })} />
+        <input type="url" value={l.url} placeholder="https://" onChange={e => set({ links: d.links.map(x => x.id === l.id ? { ...x, url:e.target.value } : x) })} />
+      </div>
+    ))}
+    <div className="addrow"><button onClick={() => set({ links:[...d.links, { id:uid('l'), label:'', url:'' }] })}>+ Кнопка-ссылка</button></div>
+  </>);
+
+  if (node.type === 'condition') body = (<>
+    <Field label="Соответствует"><Seg value={d.mode} onChange={v => set({ mode:v })} options={[['all','Всем условиям'],['any','Любому']]} /></Field>
+    {d.rules.map(r => {
+      const upd = p => set({ rules: d.rules.map(x => x.id === r.id ? { ...x, ...p } : x) });
+      return (
+        <div className="item" key={r.id}>
+          <div className="ih"><span>{COND_TYPES.find(c => c.k === r.kind)?.n}</span><button className="x" onClick={() => set({ rules: d.rules.filter(x => x.id !== r.id) })}>✕</button></div>
+          {r.kind === 'service'
+            ? <select value={r.value} onChange={e => upd({ value:e.target.value })}><option value="">Выберите услугу</option>{SERVICES.map(s => <option key={s}>{s}</option>)}</select>
+            : r.kind === 'format'
+            ? <select value={r.value} onChange={e => upd({ value:e.target.value })}><option value="">Выберите формат</option>{['Телефонный звонок','Видеозвонок','Офлайн встреча'].map(s => <option key={s}>{s}</option>)}</select>
+            : r.kind === 'day'
+            ? <select value={r.value} onChange={e => upd({ value:e.target.value })}><option value="">День недели</option>{['Пн','Вт','Ср','Чт','Пт','Сб','Вс'].map(s => <option key={s}>{s}</option>)}</select>
+            : r.kind === 'booked' || r.kind === 'slot'
+            ? <div className="hint">Проверка без параметров</div>
+            : <input type="text" value={r.value} placeholder={{ tag:'Тег, например VIP', field:'Поле = значение', var:'Переменная = значение', time:'С 10:00 до 18:00', date:'Дата или диапазон' }[r.kind]} onChange={e => upd({ value:e.target.value })} />}
+        </div>
+      );
+    })}
+    <Grouped items={COND_TYPES} label="Условие" onPick={k => set({ rules:[...d.rules, { id:uid('r'), kind:k, value:'' }] })} />
+  </>);
+
+  if (node.type === 'action') body = (<>
+    {d.items.map(a => {
+      const upd = p => set({ items: d.items.map(x => x.id === a.id ? { ...x, ...p } : x) });
+      return (
+        <div className="item" key={a.id}>
+          <div className="ih"><span>{ACT_TYPES.find(c => c.k === a.kind)?.n}</span><button className="x" onClick={() => set({ items: d.items.filter(x => x.id !== a.id) })}>✕</button></div>
+          <input type="text" value={a.value} onChange={e => upd({ value:e.target.value })}
+            placeholder={{ delay:'Например: 2 часа', notify:'Текст уведомления', addtag:'Теги через запятую', deltag:'Теги через запятую', segment:'Название сегмента', collect:'Поле: телефон', setvar:'имя = значение', conv:'Название цели', http:'https://…', goto:'Название воронки', task:'Что сделать админу' }[a.kind]} />
+        </div>
+      );
+    })}
+    <Grouped items={ACT_TYPES} label="Действие" onPick={k => set({ items:[...d.items, { id:uid('a'), kind:k, value:'' }] })} />
+  </>);
+
+  if (node.type === 'booking') body = (<>
+    <div className="h2">Услуги на выбор</div>
+    {SERVICES.map(s => <Check key={s} checked={d.services.includes(s)} onChange={v => set({ services: v ? [...d.services, s] : d.services.filter(x => x !== s) })}>{s}</Check>)}
+    <div className="h2">Форматы</div>
+    {['Телефонный звонок','Видеозвонок','Офлайн встреча'].map(s => <Check key={s} checked={d.formats.includes(s)} onChange={v => set({ formats: v ? [...d.formats, s] : d.formats.filter(x => x !== s) })}>{s}</Check>)}
+    <Check checked={d.meet} onChange={v => set({ meet:v })}>Для видеозвонка создавать ссылку Google Meet</Check>
+    <div className="h2">Обязательные поля</div>
+    <div className="hint">Компания, имя, Telegram, телефон, цель встречи. Комментарий — необязательно.</div>
+    <div className="aibox" style={{ background:'var(--teal-soft)', color:'var(--teal)' }}>Клиент получает «заявка на рассмотрении». После вашего подтверждения — выход «Админ подтвердил» и файл .ics. Доступные дни и часы задаются в разделе «Расписание».</div>
+  </>);
+
+  if (node.type === 'handoff') body = (<>
+    <Field label="Что увидит клиент"><textarea value={d.message} onChange={e => set({ message:e.target.value })} /></Field>
+    <Check checked={d.notify} onChange={v => set({ notify:v })}>Уведомить администратора в Telegram</Check>
+    <div className="hint">После этого блока бот молчит, пока вы не вернёте диалог в воронку.</div>
+  </>);
+
+  if (node.type === 'ai') body = (<>
+    {!aiEnabled && <div className="warn">ИИ выключен в настройках воронки (переключатель сверху). Этот шаг пропускается.</div>}
+    <div className="aibox">ИИ — необязательный блок. Для типовых сценариев хватает кнопок и условий. Подключайте его там, где клиент пишет произвольным текстом.</div>
+    <Field label="Режим"><Seg value={d.mode} onChange={v => set({ mode:v })} options={[['kb','По базе знаний'],['free','Диалог до цели']]} /></Field>
+    <Field label="Цель диалога"><input type="text" value={d.goal} onChange={e => set({ goal:e.target.value })} placeholder="Например: предложить запись" /></Field>
+    <Field label="Максимум реплик"><input type="number" min="1" max="10" value={d.maxTurns} onChange={e => set({ maxTurns:+e.target.value })} /></Field>
+    <Field label="Если ИИ не справился"><Seg value={d.fallback} onChange={v => set({ fallback:v })} options={[['handoff','Передать человеку'],['next','Идти дальше']]} /></Field>
+  </>);
+
+  if (node.type === 'note') body = <Field label="Заметка"><textarea value={d.text} onChange={e => set({ text:e.target.value })} /></Field>;
+
+  return (
+    <div className="panel"><span className="sheet-grip" />
+      <div className="ph"><span className="ic" style={{ width:26, height:26, borderRadius:8, display:'grid', placeItems:'center', background:t.soft, color:t.color }}><Ic d={t.icon} size={14} /></span>{t.name}<span className="sp" />
+        <button className="x" onClick={close} title="Закрыть">✕</button></div>
+      <div className="pb">{body}</div>
+      {node.type !== 'start' && <div className="pf">
+        <button className="btn" onClick={() => duplicate(node.id)}><Ic d={P.copy} size={14} /> Копия</button>
+        <button className="btn" style={{ color:'var(--red)' }} onClick={() => remove(node.id)}><Ic d={P.trash} size={14} /> Удалить</button>
+      </div>}
+    </div>
+  );
+}
+
+/* ───────── preview ───────── */
+function Preview({ nodes, edges, aiEnabled, onClose }) {
+  const [log, setLog] = useState([]);
+  const [opts, setOpts] = useState([]);
+  const endRef = useRef(null);
+  const byId = id => nodes.find(n => n.id === id);
+  const next = (id, h) => edges.find(e => e.source === id && (e.sourceHandle || 'out') === h)?.target;
+
+  const advance = (startId) => {
+    const items = []; let choices = []; let id = startId; let guard = 0;
+    while (id && guard++ < 60) {
+      const n = byId(id); if (!n) break;
+      const d = n.data;
+      if (n.type === 'start') { id = next(id, 'out'); continue; }
+      if (n.type === 'message') {
+        items.push({ k:'bot', parts:d.parts, links:d.links });
+        if (d.quick.length) { choices = d.quick.map(q => ({ label:q.label || '…', target:next(id, 'qr-' + q.id) })); break; }
+        id = next(id, 'out'); continue;
+      }
+      if (n.type === 'condition') {
+        items.push({ k:'sys', t:'Проверка: ' + (d.rules.map(condText).join(d.mode === 'all' ? ' И ' : ' ИЛИ ') || 'условие не задано') });
+        choices = [{ label:'Условие выполнено (демо)', target:next(id, 'yes') }, { label:'Не выполнено (демо)', target:next(id, 'no') }]; break;
+      }
+      if (n.type === 'action') { d.items.forEach(a => items.push({ k:'sys', t:'Действие: ' + actText(a) })); id = next(id, 'out'); continue; }
+      if (n.type === 'ai') {
+        if (!aiEnabled) { items.push({ k:'sys', t:'ИИ выключен — шаг пропущен' }); id = next(id, 'out'); continue; }
+        items.push({ k:'sys', t:'ИИ отвечает по базе знаний' });
+        items.push({ k:'bot', parts:[{ id:'ai', kind:'text', text:'Это демо-ответ ИИ. В рабочей версии здесь ответ Claude на вопрос клиента по услугам студии.' }], links:[] });
+        id = next(id, 'out'); continue;
+      }
+      if (n.type === 'booking') {
+        items.push({ k:'booking', d });
+        choices = [{ label:'Админ подтвердил время (демо)', target:next(id, 'confirmed') }, { label:'Админ отклонил / другое время (демо)', target:next(id, 'declined') }]; break;
+      }
+      if (n.type === 'handoff') { items.push({ k:'bot', parts:[{ id:'h', kind:'text', text:d.message }], links:[] }); items.push({ k:'sys', t:'Диалог передан администратору' }); break; }
+      break;
+    }
+    if (!choices.length && !items.some(i => i.t === 'Диалог передан администратору')) items.push({ k:'sys', t:'Конец воронки' });
+    return { items, choices };
+  };
+
+  const start = () => { const r = advance('start'); setLog(r.items); setOpts(r.choices); };
+  useEffect(start, []);
+  useEffect(() => { endRef.current?.scrollIntoView({ block:'end' }); }, [log, opts]);
+
+  const pick = o => {
+    const mine = [{ k:'me', t:o.label }];
+    if (!o.target) { setLog(l => [...l, ...mine, { k:'sys', t:'Ветка не подключена к следующему блоку' }]); setOpts([]); return; }
+    const r = advance(o.target); setLog(l => [...l, ...mine, ...r.items]); setOpts(r.choices);
+  };
+
+  return (
+    <div className="ov" onClick={onClose}>
+      <div className="phone" onClick={e => e.stopPropagation()}>
+        <div className="ph"><span className="av">ST96</span><div>ST96 Bot<div className="pill">предпросмотр воронки</div></div><span className="sp" style={{ flex:1 }} />
+          <button className="btn" onClick={start}>Заново</button><button className="btn icon" onClick={onClose}>✕</button></div>
+        <div className="chat">
+          {log.map((m, i) => m.k === 'sys' ? <div className="sys" key={i}>{m.t}</div>
+            : m.k === 'me' ? <div className="msg me" key={i}>{m.t}</div>
+            : m.k === 'booking' ? (
+              <div className="booking" key={i}>
+                <b>Запись на встречу</b>
+                <div>Услуга: {m.d.services[0] || '—'}</div>
+                <div>Формат: {m.d.formats.join(' / ')}</div>
+                <div className="hint">Поля: {m.d.required.join(', ')}</div>
+                <div className="sys" style={{ alignSelf:'flex-start' }}>Заявка на рассмотрении у администратора студии</div>
+              </div>)
+            : (
+              <div className="msg" key={i}>
+                {m.parts.map(p => p.kind === 'text' ? <div key={p.id}>{p.text || '…'}</div> : <div key={p.id} className="hint">[{{ image:'Фото', video:'Видео', audio:'Аудио', file:'Файл' }[p.kind]}: {p.name || 'не загружено'}]</div>)}
+                {m.links.map(l => <span className="lnk" key={l.id}>{l.label || 'Ссылка'}</span>)}
+              </div>))}
+          <div ref={endRef} />
+        </div>
+        {opts.length > 0 && <div className="opts">{opts.map((o, i) => <button key={i} onClick={() => pick(o)}>{o.label}</button>)}</div>}
+      </div>
+    </div>
+  );
+}
+
+/* ───────── layout ───────── */
+function autoLayout(nodes, edges) {
+  const start = nodes.find(n => n.type === 'start'); if (!start) return nodes;
+  const layer = { [start.id]: 0 }; const q = [start.id];
+  while (q.length) { const id = q.shift(); edges.filter(e => e.source === id).forEach(e => { if (layer[e.target] == null) { layer[e.target] = layer[id] + 1; q.push(e.target); } }); }
+  let extra = Math.max(0, ...Object.values(layer)) + 1;
+  const cols = {};
+  nodes.forEach(n => { const l = layer[n.id] ?? (n.type === 'note' ? extra : extra); (cols[l] = cols[l] || []).push(n); });
+  const pos = {};
+  Object.entries(cols).forEach(([l, arr]) => { let y = 0; arr.forEach(n => { pos[n.id] = { x:+l * 380, y }; y += (n.height || 160) + 40; }); });
+  return nodes.map(n => ({ ...n, position: pos[n.id] || n.position }));
+}
+
+/* ───────── main ───────── */
+const STORE = 'st96-funnel-proto-v3';
+function load() { try { const s = JSON.parse(localStorage.getItem(STORE)); if (s && s.nodes) return s; } catch (e) {} return demo(); }
+
+const isMobile = () => window.matchMedia('(max-width:720px)').matches;
+function Builder({ go }) {
+  const init = useMemo(load, []);
+  const [nodes, setNodes] = useState(init.nodes);
+  const [edges, setEdges] = useState(init.edges);
+  const [name, setName] = useState(init.name);
+  const [aiEnabled, setAi] = useState(init.aiEnabled !== false);
+  const [menu, setMenu] = useState(false);
+  const [preview, setPreview] = useState(false);
+  const [toast, setToast] = useState('');
+  const [past, setPast] = useState([]);
+  const [future, setFuture] = useState([]);
+  const wrap = useRef(null);
+  const rf = useReactFlow();
+  const cur = useRef({}); cur.current = { nodes, edges };
+  const lastCommit = useRef(0);
+
+  const flash = m => { setToast(m); setTimeout(() => setToast(''), 2200); };
+  const commit = (force) => {
+    const now = Date.now();
+    if (!force && now - lastCommit.current < 900) return;
+    lastCommit.current = now;
+    setPast(p => [...p.slice(-60), { nodes:cur.current.nodes, edges:cur.current.edges }]); setFuture([]);
+  };
+  const undo = () => { if (!past.length) return; const p = past[past.length - 1];
+    setFuture(f => [{ nodes, edges }, ...f]); setPast(past.slice(0, -1)); setNodes(p.nodes); setEdges(p.edges); };
+  const redo = () => { if (!future.length) return; const f = future[0];
+    setPast(p => [...p, { nodes, edges }]); setFuture(future.slice(1)); setNodes(f.nodes); setEdges(f.edges); };
+
+  useEffect(() => { try { localStorage.setItem(STORE, JSON.stringify({ nodes, edges, name, aiEnabled })); } catch (e) {} }, [nodes, edges, name, aiEnabled]);
+  useEffect(() => {
+    const h = e => {
+      const tag = (e.target.tagName || '').toLowerCase(); if (['input','textarea','select'].includes(tag)) return;
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z') { e.preventDefault(); e.shiftKey ? redo() : undo(); }
+    };
+    window.addEventListener('keydown', h); return () => window.removeEventListener('keydown', h);
+  });
+
+  const onNodesChange = useCallback(ch => {
+    if (ch.some(c => c.type === 'remove')) commit(true);
+    setNodes(ns => applyNodeChanges(ch, ns));
+  }, [past]);
+  const onEdgesChange = useCallback(ch => {
+    if (ch.some(c => c.type === 'remove')) commit(true);
+    setEdges(es => applyEdgeChanges(ch, es));
+  }, [past]);
+  const onConnect = useCallback(c => {
+    commit(true);
+    setEdges(es => addEdge({ ...c, ...edgeStyle }, es.filter(e => !(e.source === c.source && e.sourceHandle === c.sourceHandle))));
+  }, [past]);
+
+  const patch = (id, p) => { commit(); setNodes(ns => ns.map(n => n.id === id ? { ...n, data:{ ...n.data, ...p } } : n)); };
+  const remove = id => { commit(true); setNodes(ns => ns.filter(n => n.id !== id)); setEdges(es => es.filter(e => e.source !== id && e.target !== id)); };
+  const duplicate = id => { const n = nodes.find(x => x.id === id); if (!n) return; commit(true);
+    const c = JSON.parse(JSON.stringify(n)); c.id = uid('n'); c.position = { x:n.position.x + 40, y:n.position.y + 60 }; c.selected = true; c.data.count = 0;
+    setNodes(ns => ns.map(x => ({ ...x, selected:false })).concat(c)); };
+  const add = type => {
+    commit(true); setMenu(false);
+    const r = wrap.current.getBoundingClientRect();
+    const pos = rf.screenToFlowPosition({ x:r.left + r.width / 2 - 135, y:r.top + r.height / 2 - 100 });
+    const n = newNode(type, pos); n.selected = true;
+    setNodes(ns => ns.map(x => ({ ...x, selected:false })).concat(n));
+  };
+  const layout = () => { commit(true); setNodes(ns => autoLayout(ns, edges)); setTimeout(() => rf.fitView({ padding:0.2, duration:400 }), 50); flash('Блоки упорядочены'); };
+  const reset = () => { if (!confirm('Сбросить воронку к демо-версии?')) return; const d = demo(); commit(true); setNodes(d.nodes); setEdges(d.edges); setName(d.name); setAi(true); setTimeout(() => rf.fitView({ padding:0.2 }), 50); };
+
+  const sel = nodes.filter(n => n.selected);
+  const selected = sel.length === 1 ? sel[0] : null;
+  /* на телефоне шторка закрывает нижнюю часть: поднимаем выбранный блок в верхнюю четверть */
+  useEffect(() => {
+    if (!selected || !isMobile() || !wrap.current) return;
+    const z = 0.85, h = wrap.current.clientHeight;
+    rf.setCenter(selected.position.x + 135, selected.position.y + (h / 2 - 14) / z, { zoom:z, duration:250 });
+  }, [selected && selected.id]);
+  const allProblems = nodes.filter(n => n.type !== 'note' && !(n.type === 'ai' && !aiEnabled)).reduce((a, n) => a + problems(n, aiEnabled).length, 0);
+  const publish = () => allProblems ? flash(`Нельзя опубликовать: ошибок — ${allProblems}`) : flash('Воронка опубликована (демо)');
+  const aiCount = nodes.filter(n => n.type === 'ai').length;
+
+  return (
+    <Ctx.Provider value={{ aiEnabled }}>
+      <div className="app">
+        <Rail page="funnel" go={go} />
+        <div className="main">
+          <div className="top">
+            <input className="name" value={name} onChange={e => setName(e.target.value)} aria-label="Название воронки" />
+            <span className="pill hide-s">Telegram · черновик</span>
+            <span className="sp" />
+            <div className={`switch ${aiEnabled ? 'on' : ''}`} role="switch" aria-checked={aiEnabled} tabIndex={0} onClick={() => setAi(!aiEnabled)}
+              onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && setAi(!aiEnabled)}
+              title="Включает или выключает блоки ИИ в этой воронке">
+              <span className="trk" /><span><span className="hide-s">ИИ в воронке: </span><span className="show-s">ИИ: </span><b>{aiEnabled ? 'вкл' : 'выкл'}</b></span>
+            </div>
+            <button className="btn icon" onClick={undo} disabled={!past.length} title="Отменить (⌘Z)"><Ic d={P.undo} /></button>
+            <button className="btn icon" onClick={redo} disabled={!future.length} title="Повторить (⌘⇧Z)"><Ic d={P.redo} /></button>
+            <button className="btn" onClick={layout} aria-label="Упорядочить"><Ic d={P.grid} /><span className="hide-s"> Упорядочить</span></button>
+            <button className="btn" onClick={() => setPreview(true)}><Ic d={P.play} size={14} /><span className="hide-s"> Превью</span></button>
+            <button className="btn primary" onClick={publish}>Опубликовать</button>
+          </div>
+          <div className="stage" ref={wrap}>
+            <RF nodes={nodes} edges={edges} nodeTypes={nodeTypes}
+              onNodesChange={onNodesChange} onEdgesChange={onEdgesChange} onConnect={onConnect}
+              onNodeDragStart={() => commit(true)}
+              onPaneClick={() => { setMenu(false); setNodes(ns => ns.some(n => n.selected) ? ns.map(n => ({ ...n, selected:false })) : ns); }}
+              fitView={!isMobile()} onInit={inst => { if (isMobile()) { const ns = inst.getNodes(), sl = ns.find(n => n.selected), st = sl || ns.find(n => n.type === 'start') || ns[0]; if (st) inst.setCenter(st.position.x + 135, st.position.y + (sl && wrap.current ? (wrap.current.clientHeight / 2 - 14) / 0.8 : 170), { zoom:0.8 }); } }} fitViewOptions={{ padding:0.2 }} minZoom={0.2} maxZoom={1.6}
+              defaultEdgeOptions={edgeStyle} deleteKeyCode={['Backspace','Delete']} proOptions={{ hideAttribution:true }}>
+              <Background gap={22} size={1.4} />
+              <Controls showInteractive={false} position="bottom-left" />
+              {!selected && <MiniMap pannable zoomable position="bottom-right" style={{ width:150, height:96 }} />}
+            </RF>
+            <div className="legend">
+              {!aiEnabled && aiCount > 0 && <span className="warn">ИИ выключен: блоков ИИ в схеме — {aiCount}, они пропускаются</span>}
+              {allProblems > 0 && <span className="warn" style={{ color:'var(--red)', background:'var(--red-soft)' }}>Не заполнено: {allProblems}</span>}
+            </div>
+            <div className={`dock ${selected ? 'hid' : ''}`}>
+              <button className="btn primary" onClick={() => setMenu(!menu)} style={{ borderRadius:999, padding:'10px 18px' }}><Ic d={P.plus} size={16} /> Добавить блок</button>
+              <button className="btn show-s" onClick={() => rf.fitView({ padding:0.15, duration:300 })} style={{ borderRadius:999, boxShadow:'var(--shadow)' }} aria-label="Показать всю схему">Вся схема</button>
+              {menu && (
+                <div className="menu">
+                  {MENU.map((m, i) => {
+                    if (m.sep) return <div className="sep" key={i}>{m.sep}</div>;
+                    const t = TYPES[m]; const off = m === 'ai' && !aiEnabled;
+                    return (
+                      <button key={m} onClick={() => add(m)} style={off ? { opacity:.5 } : null}>
+                        <span className="ic" style={{ background:t.soft, color:t.color }}><Ic d={t.icon} size={15} /></span>
+                        <span><b>{t.name}{off ? ' (ИИ выключен)' : ''}</b><span className="d">{t.d}</span></span>
+                      </button>);
+                  })}
+                </div>)}
+            </div>
+            {selected && <Editor node={selected} patch={patch} remove={remove} duplicate={duplicate} aiEnabled={aiEnabled}
+              close={() => setNodes(ns => ns.map(n => ({ ...n, selected:false })))} />}
+            {toast && <div className="toast">{toast}</div>}
+          </div>
+        </div>
+      </div>
+      {preview && <Preview nodes={nodes} edges={edges} aiEnabled={aiEnabled} onClose={() => setPreview(false)} />}
+    </Ctx.Provider>
+  );
+}
+
+/* ───────── schedule: helpers ───────── */
+const DOW = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
+const MONTHS = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+const FORMATS = ['Телефонный звонок','Видеозвонок','Офлайн встреча'];
+const pad = n => String(n).padStart(2, '0');
+const ds = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const parseD = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+const dowOf = d => (d.getDay() + 6) % 7;
+const sod = d => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
+const tm = s => { const [h, m] = s.split(':').map(Number); return h * 60 + m; };
+const hm = n => `${pad(Math.floor(n / 60))}:${pad(n % 60)}`;
+const longDate = d => `${d.getDate()} ${MONTHS[d.getMonth()].toLowerCase().replace(/ь$/, 'я').replace(/т$/, 'та').replace(/й$/, 'я')}, ${DOW[dowOf(d)]}`;
+
+const SKEY = 'st96-schedule-v1', BKEY = 'st96-bookings-v1';
+function defaultSchedule() {
+  const week = {};
+  for (let i = 0; i < 5; i++) week[i] = { on:true, windows:[{ from:'10:00', to:'13:00' }, { from:'14:00', to:'18:00' }] };
+  week[5] = { on:true, windows:[{ from:'11:00', to:'15:00' }] };
+  week[6] = { on:false, windows:[{ from:'11:00', to:'15:00' }] };
+  const today = sod(new Date());
+  const overrides = {};
+  const nov7 = new Date(today.getFullYear(), 10, 7);
+  if (nov7 >= today) overrides[ds(nov7)] = { closed:true, reason:'Праздничный день' };
+  let fri = addDays(today, 1); while (dowOf(fri) !== 4) fri = addDays(fri, 1);
+  overrides[ds(fri)] = { blocks:[{ from:'14:00', to:'16:00', reason:'Выездная съёмка' }] };
+  return {
+    week, overrides, google:true,
+    googleBusy:{ 2:[{ from:'15:00', to:'16:30', title:'Личное' }] },
+    rules:{ step:30, buffer:15, minNotice:3, horizon:45, maxPerDay:5,
+      durations:{ 'Ретушь':30, 'Нейрофотосессия':60, 'Съёмка':60, 'Цветокоррекция':30, 'Другое':30 },
+      offlineDays:[1, 3] },
+  };
+}
+function loadS() { try { const s = JSON.parse(localStorage.getItem(SKEY)); if (s && s.week) return s; } catch (e) {} return defaultSchedule(); }
+function seedBookings() {
+  const today = sod(new Date());
+  let a = addDays(today, 2); while (dowOf(a) > 4) a = addDays(a, 1);
+  let b = addDays(today, 3); while (dowOf(b) !== 1 && dowOf(b) !== 3) b = addDays(b, 1);
+  const mk = (id, date, time, service, format, name, company, status) => ({
+    id, date:ds(date), time, service, format, name, company, telegram:'@' + name.toLowerCase(), phone:'+375 29 000-00-00',
+    goal:'Обсудить задачу и сроки', comment:'', status,
+    meet: format === 'Видеозвонок' ? 'https://meet.google.com/abc-defg-hij' : '',
+    log: status === 'pending'
+      ? [{ to:'client', t:'Заявка принята и находится на рассмотрении у администратора студии.' }, { to:'admin', t:`Новая заявка: ${name}, ${company}. Подтвердить время?` }]
+      : [{ to:'client', t:'Администратор студии принял время и дату, просим не опаздывать.' }],
+  });
+  return [
+    mk('b1', a, '11:00', 'Ретушь', 'Видеозвонок', 'Анна', 'Студия «Лето»', 'pending'),
+    mk('b2', b, '15:00', 'Нейрофотосессия', 'Офлайн встреча', 'Игорь', 'ООО «Вектор»', 'confirmed'),
+  ];
+}
+function loadB() { try { const s = JSON.parse(localStorage.getItem(BKEY)); if (Array.isArray(s)) return s; } catch (e) {} return seedBookings(); }
+
+/* Сервер считает слоты так же: правила → закрытые дни → Google → заявки → лимиты */
+function dayInfo(date, S, bookings, service, format, now = new Date()) {
+  const key = ds(date), ov = S.overrides[key] || {}, R = S.rules;
+  if (date < sod(now)) return { closed:true, why:'Прошедший день', slots:[], past:true };
+  if (date > addDays(sod(now), R.horizon)) return { closed:true, why:'За пределами горизонта записи', slots:[], far:true };
+  if (ov.closed) return { closed:true, why:ov.reason || 'Закрыт вручную', slots:[], manual:true };
+  const dow = dowOf(date);
+  if (format === 'Офлайн встреча' && !R.offlineDays.includes(dow)) return { closed:true, why:'Офлайн-встречи в этот день не проводятся', slots:[] };
+  const wins = ov.windows && ov.windows.length ? ov.windows : (ov.open ? [{ from:'10:00', to:'18:00' }] : (S.week[dow].on ? S.week[dow].windows : []));
+  if (!wins.length) return { closed:true, why:'Выходной по расписанию', slots:[] };
+  const dur = R.durations[service] || 30;
+  const busy = [];
+  (ov.blocks || []).forEach(b => busy.push([tm(b.from), tm(b.to), b.reason || 'Закрыто вручную']));
+  if (S.google) (S.googleBusy[dow] || []).forEach(b => busy.push([tm(b.from) - R.buffer, tm(b.to) + R.buffer, 'Занято в Google Calendar']));
+  const dayB = bookings.filter(b => b.date === key && b.status !== 'rejected');
+  dayB.forEach(b => busy.push([tm(b.time) - R.buffer, tm(b.time) + (R.durations[b.service] || 30) + R.buffer, 'Уже есть заявка']));
+  const limit = dayB.length >= R.maxPerDay;
+  const earliest = new Date(now.getTime() + R.minNotice * 3600000);
+  const slots = [];
+  wins.forEach(w => {
+    for (let s = tm(w.from); s + dur <= tm(w.to); s += R.step) {
+      let why = '';
+      const at = new Date(date.getFullYear(), date.getMonth(), date.getDate(), Math.floor(s / 60), s % 60);
+      if (at < earliest) why = 'Слишком скоро';
+      else if (limit) why = 'Лимит встреч на день';
+      else { const c = busy.find(([a, b]) => s < b && s + dur > a); if (c) why = c[2]; }
+      slots.push({ t:hm(s), free:!why, why });
+    }
+  });
+  return { closed:false, slots, wins, free:slots.filter(x => x.free).length };
+}
+
+function downloadIcs(b, S) {
+  const d = b.date.replace(/-/g, ''), st = d + 'T' + b.time.replace(':', '') + '00';
+  const en = d + 'T' + hm(tm(b.time) + (S.rules.durations[b.service] || 30)).replace(':', '') + '00';
+  const esc = t => String(t).replace(/([,;])/g, '\\$1').replace(/\n/g, '\\n');
+  const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//ST96//Booking//RU', 'CALSCALE:GREGORIAN', 'BEGIN:VEVENT',
+    `UID:${b.id}@st96.by`, `DTSTAMP:${new Date().toISOString().replace(/[-:]/g, '').slice(0, 15)}Z`,
+    `DTSTART;TZID=Europe/Minsk:${st}`, `DTEND;TZID=Europe/Minsk:${en}`,
+    `SUMMARY:${esc('Встреча со студией ST96: ' + b.service)}`,
+    `DESCRIPTION:${esc(`Формат: ${b.format}\nЦель: ${b.goal}${b.meet ? '\nGoogle Meet: ' + b.meet : ''}`)}`,
+    b.meet ? `URL:${b.meet}` : '', b.format === 'Офлайн встреча' ? 'LOCATION:Студия ST96' : '',
+    'BEGIN:VALARM', 'TRIGGER:-PT1H', 'ACTION:DISPLAY', 'DESCRIPTION:Через час встреча со студией ST96', 'END:VALARM',
+    'END:VEVENT', 'END:VCALENDAR'].filter(Boolean);
+  const url = URL.createObjectURL(new Blob([lines.join('\r\n')], { type:'text/calendar' }));
+  const a = document.createElement('a'); a.href = url; a.download = `st96-${b.date}-${b.time.replace(':', '')}.ics`; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+/* ───────── schedule: components ───────── */
+function Rail({ page, go }) {
+  const items = [['agent', P.ai, 'Задания агента', 'Агент'], ['funnel', P.flow, 'Воронки'], ['users', P.users, 'Клиенты'], ['send', P.send, 'Рассылки'], ['schedule', P.cal, 'Расписание и заявки', 'Заявки'], ['tpl', P.tpl, 'Шаблоны'], ['gear', P.gear, 'Ещё']];
+  return (
+    <div className="rail">
+      <div className="logo">ST</div>
+      {items.map(([k, d, tip, short]) =>
+        <button key={k} className={page === k ? 'on' : ''} title={tip} aria-label={tip} onClick={() => (k === 'funnel' || k === 'schedule' || k === 'agent' || k === 'tpl') && go(k)}><Ic d={d} size={19} /><span className="rl">{short || tip}</span></button>)}
+    </div>
+  );
+}
+
+function MonthGrid({ cursor, setCursor, cell, onPick, selected }) {
+  const first = new Date(cursor.getFullYear(), cursor.getMonth(), 1);
+  const start = addDays(first, -dowOf(first));
+  const weeks = Math.ceil((dowOf(first) + new Date(cursor.getFullYear(), cursor.getMonth() + 1, 0).getDate()) / 7);
+  const cells = Array.from({ length:weeks * 7 }, (_, i) => addDays(start, i));
+  return (
+    <div>
+      <div className="mhead">
+        <button className="btn icon" onClick={() => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() - 1, 1))} aria-label="Предыдущий месяц">‹</button>
+        <b>{MONTHS[cursor.getMonth()]} {cursor.getFullYear()}</b>
+        <button className="btn icon" onClick={() => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1))} aria-label="Следующий месяц">›</button>
+      </div>
+      <div className="g7">{DOW.map(x => <div className="dn" key={x}>{x}</div>)}</div>
+      <div className="g7">
+        {cells.map(d => {
+          const c = cell(d), out = d.getMonth() !== cursor.getMonth();
+          return (
+            <button key={ds(d)} disabled={c.disabled} onClick={() => onPick(d)}
+              className={`cell ${c.cls || ''} ${out ? 'out' : ''} ${selected === ds(d) ? 'sel' : ''}`} title={c.title || ''}>
+              <span>{d.getDate()}</span>
+              {c.badge != null && <i className="bdg">{c.badge}</i>}
+              {c.dot && <i className="dot" />}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+const TimeRange = ({ w, onChange, onDel }) => (
+  <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+    <input type="time" className="tin" value={w.from} onChange={e => onChange({ ...w, from:e.target.value })} />
+    <span>—</span>
+    <input type="time" className="tin" value={w.to} onChange={e => onChange({ ...w, to:e.target.value })} />
+    {onDel && <button className="x" onClick={onDel} aria-label="Удалить окно">✕</button>}
+  </div>
+);
+const Sw = ({ on, onChange, label }) => (
+  <div className={`switch ${on ? 'on' : ''}`} role="switch" aria-checked={on} tabIndex={0} onClick={() => onChange(!on)}
+    onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), onChange(!on))}>
+    <span className="trk" />{label && <span>{label}</span>}
+  </div>
+);
+
+function SettingsTab({ S, setS, bookings, flash }) {
+  const [cursor, setCursor] = useState(() => { const n = new Date(); return new Date(n.getFullYear(), n.getMonth(), 1); });
+  const [sel, setSel] = useState(ds(new Date()));
+  const [svc, setSvc] = useState('Ретушь');
+  const [rf, setRf] = useState(''), [rt, setRt] = useState(''), [rr, setRr] = useState('Отпуск');
+  const [blk, setBlk] = useState({ from:'14:00', to:'16:00' });
+  const R = S.rules;
+  const upW = (i, p) => setS({ ...S, week:{ ...S.week, [i]:{ ...S.week[i], ...p } } });
+  const upR = p => setS({ ...S, rules:{ ...R, ...p } });
+  const setOv = (key, p) => {
+    const ov = { ...(S.overrides[key] || {}), ...p };
+    ['closed', 'open'].forEach(k => { if (!ov[k]) delete ov[k]; });
+    if (!ov.windows || !ov.windows.length) delete ov.windows;
+    if (!ov.blocks || !ov.blocks.length) delete ov.blocks;
+    const o = { ...S.overrides };
+    if (Object.keys(ov).length) o[key] = ov; else delete o[key];
+    setS({ ...S, overrides:o });
+  };
+  const date = parseD(sel), key = sel, ov = S.overrides[key] || {};
+  const info = dayInfo(date, S, bookings, svc, null);
+  const defOpen = S.week[dowOf(date)].on;
+  const isOpen = !info.closed;
+  const toggleDay = v => setOv(key, v === defOpen ? { closed:false, open:false } : (v ? { closed:false, open:true } : { closed:true, open:false }));
+  const closeRange = () => {
+    if (!rf || !rt || rt < rf) return flash('Укажите даты: «с» не позже «по»');
+    const o = { ...S.overrides }; let n = 0;
+    for (let d = parseD(rf); d <= parseD(rt); d = addDays(d, 1)) { o[ds(d)] = { ...(o[ds(d)] || {}), closed:true, reason:rr }; n++; }
+    setS({ ...S, overrides:o }); flash(`Закрыто дней: ${n}`);
+  };
+  const holidays = () => {
+    const y = new Date().getFullYear(), o = { ...S.overrides }; let n = 0;
+    [y, y + 1].forEach(yy => [[0, 1, 'Новый год'], [0, 7, 'Рождество'], [2, 8, '8 Марта'], [4, 1, 'Праздник труда'], [4, 9, 'День Победы'], [6, 3, 'День Независимости'], [10, 7, 'Октябрьская революция'], [11, 25, 'Католическое Рождество']]
+      .forEach(([m, d, r]) => { const x = new Date(yy, m, d); if (x >= sod(new Date())) { o[ds(x)] = { ...(o[ds(x)] || {}), closed:true, reason:r }; n++; } }));
+    setS({ ...S, overrides:o }); flash(`Закрыто праздничных дней: ${n}. Переносные даты проверьте вручную`);
+  };
+  const cell = d => {
+    const i = dayInfo(d, S, bookings, svc, null), o = S.overrides[ds(d)];
+    const nb = bookings.filter(b => b.date === ds(d) && b.status !== 'rejected').length;
+    return { cls: i.past || i.far ? 'dis' : i.closed ? 'closed' : 'open', dot:!!o, badge:nb || null, title:i.closed ? i.why : `Свободно слотов: ${i.free}` };
+  };
+
+  return (
+    <div className="two">
+      <div className="col">
+        <div className="card">
+          <h3>Рабочие часы по дням недели</h3>
+          {DOW.map((n, i) => (
+            <div className="wrow" key={i}>
+              <div style={{ width:44 }}><b>{n}</b></div>
+              <Sw on={S.week[i].on} onChange={v => upW(i, { on:v })} />
+              <div style={{ flex:1, display:'flex', flexDirection:'column', gap:6 }}>
+                {S.week[i].on
+                  ? <>{S.week[i].windows.map((w, k) => <TimeRange key={k} w={w} onChange={nw => upW(i, { windows:S.week[i].windows.map((x, j) => j === k ? nw : x) })}
+                      onDel={S.week[i].windows.length > 1 ? () => upW(i, { windows:S.week[i].windows.filter((_, j) => j !== k) }) : null} />)}
+                    <button className="lnk" onClick={() => upW(i, { windows:[...S.week[i].windows, { from:'14:00', to:'18:00' }] })}>+ добавить окно (перерыв между окнами)</button></>
+                  : <span className="hint">Выходной</span>}
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="card">
+          <h3>Правила слотов</h3>
+          <div className="fgrid">
+            <div className="fld"><label>Шаг сетки</label><select value={R.step} onChange={e => upR({ step:+e.target.value })}>{[15, 30, 60].map(x => <option key={x} value={x}>{x} мин</option>)}</select></div>
+            <div className="fld"><label>Буфер между встречами</label><select value={R.buffer} onChange={e => upR({ buffer:+e.target.value })}>{[0, 5, 10, 15, 30].map(x => <option key={x} value={x}>{x} мин</option>)}</select></div>
+            <div className="fld"><label>Записаться не раньше чем за, ч</label><input type="number" min="0" value={R.minNotice} onChange={e => upR({ minNotice:+e.target.value })} /></div>
+            <div className="fld"><label>Горизонт записи, дней</label><input type="number" min="1" max="365" value={R.horizon} onChange={e => upR({ horizon:+e.target.value })} /></div>
+            <div className="fld"><label>Максимум встреч в день</label><input type="number" min="1" value={R.maxPerDay} onChange={e => upR({ maxPerDay:+e.target.value })} /></div>
+          </div>
+          <div className="h2" style={{ marginTop:14 }}>Длительность по услугам</div>
+          <div className="fgrid" style={{ marginTop:8 }}>
+            {SERVICES.map(s => <div className="fld" key={s}><label>{s}</label>
+              <select value={R.durations[s]} onChange={e => upR({ durations:{ ...R.durations, [s]:+e.target.value } })}>{[15, 30, 45, 60, 90, 120].map(x => <option key={x} value={x}>{x} мин</option>)}</select></div>)}
+          </div>
+        </div>
+        <div className="card">
+          <h3>Форматы и синхронизация</h3>
+          <div className="fld"><label>Офлайн-встречи проходят только в дни</label>
+            <div className="chips">{DOW.map((n, i) => <button key={i} className={R.offlineDays.includes(i) ? 'on' : ''}
+              onClick={() => upR({ offlineDays:R.offlineDays.includes(i) ? R.offlineDays.filter(x => x !== i) : [...R.offlineDays, i] })}>{n}</button>)}</div>
+            <div className="hint" style={{ marginTop:6 }}>Звонок и видеозвонок доступны в любой рабочий день.</div></div>
+          <div style={{ marginTop:14 }}><Sw on={S.google} onChange={v => setS({ ...S, google:v })} label="Учитывать занятость из Google Calendar" /></div>
+          <div className="hint" style={{ marginTop:6 }}>В демо занято по средам 15:00–16:30 («Личное»). В рабочей версии события читаются из календаря st96adm@gmail.com.</div>
+        </div>
+      </div>
+
+      <div className="col">
+        <div className="card">
+          <h3>Календарь: открытые и закрытые дни</h3>
+          <div className="legend2"><span><i className="sw open" />открыт</span><span><i className="sw closed" />закрыт</span><span><i className="dot" />исключение</span><span><i className="bdg">2</i>заявки</span></div>
+          <MonthGrid cursor={cursor} setCursor={setCursor} selected={sel} cell={cell} onPick={d => { setSel(ds(d)); if (d.getMonth() !== cursor.getMonth()) setCursor(new Date(d.getFullYear(), d.getMonth(), 1)); }} />
+          <div className="rangebox">
+            <div className="h2">Закрыть период</div>
+            <div style={{ display:'flex', gap:8, flexWrap:'wrap', alignItems:'flex-end', marginTop:8 }}>
+              <div className="fld"><label>с</label><input type="date" className="tin" value={rf} onChange={e => setRf(e.target.value)} /></div>
+              <div className="fld"><label>по</label><input type="date" className="tin" value={rt} onChange={e => setRt(e.target.value)} /></div>
+              <div className="fld" style={{ flex:1, minWidth:120 }}><label>Причина</label><input type="text" value={rr} onChange={e => setRr(e.target.value)} /></div>
+              <button className="btn" onClick={closeRange}>Закрыть</button>
+            </div>
+            <div style={{ display:'flex', gap:8, marginTop:10, flexWrap:'wrap' }}>
+              <button className="btn" onClick={holidays}>Закрыть праздники РБ</button>
+              <button className="btn" onClick={() => { setS({ ...S, overrides:{} }); flash('Все исключения сброшены'); }}>Сбросить исключения</button>
+            </div>
+          </div>
+        </div>
+
+        <div className="card">
+          <h3>{longDate(date)}</h3>
+          {info.past && <div className="hint">Прошедший день — изменить нельзя.</div>}
+          {!info.past && <>
+            <Sw on={isOpen && !info.far} onChange={toggleDay} label={isOpen ? 'Принимаем записи в этот день' : 'День закрыт для записи'} />
+            {info.closed && <div className="hint" style={{ marginTop:6 }}>Причина: {info.why}</div>}
+            {ov.closed && <div className="fld" style={{ marginTop:10 }}><label>Причина для себя</label><input type="text" value={ov.reason || ''} onChange={e => setOv(key, { reason:e.target.value })} placeholder="Отпуск, съёмка…" /></div>}
+            {isOpen && <>
+              <div className="h2" style={{ marginTop:14 }}>Часы приёма в этот день</div>
+              {ov.windows
+                ? <div style={{ display:'flex', flexDirection:'column', gap:6, marginTop:6 }}>
+                    {ov.windows.map((w, k) => <TimeRange key={k} w={w} onChange={nw => setOv(key, { windows:ov.windows.map((x, j) => j === k ? nw : x) })} onDel={() => setOv(key, { windows:ov.windows.filter((_, j) => j !== k) })} />)}
+                    <div style={{ display:'flex', gap:8 }}><button className="lnk" onClick={() => setOv(key, { windows:[...ov.windows, { from:'14:00', to:'18:00' }] })}>+ окно</button>
+                      <button className="lnk" onClick={() => setOv(key, { windows:[] })}>вернуть по умолчанию</button></div></div>
+                : <div className="hint" style={{ marginTop:4 }}>{info.wins.map(w => `${w.from}–${w.to}`).join(', ')} <button className="lnk" onClick={() => setOv(key, { windows:info.wins.map(w => ({ ...w })) })}>изменить только на этот день</button></div>}
+              <div className="h2" style={{ marginTop:14 }}>Закрыть часть дня</div>
+              {(ov.blocks || []).map((b, k) => <div key={k} className="item" style={{ marginTop:6, flexDirection:'row', alignItems:'center', justifyContent:'space-between' }}>
+                <span>{b.from}–{b.to} {b.reason && <span className="hint">· {b.reason}</span>}</span><button className="x" onClick={() => setOv(key, { blocks:ov.blocks.filter((_, j) => j !== k) })}>✕</button></div>)}
+              <div style={{ display:'flex', gap:8, alignItems:'center', marginTop:8, flexWrap:'wrap' }}>
+                <TimeRange w={blk} onChange={setBlk} />
+                <button className="btn" onClick={() => blk.to > blk.from ? setOv(key, { blocks:[...(ov.blocks || []), { ...blk, reason:'Закрыто вручную' }] }) : flash('Время «до» должно быть позже «от»')}>Закрыть</button>
+              </div>
+              <div className="h2" style={{ marginTop:14, display:'flex', alignItems:'center', gap:10 }}>Слоты для услуги
+                <select className="tin" value={svc} onChange={e => setSvc(e.target.value)}>{SERVICES.map(s => <option key={s}>{s}</option>)}</select></div>
+              <div className="slots" style={{ marginTop:8 }}>
+                {info.slots.map(s => <span key={s.t} className={`slot ${s.free ? '' : 'off'}`} title={s.why}>{s.t}</span>)}
+                {!info.slots.length && <span className="hint">Нет слотов</span>}
+              </div>
+              <div className="hint" style={{ marginTop:6 }}>Серые слоты заняты или закрыты: нажмите или наведите, чтобы увидеть причину.</div>
+            </>}
+          </>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const STATUS = { pending:['На рассмотрении', 'var(--amber)', 'var(--amber-soft)'], confirmed:['Подтверждена', 'var(--green)', 'var(--green-soft)'], rejected:['Отклонена', 'var(--red)', 'var(--red-soft)'] };
+function RequestsTab({ S, bookings, setBookings, flash }) {
+  const [filter, setFilter] = useState('all');
+  const list = [...bookings].filter(b => filter === 'all' || b.status === filter).sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
+  const decide = (b, ok) => {
+    const meet = ok && b.format === 'Видеозвонок' && !b.meet ? 'https://meet.google.com/' + ['xxx', 'yyyy', 'zzz'].map(p => p.replace(/./g, () => 'abcdefghijkmnpqrstuvwxyz'[Math.floor(Math.random() * 24)])).join('-') : b.meet;
+    const msg = ok
+      ? { to:'client', t:'Администратор студии принял время и дату, просим не опаздывать.' + (meet ? ` Ссылка на видеозвонок: ${meet}` : ''), file:true }
+      : { to:'client', t:'К сожалению, это время недоступно. Администратор студии свяжется с вами и предложит другое.' };
+    setBookings(bookings.map(x => x.id === b.id ? { ...x, status:ok ? 'confirmed' : 'rejected', meet, log:[...x.log, msg, { to:'admin', t:ok ? 'Встреча подтверждена, событие сохранено в Google Calendar.' : 'Заявка отклонена.' }] } : x));
+    flash(ok ? 'Подтверждено: клиенту ушло сообщение и файл .ics' : 'Заявка отклонена, клиент уведомлён');
+  };
+  return (
+    <div style={{ maxWidth:860, margin:'0 auto', display:'flex', flexDirection:'column', gap:12 }}>
+      <div className="seg scroll" style={{ alignSelf:'flex-start' }}>
+        {[['all', 'Все'], ['pending', 'На рассмотрении'], ['confirmed', 'Подтверждённые'], ['rejected', 'Отклонённые']].map(([k, l]) =>
+          <button key={k} className={filter === k ? 'on' : ''} onClick={() => setFilter(k)}>{l}{k === 'pending' ? ` (${bookings.filter(b => b.status === 'pending').length})` : ''}</button>)}
+      </div>
+      {list.length === 0 && <div className="card"><span className="hint">Заявок нет. Создайте тестовую во вкладке «Виджет клиента».</span></div>}
+      {list.map(b => {
+        const st = STATUS[b.status];
+        return (
+          <div className="card" key={b.id}>
+            <div style={{ display:'flex', gap:10, alignItems:'center', flexWrap:'wrap' }}>
+              <b style={{ fontSize:15 }}>{longDate(parseD(b.date))}, {b.time}</b>
+              <span className="chip" style={{ background:st[2], color:st[1] }}>{st[0]}</span>
+              <span className="sp" style={{ flex:1 }} />
+              {b.status === 'pending' && <><button className="btn act" onClick={() => decide(b, false)}>Отклонить</button><button className="btn primary act" onClick={() => decide(b, true)}>Подтвердить</button></>}
+              {b.status === 'confirmed' && <button className="btn act" onClick={() => downloadIcs(b, S)}>Скачать .ics</button>}
+            </div>
+            <div className="kv">
+              <span>Услуга</span><b>{b.service} · {S.rules.durations[b.service] || 30} мин</b>
+              <span>Формат</span><b>{b.format}{b.meet && b.status === 'confirmed' ? <> · <a className="lnk" href={b.meet} onClick={e => e.preventDefault()}>{b.meet}</a></> : ''}</b>
+              <span>Клиент</span><b>{b.name}, {b.company}</b>
+              <span>Контакты</span><b>{b.telegram} · {b.phone}</b>
+              <span>Цель</span><b>{b.goal}</b>
+              {b.comment && <><span>Комментарий</span><b>{b.comment}</b></>}
+            </div>
+            <details style={{ marginTop:10 }}><summary className="hint" style={{ cursor:'pointer' }}>Уведомления в Telegram ({b.log.length})</summary>
+              <div style={{ display:'flex', flexDirection:'column', gap:6, marginTop:8 }}>
+                {b.log.map((m, i) => <div key={i} className="hint" style={{ background:'var(--bg)', borderRadius:10, padding:'7px 10px' }}>
+                  <b style={{ color:'var(--ink)' }}>{m.to === 'client' ? 'Клиенту' : 'Администратору'}:</b> {m.t}{m.file && ' 📎 встреча.ics'}</div>)}
+              </div></details>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function WidgetTab({ S, bookings, setBookings, flash, goReq }) {
+  const [svc, setSvc] = useState(''), [fmt, setFmt] = useState(''), [day, setDay] = useState(''), [time, setTime] = useState('');
+  const [f, setF] = useState({ company:'', name:'', telegram:'', phone:'', goal:'', comment:'' });
+  const [done, setDone] = useState(null);
+  const [cursor, setCursor] = useState(() => { const n = new Date(); return new Date(n.getFullYear(), n.getMonth(), 1); });
+  const info = day && svc ? dayInfo(parseD(day), S, bookings, svc, fmt || null) : null;
+  const cell = d => {
+    if (!svc) return { disabled:true, cls:'dis' };
+    const i = dayInfo(d, S, bookings, svc, fmt || null), ok = !i.closed && i.free > 0;
+    return { disabled:!ok, cls:ok ? 'open' : 'dis', title:ok ? '' : i.why || 'Нет свободного времени' };
+  };
+  const req = { company:'Название компании', name:'Имя', telegram:'Telegram', phone:'Телефон', goal:'Цель встречи' };
+  const miss = Object.keys(req).filter(k => !f[k].trim());
+  const ready = svc && fmt && day && time && !miss.length;
+  const send = () => {
+    const b = { id:uid('b'), date:day, time, service:svc, format:fmt, ...f, status:'pending', meet:'',
+      log:[{ to:'client', t:'Заявка принята и находится на рассмотрении у администратора студии.' }, { to:'admin', t:`Новая заявка: ${f.name}, ${f.company} — ${svc}, ${day} ${time}. Подтвердить?` }] };
+    setBookings([...bookings, b]); setDone(b);
+  };
+  if (done) return (
+    <div className="wcard" style={{ textAlign:'center' }}>
+      <div style={{ fontSize:40 }}>⏳</div>
+      <h3 style={{ margin:'8px 0' }}>Заявка отправлена</h3>
+      <p className="hint" style={{ fontSize:14 }}>Ваша заявка находится на рассмотрении у администратора студии. Мы напишем в Telegram, когда время будет подтверждено.</p>
+      <div className="kv" style={{ textAlign:'left', margin:'14px 0' }}><span>Когда</span><b>{longDate(parseD(done.date))}, {done.time}</b><span>Услуга</span><b>{done.service}</b><span>Формат</span><b>{done.format}</b></div>
+      <div style={{ display:'flex', gap:8, justifyContent:'center' }}>
+        <button className="btn" onClick={() => { setDone(null); setDay(''); setTime(''); setF({ company:'', name:'', telegram:'', phone:'', goal:'', comment:'' }); }}>Новая запись</button>
+        <button className="btn primary" onClick={goReq}>Открыть в заявках</button></div>
+    </div>
+  );
+  const inp = k => ({ value:f[k], onChange:e => setF({ ...f, [k]:e.target.value }) });
+  return (
+    <div className="wcard">
+      <h3 style={{ margin:'0 0 4px' }}>Запись на встречу</h3>
+      <div className="hint" style={{ marginBottom:12 }}>Так форма выглядит для клиента на сайте и в Telegram-боте. Свободное время считается по настройкам расписания.</div>
+      <div className="fld"><label>Услуга *</label><select value={svc} onChange={e => { setSvc(e.target.value); setTime(''); }}><option value="">Выберите услугу</option>{SERVICES.map(s => <option key={s}>{s}</option>)}</select></div>
+      <div className="fld" style={{ marginTop:10 }}><label>Формат встречи *</label>
+        <div className="chips">{FORMATS.map(x => <button key={x} className={fmt === x ? 'on' : ''} onClick={() => { setFmt(x); setDay(''); setTime(''); }}>{x}</button>)}</div>
+        {fmt === 'Офлайн встреча' && <div className="hint" style={{ marginTop:6 }}>Офлайн: {S.rules.offlineDays.map(i => DOW[i]).join(', ') || 'нет дней'}</div>}
+        {fmt === 'Видеозвонок' && <div className="hint" style={{ marginTop:6 }}>Ссылку на Google Meet пришлём после подтверждения.</div>}</div>
+      <div className="fld" style={{ marginTop:10 }}><label>Дата *</label>
+        {!svc ? <div className="hint">Сначала выберите услугу</div> : <MonthGrid cursor={cursor} setCursor={setCursor} selected={day} cell={cell} onPick={d => { setDay(ds(d)); setTime(''); }} />}</div>
+      {info && !info.closed && <div className="fld" style={{ marginTop:10 }}><label>Время *</label>
+        <div className="slots">{info.slots.map(s => <button key={s.t} disabled={!s.free} className={`slot ${s.free ? '' : 'off'} ${time === s.t ? 'pick' : ''}`} onClick={() => setTime(s.t)} title={s.free ? '' : s.why}>{s.t}</button>)}</div></div>}
+      <div className="fgrid" style={{ marginTop:12 }}>
+        {Object.entries(req).map(([k, l]) => <div className="fld" key={k} style={k === 'goal' ? { gridColumn:'1/-1' } : null}><label>{l} *</label><input type={k === 'phone' ? 'tel' : 'text'} inputMode={k === 'phone' ? 'tel' : undefined} autoComplete={{ name:'name', phone:'tel', company:'organization' }[k] || 'off'} autoCapitalize={k === 'telegram' ? 'none' : undefined} {...inp(k)} placeholder={k === 'telegram' ? '@username' : k === 'phone' ? '+375 29 000-00-00' : ''} /></div>)}
+        <div className="fld" style={{ gridColumn:'1/-1' }}><label>Комментарий</label><textarea {...inp('comment')} style={{ minHeight:60 }} /></div>
+      </div>
+      {!ready && <div className="hint" style={{ marginTop:8 }}>Обязательно заполнить: {[!svc && 'услугу', !fmt && 'формат', !day && 'дату', !time && 'время', ...miss.map(k => req[k].toLowerCase())].filter(Boolean).join(', ')}</div>}
+      <div className="stickbar"><button className="btn primary stick" style={{ width:'100%', justifyContent:'center', padding:'11px' }} disabled={!ready} onClick={send}>Отправить заявку</button></div>
+    </div>
+  );
+}
+
+function SchedulePage({ go }) {
+  const [S, setSraw] = useState(loadS);
+  const [bookings, setBraw] = useState(loadB);
+  const [tab, setTab] = useState('settings');
+  const [toast, setToast] = useState('');
+  const setS = v => { setSraw(v); try { localStorage.setItem(SKEY, JSON.stringify(v)); } catch (e) {} };
+  const setBookings = v => { setBraw(v); try { localStorage.setItem(BKEY, JSON.stringify(v)); } catch (e) {} };
+  const flash = m => { setToast(m); clearTimeout(flash.t); flash.t = setTimeout(() => setToast(''), 2800); };
+  const pend = bookings.filter(b => b.status === 'pending').length;
+  const reset = () => { if (!confirm('Сбросить расписание и заявки к демо-данным?')) return; setS(defaultSchedule()); setBookings(seedBookings()); };
+  return (
+    <div className="app">
+      <Rail page="schedule" go={go} />
+      <div className="main">
+        <div className="top">
+          <b style={{ fontSize:16, flex:'1 1 auto' }}>Расписание и заявки</b>
+          <div className="seg" style={{ marginLeft:12 }}>
+            {[['settings', 'Расписание'], ['requests', `Заявки${pend ? ` · ${pend}` : ''}`], ['widget', 'Виджет клиента']].map(([k, l]) => <button key={k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{l}</button>)}
+          </div>
+          <span className="sp" />
+          <span className="pill hide-s">Часовой пояс: Europe/Minsk</span>
+          <button className="btn" onClick={reset}>Сбросить<span className="hide-s"> демо</span></button>
+        </div>
+        <div className="pagebody">
+          {tab === 'settings' && <SettingsTab S={S} setS={setS} bookings={bookings} flash={flash} />}
+          {tab === 'requests' && <RequestsTab S={S} bookings={bookings} setBookings={setBookings} flash={flash} />}
+          {tab === 'widget' && <WidgetTab S={S} bookings={bookings} setBookings={setBookings} flash={flash} goReq={() => setTab('requests')} />}
+        </div>
+        {toast && <div className="toast">{toast}</div>}
+      </div>
+    </div>
+  );
+}
+
+/* ───────── agent tasks: план → согласование → выполнение → отчёт ───────── */
+const AKEY = 'st96-agent-v1';
+const RISK = { read:['Чтение', 'var(--teal)', 'var(--teal-soft)'], write:['Подготовка', 'var(--blue)', 'var(--blue-soft)'], send:['Отправка', 'var(--amber)', 'var(--amber-soft)'], danger:['Только с вашим подтверждением', 'var(--red)', 'var(--red-soft)'] };
+const ASTATUS = { planning:['Составляет план', 'var(--violet)', 'var(--violet-soft)'], approval:['Ждёт согласования', 'var(--amber)', 'var(--amber-soft)'], running:['Выполняется', 'var(--blue)', 'var(--blue-soft)'], paused:['Ждёт подтверждения шага', 'var(--red)', 'var(--red-soft)'], done:['Готово', 'var(--green)', 'var(--green-soft)'], rejected:['Отклонено', 'var(--mute)', 'var(--bg)'] };
+const iso = () => new Date().toISOString();
+const fdt = s => new Date(s).toLocaleString('ru-RU', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
+const ftm = s => new Date(s).toLocaleTimeString('ru-RU', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+const mkStep = (text, risk) => ({ id:uid('s'), text, risk, on:true, state:'todo' });
+
+/* В рабочей версии план составляет Claude (Opus) по тексту, вложениям и базе знаний; здесь — подбор по ключевым словам */
+function makePlan(text, attach) {
+  const t = text.toLowerCase(), S = mkStep;
+  const steps = [S('Прочитать задание' + (attach.length ? ` и вложения (${attach.length})` : ''), 'read')];
+  if (/групп|заявк/.test(t)) steps.push(S('Забрать новые заявки из Telegram-группы', 'read'), S('Разнести заявки по услугам и формам, обновить сегменты', 'write'));
+  else if (/сегмент|аудитор|клиент/.test(t)) steps.push(S('Собрать сегмент клиентов по условиям из задания', 'read'));
+  if (/шаблон|текст|ответ|пост|сообщен/.test(t)) steps.push(S('Подготовить варианты текста по базе знаний студии', 'write'));
+  if (/статист|аналит|отч[её]т/.test(t)) steps.push(S('Выгрузить статистику по воронкам и заявкам за период', 'read'));
+  if (/рассыл|разослать|отправ/.test(t)) steps.push(S('Отправить тестовое сообщение администратору', 'send'), S('Запустить рассылку по сегменту', 'danger'));
+  if (/удал|очист/.test(t)) steps.push(S('Удалить выбранные записи', 'danger'));
+  if (steps.length === 1) steps.push(S('Подготовить черновик результата', 'write'), S('Проверить результат на ошибки и соответствие тону студии', 'read'));
+  steps.push(S('Сформировать отчёт о выполнении', 'write'));
+  return steps;
+}
+function buildReport(t) {
+  const done = t.plan.filter(s => s.state === 'done'), skipped = t.plan.filter(s => s.state === 'skipped' || !s.on);
+  const n = 40 + (t.title.length * 7) % 120;
+  return { at:iso(), summary:`Выполнено шагов: ${done.length} из ${t.plan.length}${skipped.length ? `, пропущено: ${skipped.length}` : ''}. Обработано записей: ${n}.`,
+    results:done.map(s => s.text), tokens:9000 + done.length * 2300, cost:(0.18 + done.length * 0.07).toFixed(2) };
+}
+function seedAgent() {
+  const ago = m => new Date(Date.now() - m * 60000).toISOString();
+  const t1 = { id:'t1', title:'Разобрать заявки из группы за неделю', text:'Забери новые заявки из Telegram-группы, **разнеси по услугам** и обнови сегменты.\n- ретушь\n- нейрофотосессия', attach:[], status:'done', rev:1, created:ago(300),
+    plan:[mkStep('Прочитать задание', 'read'), mkStep('Забрать новые заявки из Telegram-группы', 'read'), mkStep('Разнести заявки по услугам и формам, обновить сегменты', 'write'), mkStep('Сформировать отчёт о выполнении', 'write')].map(s => ({ ...s, state:'done' })),
+    log:[{ at:ago(300), text:'Задание создано' }, { at:ago(299), text:'Агент составил план, ждёт согласования' }, { at:ago(290), text:'План утверждён' }, { at:ago(286), text:'Все шаги выполнены, отчёт готов' }] };
+  t1.report = buildReport(t1);
+  const t2 = { id:'t2', title:'Рассылка о ноябрьской скидке на ретушь', text:'Подготовить **текст рассылки** клиентам, которые интересовались ретушью: скидка 15% до конца ноября. Тон дружелюбный, без капса.', attach:[{ id:'f1', kind:'image', name:'banner-nov.jpg' }],
+    status:'approval', rev:1, created:ago(12), plan:makePlan('Подготовить текст рассылки клиентам о скидке', [{}]), log:[{ at:ago(12), text:'Задание создано' }, { at:ago(11), text:'Агент составил план, ждёт согласования' }] };
+  return [t2, t1];
+}
+function loadA() {
+  try {
+    const s = JSON.parse(localStorage.getItem(AKEY));
+    if (Array.isArray(s)) return s.map(t => t.status === 'planning' || t.status === 'running' || t.status === 'paused'
+      ? { ...t, status:'approval', plan:t.plan.length ? t.plan : makePlan(t.text, t.attach) } : t);
+  } catch (e) {}
+  return seedAgent();
+}
+
+const Rich = ({ text }) => (
+  <div style={{ lineHeight:1.5, wordBreak:'break-word' }}>
+    {text.split('\n').map((ln, i) => {
+      const bul = /^- /.test(ln), body = bul ? ln.slice(2) : ln;
+      const parts = body.split(/\*\*(.+?)\*\*/).map((x, j) => j % 2 ? <b key={j}>{x}</b> : x);
+      return bul ? <div key={i} style={{ paddingLeft:16, position:'relative' }}><span style={{ position:'absolute', left:4 }}>•</span>{parts}</div> : <div key={i} style={{ minHeight:ln ? 0 : 8 }}>{parts}</div>;
+    })}
+  </div>
+);
+const KIND_IC = { image:P.img, video:P.vid, audio:P.aud, file:P.file };
+
+function Composer({ onCreate, onClose }) {
+  const [title, setTitle] = useState(''), [text, setText] = useState(''), [files, setFiles] = useState([]);
+  const ta = useRef(null);
+  const wrapSel = (a, b = a) => { const el = ta.current, s = el.selectionStart, e = el.selectionEnd; setText(text.slice(0, s) + a + text.slice(s, e) + b + text.slice(e)); setTimeout(() => { el.focus(); el.setSelectionRange(s + a.length, e + a.length); }, 0); };
+  const bullet = () => { const el = ta.current, s = text.lastIndexOf('\n', el.selectionStart - 1) + 1; setText(text.slice(0, s) + '- ' + text.slice(s)); setTimeout(() => el.focus(), 0); };
+  const addFiles = e => {
+    const arr = [...e.target.files].map(f => ({ id:uid('f'), name:f.name, url:URL.createObjectURL(f), kind:f.type.startsWith('image') ? 'image' : f.type.startsWith('video') ? 'video' : f.type.startsWith('audio') ? 'audio' : 'file' }));
+    setFiles([...files, ...arr]); e.target.value = '';
+  };
+  const QUICK = [['Разобрать заявки из группы', 'Забери новые заявки из Telegram-группы за неделю, разнеси по услугам и обнови сегменты.'], ['Рассылка по сегменту', 'Подготовь текст рассылки клиентам из сегмента «Ретушь» о скидке 15% и запусти её после моего подтверждения.'], ['Отчёт за неделю', 'Собери статистику по воронкам и заявкам за неделю и подготовь короткий отчёт.']];
+  return (
+    <div className="ov" onClick={onClose}>
+      <div className="modal" onClick={e => e.stopPropagation()}>
+        <div className="mh"><b style={{ fontSize:16 }}>Новое задание агенту</b><span className="sp" /><button className="x" onClick={onClose} aria-label="Закрыть">✕</button></div>
+        <div className="mb">
+          <div className="hint">Опишите задачу. Агент сначала составит план и ничего не сделает, пока вы его не утвердите.</div>
+          <div className="chips">{QUICK.map(([l, t]) => <button key={l} onClick={() => { setTitle(l); setText(t); }}>{l}</button>)}</div>
+          <div className="fld"><label>Название</label><input type="text" value={title} onChange={e => setTitle(e.target.value)} placeholder="Коротко, например «Рассылка о скидке»" /></div>
+          <div className="fld"><label>Описание задачи</label>
+            <div className="tb">
+              <button onClick={() => wrapSel('**')} aria-label="Жирный"><b>Ж</b></button>
+              <button onClick={() => wrapSel('_')} aria-label="Курсив"><i>К</i></button>
+              <button onClick={bullet} aria-label="Список">•<span className="hide-s"> Список</span></button>
+              <label className="tbb"><Ic d={P.img} size={15} /><span className="hide-s"> Фото</span><input type="file" accept="image/*" multiple hidden onChange={addFiles} /></label>
+              <label className="tbb"><Ic d={P.vid} size={15} /><span className="hide-s"> Видео</span><input type="file" accept="video/*" multiple hidden onChange={addFiles} /></label>
+              <label className="tbb"><Ic d={P.aud} size={15} /><span className="hide-s"> Аудио</span><input type="file" accept="audio/*" multiple hidden onChange={addFiles} /></label>
+              <label className="tbb"><Ic d={P.file} size={15} /><input type="file" multiple hidden onChange={addFiles} /></label>
+            </div>
+            <textarea ref={ta} value={text} onChange={e => setText(e.target.value)} style={{ minHeight:150, borderTopLeftRadius:0, borderTopRightRadius:0 }} placeholder="Что нужно сделать, для кого, какой результат ожидаете…" />
+          </div>
+          {files.length > 0 && <div className="thumbs">{files.map(f => (
+            <div className="thumb" key={f.id}>
+              {f.kind === 'image' ? <img src={f.url} alt="" /> : <span className="ti"><Ic d={KIND_IC[f.kind]} size={22} /></span>}
+              <span className="tn">{f.name}</span>
+              <button className="x" onClick={() => setFiles(files.filter(x => x.id !== f.id))} aria-label="Убрать">✕</button>
+            </div>))}</div>}
+        </div>
+        <div className="mf">
+          <button className="btn" onClick={onClose}>Отмена</button>
+          <button className="btn primary" disabled={!text.trim()} onClick={() => onCreate({ title:title.trim() || text.trim().slice(0, 50), text:text.trim(), attach:files.map(({ id, kind, name }) => ({ id, kind, name })) })}>Составить план</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AgentPage({ go }) {
+  const [tasks, setT] = useState(loadA), [openId, setOpen] = useState(null), [compose, setCompose] = useState(false);
+  const [filter, setFilter] = useState('all'), [toast, setToast] = useState(''), [note, setNote] = useState('');
+  const setTasks = fn => setT(prev => { const n = typeof fn === 'function' ? fn(prev) : fn; try { localStorage.setItem(AKEY, JSON.stringify(n)); } catch (e) {} return n; });
+  const patch = (id, p) => setTasks(ts => ts.map(t => t.id === id ? { ...t, ...(typeof p === 'function' ? p(t) : p) } : t));
+  const flash = m => { setToast(m); clearTimeout(flash.t); flash.t = setTimeout(() => setToast(''), 2600); };
+  const L = text => ({ at:iso(), text });
+  const t = tasks.find(x => x.id === openId) || null;
+
+  const planLater = (id, make, logText) => setTimeout(() => patch(id, x => ({ status:'approval', plan:make(x), log:[...x.log, L(logText)] })), 1300);
+  const create = ({ title, text, attach }) => {
+    const x = { id:uid('t'), title, text, attach, status:'planning', plan:[], log:[L('Задание создано')], rev:1, created:iso() };
+    setTasks(ts => [x, ...ts]); setCompose(false); setOpen(x.id); setNote('');
+    planLater(x.id, () => makePlan(text, attach), 'Агент составил план, ждёт согласования');
+  };
+  const upStep = (sid, p) => patch(t.id, x => ({ plan:x.plan.map(s => s.id === sid ? { ...s, ...p } : s) }));
+  const addStep = () => patch(t.id, x => ({ plan:[...x.plan.slice(0, -1), mkStep('Новый шаг', 'write'), x.plan[x.plan.length - 1]] }));
+  const delStep = sid => patch(t.id, x => ({ plan:x.plan.filter(s => s.id !== sid) }));
+  const approve = () => {
+    if (!t.plan.some(s => s.on && s.state === 'todo')) return flash('Включите хотя бы один шаг');
+    patch(t.id, x => ({ status:'running', plan:x.plan.map(s => !s.on && s.state === 'todo' ? { ...s, state:'skipped' } : s), log:[...x.log, L(x.rev > 1 || x.log.some(l => l.text === 'План утверждён') ? 'Продолжаем по утверждённому плану' : 'План утверждён, агент приступает')] }));
+  };
+  const revise = () => {
+    if (!note.trim()) return flash('Напишите, что поправить в плане');
+    const n = note.trim(); setNote('');
+    patch(t.id, x => ({ status:'planning', rev:x.rev + 1, log:[...x.log, L(`Замечание к плану: «${n}»`)] }));
+    planLater(t.id, x => [...x.plan.slice(0, -1), mkStep(`Учесть замечание: «${n}»`, 'write'), x.plan[x.plan.length - 1]], 'Агент обновил план, ждёт согласования');
+  };
+  const reject = () => { patch(t.id, x => ({ status:'rejected', log:[...x.log, L('Задание отклонено, ничего не выполнялось')] })); };
+  const stop = () => patch(t.id, x => ({ status:'approval', log:[...x.log, L('Остановлено вами. Выполненные шаги сохранены')] }));
+  const danger = ok => patch(t.id, x => {
+    const s = x.plan.find(p => p.on && p.state === 'todo' && p.risk === 'danger' && !p.ok);
+    return { status:'running', plan:x.plan.map(p => p.id === s.id ? (ok ? { ...p, ok:true } : { ...p, state:'skipped' }) : p), log:[...x.log, L(ok ? `Вы подтвердили: «${s.text}»` : `Вы отказались: «${s.text}» пропущен`)] };
+  });
+  const repeat = () => create({ title:t.title + ' (повтор)', text:t.text, attach:t.attach });
+  const dl = () => {
+    const r = t.report, md = `# ${t.title}\n\n${r.summary}\n\n## Что сделано\n${r.results.map(x => '- ' + x).join('\n')}\n\nТокенов: ${r.tokens}, ориентировочная стоимость: $${r.cost}\n`;
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([md], { type:'text/markdown' })); a.download = 'otchet-agenta.md'; a.click();
+  };
+
+  /* исполнитель: каждый шаг — два тика (старт → готово). В рабочей версии это очередь на сервере. */
+  const run = tasks.find(x => x.status === 'running');
+  const sig = run ? run.plan.map(s => s.state + (s.ok ? '!' : '')).join() : '';
+  useEffect(() => {
+    if (!run) return;
+    const h = setTimeout(() => patch(run.id, x => {
+      const cur = x.plan.find(s => s.state === 'run');
+      if (cur) return { plan:x.plan.map(s => s.id === cur.id ? { ...s, state:'done' } : s), log:[...x.log, L(`Готово: ${cur.text}`)] };
+      const nx = x.plan.find(s => s.state === 'todo');
+      if (!nx) { const done = { ...x, status:'done' }; return { status:'done', report:buildReport(done), log:[...x.log, L('Все шаги выполнены, отчёт готов')] }; }
+      if (nx.risk === 'danger' && !nx.ok) return { status:'paused', log:[...x.log, L(`Остановился перед шагом «${nx.text}» и ждёт вашего подтверждения`)] };
+      return { plan:x.plan.map(s => s.id === nx.id ? { ...s, state:'run' } : s) };
+    }), 1000);
+    return () => clearTimeout(h);
+  }, [run && run.id, sig]);
+
+  const counts = { all:tasks.length, approval:tasks.filter(x => x.status === 'approval' || x.status === 'paused').length, running:tasks.filter(x => x.status === 'running' || x.status === 'planning').length, done:tasks.filter(x => x.status === 'done').length };
+  const list = tasks.filter(x => filter === 'all' || (filter === 'approval' && (x.status === 'approval' || x.status === 'paused')) || (filter === 'running' && (x.status === 'running' || x.status === 'planning')) || (filter === 'done' && x.status === 'done'));
+  const doneN = t ? t.plan.filter(s => s.state === 'done' || s.state === 'skipped').length : 0, onN = t ? t.plan.filter(s => s.on || s.state !== 'todo').length : 0;
+  const pending = t && t.status === 'paused' ? t.plan.find(s => s.on && s.state === 'todo' && s.risk === 'danger' && !s.ok) : null;
+
+  return (
+    <div className="app">
+      <Rail page="agent" go={go} />
+      <div className="main">
+        <div className="top">
+          <b style={{ fontSize:16, flex:'1 1 auto' }}>Задания агента</b>
+          <span className="pill hide-s">Агент действует только по утверждённому плану</span>
+          <button className="btn primary" onClick={() => setCompose(true)}><Ic d={P.plus} size={15} /> Новое задание</button>
+        </div>
+        <div className={`agent ${t ? 'has-open' : ''}`}>
+          <div className="alist">
+            <div className="seg scroll">{[['all', 'Все'], ['approval', 'Согласовать'], ['running', 'В работе'], ['done', 'Готовые']].map(([k, l]) => <button key={k} className={filter === k ? 'on' : ''} onClick={() => setFilter(k)}>{l} {counts[k]}</button>)}</div>
+            {list.length === 0 && <div className="hint" style={{ padding:12 }}>Здесь пока пусто.</div>}
+            {list.map(x => { const st = ASTATUS[x.status]; return (
+              <button key={x.id} className={`atask ${openId === x.id ? 'on' : ''}`} onClick={() => { setOpen(x.id); setNote(''); }}>
+                <b style={{ fontSize:14, lineHeight:1.3 }}>{x.title}</b>
+                <span style={{ display:'flex', gap:8, alignItems:'center', flexWrap:'wrap' }}>
+                  <span className="chip" style={{ background:st[2], color:st[1] }}>{x.status === 'planning' && <i className="spin" />}{st[0]}</span>
+                  <span className="hint">{fdt(x.created)}{x.attach.length ? ` · вложений: ${x.attach.length}` : ''}</span>
+                </span>
+              </button>); })}
+          </div>
+
+          <div className="adetail">
+            {!t && <div className="card" style={{ textAlign:'center', margin:'auto' }}><div style={{ fontSize:34 }}>🧑‍💼</div><h3 style={{ margin:'8px 0' }}>Выберите задание</h3><div className="hint">или создайте новое: агент предложит план и дождётся вашего согласования.</div></div>}
+            {t && <>
+              <div style={{ display:'flex', alignItems:'flex-start', gap:10 }}>
+                <button className="btn icon back" onClick={() => setOpen(null)} aria-label="К списку">‹</button>
+                <div style={{ flex:1, minWidth:0 }}>
+                  <h2 style={{ margin:'0 0 6px', fontSize:18, lineHeight:1.25 }}>{t.title}</h2>
+                  <span className="chip" style={{ background:ASTATUS[t.status][2], color:ASTATUS[t.status][1] }}>{t.status === 'planning' && <i className="spin" />}{ASTATUS[t.status][0]}</span>
+                  <span className="hint"> · версия плана {t.rev}</span>
+                </div>
+              </div>
+
+              <div className="card">
+                <div className="h2" style={{ marginBottom:8 }}>Задание</div>
+                <Rich text={t.text} />
+                {t.attach.length > 0 && <div className="thumbs" style={{ marginTop:10 }}>{t.attach.map(f => <div className="thumb" key={f.id}><span className="ti"><Ic d={KIND_IC[f.kind]} size={22} /></span><span className="tn">{f.name}</span></div>)}</div>}
+              </div>
+
+              {t.status === 'planning' && <div className="card" style={{ display:'flex', gap:10, alignItems:'center' }}><i className="spin" /><span>Агент составляет план. Ничего не выполняется.</span></div>}
+
+              {t.plan.length > 0 && <div className="card">
+                <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:6 }}><h3 style={{ margin:0 }}>План действий</h3><span className="sp" style={{ flex:1 }} />
+                  {(t.status === 'running' || t.status === 'paused' || t.status === 'done') && <span className="hint">{doneN} из {onN}</span>}</div>
+                {t.status === 'approval' && <div className="hint" style={{ marginBottom:6 }}>Проверьте шаги: отредактируйте текст, выключите лишнее или напишите замечание. Пока вы не нажмёте «Утвердить», ничего не выполняется.</div>}
+                {(t.status === 'running' || t.status === 'paused') && <div className="pbar" style={{ margin:'4px 0 6px' }}><i style={{ width:`${onN ? Math.round(doneN / onN * 100) : 0}%` }} /></div>}
+                {t.plan.map((s, i) => { const r = RISK[s.risk], edit = t.status === 'approval', st = !s.on && s.state === 'todo' ? 'off' : s.state; return (
+                  <div key={s.id} className={`step ${st}`}>
+                    <span className="n">{s.state === 'done' ? '✓' : s.state === 'skipped' ? '–' : i + 1}</span>
+                    <div style={{ flex:1, minWidth:0, display:'flex', flexDirection:'column', gap:4 }}>
+                      {edit ? <textarea className="stx" rows={1} value={s.text} onChange={e => upStep(s.id, { text:e.target.value })} aria-label={`Шаг ${i + 1}`} ref={el => { if (el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; } }} /> : <div style={{ padding:'4px 0' }}>{s.text}</div>}
+                      <div style={{ display:'flex', gap:6, alignItems:'center', flexWrap:'wrap' }}>
+                        <span className="chip" style={{ background:r[2], color:r[1] }}>{r[0]}</span>{s.state === 'run' && <><i className="spin" /><span className="hint">выполняется</span></>}
+                        {edit && <button className="lnk" onClick={() => delStep(s.id)}>убрать шаг</button>}
+                      </div>
+                    </div>
+                    {edit && <Sw on={s.on} onChange={v => upStep(s.id, { on:v })} />}
+                  </div>); })}
+                {t.status === 'approval' && <button className="lnk" style={{ marginTop:8 }} onClick={addStep}>+ добавить шаг</button>}
+              </div>}
+
+              {pending && <div className="card" style={{ borderColor:'var(--red)', background:'var(--red-soft)' }}>
+                <b>Нужно ваше подтверждение</b>
+                <div style={{ margin:'6px 0 10px' }}>Агент дошёл до шага «{pending.text}». Это действие нельзя отменить после запуска, поэтому он ждёт вас.</div>
+                <div className="actbar"><button className="btn" onClick={() => danger(false)}>Пропустить шаг</button><button className="btn primary" onClick={() => danger(true)}>Подтвердить и выполнить</button></div>
+              </div>}
+
+              {t.status === 'approval' && <div className="card"><div className="fld"><label>Что поправить в плане (необязательно)</label><textarea value={note} onChange={e => setNote(e.target.value)} placeholder="Например: сначала покажи текст мне, без отправки" style={{ minHeight:64 }} /></div></div>}
+
+              {t.status === 'done' && t.report && <div className="card" style={{ borderColor:'var(--green)' }}>
+                <h3 style={{ color:'var(--green)' }}>Отчёт агента</h3>
+                <div style={{ marginBottom:8 }}>{t.report.summary}</div>
+                {t.report.results.map((x, i) => <div key={i} className="hint" style={{ padding:'3px 0' }}>✓ {x}</div>)}
+                <div className="hint" style={{ marginTop:8 }}>Токенов: {t.report.tokens.toLocaleString('ru-RU')} · ориентировочно ${t.report.cost} (демо-цифры)</div>
+                <div className="actbar" style={{ marginTop:12, justifyContent:'flex-start' }}>
+                  <button className="btn" onClick={dl}>Скачать отчёт</button>
+                  <button className="btn" onClick={() => flash('Сохранено в библиотеку шаблонов (демо)')}>В шаблоны</button>
+                  <button className="btn" onClick={repeat}>Повторить</button>
+                </div>
+              </div>}
+
+              <details className="card" open={t.status !== 'approval'}><summary style={{ cursor:'pointer', fontWeight:600 }}>Журнал действий ({t.log.length})</summary>
+                <div style={{ display:'flex', flexDirection:'column', gap:6, marginTop:10 }}>{[...t.log].reverse().map((l, i) => <div className="logl" key={i}><time>{ftm(l.at)}</time><span>{l.text}</span></div>)}</div></details>
+
+              {t.status === 'approval' && <div className="actbar sticky">
+                <button className="btn" onClick={reject}>Отклонить</button>
+                <button className="btn" onClick={revise}>Доработать план</button>
+                <button className="btn primary" onClick={approve}>Утвердить и запустить</button>
+              </div>}
+              {(t.status === 'running' || t.status === 'paused') && <div className="actbar sticky"><button className="btn" onClick={stop}>Остановить</button></div>}
+            </>}
+          </div>
+        </div>
+        {toast && <div className="toast">{toast}</div>}
+      </div>
+      {compose && <Composer onCreate={create} onClose={() => setCompose(false)} />}
+    </div>
+  );
+}
+
+/* ───────── библиотека шаблонов ───────── */
+const TKEY = 'st96-tpl-v1';
+const TTYPES = { text:['Текст', P.msg], photo:['Фото', P.img], video:['Видео', P.vid], audio:['Аудио', P.aud] };
+const TTASKS = ['Первое касание', 'Ответ на вопрос', 'Напоминание', 'Дожим', 'Рассылка', 'После встречи'];
+const TGOALS = ['Привлечь заявку', 'Записать на встречу', 'Прогреть', 'Вернуть клиента', 'Собрать отзыв', 'Информировать'];
+const TSERV = [...SERVICES, 'Общее'];
+const TVARS = [['{имя}', 'Анна'], ['{услуга}', 'Ретушь'], ['{дата}', '22 октября'], ['{время}', '11:00'], ['{формат}', 'видеозвонок']];
+const GRAD = ['linear-gradient(135deg,#7c4dff,#2f5bff)', 'linear-gradient(135deg,#0f9aa8,#19a463)', 'linear-gradient(135deg,#e8890c,#e5484d)', 'linear-gradient(135deg,#2f5bff,#0f9aa8)', 'linear-gradient(135deg,#e5484d,#7c4dff)'];
+const grad = id => GRAD[[...id].reduce((a, c) => a + c.charCodeAt(0), 0) % GRAD.length];
+const fillVars = txt => TVARS.reduce((t, [k, v]) => t.split(k).join(v), txt);
+
+function seedTpl() {
+  const T = (id, type, title, body, task, goal, services, media = '', used = 0, fav = false) => ({ id, type, title, body, task, goal, services, media, used, fav });
+  return [
+    T('a1', 'text', 'Приветствие в боте', 'Здравствуйте, {имя}! Это студия ST96. Помогу подобрать услугу и записать на встречу. Что вас интересует?', 'Первое касание', 'Привлечь заявку', ['Общее'], '', 41, true),
+    T('a2', 'text', 'Ответ: сколько стоит ретушь', 'Стоимость ретуши зависит от объёма: от {от} за кадр. Пришлите 1–2 фото, и я назову точную цену и сроки.'.replace('{от}', '10 BYN'), 'Ответ на вопрос', 'Прогреть', ['Ретушь'], '', 27),
+    T('a3', 'text', 'Напоминание за час', '{имя}, напоминаем: сегодня в {время} встреча со студией ST96 ({формат}). Не опаздывайте!', 'Напоминание', 'Информировать', ['Общее'], '', 63, true),
+    T('a4', 'text', 'Возврат спящего клиента', '{имя}, давно не виделись! Для вас до конца месяца скидка 15% на {услуга}. Напомнить, как записаться?', 'Дожим', 'Вернуть клиента', ['Ретушь', 'Цветокоррекция'], '', 9),
+    T('a5', 'photo', 'До/после: ретушь портрета', 'Вот что получается после ретуши — естественно, без «пластика». Хотите так же? Нажмите «Записаться».', 'Рассылка', 'Прогреть', ['Ретушь'], 'before-after.jpg', 18),
+    T('a6', 'video', 'Как проходит нейрофотосессия', 'За 40 секунд — весь процесс: от загрузки фото до готовых кадров. Лицо переносится без искажений.', 'Рассылка', 'Прогреть', ['Нейрофотосессия'], 'process.mp4', 12),
+    T('a7', 'audio', 'Голосовое: приглашение на съёмку', 'Короткое голосовое от администратора: приглашение на пробную съёмку и как выбрать время.', 'Первое касание', 'Записать на встречу', ['Съёмка'], 'invite.ogg', 5),
+    T('a8', 'text', 'Запрос отзыва', '{имя}, спасибо, что выбрали ST96! Оставьте, пожалуйста, пару слов о работе — это очень помогает. Ссылка: st96.by/review', 'После встречи', 'Собрать отзыв', ['Общее'], '', 22),
+    T('a9', 'text', 'Подтверждение записи', '{имя}, администратор принял время и дату: {дата}, {время}. Просим не опаздывать. Файл для календаря — во вложении.', 'Напоминание', 'Записать на встречу', ['Общее'], '', 88, true),
+    T('b1', 'photo', 'Портфолио: цветокоррекция', 'Один и тот же кадр до и после цветокоррекции. Разбираем, что именно изменили.', 'Рассылка', 'Привлечь заявку', ['Цветокоррекция'], 'color-grade.jpg', 7),
+    T('b2', 'text', 'Ответ на возражение «дорого»', 'Понимаю. Давайте начнём с малого: пробная {услуга} на одном кадре, чтобы вы увидели качество до оплаты всего объёма.', 'Дожим', 'Прогреть', ['Нейрофотосессия'], '', 14),
+    T('b3', 'video', 'Приветствие от основателя', 'Видео-кружок 30 секунд: кто мы и чем можем помочь вашему бренду.', 'Первое касание', 'Привлечь заявку', ['Общее'], 'hello.mp4', 3),
+  ];
+}
+function loadT() { try { const s = JSON.parse(localStorage.getItem(TKEY)); if (Array.isArray(s)) return s; } catch (e) {} return seedTpl(); }
+
+function FilterGroups({ f, setF, tpls }) {
+  const cnt = (k, v) => tpls.filter(t => k === 'service' ? t.services.includes(v) : t[k] === v).length;
+  const tog = (k, v) => setF({ ...f, [k]:f[k].includes(v) ? f[k].filter(x => x !== v) : [...f[k], v] });
+  const G = (k, title, opts) => (
+    <div key={k}>
+      <div className="h2" style={{ marginBottom:8 }}>{title}</div>
+      <div className="chips">{opts.map(o => <button key={o} className={f[k].includes(o) ? 'on' : ''} onClick={() => tog(k, o)}>{o} <small style={{ opacity:.6 }}>{cnt(k, o)}</small></button>)}</div>
+    </div>);
+  return <>{G('task', 'Задача', TTASKS)}{G('goal', 'Цель', TGOALS)}{G('service', 'Услуга', TSERV)}</>;
+}
+
+function TplEditor({ t, isNew, onSave, onClose, onDelete, onDup, flash }) {
+  const [d, setD] = useState(t), ta = useRef(null);
+  const up = p => setD({ ...d, ...p });
+  const ins = v => { const el = ta.current, s = el ? el.selectionStart : d.body.length; up({ body:d.body.slice(0, s) + v + d.body.slice(el ? el.selectionEnd : s) }); setTimeout(() => el && el.focus(), 0); };
+  const toggleS = s => up({ services:d.services.includes(s) ? d.services.filter(x => x !== s) : [...d.services, s] });
+  const ok = d.title.trim() && (d.type !== 'text' ? d.media || d.body.trim() : d.body.trim()) && d.services.length;
+  const missing = [!d.title.trim() && 'название', !d.body.trim() && d.type === 'text' && 'текст', d.type !== 'text' && !d.media && 'файл', !d.services.length && 'услугу'].filter(Boolean);
+  const use = where => { flash(`«${d.title}» вставлен: ${where} (демо)`); onSave({ ...d, used:d.used + 1 }, true); };
+  return (
+    <div className="ov" onClick={onClose}>
+      <div className="modal" onClick={e => e.stopPropagation()}>
+        <div className="mh"><b style={{ fontSize:16 }}>{isNew ? 'Новый шаблон' : 'Шаблон'}</b><span className="sp" />
+          <button className="x" onClick={() => up({ fav:!d.fav })} aria-label="В избранное" style={{ fontSize:20, color:d.fav ? 'var(--amber)' : 'var(--mute)' }}>{d.fav ? '★' : '☆'}</button>
+          <button className="x" onClick={onClose} aria-label="Закрыть">✕</button></div>
+        <div className="mb">
+          <div className="seg">{Object.entries(TTYPES).map(([k, [l]]) => <button key={k} className={d.type === k ? 'on' : ''} onClick={() => up({ type:k })}>{l}</button>)}</div>
+          <div className="fld"><label>Название</label><input type="text" value={d.title} onChange={e => up({ title:e.target.value })} placeholder="Например, «Напоминание за час»" /></div>
+          {d.type !== 'text' && <div className="fld"><label>{TTYPES[d.type][0]}</label>
+            <div className="tmedia" style={{ background:grad(d.id), marginBottom:8 }}><Ic d={TTYPES[d.type][1]} size={30} /><span className="tn2">{d.media || 'файл не выбран'}</span></div>
+            <label className="btn">Загрузить файл<input type="file" hidden accept={d.type === 'photo' ? 'image/*' : d.type === 'video' ? 'video/*' : 'audio/*'} onChange={e => e.target.files[0] && up({ media:e.target.files[0].name })} /></label></div>}
+          <div className="fld"><label>{d.type === 'text' ? 'Текст сообщения' : 'Подпись'}</label>
+            <div className="chips" style={{ marginBottom:6 }}>{TVARS.map(([k]) => <button key={k} onClick={() => ins(k)}>{k}</button>)}</div>
+            <textarea ref={ta} value={d.body} onChange={e => up({ body:e.target.value })} style={{ minHeight:110 }} /></div>
+          <div className="fld"><label>Предпросмотр в Telegram</label>
+            <div className="tgprev">{d.type !== 'text' && <div className="tmedia sm" style={{ background:grad(d.id) }}><Ic d={TTYPES[d.type][1]} size={26} /></div>}<div style={{ whiteSpace:'pre-wrap' }}>{fillVars(d.body) || '…'}</div></div></div>
+          <div className="fld"><label>Задача</label><select value={d.task} onChange={e => up({ task:e.target.value })}>{TTASKS.map(x => <option key={x}>{x}</option>)}</select></div>
+          <div className="fld"><label>Цель</label><select value={d.goal} onChange={e => up({ goal:e.target.value })}>{TGOALS.map(x => <option key={x}>{x}</option>)}</select></div>
+          <div className="fld"><label>Услуги</label><div className="chips">{TSERV.map(s => <button key={s} className={d.services.includes(s) ? 'on' : ''} onClick={() => toggleS(s)}>{s}</button>)}</div></div>
+          {!isNew && <div className="fld"><label>Использовать</label><div className="chips">
+            <button onClick={() => use('в сообщение воронки')}>В воронку</button><button onClick={() => use('в задание агента')}>В задание агента</button><button onClick={() => use('в рассылку')}>В рассылку</button>
+            <button onClick={() => { try { navigator.clipboard.writeText(d.body); } catch (e) {} flash('Текст скопирован'); }}>Копировать текст</button></div>
+            <div className="hint" style={{ marginTop:6 }}>Использован раз: {d.used}</div></div>}
+        </div>
+        <div className="mf">
+          {!isNew && <button className="btn" onClick={() => onDelete(d)} style={{ color:'var(--red)' }}>Удалить</button>}
+          {!isNew && <button className="btn" onClick={() => onDup(d)}>Дублировать</button>}
+          <span className="sp" style={{ flex:1 }} />
+          <button className="btn primary" disabled={!ok} title={ok ? '' : 'Заполните: ' + missing.join(', ')} onClick={() => onSave(d)}>Сохранить</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TemplatesPage({ go }) {
+  const [tpls, setT] = useState(loadT), [q, setQ] = useState(''), [types, setTypes] = useState([]), [favOnly, setFav] = useState(false);
+  const [f, setF] = useState({ task:[], goal:[], service:[] }), [edit, setEdit] = useState(null), [sheet, setSheet] = useState(false), [toast, setToast] = useState('');
+  const setTpls = fn => setT(prev => { const n = fn(prev); try { localStorage.setItem(TKEY, JSON.stringify(n)); } catch (e) {} return n; });
+  const flash = m => { setToast(m); clearTimeout(flash.t); flash.t = setTimeout(() => setToast(''), 2600); };
+  const list = tpls.filter(t => (!types.length || types.includes(t.type)) && (!favOnly || t.fav)
+    && (!f.task.length || f.task.includes(t.task)) && (!f.goal.length || f.goal.includes(t.goal)) && (!f.service.length || t.services.some(s => f.service.includes(s)))
+    && (!q.trim() || (t.title + ' ' + t.body).toLowerCase().includes(q.trim().toLowerCase())));
+  const nf = f.task.length + f.goal.length + f.service.length;
+  const reset = () => { setF({ task:[], goal:[], service:[] }); setTypes([]); setFav(false); setQ(''); };
+  const save = (d, keep) => { setTpls(ts => ts.some(x => x.id === d.id) ? ts.map(x => x.id === d.id ? d : x) : [d, ...ts]); if (!keep) { setEdit(null); flash('Шаблон сохранён'); } else setEdit(d); };
+  const del = d => { if (!confirm(`Удалить шаблон «${d.title}»?`)) return; setTpls(ts => ts.filter(x => x.id !== d.id)); setEdit(null); flash('Шаблон удалён'); };
+  const dup = d => { const c = { ...d, id:uid('t'), title:d.title + ' (копия)', used:0, fav:false }; setTpls(ts => [c, ...ts]); setEdit({ ...c, __new:false }); flash('Копия создана'); };
+  const blank = () => ({ id:uid('t'), type:'text', title:'', body:'', task:TTASKS[0], goal:TGOALS[0], services:[], media:'', used:0, fav:false });
+  const isNew = edit && !tpls.some(x => x.id === edit.id);
+  return (
+    <div className="app">
+      <Rail page="tpl" go={go} />
+      <div className="main">
+        <div className="top">
+          <b style={{ fontSize:16, flex:'1 1 auto' }}>Библиотека шаблонов</b>
+          <button className="btn primary" onClick={() => setEdit(blank())}><Ic d={P.plus} size={15} /> Новый шаблон</button>
+        </div>
+        <div className="tplw">
+          <aside className="tfil">
+            <FilterGroups f={f} setF={setF} tpls={tpls} />
+            {(nf > 0 || types.length > 0 || favOnly) && <button className="btn" onClick={reset}>Сбросить фильтры</button>}
+          </aside>
+          <div className="tmain">
+            <div className="tbar">
+              <input type="search" className="tsearch" placeholder="Поиск шаблонов" value={q} onChange={e => setQ(e.target.value)} />
+              <button className="btn fbtn" onClick={() => setSheet(true)}><Ic d={P.filter} size={15} /> Фильтры{nf ? ` · ${nf}` : ''}</button>
+            </div>
+            <div className="chips tscroll">
+              <button className={!types.length && !favOnly ? 'on' : ''} onClick={() => { setTypes([]); setFav(false); }}>Все</button>
+              {Object.entries(TTYPES).map(([k, [l, ic]]) => <button key={k} className={types.includes(k) ? 'on' : ''} onClick={() => setTypes(types.includes(k) ? types.filter(x => x !== k) : [...types, k])}>{l}</button>)}
+              <button className={favOnly ? 'on' : ''} onClick={() => setFav(!favOnly)}>★ Избранное</button>
+            </div>
+            <div className="hint">Найдено: {list.length} из {tpls.length}</div>
+            {list.length === 0 && <div className="card" style={{ textAlign:'center' }}><div style={{ fontSize:30 }}>🔎</div><div style={{ margin:'6px 0 10px' }}>Ничего не найдено</div><button className="btn" onClick={reset}>Сбросить фильтры</button></div>}
+            <div className="tgrid">
+              {list.map(t => (
+                <div key={t.id} className="tcard" role="button" tabIndex={0} onClick={() => setEdit(t)} onKeyDown={e => e.key === 'Enter' && setEdit(t)}>
+                  <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                    <span className="chip" style={{ background:'var(--blue-soft)', color:'var(--blue)' }}><Ic d={TTYPES[t.type][1]} size={12} /> {TTYPES[t.type][0]}</span>
+                    <span className="sp" style={{ flex:1 }} />
+                    <button className="x" aria-label="Избранное" style={{ fontSize:18, color:t.fav ? 'var(--amber)' : 'var(--mute)' }} onClick={e => { e.stopPropagation(); setTpls(ts => ts.map(x => x.id === t.id ? { ...x, fav:!x.fav } : x)); }}>{t.fav ? '★' : '☆'}</button>
+                  </div>
+                  {t.type !== 'text' && <div className="tmedia" style={{ background:grad(t.id) }}><Ic d={TTYPES[t.type][1]} size={26} /><span className="tn2">{t.media}</span></div>}
+                  <b style={{ fontSize:15, lineHeight:1.3 }}>{t.title}</b>
+                  <div className="tex">{fillVars(t.body)}</div>
+                  <div className="chips" style={{ gap:4 }}>
+                    <span className="tg">{t.task}</span><span className="tg">{t.goal}</span>{t.services.map(s => <span className="tg" key={s}>{s}</span>)}
+                  </div>
+                  <div className="hint">Использован: {t.used}</div>
+                </div>))}
+            </div>
+          </div>
+        </div>
+        {toast && <div className="toast">{toast}</div>}
+      </div>
+      {edit && <TplEditor key={edit.id} t={edit} isNew={isNew} onSave={save} onClose={() => setEdit(null)} onDelete={del} onDup={dup} flash={flash} />}
+      {sheet && (
+        <div className="ov sheetov" onClick={() => setSheet(false)}>
+          <div className="sheetf" onClick={e => e.stopPropagation()}>
+            <div className="mh"><b style={{ fontSize:16 }}>Фильтры</b><span className="sp" />{nf > 0 && <button className="lnk" onClick={() => setF({ task:[], goal:[], service:[] })}>Сбросить</button>}<button className="x" onClick={() => setSheet(false)} aria-label="Закрыть">✕</button></div>
+            <div className="mb"><FilterGroups f={f} setF={setF} tpls={tpls} /></div>
+            <div className="mf"><button className="btn primary" style={{ flex:1, justifyContent:'center' }} onClick={() => setSheet(false)}>Показать: {list.length}</button></div>
+          </div>
+        </div>)}
+    </div>
+  );
+}
+
+function App() {
+  const [page, setPage] = useState(() => { try { return localStorage.getItem('st96-page') || 'funnel'; } catch (e) { return 'funnel'; } });
+  const go = p => { setPage(p); try { localStorage.setItem('st96-page', p); } catch (e) {} };
+  return page === 'tpl' ? <TemplatesPage go={go} /> : page === 'agent' ? <AgentPage go={go} /> : page === 'schedule' ? <SchedulePage go={go} /> : <ReactFlowProvider><Builder go={go} /></ReactFlowProvider>;
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+
+</script>
+</body>
+</html>
