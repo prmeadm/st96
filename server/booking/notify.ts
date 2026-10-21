@@ -4,7 +4,7 @@ import { InlineKeyboard, InputFile, type Api } from 'grammy'
 import { serviceLabel } from '../catalog'
 import type { ClientRow, Repo } from '../repo'
 import { buildIcs } from './ics'
-import { FORMAT_LABEL, bookingUrl, whenLabel } from './schedule'
+import { FORMAT_LABEL, bookingUrl, whenLabel, whenParts } from './schedule'
 import { loadDirectAdmins } from './service'
 import type { BookingRow } from './types'
 
@@ -51,11 +51,16 @@ export async function notifyClientDecision(api: Api, repo: Repo, b: BookingRow):
   const lang = c.client.language === 'en' ? 'en' : 'ru'
   const when = whenLabel(b.starts_at, lang)
   if (b.status === 'confirmed') {
-    const meet = b.meet_url ? (lang === 'en' ? `\nLink: ${b.meet_url}` : `\nСсылка на встречу: ${b.meet_url}`) : b.format === 'video' ? (lang === 'en' ? '\nWe will send the video call link separately.' : '\nСсылку на видеозвонок пришлём отдельно.') : ''
+    const w = whenParts(b.starts_at, lang)
+    const link = b.meet_url ? (lang === 'en' ? `\n🔗 Link: ${b.meet_url}` : `\n🔗 Ссылка на встречу: ${b.meet_url}`) : b.format === 'video' ? (lang === 'en' ? '\n🔗 We will send the video call link separately.' : '\n🔗 Ссылку на видеозвонок пришлём отдельно.') : ''
     await api.sendMessage(c.chat, lang === 'en'
-      ? `✅ Your meeting is confirmed: ${when}.\n${serviceLabel(b.service, 'en')} · ${FORMAT_LABEL[b.format].en}${meet}\nThe calendar file is attached. Please don't be late!`
-      : `✅ Встреча подтверждена: ${when}.\n${serviceLabel(b.service, 'ru')} · ${FORMAT_LABEL[b.format].ru}${meet}\nФайл для календаря во вложении. Просим не опаздывать!`, { link_preview_options: { is_disabled: true } })
-    await api.sendDocument(c.chat, new InputFile(new TextEncoder().encode(buildIcs(b, lang)), 'st96-meeting.ics'))
+      ? `✅ Your meeting is confirmed\n\n📅 Date: ${w.date}\n🕐 Time: ${w.time}\n🧩 Service: ${serviceLabel(b.service, 'en')}\n📞 Format: ${FORMAT_LABEL[b.format].en}${link}\n\nPlease don't be late!`
+      : `✅ Встреча подтверждена\n\n📅 Дата: ${w.date}\n🕐 Время: ${w.time}\n🧩 Услуга: ${serviceLabel(b.service, 'ru')}\n📞 Тип связи: ${FORMAT_LABEL[b.format].ru}${link}\n\nПросим не опаздывать!`, { link_preview_options: { is_disabled: true } })
+    await api.sendDocument(c.chat, new InputFile(new TextEncoder().encode(buildIcs(b, lang)), 'st96-meeting.ics'), {
+      caption: lang === 'en'
+        ? "Add this to your calendar so you don't miss this important event! Open the file and save it: we'll remind you 1 hour and 15 minutes before."
+        : 'Добавьте задачу в свой календарь, чтобы не пропустить это важное событие! Откройте файл и сохраните: напомним за 1 час и за 15 минут.',
+    })
     return true
   }
   if (b.status === 'rejected' || b.status === 'canceled') {

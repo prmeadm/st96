@@ -157,12 +157,20 @@ const MONTHS_EN = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep'
 const DOW_RU = ['пн', 'вт', 'ср', 'чт', 'пт', 'сб', 'вс']
 const DOW_EN = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
-export function whenLabel(iso: string, lang: 'ru' | 'en' = 'ru'): string {
+/** Дата и время встречи по Минску отдельно: «25 октября, сб» и «15:00 (Минск)». */
+export function whenParts(iso: string, lang: 'ru' | 'en' = 'ru'): { date: string; time: string } {
   const { date, min } = toLocal(iso)
   const [y, m, d] = date.split('-').map(Number)
   const dow = (new Date(Date.UTC(y!, m! - 1, d!)).getUTCDay() + 6) % 7
   const t = `${String(Math.floor(min / 60)).padStart(2, '0')}:${String(min % 60).padStart(2, '0')}`
-  return lang === 'en' ? `${DOW_EN[dow]}, ${MONTHS_EN[m! - 1]} ${d}, ${t} (Minsk)` : `${d} ${MONTHS[m! - 1]}, ${DOW_RU[dow]}, ${t} (Минск)`
+  return lang === 'en'
+    ? { date: `${DOW_EN[dow]}, ${MONTHS_EN[m! - 1]} ${d}`, time: `${t} (Minsk)` }
+    : { date: `${d} ${MONTHS[m! - 1]}, ${DOW_RU[dow]}`, time: `${t} (Минск)` }
+}
+
+export function whenLabel(iso: string, lang: 'ru' | 'en' = 'ru'): string {
+  const p = whenParts(iso, lang)
+  return `${p.date}, ${p.time}`
 }
 
 export const BOOK_ORIGIN = 'https://st96.by'

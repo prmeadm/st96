@@ -15,7 +15,9 @@ export function buildIcs(b: BookingRow, lang: 'ru' | 'en' = 'ru'): string {
     `SUMMARY:${esc(lang === 'en' ? `Meeting with ST96: ${svc}` : `Встреча со студией ST96: ${svc}`)}`,
     `DESCRIPTION:${esc(`${lang === 'en' ? 'Format' : 'Формат'}: ${fmt}${b.goal ? `\n${lang === 'en' ? 'Goal' : 'Цель'}: ${b.goal}` : ''}${b.meet_url ? `\n${b.meet_url}` : ''}`)}`,
     b.meet_url ? `URL:${b.meet_url}` : '', b.format === 'offline' ? `LOCATION:${esc(lang === 'en' ? 'ST96 studio' : 'Студия ST96')}` : '',
+    // два напоминания: за час и за 15 минут
     'BEGIN:VALARM', 'TRIGGER:-PT1H', 'ACTION:DISPLAY', `DESCRIPTION:${esc(lang === 'en' ? 'Meeting with ST96 in one hour' : 'Через час встреча со студией ST96')}`, 'END:VALARM',
+    'BEGIN:VALARM', 'TRIGGER:-PT15M', 'ACTION:DISPLAY', `DESCRIPTION:${esc(lang === 'en' ? 'Meeting with ST96 in 15 minutes' : 'Через 15 минут встреча со студией ST96')}`, 'END:VALARM',
     'END:VEVENT', 'END:VCALENDAR',
   ]
   return lines.filter(Boolean).join('\r\n')
