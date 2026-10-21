@@ -12,9 +12,11 @@ type Props = {
   accent: Accent
   portrait?: boolean
   audio?: boolean
+  glow?: boolean
+  label?: string
 }
 
-export default function HeroVideo({ src, poster, accent, portrait = false, audio = false }: Props) {
+export default function HeroVideo({ src, poster, accent, portrait = false, audio = false, glow = true, label }: Props) {
   const t = useUi()
   const inlineRef = useRef<HTMLVideoElement>(null)
   const closeRef = useRef<HTMLButtonElement>(null)
@@ -23,7 +25,7 @@ export default function HeroVideo({ src, poster, accent, portrait = false, audio
 
   const openModal = () => {
     const v = inlineRef.current
-    reachGoal('video_expand')
+    reachGoal('video_expand', label ? { video: label } : undefined)
     startAt.current = v?.currentTime ?? 0
     v?.pause()
     setOpen(true)
@@ -71,11 +73,13 @@ export default function HeroVideo({ src, poster, accent, portrait = false, audio
 
   return (
     <div className={`relative mx-auto w-full ${portrait ? 'max-w-[19rem] sm:max-w-[21rem]' : ''}`}>
-      <div
-        className="pointer-events-none absolute -inset-6 rounded-[2rem] opacity-60 blur-3xl"
-        style={{ background: `linear-gradient(135deg, ${accent.from}33, ${accent.to}33)` }}
-        aria-hidden="true"
-      />
+      {glow && (
+        <div
+          className="pointer-events-none absolute -inset-6 rounded-[2rem] opacity-60 blur-3xl"
+          style={{ background: `linear-gradient(135deg, ${accent.from}33, ${accent.to}33)` }}
+          aria-hidden="true"
+        />
+      )}
       <div
         className="group relative overflow-hidden rounded-2xl border border-ink-line bg-ink-soft"
         style={{ boxShadow: `0 0 60px ${accent.soft}` }}

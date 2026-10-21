@@ -3,6 +3,7 @@ import { getServiceBySlug } from '../data/content'
 import { localePath, useLang } from '../lib/i18n'
 import { useSeo } from '../hooks/useSeo'
 import ServiceHero from '../components/sections/ServiceHero'
+import AiServices from '../components/sections/AiServices'
 import Advantages from '../components/sections/Advantages'
 import ProcessTabs from '../components/sections/ProcessTabs'
 import Results from '../components/sections/Results'
@@ -24,6 +25,7 @@ export default function ServicePage() {
   return (
     <>
       <ServiceHero service={service} />
+      {service.slug === 'ai' && <AiServices />}
       <Advantages service={service} />
       <ProcessTabs service={service} />
       <Results service={service} />
