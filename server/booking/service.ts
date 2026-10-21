@@ -1,4 +1,5 @@
 // Запись на встречу: создание заявки, решение администратора, публичная доступность слотов.
+import { cleanTopics } from '../../src/data/serviceOptions'
 import { normalizePhone, normalizeTelegram } from '../leads/parse'
 import type { ClientRow, Repo } from '../repo'
 import { BOOK_ORIGIN, bookingUrl, FORMAT_KEYS, SERVICE_KEYS, addDays, dayInfo, defaultSchedule, isDate, isTime, minskNow, normalizeSchedule, slotAvailable, tm, toInstant, toLocal, type DayBooking, type DayInfo, type FormatKey, type Schedule, type ServiceKey } from './schedule'
@@ -79,7 +80,7 @@ export async function loadDay(repo: Repo, date: string, format: FormatKey | null
 export type BookingInput = {
   service: unknown; format: unknown; date: unknown; time: unknown
   name?: unknown; company?: unknown; telegram?: unknown; phone?: unknown; goal?: unknown; comment?: unknown
-  clientId?: unknown; runId?: string | null; runNode?: string | null; source?: string
+  topics?: unknown; clientId?: unknown; runId?: string | null; runNode?: string | null; source?: string
 }
 export type Result<T> = ({ ok: true } & T) | { ok: false; error: string; status: number }
 const txt = (v: unknown, max: number) => (typeof v === 'string' ? v.trim().slice(0, max) : '')
@@ -117,12 +118,13 @@ export async function createBooking(repo: Repo, input: BookingInput, now = new D
   if (!check.ok) return { ok: false, error: 'Это время недоступно. Выберите другое', status: 409 }
 
   const dur = S.rules.duration
+  const topics = cleanTopics(service, input.topics) // выбранные пункты услуги попадают в начало комментария заявки
   const starts = toInstant(date, time)
   const client = await clientFor(repo, input.clientId, name, phone, telegram ? telegram.replace(/^@/, '') : null, txt(input.company, 80))
   const res = await repo.insertBooking({
     client_id: client.id, run_id: input.runId ?? null, run_node: input.runNode ?? null, service, format,
     starts_at: starts.toISOString(), ends_at: new Date(starts.getTime() + dur * 60_000).toISOString(),
-    name, company: txt(input.company, 80) || null, telegram, phone, goal: txt(input.goal, 300) || null, comment: txt(input.comment, 500) || null,
+    name, company: txt(input.company, 80) || null, telegram, phone, goal: txt(input.goal, 300) || null, comment: [topics.length ? `Интересует: ${topics.join(', ')}` : '', txt(input.comment, 500)].filter(Boolean).join('\n') || null,
     source: input.source ?? 'site',
   })
   if (!res.ok) return { ok: false, error: 'Это время только что заняли. Выберите другое', status: 409 }

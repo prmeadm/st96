@@ -1,3 +1,4 @@
+import { SERVICE_OPTIONS } from '../data/serviceOptions'
 import { BOOKING_GOALS } from '../data/bookingGoals'
 import { PhoneField } from '../components/ui/PhoneField'
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -12,7 +13,7 @@ const T = {
   ru: {
     title: 'Запись на встречу', sub: 'Выберите услугу, формат и удобное время. Мы подтвердим встречу и напишем вам.',
     service: 'Услуга', format: 'Формат встречи', date: 'Дата', time: 'Время', noSlots: 'На этот день свободного времени нет',
-    contacts: 'Ваши контакты', name: 'Имя', phone: 'Телефон', telegram: 'Telegram', company: 'Компания', goal: 'Цель встречи', comment: 'Комментарий',
+    contacts: 'Ваши контакты', name: 'Имя', phone: 'Телефон', telegram: 'Telegram', company: 'Компания', goal: 'Цель встречи', comment: 'Сообщение', commentPh: 'Кратко о задаче, сроках, бюджете', topics: 'Что именно нужно', topicsHint: 'можно выбрать несколько',
     contactHint: 'Достаточно телефона или Telegram', consentPre: 'Согласен на обработку персональных данных:', consentLink: 'политика конфиденциальности',
     send: 'Отправить заявку', sending: 'Отправляю…', missing: 'Заполните', mService: 'услугу', mFormat: 'формат', mDate: 'дату', mTime: 'время', mName: 'имя', mContact: 'телефон или Telegram', mConsent: 'согласие',
     doneTitle: 'Заявка отправлена', doneText: 'Мы подтвердим время и напишем вам. Чтобы получить подтверждение сразу в Telegram и быстро связаться с менеджером, откройте нашего бота.',
@@ -22,7 +23,7 @@ const T = {
   en: {
     title: 'Book a meeting', sub: 'Pick a service, format and a convenient time. We will confirm the meeting and message you.',
     service: 'Service', format: 'Meeting format', date: 'Date', time: 'Time', noSlots: 'No free time on this day',
-    contacts: 'Your contacts', name: 'Name', phone: 'Phone', telegram: 'Telegram', company: 'Company', goal: 'Meeting goal', comment: 'Comment',
+    contacts: 'Your contacts', name: 'Name', phone: 'Phone', telegram: 'Telegram', company: 'Company', goal: 'Meeting goal', comment: 'Message', commentPh: 'Briefly: task, timing, budget', topics: 'What exactly do you need', topicsHint: 'you can pick several',
     contactHint: 'A phone or Telegram is enough', consentPre: 'I agree to the processing of personal data:', consentLink: 'privacy policy',
     send: 'Send request', sending: 'Sending…', missing: 'Please fill in', mService: 'service', mFormat: 'format', mDate: 'date', mTime: 'time', mName: 'name', mContact: 'phone or Telegram', mConsent: 'consent',
     doneTitle: 'Request sent', doneText: 'We will confirm the time and message you. To get the confirmation right in Telegram and reach a manager faster, open our bot.',
@@ -50,6 +51,7 @@ export default function BookPage() {
   const [slots, setSlots] = useState<Slot[] | null>(null)
   const [time, setTime] = useState('')
   const [f, setF] = useState({ name: '', phone: '', telegram: '', company: '', goal: '', comment: '', website: '' })
+  const [topics, setTopics] = useState<string[]>([])
   const [consent, setConsent] = useState(true) // по просьбе владельца отмечен заранее; клиент может снять
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -135,7 +137,7 @@ export default function BookPage() {
   const submit = async () => {
     setBusy(true)
     setError('')
-    const r = await api<{ ok?: boolean; ref?: string; starts_at?: string }>({ action: 'create', service, format, date, time, ...f, clientId: qs.get('c') ?? undefined, runId: qs.get('r') ?? undefined, runNode: qs.get('n') ?? undefined })
+    const r = await api<{ ok?: boolean; ref?: string; starts_at?: string }>({ action: 'create', service, format, date, time, topics, ...f, clientId: qs.get('c') ?? undefined, runId: qs.get('r') ?? undefined, runNode: qs.get('n') ?? undefined })
     setBusy(false)
     if (r.ok) setDone({ ref: r.ref ?? '', starts_at: r.starts_at ?? '' })
     else {
@@ -143,7 +145,7 @@ export default function BookPage() {
       if (date) { setSlots(null); void api<{ slots: Slot[] }>({ action: 'day', format, date }).then((x) => setSlots(x.slots ?? [])); setTime('') }
     }
   }
-  const reset = () => { setDone(null); setDate(''); setTime(''); setConsent(true); setF({ name: '', phone: '', telegram: '', company: '', goal: '', comment: '', website: '' }) }
+  const reset = () => { setDone(null); setDate(''); setTime(''); setConsent(true); setTopics([]); setF({ name: '', phone: '', telegram: '', company: '', goal: '', comment: '', website: '' }) }
   const input = (k: keyof typeof f, label: string, extra: Partial<React.InputHTMLAttributes<HTMLInputElement>> = {}) => (
     <label className="bk-fld"><span>{label}</span><input value={f[k]} onChange={(e) => setF({ ...f, [k]: e.target.value })} {...extra} /></label>
   )
@@ -201,8 +203,19 @@ export default function BookPage() {
 
             <section className="bk-card">
               <h2><span className="bk-n">3</span>{t.service}</h2>
-              <div className="bk-chips">{cfg?.services.map((s) => <button key={s.key} type="button" className={service === s.key ? 'on' : ''} aria-pressed={service === s.key} onClick={() => setService(s.key)}>{s[lang]}</button>)}</div>
+              <div className="bk-chips">{cfg?.services.map((s) => <button key={s.key} type="button" className={service === s.key ? 'on' : ''} aria-pressed={service === s.key} onClick={() => { setService(s.key); setTopics([]) }}>{s[lang]}</button>)}</div>
               {svc && <p className="bk-dim">{lang === 'en' ? svc.infoEn : svc.infoRu} <a href={lang === 'en' ? svc.urlEn : svc.url} target="_blank" rel="noreferrer">{t.more}</a></p>}
+              {service && SERVICE_OPTIONS[service] && (
+                <>
+                  <h3 className="bk-sub2">{t.topics} <small className="bk-dim">{t.topicsHint}</small></h3>
+                  <div className="bk-chips bk-topics" role="group" aria-label={t.topics}>
+                    {SERVICE_OPTIONS[service]!.map((o) => {
+                      const on = topics.includes(o.ru)
+                      return <button key={o.ru} type="button" className={on ? 'on' : ''} aria-pressed={on} onClick={() => setTopics(on ? topics.filter((x) => x !== o.ru) : [...topics, o.ru])}>{on && <span aria-hidden="true">✓ </span>}{lang === 'en' ? o.en : o.ru}</button>
+                    })}
+                  </div>
+                </>
+              )}
             </section>
 
             <section className="bk-card">
@@ -227,11 +240,11 @@ export default function BookPage() {
                   {BOOKING_GOALS.map((g) => <option key={g.ru} value={g.ru}>{lang === 'en' ? g.en : g.ru}</option>)}
                 </select>
               </label>
-              <label className="bk-fld"><span>{t.comment}</span><textarea rows={3} value={f.comment} onChange={(e) => setF({ ...f, comment: e.target.value })} /></label>
+              <label className="bk-fld"><span>{t.comment}</span><textarea rows={3} placeholder={t.commentPh} value={f.comment} onChange={(e) => setF({ ...f, comment: e.target.value })} /></label>
               <input className="bk-hp" tabIndex={-1} autoComplete="off" aria-hidden="true" value={f.website} onChange={(e) => setF({ ...f, website: e.target.value })} />
               <label className="bk-check-row"><input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} /><span>{t.consentPre} <a href={POLICY_PATH} target="_blank" rel="noreferrer">{t.consentLink}</a></span></label>
               {error && <p className="bk-err" role="alert">{error}</p>}
-              {missing.length > 0 && <p className="bk-dim">{t.missing}: {missing.join(', ')}</p>}
+              {missing.length > 0 && <p className="bk-missing">{t.missing}: {missing.map((m) => <span key={m} className="bk-miss">{m}</span>)}</p>}
               <button type="button" className="bk-btn" disabled={busy || missing.length > 0} onClick={submit}>{busy ? t.sending : t.send}</button>
             </section>
           </>

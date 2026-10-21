@@ -260,3 +260,16 @@ test('заявка приходит лично администратору по
   assert.deepEqual((await saveDirectAdmins(repo, '@one_admin, two_admin')).ok && (await loadDirectAdmins(repo)), ['one_admin', 'two_admin'])
   assert.deepEqual(await (async () => { await saveDirectAdmins(repo, ''); return loadDirectAdmins(repo) })(), [], 'пустой список = только группа')
 })
+
+test('выбранные пункты услуги попадают в начало комментария; чужие пункты и повторы отбрасываются', async () => {
+  const repo = memoryRepo()
+  const r = await createBooking(repo, { ...input, service: 'ai', topics: ['Сайт с AI', 'Личный AI-агент', 'Сайт с AI', 'Нейрофотосессия', 42], comment: 'Бюджет до 5000' }, NOW)
+  assert.ok(r.ok)
+  assert.equal(repo.bookings[0]!.comment, 'Интересует: Сайт с AI, Личный AI-агент\nБюджет до 5000', 'Нейрофотосессия относится к продакшну, не к AI')
+  const r2 = await createBooking(repo, { ...input, service: 'production', time: '15:00', phone: '+375 33 555-44-33', telegram: undefined, name: 'Игорь', topics: ['Нейрофотосессия'] }, NOW)
+  assert.ok(r2.ok)
+  assert.equal(repo.bookings[1]!.comment, 'Интересует: Нейрофотосессия')
+  const r3 = await createBooking(repo, { ...input, service: 'promotion', time: '16:30', phone: '+375 25 111-00-00', telegram: undefined, name: 'Олег' }, NOW)
+  assert.ok(r3.ok)
+  assert.equal(repo.bookings[2]!.comment, null, 'без пунктов и комментария пусто')
+})

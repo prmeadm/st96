@@ -70,7 +70,7 @@ export default async function handler(req: Request) {
     if (typeof b.website === 'string' && b.website) return json({ ok: true }) // ловушка для ботов: скрытое поле
     const r = await createBooking(repo, {
       service: b.service, format: b.format, date: b.date, time: b.time, name: b.name, company: b.company, telegram: b.telegram, phone: b.phone,
-      goal: b.goal, comment: b.comment, clientId: b.clientId, runId: typeof b.runId === 'string' ? b.runId : null, runNode: typeof b.runNode === 'string' ? b.runNode : null,
+      goal: b.goal, comment: b.comment, topics: b.topics, clientId: b.clientId, runId: typeof b.runId === 'string' ? b.runId : null, runNode: typeof b.runNode === 'string' ? b.runNode : null,
       source: typeof b.runId === 'string' ? 'funnel' : typeof b.clientId === 'string' ? 'link' : 'site',
     }, now)
     if (!r.ok) return json({ error: r.error }, r.status)
