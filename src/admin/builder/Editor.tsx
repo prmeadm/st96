@@ -118,7 +118,7 @@ export function Editor({ node, patch, remove, duplicate, close }: { node: Node; 
       set({ parts: [...d.parts, { id: uid('p'), kind: t.kind === 'photo' ? 'image' : t.kind === 'voice' ? 'audio' : t.kind, text: t.body, en: t.body_en ?? '', url: t.media_url ?? '' }] })
       supabase.from('template_events').insert({ template_id: t.id, kind: 'funnel' }).then(() => undefined)
     }} />
-    <div className="hint">Загрузка файлов появится позже: пока вставляйте прямую ссылку на фото, видео или файл.</div>
+    <div className="hint">Загрузка файлов появится позже: пока вставляйте прямую ссылку на файл. Ссылку на YouTube, Vimeo или Rutube тоже можно: клиент получит её сообщением с плеером.</div>
     <div className="h2">Быстрые ответы</div>
     <div className="hint">Каждый ответ получает свой выход: тяните связь к следующему блоку.</div>
     {d.quick.map((q: D) => (

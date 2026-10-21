@@ -5,6 +5,7 @@
 //   «/close» в теме          -> диалог закрыт, тема закрывается.
 import { InlineKeyboard, type Api } from 'grammy'
 import { UNKNOWN_SERVICE, serviceLabel } from '../catalog'
+import { NOT_A_FILE_ERROR, errorText, isVideoPageUrl } from '../media'
 import type { ClientRow, Repo } from '../repo'
 import { TPL_KINDS, fillTemplate, type TemplateKind, type TemplateRow } from '../templates'
 
@@ -149,12 +150,22 @@ export async function sendContent(api: Api, client: ClientRow, c: Content, foote
     await api.sendMessage(chat, text, { link_preview_options: { is_disabled: true } })
   } else {
     if (!c.media_url) throw new Error('нет ссылки на файл')
+    const url = c.media_url
     const extra = { caption: text || undefined }
-    if (c.kind === 'photo') await api.sendPhoto(chat, c.media_url, extra)
-    else if (c.kind === 'video') await api.sendVideo(chat, c.media_url, extra)
-    else if (c.kind === 'voice') await api.sendVoice(chat, c.media_url, extra)
-    else if (c.kind === 'audio') await api.sendAudio(chat, c.media_url, extra)
-    else await api.sendDocument(chat, c.media_url, extra)
+    const asLink = () => api.sendMessage(chat, [text, url].filter(Boolean).join('\n'), { link_preview_options: { url, prefer_large_media: true } })
+    if (isVideoPageUrl(url)) await asLink()
+    else {
+      try {
+        if (c.kind === 'photo') await api.sendPhoto(chat, url, extra)
+        else if (c.kind === 'video') await api.sendVideo(chat, url, extra)
+        else if (c.kind === 'voice') await api.sendVoice(chat, url, extra)
+        else if (c.kind === 'audio') await api.sendAudio(chat, url, extra)
+        else await api.sendDocument(chat, url, extra)
+      } catch (e) {
+        if (!NOT_A_FILE_ERROR.test(errorText(e))) throw e
+        await asLink()
+      }
+    }
   }
   return text
 }
