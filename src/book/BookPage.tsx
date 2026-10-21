@@ -129,6 +129,8 @@ export default function BookPage() {
     }, 2000)
   }
 
+  // «AI-разработка» первой, остальные в порядке сайта
+  const services = useMemo(() => [...(cfg?.services ?? [])].sort((a, b) => Number(b.key === 'ai') - Number(a.key === 'ai')), [cfg])
   const svc = cfg?.services.find((s) => s.key === service)
   const missing = useMemo(() => [!format && t.mFormat, !date && t.mDate, !time && t.mTime, !service && t.mService, !f.name.trim() && t.mName, !f.phone.trim() && !f.telegram.trim() && t.mContact, !consent && t.mConsent].filter(Boolean) as string[], [service, format, date, time, f, consent, t])
   const dayLabel = (d: string) => new Date(`${d}T12:00:00+03:00`).toLocaleDateString(lang === 'en' ? 'en-GB' : 'ru-RU', { timeZone: 'Europe/Minsk', weekday: 'long', day: 'numeric', month: 'long' })
@@ -203,7 +205,7 @@ export default function BookPage() {
 
             <section className="bk-card">
               <h2><span className="bk-n">3</span>{t.service}</h2>
-              <div className="bk-chips">{cfg?.services.map((s) => <button key={s.key} type="button" className={service === s.key ? 'on' : ''} aria-pressed={service === s.key} onClick={() => { setService(s.key); setTopics([]) }}>{s[lang]}</button>)}</div>
+              <div className="bk-chips">{services.map((s) => <button key={s.key} type="button" className={service === s.key ? 'on' : ''} aria-pressed={service === s.key} onClick={() => { setService(s.key); setTopics([]) }}>{s[lang]}</button>)}</div>
               {service && SERVICE_OPTIONS[service] && (
                 <>
                   <div className="bk-chips bk-topics" style={{ marginTop: 18 }} role="group" aria-label={t.topics}>
