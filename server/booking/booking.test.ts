@@ -5,7 +5,7 @@ import { memoryRepo } from '../memoryRepo'
 import { buildIcs } from './ics'
 import { notifyAdminsNewBooking, notifyClientDecision, tickBookingReminders, whenLabel } from './notify'
 import { dayInfo, defaultSchedule, normalizeSchedule, slotAvailable, toInstant, type DayBooking } from './schedule'
-import { MEET_SETTING, clientContacts, createBooking, decideBooking, loadMeetDefault, monthAvailability, saveMeetDefault, saveSchedule, loadSchedule } from './service'
+import { MEET_SETTING, clientContacts, loadDirectAdmins, parseNicks, saveDirectAdmins, createBooking, decideBooking, loadMeetDefault, monthAvailability, saveMeetDefault, saveSchedule, loadSchedule } from './service'
 
 const NOW = new Date('2026-10-20T06:00:00Z') // вторник 09:00 по Минску
 const S = defaultSchedule()
@@ -238,4 +238,25 @@ test('форма записи по личной ссылке: ник, телеф
   assert.equal(c2?.telegram, '@anna_real', 'карточка главнее заявки')
   assert.equal(c2?.name, 'Анна П.')
   assert.equal(await clientContacts(repo, 'нет-такого'), null)
+})
+
+test('заявка приходит лично администратору по нику (по умолчанию studia96), если он запускал бота; иначе сообщаем, что не дошло', async () => {
+  const repo = memoryRepo()
+  assert.deepEqual(await loadDirectAdmins(repo), ['studia96'], 'по умолчанию')
+  const r = await createBooking(repo, input, NOW)
+  assert.ok(r.ok)
+  if (!r.ok) return
+  const a = fakeApi()
+  const none = await notifyAdminsNewBooking(a.api, -100, r.booking, repo)
+  assert.deepEqual(none.failed, ['@studia96'], 'администратор ещё не запускал бота')
+  assert.equal(a.calls.length, 1, 'только группа')
+  await repo.insertClient({ name: 'Студия', tg_username: 'Studia96', tg_user_id: 777, source: 'bot' })
+  const b = fakeApi()
+  const ok = await notifyAdminsNewBooking(b.api, -100, r.booking, repo)
+  assert.deepEqual(ok.failed, [])
+  assert.deepEqual(b.calls.map((c) => c.payload.chat_id), [-100, 777], 'группа и личный чат')
+  assert.match(JSON.stringify(b.calls[1]!.payload.reply_markup), new RegExp(`bk:no:${r.booking.id}`))
+  assert.deepEqual(parseNicks('@Studia96, other_admin;  bad, @x'), ['studia96', 'other_admin'])
+  assert.deepEqual((await saveDirectAdmins(repo, '@one_admin, two_admin')).ok && (await loadDirectAdmins(repo)), ['one_admin', 'two_admin'])
+  assert.deepEqual(await (async () => { await saveDirectAdmins(repo, ''); return loadDirectAdmins(repo) })(), [], 'пустой список = только группа')
 })

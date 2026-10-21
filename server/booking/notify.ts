@@ -4,6 +4,7 @@ import { serviceLabel } from '../catalog'
 import type { ClientRow, Repo } from '../repo'
 import { buildIcs } from './ics'
 import { FORMAT_LABEL, bookingUrl, whenLabel } from './schedule'
+import { loadDirectAdmins } from './service'
 import type { BookingRow } from './types'
 
 export { whenLabel }
@@ -21,10 +22,19 @@ export function adminText(b: BookingRow): string {
   ].filter(Boolean).join('\n')
 }
 
-export async function notifyAdminsNewBooking(api: Api, groupChatId: number | null, b: BookingRow): Promise<void> {
-  if (!groupChatId) return
+/** Заявка на встречу: в рабочую группу и лично администраторам из настроек (по нику; им нужно один раз запустить бота). Возвращает, кому не удалось отправить. */
+export async function notifyAdminsNewBooking(api: Api, groupChatId: number | null, b: BookingRow, repo?: Repo): Promise<{ failed: string[] }> {
   const kb = new InlineKeyboard().text('✅ Подтвердить', `bk:ok:${b.id}`).text('✖ Отклонить', `bk:no:${b.id}`)
-  await api.sendMessage(groupChatId, adminText(b), { reply_markup: kb })
+  const failed: string[] = []
+  if (groupChatId) await api.sendMessage(groupChatId, adminText(b), { reply_markup: kb })
+  if (repo) {
+    for (const nick of await loadDirectAdmins(repo)) {
+      const admin = await repo.findClient({ username: nick }).catch(() => null)
+      if (!admin?.tg_user_id) { failed.push(`@${nick}`); continue }
+      await api.sendMessage(admin.tg_user_id, adminText(b), { reply_markup: kb }).catch(() => { failed.push(`@${nick}`) })
+    }
+  }
+  return { failed }
 }
 
 async function chatOf(repo: Repo, b: BookingRow): Promise<{ client: ClientRow; chat: number } | null> {

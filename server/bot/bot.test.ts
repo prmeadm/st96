@@ -278,3 +278,20 @@ test('/start bk_<токен> без публичного ника: просим 
   assert.equal((await repo.getTgLink(token))?.username, null)
   assert.match(String(calls.find((c) => c.method === 'sendMessage')!.payload.text), /нет публичного ника/)
 })
+
+test('кнопки заявки на встречу работают в личном чате администратора из настроек, у остальных нет', async () => {
+  const { repo, calls, send } = setup()
+  const { createBooking } = await import('../booking/service')
+  const NOW = new Date('2026-10-20T06:00:00Z')
+  const r = await createBooking(repo, { service: 'production', format: 'call', date: '2026-10-21', time: '11:00', name: 'Анна', phone: '+375 29 111-22-33' }, NOW)
+  assert.ok(r.ok)
+  if (!r.ok) return
+  const btn = (from: typeof user, chatId: number) => ({ callback_query: { id: 'q', from, chat_instance: 'x', data: `bk:ok:${r.booking.id}`, message: { message_id: 9, date: 1, chat: { id: chatId, type: 'private' as const, first_name: 'x' }, text: 'Новая заявка на встречу' } } })
+  // обычный пользователь: ничего не происходит
+  await send(btn({ ...user, username: 'random_person' }, 555))
+  assert.equal(repo.bookings[0]!.status, 'pending')
+  // администратор из настроек (по умолчанию studia96): заявка подтверждается
+  await send(btn({ ...user, id: 777, username: 'Studia96' }, 777))
+  assert.equal(repo.bookings[0]!.status, 'confirmed')
+  assert.ok(calls.some((c) => c.method === 'answerCallbackQuery'))
+})

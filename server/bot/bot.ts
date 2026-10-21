@@ -6,7 +6,7 @@ import { handleClick, handleFreeText, startFunnel, type Env } from '../funnels/e
 import { pickFunnel } from '../funnels/triggers'
 import { telegramOut } from './telegramOut'
 import { notifyClientDecision } from '../booking/notify'
-import { decideBooking } from '../booking/service'
+import { decideBooking, loadDirectAdmins } from '../booking/service'
 import { T, type Lang } from './texts'
 
 const ACK_EVERY_MS = 12 * 3600 * 1000
@@ -145,7 +145,10 @@ export function createBot(token: string, repo: Repo, opts: { groupChatId: number
   // Кнопки решения по заявке на встречу в группе администраторов: bk:ok:<id> / bk:no:<id>
   bot.callbackQuery(/^bk:(ok|no):([A-Za-z0-9-]{1,40})$/, async (ctx) => {
     const msg = ctx.callbackQuery.message
-    if (!opts.groupChatId || !msg || msg.chat.id !== opts.groupChatId) return void (await ctx.answerCallbackQuery())
+    // Решать можно в рабочей группе и в личном чате администратора, которому заявка пришла лично
+    const inGroup = !!opts.groupChatId && msg?.chat.id === opts.groupChatId
+    const direct = !!msg && msg.chat.type === 'private' && !!ctx.from.username && (await loadDirectAdmins(repo)).includes(ctx.from.username.toLowerCase())
+    if (!msg || (!inGroup && !direct)) return void (await ctx.answerCallbackQuery())
     const ok = ctx.match[1] === 'ok'
     const r = await decideBooking(repo, ctx.match[2]!, ok ? 'confirm' : 'reject')
     if (!r.ok) return void (await ctx.answerCallbackQuery({ text: r.error, show_alert: true }))

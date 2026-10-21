@@ -72,7 +72,7 @@ export default async function handler(req: Request) {
     }, now)
     if (!r.ok) return json({ error: r.error }, r.status)
     const token = process.env.TELEGRAM_BOT_TOKEN
-    if (token) await notifyAdminsNewBooking(new Api(token), process.env.TELEGRAM_CHAT_ID ? Number(process.env.TELEGRAM_CHAT_ID) : null, r.booking).catch((e) => console.error('booking notify failed', e instanceof Error ? e.message : e))
+    if (token) await notifyAdminsNewBooking(new Api(token), process.env.TELEGRAM_CHAT_ID ? Number(process.env.TELEGRAM_CHAT_ID) : null, r.booking, repo).then((n) => { if (n.failed.length) console.error('booking: not delivered to', n.failed.join(', '), '(they must start the bot)') }).catch((e) => console.error('booking notify failed', e instanceof Error ? e.message : e))
     return json({ ok: true, id: r.booking.id, starts_at: r.booking.starts_at, ref: r.client.id })
   }
   return json({ error: 'Unknown action' }, 400)

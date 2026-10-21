@@ -1,7 +1,7 @@
 import { Api } from 'grammy'
 import { requireAdmin, json } from '../server/adminAuth'
 import { notifyClientDecision } from '../server/booking/notify'
-import { createBooking, decideBooking, saveMeetDefault, saveSchedule, setMeetUrl } from '../server/booking/service'
+import { createBooking, decideBooking, saveDirectAdmins, saveMeetDefault, saveSchedule, setMeetUrl } from '../server/booking/service'
 import { supabaseRepo } from '../server/repo'
 
 export const config = { runtime: 'edge' }
@@ -40,6 +40,10 @@ export default async function handler(req: Request) {
     if (!r.ok) return json({ error: r.error }, r.status)
     const notified = token ? await notifyClientDecision(new Api(token), repo, r.booking).catch(() => false) : false
     return json({ ok: true, status: r.booking.status, notified })
+  }
+  if (b.action === 'save_direct_admins') {
+    const r = await saveDirectAdmins(repo, typeof b.url === 'string' ? b.url : '')
+    return r.ok ? json({ ok: true, nicks: r.nicks }) : json({ error: 'Не удалось сохранить' }, 500)
   }
   if (b.action === 'save_meet_default') {
     const r = await saveMeetDefault(repo, b.url ?? '')

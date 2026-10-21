@@ -115,6 +115,21 @@ export async function clientContacts(repo: Repo, id: string): Promise<{ name: st
   return { name: pick(c.name, (l) => l.name), company: pick(c.company, (l) => l.company), phone: pick(c.phone, (l) => l.phone), telegram: tg && !tg.startsWith('@') ? `@${tg}` : tg }
 }
 
+export const DIRECT_ADMINS_SETTING = 'booking_direct_admins'
+export const DEFAULT_DIRECT_ADMINS = ['studia96']
+const cleanNick = (v: string) => v.trim().replace(/^@/, '').toLowerCase()
+export const parseNicks = (raw: string | null): string[] => [...new Set((raw ?? '').split(/[\s,;]+/).map(cleanNick).filter((x) => /^[a-z][a-z0-9_]{4,31}$/.test(x)))]
+/** Администраторы, которым заявка на встречу приходит лично в Telegram (ники; по умолчанию @studia96). Они должны хотя бы раз запустить бота. */
+export async function loadDirectAdmins(repo: Repo): Promise<string[]> {
+  const raw = await repo.getSetting(DIRECT_ADMINS_SETTING).catch(() => null)
+  return raw === null ? DEFAULT_DIRECT_ADMINS : parseNicks(raw)
+}
+export async function saveDirectAdmins(repo: Repo, raw: string): Promise<Result<{ nicks: string[] }>> {
+  const nicks = parseNicks(raw)
+  await repo.setSetting(DIRECT_ADMINS_SETTING, nicks.join(', '))
+  return { ok: true, nicks }
+}
+
 export const MEET_SETTING = 'booking_meet_default'
 const isHttps = (u: string) => /^https:\/\/[^\s]+$/.test(u)
 /** Ссылка на видеозвонок по умолчанию (постоянная комната Google Meet): подставляется в видеозвонки при подтверждении */

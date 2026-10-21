@@ -32,14 +32,17 @@ export default function BookingPage() {
   const [rows, setRows] = useState<BookingRow[] | null>(null)
   const [sched, setSched] = useState<Schedule | null>(null)
   const [meetDefault, setMeetDefault] = useState('')
+  const [direct, setDirect] = useState('studia96')
   const [error, setError] = useState('')
 
   const load = useCallback(async () => {
-    const [b, s, m] = await Promise.all([
+    const [b, s, m, da] = await Promise.all([
       supabase.from('bookings').select('*').order('starts_at', { ascending: false }).limit(300),
       supabase.from('app_settings').select('value').eq('key', 'booking_schedule').maybeSingle(),
       supabase.from('app_settings').select('value').eq('key', 'booking_meet_default').maybeSingle(),
+      supabase.from('app_settings').select('value').eq('key', 'booking_direct_admins').maybeSingle(),
     ])
+    setDirect(typeof da.data?.value === 'string' ? da.data.value : 'studia96')
     setMeetDefault(typeof m.data?.value === 'string' ? m.data.value : '')
     if (b.error) return setError('Не удалось загрузить заявки на встречи')
     setRows((b.data ?? []) as BookingRow[])
@@ -57,7 +60,7 @@ export default function BookingPage() {
       {error && <div className="err" role="alert">{error}</div>}
       {tab === 'requests' && <Requests rows={rows} reload={load} />}
       {tab === 'schedule' && sched && <ScheduleTab initial={sched} rows={rows ?? []} onSaved={setSched} onBooked={load} />}
-      {tab === 'link' && <LinkTab meetDefault={meetDefault} onMeet={setMeetDefault} />}
+      {tab === 'link' && <LinkTab meetDefault={meetDefault} onMeet={setMeetDefault} direct={direct} onDirect={setDirect} />}
     </div>
   )
 }
@@ -358,7 +361,7 @@ function ScheduleTab({ initial, rows, onSaved, onBooked }: { initial: Schedule; 
 }
 
 // ───────────────────────── ссылка ─────────────────────────
-function LinkTab({ meetDefault, onMeet }: { meetDefault: string; onMeet: (u: string) => void }) {
+function LinkTab({ meetDefault, onMeet, direct, onDirect }: { meetDefault: string; onMeet: (u: string) => void; direct: string; onDirect: (v: string) => void }) {
   const [service, setService] = useState<'' | ServiceKey>('')
   const [format, setFormat] = useState<'' | FormatKey>('')
   const [copied, setCopied] = useState('')
@@ -367,6 +370,25 @@ function LinkTab({ meetDefault, onMeet }: { meetDefault: string; onMeet: (u: str
   const [mu, setMu] = useState(meetDefault)
   const [mmsg, setMmsg] = useState('')
   useEffect(() => setMu(meetDefault), [meetDefault])
+  // Кому заявки приходят лично: ники через запятую; у каждого показываем, запускал ли он бота (без этого написать ему нельзя)
+  const [dv, setDv] = useState(direct)
+  const [dmsg, setDmsg] = useState('')
+  const [dstate, setDstate] = useState<Record<string, boolean>>({})
+  useEffect(() => setDv(direct), [direct])
+  useEffect(() => {
+    const nicks = direct.split(/[\s,;]+/).map((x) => x.replace(/^@/, '').toLowerCase()).filter(Boolean)
+    if (!nicks.length) return setDstate({})
+    void supabase.from('clients').select('tg_username, tg_user_id').in('tg_username', nicks).then(({ data }) => {
+      const m: Record<string, boolean> = {}
+      for (const n of nicks) m[n] = !!(data ?? []).find((c) => c.tg_username?.toLowerCase() === n && c.tg_user_id)
+      setDstate(m)
+    })
+  }, [direct])
+  const saveDirect = async () => {
+    const r = await callApi<{ nicks: string[] }>('/api/booking-admin', { action: 'save_direct_admins', url: dv })
+    if (!r.ok) return setDmsg(r.error)
+    onDirect(r.data.nicks.join(', ')); setDmsg('Сохранено')
+  }
   const saveMeet = async () => {
     const r = await callApi<{ url: string }>('/api/booking-admin', { action: 'save_meet_default', url: mu })
     if (!r.ok) return setMmsg(r.error)
@@ -374,6 +396,13 @@ function LinkTab({ meetDefault, onMeet }: { meetDefault: string; onMeet: (u: str
   }
   return (
     <>
+    <div className="card">
+      <h3>Заявки на встречу лично администратору</h3>
+      <div className="hint">Каждая новая заявка приходит в рабочую группу и ещё в личный чат с ботом этим администраторам, с кнопками «Подтвердить» и «Отклонить». Укажите ники Telegram через запятую. Чтобы бот мог написать человеку, ему нужно один раз открыть бота @st96_leads_bot и нажать «Запустить».</div>
+      <div className="fld"><label>Ники</label><input value={dv} onChange={(e) => setDv(e.target.value)} placeholder="studia96" /></div>
+      {Object.entries(dstate).map(([n, ok]) => <div key={n} className={ok ? 'hint' : 'err'}>@{n}: {ok ? 'бот может писать' : 'ещё не запускал бота: заявки лично не дойдут, пока он не нажмёт «Запустить» у @st96_leads_bot'}</div>)}
+      <div className="row"><button type="button" className="btn primary" onClick={saveDirect} disabled={dv.trim() === direct.trim()}>Сохранить</button>{dmsg && <span className="hint" role="status">{dmsg}</span>}</div>
+    </div>
     <div className="card">
       <h3>Ссылка на видеозвонок (Google Meet)</h3>
       <div className="hint">Одна постоянная комната: при подтверждении видеозвонка (в админке или кнопкой в Telegram) ссылка сама попадёт в сообщение клиенту, напоминание за час и файл календаря. Создайте комнату в Google Meet (кнопка «Новая встреча» → «Создать встречу на потом») и вставьте ссылку. Для отдельной встречи ссылку можно заменить в её карточке.</div>
