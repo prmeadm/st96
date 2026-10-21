@@ -64,7 +64,6 @@ const COPY = {
 } as const
 
 const ACID = '#d8ff3f'
-const VIOLET = '#8b6bff'
 const CYCLE_MS = 2700
 
 type Live = { id: number; ev: number }
@@ -98,10 +97,10 @@ function Node({
       style={{ left: `${x}%`, top: `${y}%`, transform: 'translate(-50%,-50%)', gap: '0.6cqw' }}
     >
       <motion.div
-        animate={hit ? { scale: [1, 1.18, 1], borderColor: [ACID, ACID, '#232328'] } : {}}
+        animate={hit ? { scale: [1, 1.18, 1], borderColor: [ACID, ACID, '#09090b'] } : {}}
         transition={{ duration: 0.8, ease: 'easeOut' }}
-        className="relative grid place-items-center border bg-ink-soft"
-        style={{ width: '9.5cqw', height: '9.5cqw', borderRadius: '2.4cqw', borderColor: '#232328' }}
+        className="relative grid place-items-center border"
+        style={{ width: '9.5cqw', height: '9.5cqw', borderRadius: '2.4cqw', borderColor: '#09090b', background: '#09090b', boxShadow: '0 0.8cqw 2cqw rgba(9,9,11,0.28)' }}
       >
         <Icon style={{ width: '4.6cqw', height: '4.6cqw', color: hit ? ACID : '#f5f4ef' }} strokeWidth={1.8} />
         <AnimatePresence>
@@ -118,7 +117,7 @@ function Node({
           )}
         </AnimatePresence>
       </motion.div>
-      <span style={{ fontSize: '2.3cqw', fontWeight: 600, color: '#a6a6ac', letterSpacing: '0.02em', lineHeight: 1.1 }}>{label}</span>
+      <span style={{ fontSize: '2.4cqw', fontWeight: 700, color: '#09090b', letterSpacing: '0.01em', lineHeight: 1.1 }}>{label}</span>
     </div>
   )
 }
@@ -137,10 +136,10 @@ function Packet({ copy, ev, onDone }: { copy: (typeof COPY)['ru'] | (typeof COPY
         style={{
           fontSize: '2.5cqw',
           padding: '0.9cqw 2cqw',
-          background: '#111114',
+          background: '#09090b',
           borderColor: ACID,
           color: '#f5f4ef',
-          boxShadow: `0 0 2.4cqw ${ACID}55`,
+          boxShadow: '0 0.8cqw 2.4cqw rgba(9,9,11,0.4)',
           translateX: '-50%',
           translateY: '-50%',
         }}
@@ -158,7 +157,7 @@ function Packet({ copy, ev, onDone }: { copy: (typeof COPY)['ru'] | (typeof COPY
       {/* result leaves the agent */}
       <motion.div
         className="pointer-events-none absolute z-20 grid place-items-center rounded-full"
-        style={{ width: '4.6cqw', height: '4.6cqw', background: ACID, translateX: '-50%', translateY: '-50%', boxShadow: `0 0 3cqw ${ACID}88` }}
+        style={{ width: '4.6cqw', height: '4.6cqw', background: ACID, translateX: '-50%', translateY: '-50%', boxShadow: '0 0.8cqw 2.4cqw rgba(9,9,11,0.4)' }}
         initial={{ left: '50%', top: '50%', opacity: 0, scale: 0.2 }}
         animate={{
           left: ['50%', '66%', `${dx - 7}%`],
@@ -193,7 +192,7 @@ export default function AgentScene({ lang, className = '' }: { lang: Lang; class
   const my = useMotionValue(0.5)
   const rx = useSpring(useTransform(my, [0, 1], [5, -5]), { stiffness: 120, damping: 16 })
   const ry = useSpring(useTransform(mx, [0, 1], [-6, 6]), { stiffness: 120, damping: 16 })
-  const spot = useTransform([mx, my], ([x, y]) => `radial-gradient(34cqw circle at ${(x as number) * 100}% ${(y as number) * 100}%, rgba(216,255,63,0.16), transparent 70%)`)
+  const spot = useTransform([mx, my], ([x, y]) => `radial-gradient(34cqw circle at ${(x as number) * 100}% ${(y as number) * 100}%, rgba(255,255,255,0.34), transparent 70%)`)
 
   useEffect(() => {
     const el = root.current
@@ -252,21 +251,21 @@ export default function AgentScene({ lang, className = '' }: { lang: Lang; class
         aria-label={copy.aria}
         onPointerMove={onMove}
         onPointerLeave={onLeave}
-        style={{ rotateX: reduced ? 0 : rx, rotateY: reduced ? 0 : ry, containerType: 'inline-size', transformStyle: 'preserve-3d' }}
-        className="relative aspect-[16/10] w-full overflow-hidden rounded-[1.6cqw] border border-ink-line bg-ink"
+        style={{ rotateX: reduced ? 0 : rx, rotateY: reduced ? 0 : ry, containerType: 'inline-size', transformStyle: 'preserve-3d', background: '#c084fc', borderColor: 'rgba(9,9,11,0.22)' }}
+        className="relative aspect-[16/10] w-full overflow-hidden rounded-[1.6cqw] border"
       >
         {/* ground: grid + corner glows + cursor spotlight */}
         <div
-          className="pointer-events-none absolute inset-0 opacity-[0.55]"
+          className="pointer-events-none absolute inset-0"
           style={{
-            backgroundImage: 'linear-gradient(to right,#232328 1px,transparent 1px),linear-gradient(to bottom,#232328 1px,transparent 1px)',
+            backgroundImage: 'linear-gradient(to right,rgba(9,9,11,0.12) 1px,transparent 1px),linear-gradient(to bottom,rgba(9,9,11,0.12) 1px,transparent 1px)',
             backgroundSize: '8cqw 8cqw',
             WebkitMaskImage: 'radial-gradient(ellipse 80% 85% at 50% 50%,#000 20%,transparent 85%)',
             maskImage: 'radial-gradient(ellipse 80% 85% at 50% 50%,#000 20%,transparent 85%)',
           }}
         />
-        <div className="pointer-events-none absolute" style={{ left: '-30%', bottom: '-55%', width: '80%', height: '110%', background: 'radial-gradient(circle, rgba(216,255,63,0.16), transparent 65%)' }} />
-        <div className="pointer-events-none absolute" style={{ right: '-30%', top: '-55%', width: '90%', height: '120%', background: 'radial-gradient(circle, rgba(139,107,255,0.28), transparent 65%)' }} />
+        <div className="pointer-events-none absolute" style={{ left: '-30%', bottom: '-55%', width: '80%', height: '110%', background: 'radial-gradient(circle, rgba(88,28,135,0.34), transparent 65%)' }} />
+        <div className="pointer-events-none absolute" style={{ right: '-30%', top: '-55%', width: '90%', height: '120%', background: 'radial-gradient(circle, rgba(255,255,255,0.42), transparent 65%)' }} />
         <motion.div className="pointer-events-none absolute inset-0" style={{ background: spot }} />
 
         {/* connection lines */}
@@ -275,12 +274,12 @@ export default function AgentScene({ lang, className = '' }: { lang: Lang; class
             <g key={i}>
               {(['l', 'r'] as const).map((side) => (
                 <g key={side}>
-                  <path d={lineD(y, side)} fill="none" stroke="#232328" strokeWidth="1.4" vectorEffect="non-scaling-stroke" />
+                  <path d={lineD(y, side)} fill="none" stroke="rgba(9,9,11,0.3)" strokeWidth="1.4" vectorEffect="non-scaling-stroke" />
                   <motion.path
                     d={lineD(y, side)}
                     fill="none"
-                    stroke={ACID}
-                    strokeOpacity={0.55}
+                    stroke="#09090b"
+                    strokeOpacity={0.85}
                     strokeWidth="1.4"
                     strokeDasharray="2 9"
                     strokeLinecap="round"
@@ -308,14 +307,14 @@ export default function AgentScene({ lang, className = '' }: { lang: Lang; class
             <motion.span
               key={i}
               className="absolute inset-0 rounded-full"
-              style={{ border: `1px solid ${ACID}` }}
+              style={{ border: '1.5px solid rgba(9,9,11,0.5)' }}
               animate={reduced || !active ? { opacity: 0 } : { scale: [0.7, 1.55], opacity: [0.5, 0] }}
               transition={{ duration: 2.8, repeat: Infinity, delay: i * 1.4, ease: 'easeOut' }}
             />
           ))}
           <motion.div
             className="absolute inset-0 rounded-full"
-            style={{ background: `conic-gradient(from 0deg, transparent 0%, ${ACID} 18%, transparent 40%, ${VIOLET} 62%, transparent 82%)`, WebkitMask: 'radial-gradient(circle, transparent 62%, #000 64%)', mask: 'radial-gradient(circle, transparent 62%, #000 64%)' }}
+            style={{ background: `conic-gradient(from 0deg, transparent 0%, #09090b 22%, transparent 46%, ${ACID} 62%, transparent 80%)`, WebkitMask: 'radial-gradient(circle, transparent 62%, #000 64%)', mask: 'radial-gradient(circle, transparent 62%, #000 64%)' }}
             animate={reduced || !active ? undefined : { rotate: 360 }}
             transition={{ duration: 6, repeat: Infinity, ease: 'linear' }}
           />
@@ -328,14 +327,14 @@ export default function AgentScene({ lang, className = '' }: { lang: Lang; class
               <span
                 key={a}
                 className="absolute rounded-full"
-                style={{ left: '50%', top: '50%', width: '1.6cqw', height: '1.6cqw', background: a === 0 ? ACID : '#f5f4ef', transform: `rotate(${a}deg) translateY(-17.5cqw) translate(-50%,-50%)`, boxShadow: `0 0 1.6cqw ${ACID}` }}
+                style={{ left: '50%', top: '50%', width: '1.6cqw', height: '1.6cqw', background: a === 0 ? ACID : '#09090b', transform: `rotate(${a}deg) translateY(-17.5cqw) translate(-50%,-50%)`, boxShadow: a === 0 ? '0 0 0 0.4cqw #09090b' : 'none' }}
               />
             ))}
           </motion.div>
           <motion.div
             key={pulse}
-            className="absolute grid place-items-center rounded-full border bg-ink-soft"
-            style={{ inset: '16%', borderColor: ACID, boxShadow: `0 0 4cqw ${ACID}33, inset 0 0 3cqw ${ACID}22` }}
+            className="absolute grid place-items-center rounded-full border"
+            style={{ inset: '16%', borderColor: ACID, background: '#09090b', boxShadow: `0 1.5cqw 4cqw rgba(9,9,11,0.4), inset 0 0 3cqw ${ACID}22` }}
             initial={{ scale: pulse ? 1.16 : 1 }}
             animate={{ scale: 1 }}
             transition={{ type: 'spring', stiffness: 260, damping: 14 }}
@@ -351,7 +350,7 @@ export default function AgentScene({ lang, className = '' }: { lang: Lang; class
                 exit={{ opacity: 0, y: -6 }}
                 transition={{ duration: 0.25 }}
                 className="block"
-                style={{ fontSize: '2.5cqw', fontWeight: 500, color: '#a6a6ac' }}
+                style={{ fontSize: '2.5cqw', fontWeight: 700, color: '#09090b' }}
               >
                 {copy.status[statusIdx]}…
               </motion.span>
@@ -365,7 +364,7 @@ export default function AgentScene({ lang, className = '' }: { lang: Lang; class
         ))}
 
         {/* HUD */}
-        <div className="absolute flex items-center rounded-full border border-ink-line bg-ink/80 backdrop-blur-sm" style={{ left: '3cqw', top: '3cqw', gap: '1.2cqw', padding: '0.9cqw 2cqw' }}>
+        <div className="absolute flex items-center rounded-full border border-ink-line bg-ink" style={{ left: '3cqw', top: '3cqw', gap: '1.2cqw', padding: '0.9cqw 2cqw' }}>
           <motion.span
             className="block rounded-full"
             style={{ width: '1.5cqw', height: '1.5cqw', background: ACID }}
@@ -374,7 +373,7 @@ export default function AgentScene({ lang, className = '' }: { lang: Lang; class
           />
           <span style={{ fontSize: '2.3cqw', fontWeight: 600, color: '#f5f4ef' }}>{copy.live}</span>
         </div>
-        <div className="absolute flex items-center rounded-full border border-ink-line bg-ink/80 backdrop-blur-sm" style={{ right: '3cqw', top: '3cqw', gap: '1.2cqw', padding: '0.9cqw 2cqw' }}>
+        <div className="absolute flex items-center rounded-full border border-ink-line bg-ink" style={{ right: '3cqw', top: '3cqw', gap: '1.2cqw', padding: '0.9cqw 2cqw' }}>
           <span style={{ fontSize: '2.3cqw', color: '#a6a6ac' }}>{copy.processed}</span>
           <span className="relative block overflow-hidden text-right" style={{ height: '3.2cqw', minWidth: '6.6cqw' }}>
             <AnimatePresence mode="popLayout" initial={false}>
@@ -402,7 +401,7 @@ export default function AgentScene({ lang, className = '' }: { lang: Lang; class
                 exit={{ opacity: 0, y: -8 }}
                 transition={{ duration: 0.3 }}
                 className="flex items-center whitespace-nowrap rounded-full border"
-                style={{ gap: '1.2cqw', padding: '0.9cqw 2.2cqw', fontSize: '2.4cqw', fontWeight: 600, color: '#f5f4ef', borderColor: `${ACID}66`, background: 'rgba(17,17,20,0.9)' }}
+                style={{ gap: '1.2cqw', padding: '0.9cqw 2.2cqw', fontSize: '2.4cqw', fontWeight: 600, color: '#f5f4ef', borderColor: `${ACID}66`, background: '#09090b' }}
               >
                 <Check style={{ width: '2.6cqw', height: '2.6cqw', color: ACID }} strokeWidth={3.2} />
                 {log.text}
