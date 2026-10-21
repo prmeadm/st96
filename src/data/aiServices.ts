@@ -105,19 +105,17 @@ export const aiServiceItems: AiServiceItem[] = [
 
 export const aiServicesIntro = {
   ru: {
-    emoji: '🧑‍💻➕🤖',
-    kicker: 'Вторая сильная компетенция',
     title: 'Разработка бизнес-решений на базе AI',
-    lead: 'AI только усиливает и ускоряет реальные навыки, накопленную годами экспертизу и опыт. Без этого — это просто умный бот.',
     sub: 'С нами в вашем распоряжении 10 лет опыта, высокая квалификация и экспертиза, которые могут превратиться в ваши:',
     cta: 'Обсудить проект',
+    prev: 'Назад',
+    next: 'Вперёд',
   },
   en: {
-    emoji: '🧑‍💻➕🤖',
-    kicker: 'Our second core competence',
     title: 'Business solutions built on AI',
-    lead: 'AI only amplifies and speeds up real skills — expertise and experience built over the years. Without them, it is just a clever bot.',
     sub: 'With us you get 10 years of experience, high qualification and expertise that can turn into your own:',
     cta: 'Discuss a project',
+    prev: 'Previous',
+    next: 'Next',
   },
 } as const

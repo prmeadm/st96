@@ -106,7 +106,7 @@ export default function LeadCapture({ service, title, text }: Props) {
     <section id="lead" className="relative border-t border-ink-line py-20 sm:py-28">
       <div className="mx-auto max-w-7xl px-5 sm:px-8">
         <div className="grid grid-cols-1 gap-14 lg:grid-cols-[0.9fr_1.1fr] lg:gap-10">
-          <Reveal>
+          <Reveal className="min-w-0">
             <span
               className="mb-4 inline-flex items-center gap-2 font-display text-xs font-semibold tracking-[0.2em] text-paper-dim uppercase"
             >
@@ -151,7 +151,7 @@ export default function LeadCapture({ service, title, text }: Props) {
             </div>
           </Reveal>
 
-          <Reveal delay={0.1}>
+          <Reveal delay={0.1} className="min-w-0">
             <div className="relative overflow-hidden rounded-2xl border border-ink-line bg-ink-soft p-6 sm:p-10">
               <div
                 className="pointer-events-none absolute -top-24 -right-24 h-64 w-64 rounded-full opacity-20 blur-[90px]"
