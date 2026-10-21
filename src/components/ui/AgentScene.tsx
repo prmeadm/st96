@@ -69,6 +69,14 @@ const CYCLE_MS = 2700
 
 type Live = { id: number; ev: number }
 
+/** Per-property timing: position eases along the path, opacity/scale fade in and out at the ends. */
+const flight = (duration: number, delay: number) => ({
+  left: { duration, delay, ease: 'easeInOut' as const, times: [0, 0.55, 1] },
+  top: { duration, delay, ease: 'easeInOut' as const, times: [0, 0.55, 1] },
+  opacity: { duration, delay, ease: 'linear' as const, times: [0, 0.15, 0.85, 1] },
+  scale: { duration, delay, ease: 'easeOut' as const, times: [0, 0.2, 0.85, 1] },
+})
+
 function Node({
   Icon,
   label,
@@ -143,7 +151,7 @@ function Packet({ copy, ev, onDone }: { copy: (typeof COPY)['ru'] | (typeof COPY
           opacity: [0, 1, 1, 0],
           scale: [0.7, 1, 1, 0.2],
         }}
-        transition={{ duration: 1.25, ease: 'easeInOut', times: [0, 0.55, 1], opacity: { times: [0, 0.15, 0.85, 1] }, scale: { times: [0, 0.2, 0.85, 1] } }}
+        transition={flight(1.25, 0)}
       >
         {e.packet}
       </motion.div>
@@ -158,7 +166,7 @@ function Packet({ copy, ev, onDone }: { copy: (typeof COPY)['ru'] | (typeof COPY
           opacity: [0, 1, 1, 0],
           scale: [0.2, 1, 1, 0.5],
         }}
-        transition={{ delay: 1.3, duration: 1.1, ease: 'easeInOut', times: [0, 0.5, 1], opacity: { times: [0, 0.12, 0.85, 1] }, scale: { times: [0, 0.2, 0.85, 1] } }}
+        transition={flight(1.1, 1.3)}
         onAnimationComplete={onDone}
       >
         <Check style={{ width: '3cqw', height: '3cqw', color: '#09090b' }} strokeWidth={3.4} />
@@ -384,7 +392,7 @@ export default function AgentScene({ lang, className = '' }: { lang: Lang; class
             </AnimatePresence>
           </span>
         </div>
-        <div className="absolute left-1/2 flex justify-center" style={{ bottom: '3cqw', transform: 'translateX(-50%)', width: '92%', height: '5.4cqw' }}>
+        <div className="absolute flex justify-start" style={{ bottom: '3cqw', left: '3cqw', width: '60%', height: '5.4cqw' }}>
           <AnimatePresence mode="wait">
             {log && (
               <motion.div
