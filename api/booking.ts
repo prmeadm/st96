@@ -4,7 +4,7 @@ import { buildIcs } from '../server/booking/ics'
 import { notifyAdminsNewBooking } from '../server/booking/notify'
 import { FORMAT_KEYS, FORMAT_LABEL, isDate, minskNow, type FormatKey } from '../server/booking/schedule'
 import { SITE_SERVICES } from '../server/catalog'
-import { clientContacts, createBooking, daySlots, loadSchedule, monthAvailability } from '../server/booking/service'
+import { clientContacts, createBooking, loadDay, loadMonth } from '../server/booking/service'
 import { supabaseRepo } from '../server/repo'
 
 export const config = { runtime: 'edge' }
@@ -33,14 +33,17 @@ export default async function handler(req: Request) {
     return json({ error: 'Invalid JSON' }, 400)
   }
   const now = new Date()
-  const S = await loadSchedule(repo)
   const format = FORMAT_KEYS.includes(b.format as FormatKey) ? (b.format as FormatKey) : null
 
-  if (b.action === 'config') {
+  // Первая загрузка страницы одним запросом: настройки и календарь текущего месяца (расписание и заявки читаются параллельно)
+  if (b.action === 'config' || b.action === 'init') {
+    const today = minskNow(now).date
+    const month = b.action === 'init' && typeof b.month === 'string' && /^\d{4}-\d{2}$/.test(b.month) ? b.month : today.slice(0, 7)
+    const { S, days } = await loadMonth(repo, month, format, now)
     return json({
       services: SITE_SERVICES.map((x) => ({ key: x.key, ru: x.ru, en: x.en, infoRu: x.infoRu, infoEn: x.infoEn, url: x.url, urlEn: x.urlEn, minutes: S.rules.duration })),
       formats: FORMAT_KEYS.map((k) => ({ key: k, ru: FORMAT_LABEL[k].ru, en: FORMAT_LABEL[k].en })),
-      offlineDays: S.rules.offlineDays, today: minskNow(now).date, horizon: S.rules.horizon,
+      offlineDays: S.rules.offlineDays, today, horizon: S.rules.horizon, month, days,
     })
   }
   // Личная ссылка записи: контакты клиента подставляются в форму из его карточки (id клиента в ссылке известен только ему; почта и прочие данные не отдаются)
@@ -56,11 +59,11 @@ export default async function handler(req: Request) {
   }
   if (b.action === 'month') {
     if (typeof b.month !== 'string' || !/^\d{4}-\d{2}$/.test(b.month)) return json({ error: 'Неверный запрос' }, 400)
-    return json({ days: await monthAvailability(repo, S, b.month, format, now) })
+    return json({ days: (await loadMonth(repo, b.month, format, now)).days })
   }
   if (b.action === 'day') {
     if (!isDate(b.date)) return json({ error: 'Неверный запрос' }, 400)
-    const d = await daySlots(repo, S, b.date, format, now)
+    const d = await loadDay(repo, b.date, format, now)
     return json({ closed: d.closed, why: d.why, slots: d.slots.map((s) => ({ t: s.t, free: s.free })) })
   }
   if (b.action === 'create') {

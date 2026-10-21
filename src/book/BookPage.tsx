@@ -5,7 +5,7 @@ import { MonthGrid, shiftMonth } from '../booking/MonthGrid'
 import { POLICY_PATH } from '../data/privacy'
 
 type Lang = 'ru' | 'en'
-type Cfg = { services: { key: string; ru: string; en: string; infoRu: string; infoEn: string; url: string; urlEn: string; minutes: number }[]; formats: { key: string; ru: string; en: string }[]; offlineDays: number[]; today: string; horizon: number }
+type Cfg = { services: { key: string; ru: string; en: string; infoRu: string; infoEn: string; url: string; urlEn: string; minutes: number }[]; formats: { key: string; ru: string; en: string }[]; offlineDays: number[]; today: string; horizon: number; month?: string; days?: Record<string, { free: number; why?: string }> }
 type Slot = { t: string; free: boolean }
 
 const T = {
@@ -16,7 +16,7 @@ const T = {
     contactHint: 'Достаточно телефона или Telegram', consentPre: 'Согласен на обработку персональных данных:', consentLink: 'политика конфиденциальности',
     send: 'Отправить заявку', sending: 'Отправляю…', missing: 'Заполните', mService: 'услугу', mFormat: 'формат', mDate: 'дату', mTime: 'время', mName: 'имя', mContact: 'телефон или Telegram', mConsent: 'согласие',
     doneTitle: 'Заявка отправлена', doneText: 'Мы подтвердим время и напишем вам. Чтобы получить подтверждение сразу в Telegram и быстро связаться с менеджером, откройте нашего бота.',
-    openTg: 'Перейти в Telegram', again: 'Новая запись', when: 'Когда', offline: 'Офлайн-встречи проходят по дням', video: 'Ссылку на видеозвонок пришлём после подтверждения.', min: 'мин', goalPick: 'Выберите цель встречи', tgBtn: 'Из Telegram', tgWaiting: 'Жду…', tgBtnHint: 'Подставить ник из вашего Telegram', tgOpen: 'Откройте Telegram и нажмите «Запустить» у бота. Ник подставится сам.', tgDone: 'Ник подставлен из Telegram.', tgNoName: 'В вашем Telegram нет публичного ника: задайте его в настройках Telegram или укажите телефон.', tgTimeout: 'Не дождались ответа. Попробуйте ещё раз или впишите ник вручную.', prefilled: 'Мы подставили контакты, которые вы оставляли в заявке. Проверьте и при необходимости исправьте.', pickDay: 'Выберите день: у каждого дня своё свободное время.', freeSlots: 'свободных времён', duration: 'Длительность встречи', more: 'Подробнее на сайте', err: 'Не удалось отправить. Попробуйте ещё раз.',
+    openTg: 'Перейти в Telegram', again: 'Новая запись', when: 'Когда', offline: 'Офлайн-встречи проходят по дням', video: 'Ссылку на видеозвонок пришлём после подтверждения.', min: 'мин', loadingDays: 'Загружаем свободное время…', goalPick: 'Выберите цель встречи', tgBtn: 'Из Telegram', tgWaiting: 'Жду…', tgBtnHint: 'Подставить ник из вашего Telegram', tgOpen: 'Откройте Telegram и нажмите «Запустить» у бота. Ник подставится сам.', tgDone: 'Ник подставлен из Telegram.', tgNoName: 'В вашем Telegram нет публичного ника: задайте его в настройках Telegram или укажите телефон.', tgTimeout: 'Не дождались ответа. Попробуйте ещё раз или впишите ник вручную.', prefilled: 'Мы подставили контакты, которые вы оставляли в заявке. Проверьте и при необходимости исправьте.', pickDay: 'Выберите день: у каждого дня своё свободное время.', freeSlots: 'свободных времён', duration: 'Длительность встречи', more: 'Подробнее на сайте', err: 'Не удалось отправить. Попробуйте ещё раз.',
     dows: ['пн', 'вт', 'ср', 'чт', 'пт', 'сб', 'вс'], minsk: 'время по Минску',
   },
   en: {
@@ -26,7 +26,7 @@ const T = {
     contactHint: 'A phone or Telegram is enough', consentPre: 'I agree to the processing of personal data:', consentLink: 'privacy policy',
     send: 'Send request', sending: 'Sending…', missing: 'Please fill in', mService: 'service', mFormat: 'format', mDate: 'date', mTime: 'time', mName: 'name', mContact: 'phone or Telegram', mConsent: 'consent',
     doneTitle: 'Request sent', doneText: 'We will confirm the time and message you. To get the confirmation right in Telegram and reach a manager faster, open our bot.',
-    openTg: 'Open Telegram', again: 'New booking', when: 'When', offline: 'In-person meetings take place on', video: 'We will send the video call link after confirmation.', min: 'min', goalPick: 'Choose the goal of the meeting', tgBtn: 'From Telegram', tgWaiting: 'Waiting…', tgBtnHint: 'Fill in your Telegram username', tgOpen: 'Open Telegram and tap Start in the bot. Your username will be filled in automatically.', tgDone: 'Username filled in from Telegram.', tgNoName: 'Your Telegram has no public username: set one in Telegram settings or enter your phone.', tgTimeout: 'No answer received. Try again or type the username manually.', prefilled: 'We filled in the contacts you left in your request. Please check and edit if needed.', pickDay: 'Pick a day: every day has its own free times.', freeSlots: 'free times', duration: 'Meeting length', more: 'More on the site', err: 'Could not send. Please try again.',
+    openTg: 'Open Telegram', again: 'New booking', when: 'When', offline: 'In-person meetings take place on', video: 'We will send the video call link after confirmation.', min: 'min', loadingDays: 'Loading free times…', goalPick: 'Choose the goal of the meeting', tgBtn: 'From Telegram', tgWaiting: 'Waiting…', tgBtnHint: 'Fill in your Telegram username', tgOpen: 'Open Telegram and tap Start in the bot. Your username will be filled in automatically.', tgDone: 'Username filled in from Telegram.', tgNoName: 'Your Telegram has no public username: set one in Telegram settings or enter your phone.', tgTimeout: 'No answer received. Try again or type the username manually.', prefilled: 'We filled in the contacts you left in your request. Please check and edit if needed.', pickDay: 'Pick a day: every day has its own free times.', freeSlots: 'free times', duration: 'Meeting length', more: 'More on the site', err: 'Could not send. Please try again.',
     dows: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], minsk: 'Minsk time',
   },
 } as const
@@ -55,7 +55,21 @@ export default function BookPage() {
   const [error, setError] = useState('')
   const [done, setDone] = useState<{ ref: string; starts_at: string } | null>(null)
 
-  useEffect(() => { void api<Cfg>({ action: 'config' }).then((c) => { if (!c.error) { setCfg(c); setMonth(c.today.slice(0, 7)) } }) }, [])
+  // Один запрос при открытии: настройки и календарь текущего месяца сразу (раньше два запроса подряд)
+  const loaded = useRef('')
+  const [daysBusy, setDaysBusy] = useState(true)
+  useEffect(() => {
+    void api<Cfg>({ action: 'init', format: qs.get('f') ?? '' }).then((c) => {
+      if (c.error) return setDaysBusy(false)
+      setCfg(c)
+      const m = c.month ?? c.today.slice(0, 7)
+      loaded.current = `${m}|${format}`
+      setMonth(m)
+      if (c.days) setDays(c.days)
+      setDaysBusy(false)
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
   // Контакты из карточки клиента по личной ссылке: клиент уже оставлял их в заявке
   const [prefilled, setPrefilled] = useState(false)
   useEffect(() => {
@@ -71,9 +85,10 @@ export default function BookPage() {
   useEffect(() => { document.documentElement.lang = lang; document.title = `${t.title} — ST96` }, [lang, t.title])
 
   useEffect(() => {
-    if (!month) return
+    if (!month || loaded.current === `${month}|${format}`) return
     let alive = true
-    void api<{ days: typeof days }>({ action: 'month', format, month }).then((r) => alive && r.days && setDays(r.days))
+    setDaysBusy(true)
+    void api<{ days: typeof days }>({ action: 'month', format, month }).then((r) => { if (!alive) return; if (r.days) setDays(r.days); loaded.current = `${month}|${format}`; setDaysBusy(false) })
     return () => { alive = false }
   }, [format, month])
   useEffect(() => {
@@ -170,7 +185,8 @@ export default function BookPage() {
                   cell={(d) => { const x = days[d]; const ok = !!x && x.free > 0; return { disabled: !ok, cls: ok ? 'open' : 'dis', title: x?.why ?? (ok ? `${x.free} ${t.freeSlots}` : undefined) } }}
                   onPick={(d) => { setDate(d); setTime(''); if (d.slice(0, 7) !== month) setMonth(d.slice(0, 7)) }} />
               )}
-              {!date && <p className="bk-dim">{t.pickDay}</p>}
+              {daysBusy && <p className="bk-dim" role="status">{t.loadingDays}</p>}
+              {!date && !daysBusy && <p className="bk-dim">{t.pickDay}</p>}
               {date && slots && (
                 <>
                   <h2 className="bk-sub2">{dayLabel(date)} <small className="bk-dim">{t.minsk}</small></h2>

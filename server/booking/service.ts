@@ -31,24 +31,49 @@ const byDate = (rows: BookingRow[]) => {
   return m
 }
 
-/** Свободные слоты за месяц: для календаря клиента и админки (одно обращение к базе). */
-export async function monthAvailability(repo: Repo, S: Schedule, month: string, format: FormatKey | null, now: Date): Promise<Record<string, { free: number; why?: string }>> {
+/** Границы месяца: первый и последний день */
+const monthRange = (month: string): { first: string; last: string } | null => {
   const first = `${month}-01`
-  if (!isDate(first)) return {}
+  if (!isDate(first)) return null
   const next = new Date(Date.UTC(Number(month.slice(0, 4)), Number(month.slice(5, 7)), 1)).toISOString().slice(0, 10)
-  const last = addDays(next, -1)
-  const booked = byDate(await repo.listActiveBookings(first, last))
+  return { first, last: addDays(next, -1) }
+}
+
+/** Свободные слоты месяца по уже загруженным заявкам (расчёт без обращений к базе) */
+export function monthFrom(S: Schedule, rows: BookingRow[], month: string, format: FormatKey | null, now: Date): Record<string, { free: number; why?: string }> {
+  const r = monthRange(month)
+  if (!r) return {}
+  const booked = byDate(rows)
   const out: Record<string, { free: number; why?: string }> = {}
-  for (let d = first; d <= last; d = addDays(d, 1)) {
+  for (let d = r.first; d <= r.last; d = addDays(d, 1)) {
     const i = dayInfo(d, S, booked.get(d) ?? [], format, now)
     out[d] = i.closed ? { free: 0, why: i.why } : { free: i.free }
   }
   return out
 }
 
+/** Расписание и заявки месяца запрашиваются одновременно: ответ ждёт самый долгий запрос, а не сумму двух */
+export async function loadMonth(repo: Repo, month: string, format: FormatKey | null, now: Date): Promise<{ S: Schedule; days: Record<string, { free: number; why?: string }> }> {
+  const r = monthRange(month)
+  const [S, rows] = await Promise.all([loadSchedule(repo), r ? repo.listActiveBookings(r.first, r.last) : Promise.resolve([])])
+  return { S, days: monthFrom(S, rows, month, format, now) }
+}
+
+/** Свободные слоты за месяц: для календаря клиента и админки (одно обращение к базе). */
+export async function monthAvailability(repo: Repo, S: Schedule, month: string, format: FormatKey | null, now: Date): Promise<Record<string, { free: number; why?: string }>> {
+  const r = monthRange(month)
+  return r ? monthFrom(S, await repo.listActiveBookings(r.first, r.last), month, format, now) : {}
+}
+
 export async function daySlots(repo: Repo, S: Schedule, date: string, format: FormatKey | null, now: Date): Promise<DayInfo> {
   const booked = byDate(await repo.listActiveBookings(date, date)).get(date) ?? []
   return dayInfo(date, S, booked, format, now)
+}
+
+/** День: расписание и заявки дня запрашиваются одновременно */
+export async function loadDay(repo: Repo, date: string, format: FormatKey | null, now: Date): Promise<DayInfo> {
+  const [S, rows] = await Promise.all([loadSchedule(repo), repo.listActiveBookings(date, date)])
+  return dayInfo(date, S, byDate(rows).get(date) ?? [], format, now)
 }
 
 export type BookingInput = {
