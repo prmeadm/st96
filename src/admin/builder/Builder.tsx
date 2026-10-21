@@ -98,8 +98,10 @@ function Inner({ graph, onChange, counts, full, setFull, onSave, saveDisabled, s
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const patch = (id: string, p: any) => { commit(); setNodes((ns) => ns.map((n) => n.id === id ? { ...n, data: { ...n.data, ...p } } : n)) }
-  const remove = (id: string) => { commit(true); setNodes((ns) => ns.filter((n) => n.id !== id)); setEdges((es) => es.filter((e) => e.source !== id && e.target !== id)) }
-  const editNode = (id: string) => setNodes((ns) => ns.map((n): Node => ({ ...n, selected: n.id === id })))
+  const remove = (id: string) => { commit(true); setEditId((e) => (e === id ? null : e)); setNodes((ns) => ns.filter((n) => n.id !== id)); setEdges((es) => es.filter((e) => e.source !== id && e.target !== id)) }
+  // Настройки блока открываются только карандашом на самом блоке; обычный клик по блоку лишь выделяет его
+  const [editId, setEditId] = useState<string | null>(null)
+  const editNode = (id: string) => { setEditId(id); setNodes((ns) => ns.map((n): Node => ({ ...n, selected: n.id === id }))) }
   const duplicate = (id: string) => {
     const n = nodes.find((x) => x.id === id)
     if (!n) return
@@ -133,13 +135,13 @@ function Inner({ graph, onChange, counts, full, setFull, onSave, saveDisabled, s
     return () => clearTimeout(t)
   }, [ready]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const selected = nodes.filter((n) => n.selected).length === 1 ? nodes.find((n) => n.selected)! : null
-  // на телефоне шторка закрывает нижнюю часть: поднимаем выбранный блок в верхнюю четверть
+  const editing = editId ? nodes.find((n) => n.id === editId) ?? null : null
+  // на телефоне шторка закрывает нижнюю часть: поднимаем редактируемый блок в верхнюю четверть
   useEffect(() => {
-    if (!selected || !isMobile() || !wrap.current) return
+    if (!editing || !isMobile() || !wrap.current) return
     const z = 0.85, h = wrap.current.clientHeight
-    rf.setCenter(selected.position.x + 135, selected.position.y + (h / 2 - 14) / z, { zoom: z, duration: 250 })
-  }, [selected?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+    rf.setCenter(editing.position.x + 135, editing.position.y + (h / 2 - 14) / z, { zoom: z, duration: 250 })
+  }, [editing?.id]) // eslint-disable-line react-hooks/exhaustive-deps
   const allProblems = nodes.filter((n) => n.type !== 'note').reduce((a, n) => a + problems(n.type as string, n.data).length, 0)
 
   return (
@@ -162,14 +164,14 @@ function Inner({ graph, onChange, counts, full, setFull, onSave, saveDisabled, s
         <ReactFlow
           nodes={nodes} edges={edges} nodeTypes={nodeTypes} onNodesChange={onNodesChange} onEdgesChange={onEdgesChange} onConnect={onConnect}
           onNodeDragStart={() => commit(true)}
-          onPaneClick={() => { setMenu(false); setNodes((ns) => ns.some((n) => n.selected) ? ns.map((n) => ({ ...n, selected: false })) : ns) }}
+          onPaneClick={() => { setMenu(false); setEditId(null); setNodes((ns) => ns.some((n) => n.selected) ? ns.map((n) => ({ ...n, selected: false })) : ns) }}
           fitView fitViewOptions={{ padding: 0.2 }} minZoom={0.2} maxZoom={1.6}
           defaultEdgeOptions={edgeStyle} deleteKeyCode={['Backspace', 'Delete']} proOptions={{ hideAttribution: true }}>
           <Background gap={22} size={1.4} />
           <Controls showInteractive={false} position="bottom-left" />
-          {!selected && <MiniMap pannable zoomable position="bottom-right" style={{ width: 150, height: 96 }} />}
+          {!editing && <MiniMap pannable zoomable position="bottom-right" style={{ width: 150, height: 96 }} />}
         </ReactFlow>
-        <div className={`dock ${selected ? 'hid' : ''}`}>
+        <div className={`dock ${editing ? 'hid' : ''}`}>
           <button type="button" className="btn primary" onClick={() => setMenu(!menu)} style={{ borderRadius: 999, padding: '10px 18px' }}><Ic d={P.plus} size={16} /> Добавить блок</button>
           <button type="button" className="btn show-s" onClick={() => rf.fitView({ padding: 0.15, duration: 300 })} style={{ borderRadius: 999, boxShadow: 'var(--shadow)' }}>Вся схема</button>
           {menu && (
@@ -187,7 +189,7 @@ function Inner({ graph, onChange, counts, full, setFull, onSave, saveDisabled, s
             </div>
           )}
         </div>
-        {selected && <Editor node={selected} patch={patch} remove={remove} duplicate={duplicate} close={() => setNodes((ns) => ns.map((n) => ({ ...n, selected: false })))} />}
+        {editing && <Editor node={editing} patch={patch} remove={remove} duplicate={duplicate} close={() => { setEditId(null); setNodes((ns) => ns.map((n) => ({ ...n, selected: false }))) }} />}
         {toast && <div className="toast">{toast}</div>}
       </div>
       {preview && <Preview nodes={nodes} edges={edges} onClose={() => setPreview(false)} />}
