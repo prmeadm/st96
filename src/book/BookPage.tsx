@@ -204,10 +204,9 @@ export default function BookPage() {
             <section className="bk-card">
               <h2><span className="bk-n">3</span>{t.service}</h2>
               <div className="bk-chips">{cfg?.services.map((s) => <button key={s.key} type="button" className={service === s.key ? 'on' : ''} aria-pressed={service === s.key} onClick={() => { setService(s.key); setTopics([]) }}>{s[lang]}</button>)}</div>
-              {svc && <p className="bk-dim">{lang === 'en' ? svc.infoEn : svc.infoRu} <a href={lang === 'en' ? svc.urlEn : svc.url} target="_blank" rel="noreferrer">{t.more}</a></p>}
               {service && SERVICE_OPTIONS[service] && (
                 <>
-                  <div className="bk-chips bk-topics" style={{ marginTop: 12 }} role="group" aria-label={t.topics}>
+                  <div className="bk-chips bk-topics" style={{ marginTop: 18 }} role="group" aria-label={t.topics}>
                     {SERVICE_OPTIONS[service]!.map((o) => {
                       const on = topics.includes(o.ru)
                       return <button key={o.ru} type="button" className={on ? 'on' : ''} aria-pressed={on} onClick={() => setTopics((cur) => (cur.includes(o.ru) ? cur.filter((x) => x !== o.ru) : [...cur, o.ru]))}>{on && <span aria-hidden="true">✓ </span>}{lang === 'en' ? o.en : o.ru}</button>
@@ -215,6 +214,7 @@ export default function BookPage() {
                   </div>
                 </>
               )}
+              {svc && <p className="bk-dim bk-svcinfo">{lang === 'en' ? svc.infoEn : svc.infoRu} <a href={lang === 'en' ? svc.urlEn : svc.url} target="_blank" rel="noreferrer">{t.more}</a></p>}
             </section>
 
             <section className="bk-card">
