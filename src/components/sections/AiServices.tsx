@@ -128,11 +128,11 @@ export default function AiServices() {
                     type="button"
                     onClick={() => order(s.slug, s.title[lang])}
                     data-cursor-hover
-                    className="mt-auto inline-flex w-fit items-center gap-2 rounded-full px-5 py-2.5 font-display text-xs font-semibold text-ink transition-transform duration-200 ease-out hover:scale-[1.03] active:scale-[0.97]"
-                    style={{ background: accent.solid }}
+                    className="group/order mt-auto inline-flex w-fit items-center gap-2 rounded-full border-2 border-[var(--c)] bg-transparent px-5 py-2.5 font-display text-xs font-semibold text-[var(--c)] transition-[background-color,color,transform] duration-200 ease-out hover:bg-[var(--c)] hover:text-ink active:scale-[0.97] motion-reduce:transition-colors"
+                    style={{ ['--c' as string]: accent.solid }}
                   >
                     {t.order}
-                    <ArrowUpRight className="h-3.5 w-3.5" />
+                    <ArrowUpRight className="h-3.5 w-3.5 transition-transform duration-200 ease-out group-hover/order:translate-x-0.5 group-hover/order:-translate-y-0.5" />
                   </button>
                 </div>
                 <div
