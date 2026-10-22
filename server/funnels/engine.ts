@@ -3,6 +3,7 @@ import { bookingUrl, FORMAT_KEYS, type FormatKey, type ServiceKey } from '../boo
 import { serviceByLabel } from '../catalog'
 import { hasFreeSlots } from '../booking/service'
 import type { ClientRow, Repo } from '../repo'
+import { isBlockedError, retryDelay } from './retry'
 import {
   asArray, nextOf, parseDelay, parsePair, str,
   type ActionItem, type Funnel, type Graph, type Link, type Part, type Quick, type Rule, type RunRow,
@@ -105,18 +106,32 @@ export async function startFunnel(env: Env, funnel: Funnel, client: ClientRow): 
   return advance(env, funnel, client, run, nextOf(g, start.id), {})
 }
 
-/** Нажатие кнопки быстрого ответа. */
-export async function handleClick(env: Env, client: ClientRow, run: RunRow, quickId: string): Promise<'ok' | 'stale'> {
+/** callback_data кнопки: fb:<запуск>:<кнопка>[:<блок>] (Telegram ограничивает 64 байтами, блок добавляем, если помещается). */
+export function quickData(runId: string, quickId: string, nodeId: string): string {
+  const withNode = `fb:${runId}:${quickId}:${nodeId}`
+  return /^[\w-]{1,24}$/.test(nodeId) && new TextEncoder().encode(withNode).length <= 64 ? withNode : `fb:${runId}:${quickId}`
+}
+
+/**
+ * Нажатие кнопки быстрого ответа. Работает и для кнопок старых сообщений: клиент может вернуться к любой ветке,
+ * воронка продолжится с неё (другой идущий запуск этого клиента останавливается).
+ */
+export async function handleClick(env: Env, client: ClientRow, run: RunRow, quickId: string, nodeHint?: string): Promise<'ok' | 'stale'> {
   const funnel = await env.repo.getFunnel(run.funnel_id)
-  if (!funnel || run.status !== 'waiting' || run.vars.__wait !== 'input' || !run.current_node) return 'stale'
-  const node = funnel.graph.nodes.find((n) => n.id === run.current_node)
-  const q = asArray<Quick>(node?.data.quick).find((x) => x.id === quickId)
-  if (!node || !q) return 'stale'
+  if (!funnel) return 'stale'
+  const nodes = funnel.graph.nodes
+  const holds = (n?: (typeof nodes)[number]) => !!n && n.type === 'message' && asArray<Quick>(n.data.quick).some((x) => x.id === quickId)
+  const node = [nodeHint, run.current_node].map((id) => nodes.find((n) => n.id === id)).find(holds) ?? nodes.find(holds)
+  if (!node) return 'stale'
+  const q = asArray<Quick>(node.data.quick).find((x) => x.id === quickId)!
+  const active = await env.repo.findActiveRun(client.id)
+  if (active && active.id !== run.id) await env.repo.updateRun(active.id, { status: 'stopped', finished_at: new Date().toISOString() })
   await env.repo.insertEvent({ run_id: run.id, funnel_id: run.funnel_id, client_id: client.id, node_id: node.id, event: 'click', data: { quick: q.id, label: q.label } })
   await env.repo.insertMessage({ client_id: client.id, direction: 'in', kind: 'text', text: q.label, tg_chat_id: client.tg_user_id, tg_message_id: null })
   const target = nextOf(funnel.graph, node.id, `qr-${q.id}`)
-  await env.repo.updateRun(run.id, { status: 'running', vars: { ...run.vars, __wait: null } })
-  await advance(env, funnel, client, { ...run, status: 'running' }, target, {})
+  const vars = { ...run.vars, __wait: null, __resume: null, __retries: 0 }
+  await env.repo.updateRun(run.id, { status: 'running', current_node: node.id, wake_at: null, finished_at: null, vars })
+  await advance(env, funnel, client, { ...run, status: 'running', vars }, target, {})
   return 'ok'
 }
 
@@ -137,13 +152,13 @@ export async function resumeRun(env: Env, runId: string): Promise<'resumed' | 's
   if (!run || run.status !== 'waiting' || run.vars.__wait !== 'timer') return 'skipped'
   const funnel = await env.repo.getFunnel(run.funnel_id)
   const client = await env.repo.findClientById(run.client_id)
-  const r = run.vars.__resume as { node: string; item: number } | undefined
+  const r = run.vars.__resume as { node: string; item: number; retry?: boolean } | undefined
   if (!funnel || !client || !r) {
     await env.repo.updateRun(run.id, { status: 'failed' })
     return 'skipped'
   }
   await env.repo.updateRun(run.id, { status: 'running', wake_at: null, vars: { ...run.vars, __wait: null, __resume: null } })
-  await advance(env, funnel, client, { ...run, status: 'running' }, r.node, { itemIndex: r.item, proactive: true })
+  await advance(env, funnel, client, { ...run, status: 'running' }, r.node, { itemIndex: r.item, proactive: !r.retry })
   return 'resumed'
 }
 
@@ -180,8 +195,9 @@ export async function advance(env: Env, funnel: Funnel, client: ClientRow, run: 
   let firstItem = opts.itemIndex ?? 0
   const chat = client.tg_user_id
   const lang = client.language
-  // Отложенные сообщения (после паузы) уходят только тем, кто согласился на рассылки
-  const mayPush = !opts.proactive || (!!client.consent_at && !client.opted_out_at)
+  // Воронка — диалог, который клиент начал сам, поэтому её шаги (и после паузы) уходят всем, кроме отписавшихся (/stop).
+  // Согласие на рассылки (consent_at) нужно только для массовых рассылок.
+  const mayPush = !opts.proactive || !client.opted_out_at
   const event = (node: string, ev: string, data?: Record<string, unknown>) => repo.insertEvent({ run_id: run.id, funnel_id: funnel.id, client_id: client.id, node_id: node, event: ev, data })
   const finish = async (status: 'done' | 'stopped'): Promise<Outcome> => {
     await repo.updateRun(run.id, { status, current_node: id, vars, finished_at: new Date().toISOString() })
@@ -190,18 +206,20 @@ export async function advance(env: Env, funnel: Funnel, client: ClientRow, run: 
 
   let guard = 0
   let sends = 0
+  let pos = 0 // какая часть сообщения или какое действие блока сейчас выполняется (для продолжения после сбоя)
   while (id && guard++ < MAX_STEPS) {
     const node = g.nodes.find((n) => n.id === id)
     if (!node) break
     const d = node.data
-    await event(node.id, 'enter')
+    try {
+    if (firstItem === 0) await event(node.id, 'enter')
 
     if (node.type === 'message') {
       const parts = asArray<Part>(d.parts)
       const quick = asArray<Quick>(d.quick)
       const links = asArray<Link>(d.links)
       const kb: Btn[][] = [
-        ...quick.map((q) => [{ text: lang === 'en' && q.en ? q.en : q.label, callback_data: `fb:${run.id}:${q.id}` }]),
+        ...quick.filter((q) => str(lang === 'en' && q.en ? q.en : q.label).trim()).map((q) => [{ text: lang === 'en' && q.en ? q.en : q.label, callback_data: quickData(run.id, q.id, node.id) }]),
         ...links.filter((l) => str(l.label).trim() && /^(https?:\/\/|tg:\/\/)\S+$/i.test(str(l.url).trim())).map((l) => [{ text: l.label, url: l.url.trim() }]),
       ]
       const sendable = parts.filter((p) => (p.kind === 'text' ? !!str(lang === 'en' && p.en ? p.en : p.text).trim() : !!p.url))
@@ -211,7 +229,8 @@ export async function advance(env: Env, funnel: Funnel, client: ClientRow, run: 
           await event(node.id, 'loop_guard')
           return finish('done')
         }
-        for (let i = 0; i < sendable.length; i++) {
+        for (let i = Math.min(firstItem, sendable.length - 1); i < sendable.length; i++) {
+          pos = i
           const p = sendable[i]
           const buttons = i === sendable.length - 1 && kb.length ? kb : undefined
           if (p.kind === 'text') {
@@ -227,8 +246,9 @@ export async function advance(env: Env, funnel: Funnel, client: ClientRow, run: 
         await event(node.id, 'skipped_no_consent')
         if (quick.length) return finish('done')
       }
+      firstItem = 0
       if (quick.length && chat && mayPush) {
-        await repo.updateRun(run.id, { status: 'waiting', current_node: node.id, vars: { ...vars, __wait: 'input' } })
+        await repo.updateRun(run.id, { status: 'waiting', current_node: node.id, vars: { ...vars, __wait: 'input', __retries: 0 } })
         return 'waiting_input'
       }
       id = nextOf(g, node.id)
@@ -253,6 +273,7 @@ export async function advance(env: Env, funnel: Funnel, client: ClientRow, run: 
     if (node.type === 'action') {
       const items = asArray<ActionItem>(d.items)
       for (let i = firstItem; i < items.length; i++) {
+        pos = i
         const a = items[i]
         const v = str(a.value).trim()
         if (a.kind === 'delay') {
@@ -312,6 +333,24 @@ export async function advance(env: Env, funnel: Funnel, client: ClientRow, run: 
 
     // start, note и неизвестные блоки: идём дальше
     id = node.type === 'start' ? nextOf(g, node.id) : null
+    } catch (e) {
+      // Сбой отправки не должен останавливать воронку: временный (429, сеть, 5xx) повторяем по расписанию с того же места,
+      // окончательный (клиент заблокировал бота, неверный запрос) записываем и сообщаем сотрудникам в тему клиента.
+      const msg = e instanceof Error ? e.message : String(e)
+      const tries = Number(vars.__retries ?? 0)
+      const delay = retryDelay(e)
+      console.error('funnel step failed', run.id, node.id, msg)
+      await event(node.id, 'send_failed', { error: msg.slice(0, 300), tries }).catch(() => undefined)
+      if (delay !== null && tries < 5) {
+        const at = new Date(nowOf(env).getTime() + Math.max(delay, 3000))
+        await repo.updateRun(run.id, { status: 'waiting', current_node: node.id, wake_at: at.toISOString(), vars: { ...vars, __wait: 'timer', __retries: tries + 1, __resume: { node: node.id, item: pos, retry: !opts.proactive } } })
+        await repo.enqueueJob('resume_run', at, { runId: run.id })
+        return 'waiting_timer'
+      }
+      await repo.updateRun(run.id, { status: 'failed', current_node: node.id, vars, finished_at: new Date().toISOString() }).catch(() => undefined)
+      if (!isBlockedError(e)) await env.out.notifyAdmins(client, `⚠️ Воронка «${funnel.name}» не смогла отправить клиенту блок ${node.id}: ${msg.slice(0, 200)}`).catch(() => undefined)
+      return 'done'
+    }
   }
 
   if (guard >= MAX_STEPS) await event(from ?? 'unknown', 'loop_guard')

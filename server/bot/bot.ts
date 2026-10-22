@@ -131,14 +131,19 @@ export function createBot(token: string, repo: Repo, opts: { groupChatId: number
     }
   })
 
-  // Кнопки быстрых ответов из воронок: fb:<run>:<кнопка>
-  bot.callbackQuery(/^fb:([0-9a-f-]{36}):(\w+)$/, async (ctx) => {
+  // Кнопки быстрых ответов из воронок: fb:<запуск>:<кнопка>[:<блок>]
+  bot.callbackQuery(/^fb:([0-9a-f-]{36}):(\w+)(?::([\w-]{1,24}))?$/, async (ctx) => {
     const { client } = await ensureClient(repo, ctx.from)
-    const run = await repo.getRun(ctx.match[1])
-    if (!run || run.client_id !== client.id) return void (await ctx.answerCallbackQuery({ text: 'Кнопка устарела' }))
+    const t = T[client.language]
+    const run = await repo.getRun(ctx.match[1]!)
+    if (!run || run.client_id !== client.id) return void (await ctx.answerCallbackQuery({ text: t.staleButton, show_alert: true }))
+    if (isMuted(client)) return void (await ctx.answerCallbackQuery({ text: t.humanOn, show_alert: true }))
     await ctx.answerCallbackQuery()
-    const r = await handleClick(envFor(ctx.api), client, run, ctx.match[2])
-    if (r === 'ok') await ctx.editMessageReplyMarkup({ reply_markup: undefined }).catch(() => undefined)
+    // Сразу убираем кнопки ответов у нажатого сообщения (повторное нажатие не запустит ветку дважды), кнопки-ссылки оставляем
+    const rows = (ctx.callbackQuery.message?.reply_markup?.inline_keyboard ?? []).map((r) => r.filter((b) => 'url' in b)).filter((r) => r.length)
+    await ctx.editMessageReplyMarkup({ reply_markup: rows.length ? { inline_keyboard: rows } : undefined }).catch(() => undefined)
+    const r = await handleClick(envFor(ctx.api), client, run, ctx.match[2]!, ctx.match[3])
+    if (r === 'stale') await ctx.reply(t.staleButton).catch(() => undefined)
   })
 
   // Кнопка шаблона в теме клиента (после /shablon): отправляем шаблон тому, чья это тема

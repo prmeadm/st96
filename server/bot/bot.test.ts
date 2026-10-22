@@ -219,7 +219,7 @@ test('воронка: чужая кнопка и старый запуск не 
   const other = { ...user, id: 999, username: 'other' }
   await send({ callback_query: { id: 'c2', from: other, chat_instance: 'x', data: `fb:${repo.runs[0].id}:q1`, message: { message_id: 9, date: 1, chat: { id: 999, type: 'private', first_name: 'X' } } } })
   assert.equal(repo.runs[0].status, 'waiting')
-  assert.ok(calls.some((c) => c.method === 'answerCallbackQuery' && /устарела/.test(String(c.payload.text))))
+  assert.ok(calls.some((c) => c.method === 'answerCallbackQuery' && /больше не работает/.test(String(c.payload.text))))
 })
 
 test('воронка по ключевому слову запускается на сообщение', async () => {
@@ -317,4 +317,23 @@ test('кнопки заявки на встречу работают в личн
   await send(btn({ ...user, id: 777, username: 'Studia96' }, 777))
   assert.equal(repo.bookings[0]!.status, 'confirmed')
   assert.ok(calls.some((c) => c.method === 'answerCallbackQuery'))
+})
+
+test('нажатие кнопки воронки: кнопки ответов убираются, кнопки-ссылки остаются; во время диалога с человеком старые кнопки не перезапускают бота', async () => {
+  const { repo, calls, send } = setup()
+  publish(repo)
+  await send(msg('/start', START_ENT))
+  const run = repo.runs[0]!
+  const markup = { inline_keyboard: [[{ text: 'Услуги и цены', callback_data: `fb:${run.id}:q1:m1` }], [{ text: 'Сайт', url: 'https://st96.by' }]] }
+  const cb = (id: string, data: string) => ({ callback_query: { id, from: user, chat_instance: 'x', data, message: { message_id: 9, date: 1, chat: priv, text: 'x', reply_markup: markup } } })
+  await send(cb('c1', `fb:${run.id}:q1:m1`) as never)
+  const edit = calls.find((c) => c.method === 'editMessageReplyMarkup')!
+  assert.deepEqual(edit.payload.reply_markup, { inline_keyboard: [[{ text: 'Сайт', url: 'https://st96.by' }]] })
+  assert.ok(repo.events.some((e) => e.event === 'click'))
+
+  await repo.updateClient(repo.clients[0]!.id, { human_until: new Date(Date.now() + 3600_000).toISOString() })
+  const clicks = repo.events.filter((e) => e.event === 'click').length
+  await send(cb('c2', `fb:${run.id}:q2:m1`) as never)
+  assert.equal(repo.events.filter((e) => e.event === 'click').length, clicks, 'пока отвечает человек, нажатие не запускает воронку')
+  assert.ok(calls.some((c) => c.method === 'answerCallbackQuery' && /администратор/.test(String(c.payload.text))))
 })

@@ -72,14 +72,16 @@ test('кнопка «Связаться с админом»: передача ч
   assert.equal(repo.runs[0].status, 'stopped')
 })
 
-test('устаревшая и неизвестная кнопки игнорируются, текст без выхода «другое» тоже', async () => {
+test('неизвестная кнопка игнорируется, текст без выхода «другое» тоже; кнопку старого сообщения можно нажать снова', async () => {
   const { repo, env, funnel, clientP } = setup()
   const client = await clientP
   await startFunnel(env, funnel, client)
   assert.equal(await handleClick(env, client, repo.runs[0], 'zzz'), 'stale')
   assert.equal(await handleFreeText(env, client, repo.runs[0]), false)
   await handleClick(env, client, repo.runs[0], 'q4')
-  assert.equal(await handleClick(env, client, repo.runs[0], 'q4'), 'stale')
+  // запуск завершён передачей человеку, но кнопка из первого сообщения по-прежнему ведёт по своей ветке
+  // (пока диалог у человека, бот такие нажатия не пропускает: это проверяется в обработчике бота)
+  assert.equal(await handleClick(env, client, repo.runs[0], 'q4'), 'ok')
 })
 
 test('текст клиента идёт по выходу «Если клиент написал другое»', async () => {
@@ -127,12 +129,17 @@ test('условие по тегу, действие: тег, переменна
   assert.ok(only(calls, 'text').some((c) => c.text === 'Вы наш VIP'))
 })
 
-test('после паузы сообщение не уходит клиенту без согласия или отписанному', async () => {
+test('после паузы сообщение уходит клиенту, который сам запустил бота, но не отписавшемуся (/stop)', async () => {
   const graph = g([start(), { id: 'a1', type: 'action', data: { items: [{ id: 'x', kind: 'delay', value: '1 час' }] } }, msg('m', 'Акция только сегодня')], [E('start', 'out', 'a1'), E('a1', 'out', 'm')])
-  for (const patch of [{ consent_at: null }, { opted_out_at: '2026-10-10T00:00:00Z' }]) {
-    const { repo, calls, env, funnel, clientP } = setup(graph, patch)
-    const client = await clientP
-    await startFunnel(env, funnel, client)
+  {
+    const { repo, calls, env, funnel, clientP } = setup(graph, { consent_at: null })
+    await startFunnel(env, funnel, await clientP)
+    await resumeRun(env, repo.runs[0].id)
+    assert.deepEqual(only(calls, 'text').map((c) => c.text), ['Акция только сегодня'], 'без согласия на рассылки шаг воронки всё равно доходит')
+  }
+  {
+    const { repo, calls, env, funnel, clientP } = setup(graph, { opted_out_at: '2026-10-10T00:00:00Z' })
+    await startFunnel(env, funnel, await clientP)
     await resumeRun(env, repo.runs[0].id)
     assert.equal(only(calls, 'text').length, 0)
     assert.ok(repo.events.some((e) => e.event === 'skipped_no_consent'))

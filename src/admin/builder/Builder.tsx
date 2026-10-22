@@ -110,6 +110,11 @@ function Inner({ graph, onChange, counts, full, setFull, onSave, saveDisabled, s
     commit(true)
     const c: Node = JSON.parse(JSON.stringify(n))
     c.id = uid('n'); c.position = { x: n.position.x + 40, y: n.position.y + 60 }; c.selected = true
+    // у копии свои id частей, кнопок и правил: иначе нажатие кнопки копии бот мог принять за кнопку оригинала
+    const d = c.data as Record<string, unknown>
+    for (const [k, p] of [['parts', 'p'], ['quick', 'q'], ['links', 'l'], ['rules', 'r'], ['items', 'a']] as const) {
+      if (Array.isArray(d[k])) d[k] = (d[k] as { id: string }[]).map((x) => ({ ...x, id: uid(p) }))
+    }
     setNodes((ns) => [...ns.map((x): Node => ({ ...x, selected: false })), c])
   }
   const add = (type: string) => {

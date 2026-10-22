@@ -7,7 +7,7 @@ import { InlineKeyboard, type Api } from 'grammy'
 import { UNKNOWN_SERVICE, serviceLabel } from '../catalog'
 import { bookingUrl } from '../booking/schedule'
 import { clickablePhone } from '../leads/parse'
-import { NOT_A_FILE_ERROR, errorText, isVideoPageUrl } from '../media'
+import { CAPTION_LIMIT, NOT_A_FILE_ERROR, canonicalVideoUrl, errorText, isVideoPageUrl, splitText, youtubeId, youtubeThumb } from '../media'
 import type { ClientRow, Repo } from '../repo'
 import { TPL_KINDS, fillTemplate, type TemplateKind, type TemplateRow } from '../templates'
 
@@ -169,25 +169,39 @@ export async function sendContent(api: Api, client: ClientRow, c: Content, foote
   const chat = client.tg_user_id
   const raw = client.language === 'en' && c.body_en ? c.body_en : c.body
   const text = (fillTemplate(raw, client).trim() + footer).trim()
+  const sendLong = async (t: string) => { for (const part of splitText(t)) await api.sendMessage(chat, part, { link_preview_options: { is_disabled: true } }) }
   if (c.kind === 'text') {
-    await api.sendMessage(chat, text, { link_preview_options: { is_disabled: true } })
-  } else {
-    if (!c.media_url) throw new Error('нет ссылки на файл')
-    const url = c.media_url
-    const extra = { caption: text || undefined }
-    const asLink = () => api.sendMessage(chat, [text, url].filter(Boolean).join('\n'), { link_preview_options: { url, prefer_large_media: true } })
-    if (isVideoPageUrl(url)) await asLink()
-    else {
-      try {
-        if (c.kind === 'photo') await api.sendPhoto(chat, url, extra)
-        else if (c.kind === 'video') await api.sendVideo(chat, url, extra)
-        else if (c.kind === 'voice') await api.sendVoice(chat, url, extra)
-        else if (c.kind === 'audio') await api.sendAudio(chat, url, extra)
-        else await api.sendDocument(chat, url, extra)
-      } catch (e) {
-        if (!NOT_A_FILE_ERROR.test(errorText(e))) throw e
-        await asLink()
-      }
+    await sendLong(text)
+    return text
+  }
+  if (!c.media_url) throw new Error('нет ссылки на файл')
+  const url = c.media_url
+  // подпись к файлу Telegram ограничивает 1024 символами: длинный текст уходит отдельным сообщением перед файлом
+  const caption = text && text.length <= CAPTION_LIMIT ? text : undefined
+  if (text && !caption) await sendLong(text)
+  const link = canonicalVideoUrl(url)
+  const yt = isVideoPageUrl(url) ? youtubeId(link) : null
+  const asLink = () => api.sendMessage(chat, [caption, link].filter(Boolean).join('\n'), { link_preview_options: yt ? { is_disabled: true } : { url: link, prefer_large_media: true } })
+  if (yt) {
+    // YouTube: обложка ролика и кнопка «Смотреть видео» (предпросмотр ссылки медленный и часто упирается в 429)
+    try {
+      await api.sendPhoto(chat, youtubeThumb(yt), { caption, reply_markup: new InlineKeyboard().url('▶️ Смотреть видео', link) })
+    } catch (e) {
+      if ((e as { error_code?: number }).error_code === 429) throw e
+      await asLink()
+    }
+  } else if (isVideoPageUrl(url)) await asLink()
+  else {
+    const extra = { caption }
+    try {
+      if (c.kind === 'photo') await api.sendPhoto(chat, url, extra)
+      else if (c.kind === 'video') await api.sendVideo(chat, url, extra)
+      else if (c.kind === 'voice') await api.sendVoice(chat, url, extra)
+      else if (c.kind === 'audio') await api.sendAudio(chat, url, extra)
+      else await api.sendDocument(chat, url, extra)
+    } catch (e) {
+      if (!NOT_A_FILE_ERROR.test(errorText(e))) throw e
+      await asLink()
     }
   }
   return text

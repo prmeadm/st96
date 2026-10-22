@@ -66,15 +66,17 @@ test('firstVideoUrl находит ссылку на видео в тексте 
   assert.equal(firstVideoUrl('Наш сайт https://st96.by и всё'), null)
 })
 
-test('текст со ссылкой на YouTube уходит с предпросмотром плеера, обычный текст без предпросмотра', async () => {
+test('текст со ссылкой на Vimeo уходит с предпросмотром плеера; YouTube и обычные ссылки без предпросмотра', async () => {
   const { calls, api } = fakeApi()
   const out = telegramOut(api, {} as Repo, null, { sleep: async () => undefined })
+  await out.sendText(1, 'Ролик: https://vimeo.com/123')
   await out.sendText(1, 'Ролик: https://youtu.be/dQw4w9WgXcQ?si=zz')
   await out.sendText(1, 'Сайт https://st96.by')
   const opt = (i: number) => (calls[i].args[2] as { link_preview_options: Record<string, unknown> }).link_preview_options
-  assert.equal(opt(0).url, 'https://www.youtube.com/watch?v=dQw4w9WgXcQ')
-  assert.equal(opt(0).is_disabled, undefined)
+  assert.equal(opt(0).url, 'https://vimeo.com/123')
   assert.equal(opt(1).is_disabled, true)
+  assert.match(String(calls[1].args[1]), /youtu\.be/)
+  assert.equal(opt(2).is_disabled, true)
 })
 
 test('Telegram 429 («подождите N секунд»): бот ждёт и повторяет, сообщение не теряется', async () => {

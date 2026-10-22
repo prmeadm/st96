@@ -47,3 +47,29 @@ export function canonicalVideoUrl(raw: string): string {
     return raw.trim()
   }
 }
+
+/** Идентификатор ролика YouTube (11 символов) из любой формы ссылки: watch, youtu.be, shorts, embed, live. */
+export function youtubeId(raw: string): string | null {
+  const m = canonicalVideoUrl(raw).match(/^https:\/\/www\.youtube\.com\/watch\?v=([\w-]{11})/)
+  return m ? m[1]! : null
+}
+
+/** Обложка ролика с CDN YouTube: есть у любого публичного видео, Telegram скачивает её быстро и надёжно. */
+export const youtubeThumb = (id: string) => `https://i.ytimg.com/vi/${id}/hqdefault.jpg`
+
+export const TEXT_LIMIT = 4096
+export const CAPTION_LIMIT = 1024
+
+/** Делит длинный текст на части не длиннее лимита Telegram: по абзацам, затем по строкам и словам. */
+export function splitText(text: string, limit = TEXT_LIMIT): string[] {
+  const out: string[] = []
+  let rest = text.trim()
+  while (rest.length > limit) {
+    const cut = Math.max(rest.lastIndexOf('\n\n', limit), rest.lastIndexOf('\n', limit), rest.lastIndexOf(' ', limit))
+    const at = cut > limit * 0.5 ? cut : limit
+    out.push(rest.slice(0, at).trim())
+    rest = rest.slice(at).trim()
+  }
+  if (rest) out.push(rest)
+  return out
+}
