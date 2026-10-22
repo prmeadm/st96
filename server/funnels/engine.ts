@@ -14,7 +14,7 @@ export type Btn = { text: string; callback_data?: string; url?: string }
 /** Отправка клиенту и сотрудникам. В проде это Telegram, в тестах запись вызовов. */
 export interface Out {
   sendText(chatId: number, text: string, buttons?: Btn[][]): Promise<void>
-  sendMedia(chatId: number, kind: 'image' | 'video' | 'audio' | 'file', url: string, caption?: string, buttons?: Btn[][]): Promise<void>
+  sendMedia(chatId: number, kind: 'image' | 'video' | 'videonote' | 'audio' | 'file', url: string, caption?: string, buttons?: Btn[][]): Promise<void>
   notifyAdmins(client: ClientRow, text: string): Promise<void>
 }
 
@@ -194,6 +194,8 @@ export function groupParts(parts: Part[]): { media?: Part; text?: Part }[] {
   const units: { order: number; media?: Part; text?: Part }[] = []
   parts.forEach((p, i) => {
     if (p.kind === 'text') return
+    // у кружка в Telegram не бывает подписи: он идёт отдельным сообщением, соседний текст остаётся сам по себе
+    if (p.kind === 'videonote') return void units.push({ order: i, media: p })
     const free = (j: number) => parts[j]?.kind === 'text' && !used.has(j)
     const t = free(i - 1) ? i - 1 : free(i + 1) ? i + 1 : -1
     if (t >= 0) used.add(t)
@@ -258,8 +260,8 @@ export async function advance(env: Env, funnel: Funnel, client: ClientRow, run: 
             await env.out.sendText(chat, text, buttons)
             await repo.insertMessage({ client_id: client.id, direction: 'out', kind: 'text', text, tg_chat_id: chat, tg_message_id: null })
           } else {
-            await env.out.sendMedia(chat, u.media.kind as 'image' | 'video' | 'audio' | 'file', u.media.url!, text || undefined, buttons)
-            await repo.insertMessage({ client_id: client.id, direction: 'out', kind: u.media.kind === 'image' ? 'photo' : u.media.kind === 'file' ? 'file' : (u.media.kind as 'video' | 'audio'), text: text || null, tg_chat_id: chat, tg_message_id: null })
+            await env.out.sendMedia(chat, u.media.kind as 'image' | 'video' | 'videonote' | 'audio' | 'file', u.media.url!, text || undefined, buttons)
+            await repo.insertMessage({ client_id: client.id, direction: 'out', kind: u.media.kind === 'image' ? 'photo' : u.media.kind === 'file' ? 'file' : u.media.kind === 'videonote' ? 'video' : (u.media.kind as 'video' | 'audio'), text: text || null, tg_chat_id: chat, tg_message_id: null })
           }
         }
       } else if (!mayPush) {

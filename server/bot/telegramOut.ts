@@ -1,4 +1,4 @@
-import { InlineKeyboard, type Api } from 'grammy'
+import { InlineKeyboard, InputFile, type Api } from 'grammy'
 import type { Btn, Out } from '../funnels/engine'
 import { RetryLaterError } from '../funnels/retry'
 import type { Repo } from '../repo'
@@ -143,6 +143,20 @@ export function telegramOut(api: Api, repo: Repo, groupChatId: number | null, op
     async sendMedia(chatId, kind, url, caption, buttons) {
       const kb = keyboard(buttons)
       if (isVideoPageUrl(url)) return sendVideoLink(chatId, url, caption, kb)
+      if (kind === 'videonote') {
+        // Кружок Telegram принимает только загруженным файлом (по ссылке нельзя): бот скачивает его и загружает сам.
+        // Подписи у кружка нет, поэтому текст (если он есть) уходит следующим сообщением вместе с кнопками.
+        try {
+          await paced(chatId, () => withKeyboardFallback((markup) => api.sendVideoNote(chatId, new InputFile(new URL(url)), { reply_markup: caption ? undefined : markup }), kb))
+        } catch (e) {
+          if (e instanceof RetryLaterError) throw e
+          // не квадрат, не MP4 или файл недоступен: клиент всё равно получает видео, обычным сообщением
+          console.error('video note rejected, sending as a regular video:', errorText(e).slice(0, 160))
+          await paced(chatId, () => withKeyboardFallback((markup) => api.sendVideo(chatId, url, { reply_markup: caption ? undefined : markup }), kb))
+        }
+        if (caption) await sendPlain(chatId, caption, kb, { is_disabled: true })
+        return
+      }
       const file = (cap: string | undefined, markup: Markup) => {
         const extra = { caption: cap, reply_markup: markup }
         if (kind === 'image') return api.sendPhoto(chatId, url, extra)

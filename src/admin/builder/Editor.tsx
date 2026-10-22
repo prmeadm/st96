@@ -5,6 +5,8 @@ import { TRIGGER } from '../../../server/funnels/types'
 import { ACT_TYPES, COND_TYPES, DAYS, FORMATS, P, SERVICES, TRIGGERS, TYPES, uid, type D } from './catalog'
 import { Ic } from './Nodes'
 import { TranslateButton } from '../ui/TranslateButton'
+import { MediaField } from '../ui/MediaField'
+import { VideoNoteField } from '../ui/VideoNoteField'
 import { supabase } from '../supabase'
 import type { TemplateRow } from '../../../server/templates'
 import { TPL_KINDS } from '../../../server/templates'
@@ -70,7 +72,9 @@ function Grouped({ items, onPick, label }: { items: { k: string; n: string; g: s
   )
 }
 
-const PART_NAMES: Record<string, string> = { text: 'Текст', image: 'Фото', video: 'Видео', audio: 'Аудио', file: 'Файл' }
+const PART_NAMES: Record<string, string> = { text: 'Текст', image: 'Фото', video: 'Видео', videonote: 'Кружок', audio: 'Аудио', file: 'Файл' }
+// вид части блока -> вид поля загрузки (как в шаблонах)
+const FIELD_KIND = { image: 'photo', video: 'video', audio: 'audio', file: 'file' } as const
 const ACT_HINT: Record<string, string> = {
   delay: 'Например: 2 часа, 30 мин, 1 день', notify: 'Текст уведомления, можно {имя}', addtag: 'Теги через запятую', deltag: 'Теги через запятую',
   segment: 'Название сегмента', setvar: 'ключ = значение', conv: 'Название цели',
@@ -105,20 +109,22 @@ export function Editor({ node, patch, remove, duplicate, close }: { node: Node; 
           <textarea value={p.text ?? ''} placeholder="Текст сообщения. Можно {имя}, {компания}, {запись}" onChange={(e) => set({ parts: d.parts.map((x: D) => x.id === p.id ? { ...x, text: e.target.value } : x) })} />
           <div className="lblrow"><span className="hint">English</span><TranslateButton source={p.text ?? ''} target={p.en ?? ''} onDone={(t) => set({ parts: d.parts.map((x: D) => x.id === p.id ? { ...x, en: t } : x) })} /></div>
           <textarea className="en" value={p.en ?? ''} placeholder="English (необязательно, для клиентов с английским)" onChange={(e) => set({ parts: d.parts.map((x: D) => x.id === p.id ? { ...x, en: e.target.value } : x) })} />
-        </>) : (
-          <input type="url" value={p.url ?? ''} placeholder="https://… ссылка на файл" onChange={(e) => set({ parts: d.parts.map((x: D) => x.id === p.id ? { ...x, url: e.target.value } : x) })} />
+        </>) : p.kind === 'videonote' ? (
+          <VideoNoteField value={p.url ?? ''} folder="funnels" onChange={(url) => set({ parts: d.parts.map((x: D) => x.id === p.id ? { ...x, url } : x) })} />
+        ) : (
+          <MediaField kind={FIELD_KIND[p.kind as keyof typeof FIELD_KIND] ?? 'file'} value={p.url ?? ''} folder="funnels" onChange={(url) => set({ parts: d.parts.map((x: D) => x.id === p.id ? { ...x, url } : x) })} />
         )}
       </div>
     ))}
     <div className="addrow">
-      {[['text', '+ Текст'], ['image', '+ Фото'], ['video', '+ Видео'], ['audio', '+ Аудио'], ['file', '+ Файл']].map(([k, l]) =>
+      {[['text', '+ Текст'], ['image', '+ Фото'], ['video', '+ Видео'], ['videonote', '+ Кружок'], ['audio', '+ Аудио'], ['file', '+ Файл']].map(([k, l]) =>
         <button type="button" key={k} onClick={() => set({ parts: [...d.parts, { id: uid('p'), kind: k, text: '', url: '' }] })}>{l}</button>)}
     </div>
     <TemplatePicker onPick={(t) => {
       set({ parts: [...d.parts, { id: uid('p'), kind: t.kind === 'photo' ? 'image' : t.kind === 'voice' ? 'audio' : t.kind, text: t.body, en: t.body_en ?? '', url: t.media_url ?? '' }] })
       supabase.from('template_events').insert({ template_id: t.id, kind: 'funnel' }).then(() => undefined)
     }} />
-    <div className="hint">Загрузка файлов появится позже: пока вставляйте прямую ссылку на файл. Ссылку на YouTube, Vimeo или Rutube тоже можно. Фото или видео уходит одним сообщением с соседним текстом: медиа сверху, текст под ним (как в Telegram).</div>
+    <div className="hint">Файл можно загрузить, снять камерой или вставить ссылкой (YouTube, Vimeo, Rutube тоже). Кружок — квадратное видео до минуты. Фото или видео уходит одним сообщением с соседним текстом: медиа сверху, текст под ним (как в Telegram).</div>
     <div className="h2">Быстрые ответы</div>
     <div className="hint">Каждый ответ получает свой выход: тяните связь к следующему блоку.</div>
     {d.quick.map((q: D) => (

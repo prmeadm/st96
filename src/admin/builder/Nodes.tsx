@@ -52,7 +52,7 @@ function Shell({ id, type, selected, data, children }: { id: string; type: strin
 const OutHandle = ({ id, label, cls }: { id: string; label: string; cls?: string }) => (
   <div className={`outl ${cls || ''}`}>{label}<Handle id={id} type="source" position={Position.Right} style={{ top: '50%' }} /></div>
 )
-const MEDIA: Record<string, [string, string]> = { image: [P.img, 'Фото'], video: [P.vid, 'Видео'], audio: [P.aud, 'Аудио'], file: [P.file, 'Файл'] }
+const MEDIA: Record<string, [string, string]> = { image: [P.img, 'Фото'], video: [P.vid, 'Видео'], videonote: [P.vid, 'Кружок'], audio: [P.aud, 'Аудио'], file: [P.file, 'Файл'] }
 
 function StartNode({ id, data, selected }: any) {
   return (

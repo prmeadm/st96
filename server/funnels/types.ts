@@ -1,5 +1,5 @@
 // Формат схемы воронки совпадает с конструктором (узлы и связи).
-export type Part = { id: string; kind: 'text' | 'image' | 'video' | 'audio' | 'file'; text?: string; en?: string; url?: string; name?: string }
+export type Part = { id: string; kind: 'text' | 'image' | 'video' | 'videonote' | 'audio' | 'file'; text?: string; en?: string; url?: string; name?: string }
 export type Quick = { id: string; label: string; en?: string }
 export type Link = { id: string; label: string; url: string }
 export type Rule = { id: string; kind: string; value: string }
