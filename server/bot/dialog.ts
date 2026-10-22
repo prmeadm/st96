@@ -176,11 +176,22 @@ export async function sendContent(api: Api, client: ClientRow, c: Content, foote
   }
   if (!c.media_url) throw new Error('нет ссылки на файл')
   const url = c.media_url
-  // подпись к файлу Telegram ограничивает 1024 символами: длинный текст уходит отдельным сообщением перед файлом
+  // медиа сверху, текст подписью (до 1024 знаков); длиннее: одно сообщение с картинкой над текстом через предпросмотр
   const caption = text && text.length <= CAPTION_LIMIT ? text : undefined
-  if (text && !caption) await sendLong(text)
   const link = canonicalVideoUrl(url)
   const yt = isVideoPageUrl(url) ? youtubeId(link) : null
+  if (text && !caption && text.length <= 4096 && (yt || !isVideoPageUrl(url))) {
+    try {
+      await api.sendMessage(chat, text, {
+        link_preview_options: { url: yt ? youtubeThumb(yt) : url, prefer_large_media: true, show_above_text: true },
+        reply_markup: yt ? new InlineKeyboard().url('▶️ Смотреть видео', link) : undefined,
+      })
+      return text
+    } catch (e) {
+      if ((e as { error_code?: number }).error_code === 429) throw e
+    }
+  }
+  const textAfter = text && !caption ? text : '' // запасной путь для длинного текста: сначала файл, под ним текст
   const asLink = () => api.sendMessage(chat, [caption, link].filter(Boolean).join('\n'), { link_preview_options: yt ? { is_disabled: true } : { url: link, prefer_large_media: true } })
   if (yt) {
     // YouTube: обложка ролика и кнопка «Смотреть видео» (предпросмотр ссылки медленный и часто упирается в 429)
@@ -204,6 +215,7 @@ export async function sendContent(api: Api, client: ClientRow, c: Content, foote
       await asLink()
     }
   }
+  if (textAfter) await sendLong(textAfter)
   return text
 }
 

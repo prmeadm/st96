@@ -64,11 +64,14 @@ async function setup(fail?: (method: string, n: number) => number | null) {
 const buttons = (s: Sent) => (s.extra.reply_markup?.inline_keyboard ?? []).flat().map((b) => b.text)
 const lastRun = (repo: ReturnType<typeof memoryRepo>) => repo.runs[repo.runs.length - 1]!
 
+const preview = (s: Sent) => s.extra.link_preview_options as { url?: string; show_above_text?: boolean } | undefined
+
 test('живая воронка: путь «Услуги → Видео продакшн» доходит до видео, кнопок и записи через сутки', async () => {
   const { repo, tg, env, funnel, client, later } = await setup()
   assert.equal(await startFunnel(env, funnel, client), 'waiting_input')
-  assert.deepEqual(tg.sent.map((s) => s.method), ['sendMessage', 'sendPhoto'])
-  assert.deepEqual(buttons(tg.sent[1]!), ['Услуги и цены', 'Записаться на встречу', 'Задать вопрос', 'Связаться с админом'], 'кнопки на последнем сообщении блока')
+  assert.deepEqual(tg.sent.map((s) => s.method), ['sendPhoto'], 'приветствие: одно сообщение, фото сверху, текст подписью')
+  assert.match(String(tg.sent[0]!.extra.caption), /Здравствуйте, Дмитрий!/)
+  assert.deepEqual(buttons(tg.sent[0]!), ['Услуги и цены', 'Записаться на встречу', 'Задать вопрос', 'Связаться с админом'])
 
   assert.equal(await handleClick(env, client, lastRun(repo), 'q1', 'm1'), 'ok')
   assert.deepEqual(buttons(tg.sent.at(-1)!), ['AI-разработка', 'Видео продакшн на базе AI', 'Коммерческий промоушн', 'Вернемся со сметой за 48 часов'])
@@ -76,12 +79,15 @@ test('живая воронка: путь «Услуги → Видео прод
   const before = tg.sent.length
   assert.equal(await handleClick(env, client, lastRun(repo), 'quz25fc', 'nto3rtb'), 'ok')
   const block = tg.sent.slice(before)
-  assert.deepEqual(block.map((s) => s.method), ['sendMessage', 'sendPhoto'], 'текст, затем обложка ролика (не файл и не медленный предпросмотр)')
-  assert.match(String(block[1]!.body), /^https:\/\/i\.ytimg\.com\/vi\/O3M6Ox3-Mhs\//)
-  const kb = block[1]!.extra.reply_markup!.inline_keyboard.flat()
+  // текст блока длиннее подписи (1024): одно сообщение, обложка ролика над текстом (предпросмотр), кнопки под ним
+  assert.deepEqual(block.map((s) => s.method), ['sendMessage'])
+  assert.match(String(block[0]!.body), /Видео продакшн на базе AI/)
+  assert.match(String(preview(block[0]!)?.url), /^https:\/\/i\.ytimg\.com\/vi\/O3M6Ox3-Mhs\//)
+  assert.equal(preview(block[0]!)?.show_above_text, true)
+  const kb = block[0]!.extra.reply_markup!.inline_keyboard.flat()
   assert.equal(kb[0]!.text, '▶️ Смотреть видео')
   assert.equal(kb[0]!.url, 'https://www.youtube.com/watch?v=O3M6Ox3-Mhs')
-  assert.deepEqual(kb.slice(1).map((b) => b.text), ['Коммерческий промоушн', 'Обсудим проект?'], 'кнопки блока видны и на видео-сообщении')
+  assert.deepEqual(kb.slice(1).map((b) => b.text), ['Коммерческий промоушн', 'Обсудим проект?'])
   assert.equal(lastRun(repo).status, 'waiting')
 
   assert.equal(await handleClick(env, client, lastRun(repo), 'q6epmur', 'nd6vr88'), 'ok')
@@ -96,27 +102,50 @@ test('живая воронка: путь «Услуги → Видео прод
   assert.match(booking.extra.reply_markup!.inline_keyboard[0]![0]!.url!, /^https:\/\/st96\.by\/book\?/)
 })
 
+test('живая воронка: короткий текст с видео YouTube — обложка с подписью одним сообщением', async () => {
+  const { repo, tg, env, funnel, client } = await setup()
+  const short = JSON.parse(JSON.stringify(funnel)) as Funnel
+  short.graph.nodes.find((n) => n.id === 'nd6vr88')!.data.parts = [{ id: 'a', kind: 'text', text: 'Наш ролик' }, { id: 'b', kind: 'video', url: 'https://youtu.be/O3M6Ox3-Mhs' }]
+  repo.funnels[0] = short
+  await startFunnel(env, short, client)
+  await handleClick(env, client, lastRun(repo), 'q1', 'm1')
+  const before = tg.sent.length
+  await handleClick(env, client, lastRun(repo), 'quz25fc', 'nto3rtb')
+  const block = tg.sent.slice(before)
+  assert.deepEqual(block.map((s) => s.method), ['sendPhoto'])
+  assert.equal(block[0]!.extra.caption, 'Наш ролик')
+})
+
 test('живая воронка: 429 на видео-блоке не теряет сообщение, воронка продолжается с того же места', async () => {
-  let failPhoto = true
-  const { repo, tg, env, funnel, client } = await setup((method) => (method === 'sendPhoto' && failPhoto && tg.sent.some((s) => String(s.body).includes('Видео продакшн')) ? 8 : null))
+  let fail = true
+  const { repo, tg, env, funnel, client } = await setup((method) => (method === 'sendMessage' && fail && tg.sent.some((s) => buttons(s).includes('Вернемся со сметой за 48 часов')) ? 30 : null))
   await startFunnel(env, funnel, client)
   await handleClick(env, client, lastRun(repo), 'q1', 'm1')
   const before = tg.sent.length
   await handleClick(env, client, lastRun(repo), 'quz25fc', 'nto3rtb')
-  assert.deepEqual(tg.sent.slice(before).map((s) => s.method), ['sendMessage'], 'текст ушёл, обложка получила 429')
+  assert.equal(tg.sent.length, before, 'Telegram ответил 429 и просил ждать 30 с: в этом запросе не ждём')
   const run = lastRun(repo)
   assert.equal(run.status, 'waiting')
   assert.equal(run.vars.__wait, 'timer')
-  assert.deepEqual(run.vars.__resume, { node: 'nd6vr88', item: 1, retry: true })
+  assert.deepEqual(run.vars.__resume, { node: 'nd6vr88', item: 0, retry: true })
   assert.ok(repo.jobs.some((j) => j.kind === 'resume_run' && !j.done))
 
-  failPhoto = false
+  fail = false
   assert.equal(await resumeRun(env, run.id), 'resumed')
-  const after = tg.sent.slice(before + 1)
-  assert.deepEqual(after.map((s) => s.method), ['sendPhoto'], 'повтор отправляет только недошедшую часть, текст не дублируется')
+  const after = tg.sent.slice(before)
+  assert.equal(after.length, 1, 'повтор отправляет блок один раз')
   assert.ok(buttons(after[0]!).includes('Коммерческий промоушн'))
-  assert.equal(lastRun(repo).status, 'waiting')
   assert.equal(await handleClick(env, client, lastRun(repo), 'q6epmur', 'nd6vr88'), 'ok', 'кнопки после повтора работают')
+})
+
+test('части блока: медиа склеивается с соседним текстом, лишний текст идёт отдельно', async () => {
+  const { groupParts } = await import('./engine')
+  const P = (id: string, kind: string) => ({ id, kind } as never)
+  const shape = (u: ReturnType<typeof groupParts>) => u.map((x) => `${x.media?.id ?? '-'}+${x.text?.id ?? '-'}`)
+  assert.deepEqual(shape(groupParts([P('t1', 'text'), P('i1', 'image')])), ['i1+t1'])
+  assert.deepEqual(shape(groupParts([P('i1', 'image'), P('t1', 'text')])), ['i1+t1'])
+  assert.deepEqual(shape(groupParts([P('t1', 'text'), P('v1', 'video'), P('t2', 'text')])), ['v1+t1', '-+t2'])
+  assert.deepEqual(shape(groupParts([P('i1', 'image'), P('i2', 'image')])), ['i1+-', 'i2+-'])
 })
 
 test('живая воронка: кнопка старого сообщения ведёт по своей ветке, текущий запуск не мешает', async () => {

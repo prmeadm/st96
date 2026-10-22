@@ -2,7 +2,7 @@ import { InlineKeyboard, type Api } from 'grammy'
 import type { Btn, Out } from '../funnels/engine'
 import { RetryLaterError } from '../funnels/retry'
 import type { Repo } from '../repo'
-import { NOT_A_FILE_ERROR, canonicalVideoUrl, errorText, firstVideoUrl, isVideoPageUrl, splitText, youtubeId, youtubeThumb } from '../media'
+import { CAPTION_LIMIT, NOT_A_FILE_ERROR, canonicalVideoUrl, errorText, firstVideoUrl, isVideoPageUrl, splitText, youtubeId, youtubeThumb } from '../media'
 import { notifyTopic } from './dialog'
 
 type Markup = InlineKeyboard | undefined
@@ -73,25 +73,45 @@ export function telegramOut(api: Api, repo: Repo, groupChatId: number | null, op
     }
   }
 
+  type Preview = { url: string; prefer_large_media: true; show_above_text: true }
+  /**
+   * Текст длиннее подписи (1024): одно сообщение, где картинка стоит над текстом (предпросмотр ссылки на файл, до 4096 знаков).
+   * Если Telegram не построит предпросмотр, отправляем файл, а сразу под ним текст: порядок «медиа сверху» сохраняется.
+   */
+  const sendAbove = async (chatId: number, previewUrl: string, text: string, kb: Markup, sendFile: () => Promise<unknown>) => {
+    if (text.length <= 4096) {
+      try {
+        const preview: Preview = { url: previewUrl, prefer_large_media: true, show_above_text: true }
+        await paced(chatId, () => withKeyboardFallback((markup) => api.sendMessage(chatId, text, { reply_markup: markup, link_preview_options: preview }), kb))
+        return
+      } catch (e) {
+        if (e instanceof RetryLaterError) throw e
+        console.error('media-above-text preview failed, sending file then text:', errorText(e).slice(0, 160))
+      }
+    }
+    await paced(chatId, sendFile)
+    await sendPlain(chatId, text, kb, { is_disabled: true })
+  }
+
   /** Ссылка на видео (YouTube, Vimeo, Rutube...): файл по ней получить нельзя. */
   const sendVideoLink = async (chatId: number, url: string, caption: string | undefined, kb: Markup) => {
     const link = canonicalVideoUrl(url)
     const yt = youtubeId(link)
     if (yt) {
-      // YouTube: обложка ролика и кнопка «Смотреть видео». Предпросмотр ссылки Telegram строит долго и часто отвечает 429,
-      // а у роликов с запретом встраивания плеера в Telegram всё равно нет.
+      // YouTube: обложка ролика (подпись — текст блока) и кнопка «Смотреть видео». Предпросмотр ссылки YouTube Telegram строит
+      // долго и часто отвечает 429, а у роликов с запретом встраивания плеера в Telegram всё равно нет.
       const watch = new InlineKeyboard().url('▶️ Смотреть видео', link).row()
       const merged = kb ? InlineKeyboard.from([...watch.inline_keyboard, ...kb.inline_keyboard]) : watch
-      const cap = caption && caption.length <= 1024 ? caption : undefined
-      if (caption && !cap) await sendPlain(chatId, caption, undefined, { is_disabled: true })
+      const cover = youtubeThumb(yt)
+      if (caption && caption.length > CAPTION_LIMIT) return sendAbove(chatId, cover, caption, merged, () => api.sendPhoto(chatId, cover))
       try {
-        await paced(chatId, () => withKeyboardFallback((markup) => api.sendPhoto(chatId, youtubeThumb(yt), { caption: cap, reply_markup: markup }), merged))
+        await paced(chatId, () => withKeyboardFallback((markup) => api.sendPhoto(chatId, cover, { caption, reply_markup: markup }), merged))
         return
       } catch (e) {
         if (e instanceof RetryLaterError) throw e
         console.error('youtube cover failed, sending plain link:', errorText(e).slice(0, 160))
       }
-      await sendPlain(chatId, [cap, `▶️ ${link}`].filter(Boolean).join('\n'), merged, { is_disabled: true })
+      await sendPlain(chatId, [caption, `▶️ ${link}`].filter(Boolean).join('\n'), merged, { is_disabled: true })
       return
     }
     try {
@@ -123,14 +143,17 @@ export function telegramOut(api: Api, repo: Repo, groupChatId: number | null, op
     async sendMedia(chatId, kind, url, caption, buttons) {
       const kb = keyboard(buttons)
       if (isVideoPageUrl(url)) return sendVideoLink(chatId, url, caption, kb)
+      const file = (cap: string | undefined, markup: Markup) => {
+        const extra = { caption: cap, reply_markup: markup }
+        if (kind === 'image') return api.sendPhoto(chatId, url, extra)
+        if (kind === 'video') return api.sendVideo(chatId, url, extra)
+        if (kind === 'audio') return api.sendAudio(chatId, url, extra)
+        return api.sendDocument(chatId, url, extra)
+      }
       try {
-        await paced(chatId, () => withKeyboardFallback((markup) => {
-          const extra = { caption: caption && caption.length <= 1024 ? caption : undefined, reply_markup: markup }
-          if (kind === 'image') return api.sendPhoto(chatId, url, extra)
-          if (kind === 'video') return api.sendVideo(chatId, url, extra)
-          if (kind === 'audio') return api.sendAudio(chatId, url, extra)
-          return api.sendDocument(chatId, url, extra)
-        }, kb))
+        // фото и видео над текстом в одном сообщении: текст идёт подписью (Telegram даёт подписи до 1024 знаков)
+        if (caption && caption.length > CAPTION_LIMIT) return await sendAbove(chatId, url, caption, kb, () => file(undefined, undefined))
+        await paced(chatId, () => withKeyboardFallback((markup) => file(caption, markup), kb))
       } catch (e) {
         if (!NOT_A_FILE_ERROR.test(errorText(e))) throw e
         await sendVideoLink(chatId, url, caption, kb) // по ссылке не файл: клиент всё равно получает материал ссылкой

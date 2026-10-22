@@ -185,6 +185,24 @@ export async function resumeBooking(env: Env, runId: string, handle: 'confirmed'
   return 'resumed'
 }
 
+/**
+ * Сообщения блока: каждое фото, видео, аудио или файл уходит одним сообщением с соседним текстом
+ * (текст перед медиа считается его подписью, иначе берётся текст после). Остальной текст идёт отдельно.
+ */
+export function groupParts(parts: Part[]): { media?: Part; text?: Part }[] {
+  const used = new Set<number>()
+  const units: { order: number; media?: Part; text?: Part }[] = []
+  parts.forEach((p, i) => {
+    if (p.kind === 'text') return
+    const free = (j: number) => parts[j]?.kind === 'text' && !used.has(j)
+    const t = free(i - 1) ? i - 1 : free(i + 1) ? i + 1 : -1
+    if (t >= 0) used.add(t)
+    units.push({ order: t >= 0 ? Math.min(i, t) : i, media: p, text: t >= 0 ? parts[t] : undefined })
+  })
+  parts.forEach((p, i) => { if (p.kind === 'text' && !used.has(i)) units.push({ order: i, text: p }) })
+  return units.sort((a, b) => a.order - b.order).map(({ media, text }) => ({ media, text }))
+}
+
 type Opts = { itemIndex?: number; proactive?: boolean }
 
 export async function advance(env: Env, funnel: Funnel, client: ClientRow, run: RunRow, from: string | null, opts: Opts): Promise<Outcome> {
@@ -229,17 +247,19 @@ export async function advance(env: Env, funnel: Funnel, client: ClientRow, run: 
           await event(node.id, 'loop_guard')
           return finish('done')
         }
-        for (let i = Math.min(firstItem, sendable.length - 1); i < sendable.length; i++) {
+        // Фото и видео уходят одним сообщением с соседним текстом (медиа сверху, текст подписью), как при отправке из Telegram
+        const units = groupParts(sendable)
+        for (let i = Math.min(firstItem, units.length - 1); i < units.length; i++) {
           pos = i
-          const p = sendable[i]
-          const buttons = i === sendable.length - 1 && kb.length ? kb : undefined
-          if (p.kind === 'text') {
-            const text = fill(str(lang === 'en' && p.en ? p.en : p.text), client, vars)
+          const u = units[i]!
+          const buttons = i === units.length - 1 && kb.length ? kb : undefined
+          const text = u.text ? fill(str(lang === 'en' && u.text.en ? u.text.en : u.text.text), client, vars) : ''
+          if (!u.media) {
             await env.out.sendText(chat, text, buttons)
             await repo.insertMessage({ client_id: client.id, direction: 'out', kind: 'text', text, tg_chat_id: chat, tg_message_id: null })
           } else {
-            await env.out.sendMedia(chat, p.kind, p.url!, undefined, buttons)
-            await repo.insertMessage({ client_id: client.id, direction: 'out', kind: p.kind === 'image' ? 'photo' : p.kind === 'file' ? 'file' : p.kind, text: null, tg_chat_id: chat, tg_message_id: null })
+            await env.out.sendMedia(chat, u.media.kind as 'image' | 'video' | 'audio' | 'file', u.media.url!, text || undefined, buttons)
+            await repo.insertMessage({ client_id: client.id, direction: 'out', kind: u.media.kind === 'image' ? 'photo' : u.media.kind === 'file' ? 'file' : (u.media.kind as 'video' | 'audio'), text: text || null, tg_chat_id: chat, tg_message_id: null })
           }
         }
       } else if (!mayPush) {
