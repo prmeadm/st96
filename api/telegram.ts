@@ -48,7 +48,8 @@ export default async function handler(req: Request) {
 
   const bot = createBot(token!, tracedRepo(supabaseRepo(url!, key!)), { groupChatId: process.env.TELEGRAM_CHAT_ID ? Number(process.env.TELEGRAM_CHAT_ID) : null })
   if (!bot.isInited()) await bot.init()
-  return webhookCallback(bot, 'std/http', { secretToken: secret! })(req)
+  // По умолчанию grammy обрывает обработку через 10 с; при ответе Telegram 429 бот ждёт до 9 с и повторяет, поэтому даём 22 с (edge-функция обязана ответить за 25 с)
+  return webhookCallback(bot, 'std/http', { secretToken: secret!, timeoutMilliseconds: 22_000 })(req)
 }
 
 function json(data: unknown, status: number) {
