@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion'
 import type { Accent, Advantage } from '../../data/services'
 import { useUi } from '../../lib/i18n'
 import SectionHeading from '../ui/SectionHeading'
@@ -23,10 +22,7 @@ export default function Advantages({ service }: { service: AdvantagesData }) {
         <StaggerGroup className="grid grid-cols-1 gap-px overflow-hidden rounded-2xl border border-ink-line bg-ink-line sm:grid-cols-2">
           {service.advantages.map((a, i) => (
             <StaggerItem key={a.title}>
-              <motion.div
-                whileHover={{ backgroundColor: 'var(--color-ink-soft)' }}
-                className="group relative h-full bg-ink p-8 transition-colors sm:p-10"
-              >
+              <div className="group relative h-full bg-ink p-8 transition-colors duration-300 hover:bg-ink-soft sm:p-10">
                 <span
                   className="font-display text-sm font-semibold"
                   style={{ color: service.accent.solid }}
@@ -39,7 +35,7 @@ export default function Advantages({ service }: { service: AdvantagesData }) {
                   className="absolute inset-x-0 bottom-0 h-0.5 origin-left scale-x-0 transition-transform duration-500 group-hover:scale-x-100"
                   style={{ background: `linear-gradient(90deg, ${service.accent.from}, ${service.accent.to})` }}
                 />
-              </motion.div>
+              </div>
             </StaggerItem>
           ))}
         </StaggerGroup>

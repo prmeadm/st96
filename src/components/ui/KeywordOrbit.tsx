@@ -79,9 +79,10 @@ export default function KeywordOrbit({ keywords, accent, centerLabel = 'ST96' }:
                     initial={{ opacity: 0, scale: 0.6 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: 0.4 + i * 0.08, duration: 0.5 }}
-                    whileHover={{ scale: 1.15, borderColor: accent.solid }}
+                    whileHover={{ scale: 1.15 }}
+                    style={{ ['--kw' as string]: accent.solid }}
                     data-cursor-hover
-                    className="rounded-full border border-ink-line bg-ink-soft/80 px-3.5 py-2 text-xs font-medium whitespace-nowrap text-paper backdrop-blur-sm sm:text-sm"
+                    className="rounded-full border border-ink-line bg-ink-soft/80 px-3.5 py-2 text-xs font-medium whitespace-nowrap text-paper backdrop-blur-sm transition-colors duration-200 hover:border-[var(--kw)] sm:text-sm"
                   >
                     {word}
                   </motion.div>
