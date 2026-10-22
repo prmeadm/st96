@@ -54,6 +54,16 @@ export default function LeadCapture({ service, title, text }: Props) {
 
   const accentSolid = service?.accent.solid ?? '#d8ff3f'
 
+  // other sections (e.g. "Order" on a solution card) can prefill the message
+  useEffect(() => {
+    const onPrefill = (e: Event) => {
+      const m = (e as CustomEvent<{ message?: string }>).detail?.message
+      if (m) setMessage(m)
+    }
+    window.addEventListener('st96:lead-prefill', onPrefill)
+    return () => window.removeEventListener('st96:lead-prefill', onPrefill)
+  }, [])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!name.trim() || !contact.trim()) {

@@ -4,7 +4,8 @@ import { ArrowLeft, ArrowRight, ArrowUpRight } from 'lucide-react'
 import { accents } from '../../data/services'
 import { aiServiceItems, aiServicesIntro } from '../../data/aiServices'
 import { useLang } from '../../lib/i18n'
-import HeroVideo from '../ui/HeroVideo'
+import { SolutionSceneCard } from '../ui/SolutionScene'
+import { reachGoal } from '../../lib/analytics'
 import { AgentSceneCard } from '../ui/AgentScene'
 import MagneticButton from '../ui/MagneticButton'
 import Reveal from '../ui/Reveal'
@@ -68,6 +69,12 @@ export default function AiServices() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reduced, hold, inView])
 
+  const order = (slug: string, title: string) => {
+    reachGoal('ai_order_click', { solution: slug })
+    window.dispatchEvent(new CustomEvent('st96:lead-prefill', { detail: { message: `${t.prefill}${title}` } }))
+    document.getElementById('lead')?.scrollIntoView({ behavior: 'smooth' })
+  }
+
   const total = aiServiceItems.length
   const last = Math.min(total, state.first + state.perView - 1)
   const pad = (n: number) => String(n).padStart(2, '0')
@@ -108,26 +115,25 @@ export default function AiServices() {
               aria-label={`${i + 1} / ${total}`}
             >
               <div className="p-3 pb-0">
-                {s.slug === 'ai-agents' ? (
-                  <AgentSceneCard lang={lang} />
-                ) : (
-                  <HeroVideo
-                    src={`/video/ai-services/${s.slug}-${lang}.mp4`}
-                    poster={`/video/ai-services/${s.slug}-${lang}.jpg`}
-                    accent={accent}
-                    audio
-                    glow={false}
-                    label={s.slug}
-                  />
-                )}
+                {s.slug === 'ai-agents' ? <AgentSceneCard lang={lang} /> : <SolutionSceneCard slug={s.slug} lang={lang} />}
               </div>
-              <div className="relative flex flex-1 items-start gap-4 p-6">
-                <span className="font-display text-sm font-semibold" style={{ color: accent.solid }}>
+              <div className="relative flex flex-1 items-stretch gap-4 p-6">
+                <span className="self-start font-display text-sm font-semibold" style={{ color: accent.solid }}>
                   {pad(i + 1)}
                 </span>
-                <div>
+                <div className="flex min-w-0 flex-1 flex-col">
                   <h3 className="font-display text-lg leading-snug font-semibold sm:text-xl">{s.title[lang]}</h3>
-                  <p className="mt-2 text-sm text-paper-dim">{s.text[lang]}</p>
+                  <p className="mt-2 mb-5 text-sm text-paper-dim">{s.text[lang]}</p>
+                  <button
+                    type="button"
+                    onClick={() => order(s.slug, s.title[lang])}
+                    data-cursor-hover
+                    className="mt-auto inline-flex w-fit items-center gap-2 rounded-full px-5 py-2.5 font-display text-xs font-semibold text-ink transition-transform duration-200 ease-out hover:scale-[1.03] active:scale-[0.97]"
+                    style={{ background: accent.solid }}
+                  >
+                    {t.order}
+                    <ArrowUpRight className="h-3.5 w-3.5" />
+                  </button>
                 </div>
                 <div
                   className="absolute inset-x-0 bottom-0 h-0.5 origin-left scale-x-0 transition-transform duration-500 group-hover:scale-x-100"
