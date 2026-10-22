@@ -73,3 +73,13 @@ export function splitText(text: string, limit = TEXT_LIMIT): string[] {
   if (rest) out.push(rest)
   return out
 }
+
+/** Разрешено ли встраивание ролика YouTube (oEmbed отвечает 200). Без встраивания Telegram не может проиграть видео в сообщении. */
+const embedCache = new Map<string, boolean>()
+export async function youtubeEmbeddable(id: string): Promise<boolean> {
+  if (embedCache.has(id)) return embedCache.get(id)!
+  const url = `https://www.youtube.com/oembed?format=json&url=${encodeURIComponent(`https://www.youtube.com/watch?v=${id}`)}`
+  const ok = await fetch(url, { signal: AbortSignal.timeout(3000) }).then((r) => r.ok).catch(() => false)
+  embedCache.set(id, ok)
+  return ok
+}

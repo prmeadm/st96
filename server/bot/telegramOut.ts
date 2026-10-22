@@ -2,7 +2,7 @@ import { InlineKeyboard, InputFile, type Api } from 'grammy'
 import type { Btn, Out } from '../funnels/engine'
 import { RetryLaterError } from '../funnels/retry'
 import type { Repo } from '../repo'
-import { CAPTION_LIMIT, NOT_A_FILE_ERROR, canonicalVideoUrl, errorText, firstVideoUrl, isVideoPageUrl, splitText, youtubeId, youtubeThumb } from '../media'
+import { CAPTION_LIMIT, NOT_A_FILE_ERROR, canonicalVideoUrl, youtubeEmbeddable, errorText, firstVideoUrl, isVideoPageUrl, splitText, youtubeId, youtubeThumb } from '../media'
 import { notifyTopic } from './dialog'
 
 type Markup = InlineKeyboard | undefined
@@ -39,7 +39,8 @@ const is429 = (e: unknown) => (e as { error_code?: number }).error_code === 429
 const retryAfterMs = (e: unknown) => (((e as { parameters?: { retry_after?: number } }).parameters?.retry_after ?? 5) + 0.5) * 1000
 
 /** Отправка из воронок через Telegram. */
-export function telegramOut(api: Api, repo: Repo, groupChatId: number | null, opts: { sleep?: (ms: number) => Promise<void>; budgetMs?: number } = {}): Out {
+export function telegramOut(api: Api, repo: Repo, groupChatId: number | null, opts: { sleep?: (ms: number) => Promise<void>; budgetMs?: number; embeddable?: (youtubeId: string) => Promise<boolean> } = {}): Out {
+  const embeddable = opts.embeddable ?? youtubeEmbeddable
   const sleep = opts.sleep ?? realSleep
   const deadline = Date.now() + (opts.budgetMs ?? BUDGET_MS)
   const last = new Map<number, number>()
@@ -97,9 +98,25 @@ export function telegramOut(api: Api, repo: Repo, groupChatId: number | null, op
   const sendVideoLink = async (chatId: number, url: string, caption: string | undefined, kb: Markup) => {
     const link = canonicalVideoUrl(url)
     const yt = youtubeId(link)
+    if (yt && (await embeddable(yt))) {
+      // Встраивание разрешено: одно сообщение, плеер YouTube над текстом, видео играет прямо в Telegram (текст до 4096 знаков).
+      // Одна попытка без ожидания: если Telegram не успел построить предпросмотр (429), отправляем обложку ниже.
+      const text = caption?.trim() ? caption : link
+      if (text.length <= 4096) {
+        const gap = (last.get(chatId) ?? 0) + MIN_GAP_MS - Date.now()
+        if (gap > 0) await sleep(gap)
+        try {
+          await withKeyboardFallback((markup) => api.sendMessage(chatId, text, { reply_markup: markup, link_preview_options: { url: link, prefer_large_media: true, show_above_text: true } }), kb)
+          last.set(chatId, Date.now())
+          return
+        } catch (e) {
+          last.set(chatId, Date.now())
+          console.error('youtube player preview failed, sending cover:', errorText(e).slice(0, 160))
+        }
+      }
+    }
     if (yt) {
-      // YouTube: обложка ролика (подпись — текст блока) и кнопка «Смотреть видео». Предпросмотр ссылки YouTube Telegram строит
-      // долго и часто отвечает 429, а у роликов с запретом встраивания плеера в Telegram всё равно нет.
+      // Встраивание запрещено (или предпросмотр не построился): обложка ролика и кнопка «Смотреть видео».
       const watch = new InlineKeyboard().url('▶️ Смотреть видео', link).row()
       const merged = kb ? InlineKeyboard.from([...watch.inline_keyboard, ...kb.inline_keyboard]) : watch
       const cover = youtubeThumb(yt)

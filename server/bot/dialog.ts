@@ -7,7 +7,7 @@ import { InlineKeyboard, type Api } from 'grammy'
 import { UNKNOWN_SERVICE, serviceLabel } from '../catalog'
 import { bookingUrl } from '../booking/schedule'
 import { clickablePhone } from '../leads/parse'
-import { CAPTION_LIMIT, NOT_A_FILE_ERROR, canonicalVideoUrl, errorText, isVideoPageUrl, splitText, youtubeId, youtubeThumb } from '../media'
+import { CAPTION_LIMIT, NOT_A_FILE_ERROR, canonicalVideoUrl, youtubeEmbeddable, errorText, isVideoPageUrl, splitText, youtubeId, youtubeThumb } from '../media'
 import type { ClientRow, Repo } from '../repo'
 import { TPL_KINDS, fillTemplate, type TemplateKind, type TemplateRow } from '../templates'
 
@@ -180,11 +180,12 @@ export async function sendContent(api: Api, client: ClientRow, c: Content, foote
   const caption = text && text.length <= CAPTION_LIMIT ? text : undefined
   const link = canonicalVideoUrl(url)
   const yt = isVideoPageUrl(url) ? youtubeId(link) : null
+  const playable = yt ? await youtubeEmbeddable(yt) : false
   if (text && !caption && text.length <= 4096 && (yt || !isVideoPageUrl(url))) {
     try {
       await api.sendMessage(chat, text, {
-        link_preview_options: { url: yt ? youtubeThumb(yt) : url, prefer_large_media: true, show_above_text: true },
-        reply_markup: yt ? new InlineKeyboard().url('▶️ Смотреть видео', link) : undefined,
+        link_preview_options: { url: yt ? (playable ? link : youtubeThumb(yt)) : url, prefer_large_media: true, show_above_text: true },
+        reply_markup: yt && !playable ? new InlineKeyboard().url('▶️ Смотреть видео', link) : undefined,
       })
       return text
     } catch (e) {
@@ -193,8 +194,17 @@ export async function sendContent(api: Api, client: ClientRow, c: Content, foote
   }
   const textAfter = text && !caption ? text : '' // запасной путь для длинного текста: сначала файл, под ним текст
   const asLink = () => api.sendMessage(chat, [caption, link].filter(Boolean).join('\n'), { link_preview_options: yt ? { is_disabled: true } : { url: link, prefer_large_media: true } })
+  if (yt && !textAfter && playable) {
+    // встраивание разрешено: плеер YouTube над текстом, видео играет прямо в Telegram
+    try {
+      await api.sendMessage(chat, caption || link, { link_preview_options: { url: link, prefer_large_media: true, show_above_text: true } })
+      return text
+    } catch (e) {
+      if ((e as { error_code?: number }).error_code !== 429) console.error('youtube player preview failed, sending cover:', errorText(e).slice(0, 160))
+    }
+  }
   if (yt) {
-    // YouTube: обложка ролика и кнопка «Смотреть видео» (предпросмотр ссылки медленный и часто упирается в 429)
+    // YouTube без встраивания: обложка ролика и кнопка «Смотреть видео»
     try {
       await api.sendPhoto(chat, youtubeThumb(yt), { caption, reply_markup: new InlineKeyboard().url('▶️ Смотреть видео', link) })
     } catch (e) {

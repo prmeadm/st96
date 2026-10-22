@@ -50,11 +50,11 @@ function fakeTelegram(fail: (method: string, n: number) => number | null = () =>
   return { api, sent }
 }
 
-async function setup(fail?: (method: string, n: number) => number | null) {
+async function setup(fail?: (method: string, n: number) => number | null, embeddable = false) {
   const repo = memoryRepo()
   const tg = fakeTelegram(fail)
   let now = new Date('2026-10-22T08:00:00Z')
-  const env: Env = { repo, out: telegramOut(tg.api, repo, null, { sleep: async () => undefined }), now: () => now }
+  const env: Env = { repo, out: telegramOut(tg.api, repo, null, { sleep: async () => undefined, embeddable: async () => embeddable }), now: () => now }
   const funnel: Funnel = { id: 'f-real', name: 'Запись на консультацию - все услуги.', status: 'published', graph, ai_enabled: false, version: 72 }
   repo.funnels.push(funnel)
   // клиент пришёл в бота сам: согласия на рассылки нет, после /start воронка всё равно должна идти до конца
@@ -173,4 +173,31 @@ test('живая воронка: окончательная ошибка Telegra
   assert.equal(await startFunnel(env, funnel, client), 'done')
   assert.equal(repo.runs[0]!.status, 'failed')
   assert.match(notes[0]!, /не смогла отправить клиенту блок m1/)
+})
+
+test('живая воронка: ролик с разрешённым встраиванием — плеер YouTube над текстом одним сообщением', async () => {
+  const { repo, tg, env, funnel, client } = await setup(undefined, true)
+  await startFunnel(env, funnel, client)
+  await handleClick(env, client, lastRun(repo), 'q1', 'm1')
+  const before = tg.sent.length
+  await handleClick(env, client, lastRun(repo), 'quz25fc', 'nto3rtb')
+  const block = tg.sent.slice(before)
+  assert.deepEqual(block.map((s) => s.method), ['sendMessage'])
+  assert.match(String(block[0]!.body), /Видео продакшн на базе AI/, 'длинный текст (больше 1024) целиком в том же сообщении')
+  assert.deepEqual(preview(block[0]!), { url: 'https://www.youtube.com/watch?v=O3M6Ox3-Mhs', prefer_large_media: true, show_above_text: true })
+  assert.deepEqual(buttons(block[0]!), ['Коммерческий промоушн', 'Обсудим проект?'])
+})
+
+test('живая воронка: если Telegram не построил плеер (429), уходит обложка с кнопкой', async () => {
+  const { repo, tg, env, funnel, client } = await setup((method, _n) => (method === 'sendMessage' && tg.sent.some((s) => buttons(s).includes('Вернемся со сметой за 48 часов')) && !tg.sent.some((s) => String(s.body).includes('Видео продакшн')) && failOnce() ? 8 : null), true)
+  let failed = false
+  function failOnce() { if (failed) return false; failed = true; return true }
+  await startFunnel(env, funnel, client)
+  await handleClick(env, client, lastRun(repo), 'q1', 'm1')
+  const before = tg.sent.length
+  await handleClick(env, client, lastRun(repo), 'quz25fc', 'nto3rtb')
+  const block = tg.sent.slice(before)
+  assert.equal(block.length, 1, 'одно сообщение, без дубля')
+  assert.match(String(preview(block[0]!)?.url), /i\.ytimg\.com/)
+  assert.equal(buttons(block[0]!)[0], '▶️ Смотреть видео')
 })
