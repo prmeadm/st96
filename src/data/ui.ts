@@ -25,6 +25,10 @@ export const ui = {
     rights: 'Все права защищены.',
     privacyLink: 'Политика обработки персональных данных',
     cookieSettings: 'Настройки cookie',
+    theme: 'Тема',
+    themeDark: 'Тёмная',
+    themeLight: 'Светлая',
+    themeSwitch: 'Переключить тему',
     operatorLine: 'ООО «КИНГСГАРДЕН», УНП 193999293',
     seoTitle: 'ST96 — креативная студия полного цикла',
     seoDescription:
@@ -112,6 +116,10 @@ export const ui = {
     rights: 'All rights reserved.',
     privacyLink: 'Personal data processing policy',
     cookieSettings: 'Cookie settings',
+    theme: 'Theme',
+    themeDark: 'Dark',
+    themeLight: 'Light',
+    themeSwitch: 'Switch theme',
     operatorLine: 'KINGSGARDEN LLC, UNP 193999293',
     seoTitle: 'ST96 — full-cycle creative studio',
     seoDescription:

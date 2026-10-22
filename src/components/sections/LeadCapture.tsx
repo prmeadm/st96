@@ -52,7 +52,7 @@ export default function LeadCapture({ service, title, text }: Props) {
     return () => clearTimeout(timer)
   }, [status, redirectIn, botUrl])
 
-  const accentSolid = service?.accent.solid ?? '#d8ff3f'
+  const accentSolid = service?.accent.solid ?? 'var(--color-acid)'
 
   // other sections (e.g. "Order" on a solution card) can prefill the message
   useEffect(() => {
@@ -123,7 +123,7 @@ export default function LeadCapture({ service, title, text }: Props) {
               <span className="h-1.5 w-1.5 rounded-full" style={{ background: accentSolid }} />
               {l.kicker}
             </span>
-            <h2 className="text-balance font-display text-[clamp(1.4rem,7vw,1.875rem)] leading-[1.1] font-semibold sm:text-4xl md:text-5xl">
+            <h2 className="text-balance font-display text-[clamp(1.4rem,7vw,1.875rem)] leading-[1.1] font-semibold sm:text-4xl md:text-5xl lg:text-[clamp(1.5rem,3vw,2.45rem)]">
               {title ?? service?.ctaTitle ?? l.defaultTitle}
             </h2>
             <p className="mt-5 max-w-md text-lg text-paper-dim">

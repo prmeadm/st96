@@ -378,7 +378,7 @@ export default function AgentScene({ lang, className = '' }: { lang: Lang; class
         ))}
 
         {/* HUD */}
-        <div className="absolute flex items-center rounded-full border border-ink-line bg-ink" style={{ left: '3cqw', top: '3cqw', gap: '1.2cqw', padding: '0.9cqw 2cqw' }}>
+        <div className="absolute flex items-center rounded-full border" style={{ background: '#09090b', borderColor: '#232328', left: '3cqw', top: '3cqw', gap: '1.2cqw', padding: '0.9cqw 2cqw' }}>
           <motion.span
             className="block rounded-full"
             style={{ width: '1.5cqw', height: '1.5cqw', background: ACID }}
@@ -387,7 +387,7 @@ export default function AgentScene({ lang, className = '' }: { lang: Lang; class
           />
           <span style={{ fontSize: '2.3cqw', fontWeight: 600, color: '#f5f4ef' }}>{copy.live}</span>
         </div>
-        <div className="absolute flex items-center rounded-full border border-ink-line bg-ink" style={{ right: '3cqw', top: '3cqw', gap: '1.2cqw', padding: '0.9cqw 2cqw' }}>
+        <div className="absolute flex items-center rounded-full border" style={{ background: '#09090b', borderColor: '#232328', right: '3cqw', top: '3cqw', gap: '1.2cqw', padding: '0.9cqw 2cqw' }}>
           <span style={{ fontSize: '2.3cqw', color: '#a6a6ac' }}>{copy.processed}</span>
           <span className="relative block overflow-hidden text-right" style={{ height: '3.2cqw', minWidth: '6.6cqw' }}>
             <AnimatePresence mode="popLayout" initial={false}>

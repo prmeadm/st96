@@ -20,7 +20,7 @@ export default function Aurora({ accent }: { accent: Accent }) {
         className="absolute inset-0 opacity-[0.06]"
         style={{
           backgroundImage:
-            'linear-gradient(to right, #f5f4ef 1px, transparent 1px), linear-gradient(to bottom, #f5f4ef 1px, transparent 1px)',
+            'linear-gradient(to right, var(--color-paper) 1px, transparent 1px), linear-gradient(to bottom, var(--color-paper) 1px, transparent 1px)',
           backgroundSize: '64px 64px',
         }}
       />

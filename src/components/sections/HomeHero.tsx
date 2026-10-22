@@ -13,7 +13,7 @@ export default function HomeHero() {
   const ref = useRef<HTMLDivElement>(null)
   const mx = useMotionValue(50)
   const my = useMotionValue(50)
-  const spotlight = useMotionTemplate`radial-gradient(600px circle at ${mx}% ${my}%, rgba(216,255,63,0.14), transparent 70%)`
+  const spotlight = useMotionTemplate`radial-gradient(600px circle at ${mx}% ${my}%, color-mix(in srgb, var(--color-acid) 16%, transparent), transparent 70%)`
 
   const handleMove = (e: React.MouseEvent) => {
     const rect = ref.current?.getBoundingClientRect()
@@ -33,7 +33,7 @@ export default function HomeHero() {
         className="pointer-events-none absolute inset-0 opacity-[0.06]"
         style={{
           backgroundImage:
-            'linear-gradient(to right, #f5f4ef 1px, transparent 1px), linear-gradient(to bottom, #f5f4ef 1px, transparent 1px)',
+            'linear-gradient(to right, var(--color-paper) 1px, transparent 1px), linear-gradient(to bottom, var(--color-paper) 1px, transparent 1px)',
           backgroundSize: '64px 64px',
         }}
       />

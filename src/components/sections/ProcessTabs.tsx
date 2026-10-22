@@ -119,7 +119,7 @@ export default function ProcessTabs({ service }: { service: ProcessData }) {
                     <li key={p} className="flex items-start gap-2.5 text-paper">
                       <span
                         className="mt-1 grid h-4 w-4 shrink-0 place-items-center rounded-full"
-                        style={{ background: `${service.accent.solid}33` }}
+                        style={{ background: `color-mix(in srgb, ${service.accent.solid} 20%, transparent)` }}
                       >
                         <Check className="h-2.5 w-2.5" style={{ color: service.accent.solid }} />
                       </span>

@@ -48,25 +48,25 @@ export const accents = {
   producing: {
     from: '#8b6bff',
     to: '#ff5fa8',
-    solid: '#8b6bff',
+    solid: 'var(--accent-producing)',
     soft: 'rgba(139,107,255,0.15)',
   },
   promotion: {
     from: '#d8ff3f',
     to: '#ff8a3d',
-    solid: '#d8ff3f',
+    solid: 'var(--accent-promotion)',
     soft: 'rgba(216,255,63,0.15)',
   },
   production: {
     from: '#35e6c8',
     to: '#4d7bff',
-    solid: '#35e6c8',
+    solid: 'var(--accent-production)',
     soft: 'rgba(53,230,200,0.15)',
   },
   ai: {
     from: '#c084fc',
     to: '#35e6c8',
-    solid: '#c084fc',
+    solid: 'var(--accent-ai)',
     soft: 'rgba(192,132,252,0.15)',
   },
 } satisfies Record<string, Accent>

@@ -44,9 +44,46 @@
   }
 }
 
+/* brand accents per service (darker in the light theme for contrast) */
+:root {
+  --accent-producing: #8b6bff;
+  --accent-promotion: #d8ff3f;
+  --accent-production: #35e6c8;
+  --accent-ai: #c084fc;
+}
+
+/* light theme: same tokens, inverted; acid becomes a deeper lime so it stays readable */
+:root[data-theme='light'] {
+  color-scheme: light;
+  --color-ink: #f5f4ef;
+  --color-ink-soft: #ffffff;
+  --color-ink-line: #dad9d0;
+  --color-paper: #09090b;
+  --color-paper-dim: #585860;
+  --color-acid: #4f7600;
+  --accent-producing: #6246e0;
+  --accent-promotion: #557a00;
+  --accent-production: #0a8472;
+  --accent-ai: #8a35dc;
+}
+
 html {
   background: var(--color-ink);
+}
+:root:not([data-theme='light']) {
   color-scheme: dark;
+}
+
+/* short colour fade when the visitor flips the theme (class is added for ~300 ms only) */
+html.theme-anim *,
+html.theme-anim *::before,
+html.theme-anim *::after {
+  transition:
+    background-color 0.28s ease,
+    color 0.28s ease,
+    border-color 0.28s ease,
+    fill 0.28s ease,
+    stroke 0.28s ease !important;
 }
 
 body {

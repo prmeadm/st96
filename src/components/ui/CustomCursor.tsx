@@ -72,7 +72,7 @@ export default function CustomCursor() {
         style={{
           width: hovering ? 56 : 32,
           height: hovering ? 56 : 32,
-          borderColor: hovering ? 'var(--color-acid)' : 'rgba(245,244,239,0.35)',
+          borderColor: hovering ? 'var(--color-acid)' : 'color-mix(in srgb, var(--color-paper) 35%, transparent)',
         }}
       />
     </div>

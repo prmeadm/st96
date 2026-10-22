@@ -4,6 +4,7 @@ import { ArrowUpRight, Mail, Phone, Send } from 'lucide-react'
 import { getServices } from '../../data/content'
 import { localePath, stripLang, useLang, useUi } from '../../lib/i18n'
 import Reveal from '../ui/Reveal'
+import ThemeToggle from '../ui/ThemeToggle'
 import MagneticButton from '../ui/MagneticButton'
 
 const CONTACTS = {
@@ -139,7 +140,10 @@ export default function Footer() {
         </div>
 
         <div className="flex flex-col items-start justify-between gap-4 pt-8 text-sm text-paper-dim sm:flex-row sm:items-center">
-          <p>© {new Date().getFullYear()} ST96. {t.rights}</p>
+          <div className="flex flex-col items-start gap-4">
+            <p>© {new Date().getFullYear()} ST96. {t.rights}</p>
+            <ThemeToggle />
+          </div>
           <div className="flex flex-col gap-1 sm:items-end">
             <Link to={localePath(lang, '/privacy')} className="transition-colors hover:text-paper" data-cursor-hover>
               {t.privacyLink}
