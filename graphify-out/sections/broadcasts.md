@@ -16,23 +16,23 @@
 - `server/broadcasts.ts` — 15 узл.
 - `src/admin/pages/BroadcastPage.tsx` — 6 узл.
 - `server/broadcasts.test.ts` — 4 узл.
-- `api/broadcast.ts` — 3 узл.
 - `src/admin/pages/BroadcastsPage.tsx` — 3 узл.
+- `api/broadcast.ts` — 3 узл.
 
 ## Главные узлы (больше всего связей)
 
-- `tickBroadcasts()` (server/broadcasts.ts:L56)
 - `BroadcastPage()` (src/admin/pages/BroadcastPage.tsx:L19)
+- `tickBroadcasts()` (server/broadcasts.ts:L56)
 - `startBroadcast()` (server/broadcasts.ts:L101)
 - `BroadcastRow` (server/broadcasts.ts:L9)
-- `handler()` (api/broadcast.ts:L12)
-- `BroadcastsPage()` (src/admin/pages/BroadcastsPage.tsx:L11)
-- `Segment` (server/broadcasts.ts:L7)
 - `inAudience()` (server/broadcasts.ts:L34)
+- `handler()` (api/broadcast.ts:L12)
+- `Segment` (server/broadcasts.ts:L7)
+- `BroadcastsPage()` (src/admin/pages/BroadcastsPage.tsx:L11)
 - `validateBroadcast()` (server/broadcasts.ts:L43)
 - `AudienceClient` (server/broadcasts.ts:L25)
-- `BROADCAST_STATUS` (server/broadcasts.ts:L27)
 - `fromRow()` (src/admin/pages/BroadcastPage.tsx:L16)
+- `BROADCAST_STATUS` (server/broadcasts.ts:L27)
 
 ## От чего зависит (вызовы в другие разделы)
 

@@ -15,24 +15,24 @@
 
 - `src/admin/types.ts` — 11 узл.
 - `src/admin/auth.tsx` — 7 узл.
-- `src/admin/ui/Seg.tsx` — 6 узл.
 - `src/admin/ui/QuickNav.tsx` — 6 узл.
+- `src/admin/ui/Seg.tsx` — 6 узл.
 - `src/admin/AdminApp.tsx` — 5 узл.
 - `src/admin/pages/FilterBar.tsx` — 5 узл.
 - `src/admin/ui/Icon.tsx` — 4 узл.
-- `src/admin/highlight.tsx` — 3 узл.
 - `src/admin/ui/SaveButton.tsx` — 3 узл.
 - `src/admin/supabase.ts` — 3 узл.
-- `src/admin/ui/RowActions.tsx` — 2 узл.
-- `src/admin/ui/BackLink.tsx` — 2 узл.
+- `src/admin/highlight.tsx` — 3 узл.
 - `src/admin/api.ts` — 2 узл.
+- `src/admin/ui/BackLink.tsx` — 2 узл.
+- `src/admin/ui/RowActions.tsx` — 2 узл.
 - `src/admin/main.tsx` — 1 узл.
 
 ## Главные узлы (больше всего связей)
 
 - `Icon()` (src/admin/ui/Icon.tsx:L45)
-- `supabase` (src/admin/supabase.ts:L4)
 - `fmtDate()` (src/admin/types.ts:L61)
+- `supabase` (src/admin/supabase.ts:L4)
 - `Shell()` (src/admin/AdminApp.tsx:L47)
 - `callApi()` (src/admin/api.ts:L4)
 - `RowActions()` (src/admin/ui/RowActions.tsx:L5)

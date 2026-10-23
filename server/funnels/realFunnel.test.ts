@@ -188,7 +188,7 @@ test('живая воронка: ролик с разрешённым встра
   assert.deepEqual(buttons(block[0]!), ['Коммерческий промоушн', 'Обсудим проект?'])
 })
 
-test('живая воронка: если Telegram не построил плеер (429), уходит обложка с кнопкой', async () => {
+test('живая воронка: на 429 плеер YouTube отправляется повторно, а не обложкой с кнопкой наружу', async () => {
   const { repo, tg, env, funnel, client } = await setup((method, _n) => (method === 'sendMessage' && tg.sent.some((s) => buttons(s).includes('Вернемся со сметой за 48 часов')) && !tg.sent.some((s) => String(s.body).includes('Видео продакшн')) && failOnce() ? 8 : null), true)
   let failed = false
   function failOnce() { if (failed) return false; failed = true; return true }
@@ -198,6 +198,6 @@ test('живая воронка: если Telegram не построил пле�
   await handleClick(env, client, lastRun(repo), 'quz25fc', 'nto3rtb')
   const block = tg.sent.slice(before)
   assert.equal(block.length, 1, 'одно сообщение, без дубля')
-  assert.match(String(preview(block[0]!)?.url), /i\.ytimg\.com/)
-  assert.equal(buttons(block[0]!)[0], '▶️ Смотреть видео')
+  assert.deepEqual(preview(block[0]!), { url: 'https://www.youtube.com/watch?v=O3M6Ox3-Mhs', prefer_large_media: true, show_above_text: true }, 'плеер, который играет в Telegram')
+  assert.ok(!buttons(block[0]!).includes('▶️ Смотреть видео'))
 })

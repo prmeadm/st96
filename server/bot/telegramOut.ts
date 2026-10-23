@@ -108,17 +108,15 @@ export function telegramOut(api: Api, repo: Repo, groupChatId: number | null, op
     const yt = youtubeId(link)
     if (yt && (await embeddable(yt))) {
       // Встраивание разрешено: одно сообщение, плеер YouTube над текстом, видео играет прямо в Telegram (текст до 4096 знаков).
-      // Одна попытка без ожидания: если Telegram не успел построить предпросмотр (429), отправляем обложку ниже.
+      // На 429 не сдаёмся на обложку (её кнопка открывает YouTube вне Telegram): ждём и повторяем, а если ждать долго,
+      // движок продолжит воронку позже с тем же плеером. Обложка — только если Telegram не смог построить предпросмотр.
       const text = caption?.trim() ? caption : link
       if (text.length <= 4096) {
-        const gap = (last.get(chatId) ?? 0) + MIN_GAP_MS - Date.now()
-        if (gap > 0) await sleep(gap)
         try {
-          await withKeyboardFallback((markup) => api.sendMessage(chatId, text, { reply_markup: markup, link_preview_options: { url: link, prefer_large_media: true, show_above_text: true } }), kb)
-          last.set(chatId, Date.now())
+          await paced(chatId, () => withKeyboardFallback((markup) => api.sendMessage(chatId, text, { reply_markup: markup, link_preview_options: { url: link, prefer_large_media: true, show_above_text: true } }), kb))
           return
         } catch (e) {
-          last.set(chatId, Date.now())
+          if (e instanceof RetryLaterError) throw e
           console.error('youtube player preview failed, sending cover:', errorText(e).slice(0, 160))
         }
       }
