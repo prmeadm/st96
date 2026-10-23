@@ -56,3 +56,10 @@ test('если Telegram не принял кружок, клиент получ�
   assert.equal(calls[1]!.file, URL_)
   assert.match(JSON.stringify(calls[1]!.extra.reply_markup), /fb:x/)
 })
+
+test('кружок тяжелее 12 МБ Telegram не примет: сразу обычное видео, без попытки sendVideoNote', async () => {
+  const { calls, api } = fakeApi()
+  const big = new Uint8Array(12 * 1024 * 1024 + 1)
+  await telegramOut(api, {} as Repo, null, { sleep: async () => undefined, download: async () => big }).sendMedia(1, 'videonote', URL_, undefined, undefined)
+  assert.deepEqual(calls.map((c) => c.m), ['sendVideo'])
+})

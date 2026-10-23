@@ -34,6 +34,7 @@ async function withKeyboardFallback<T>(send: (markup: Markup) => Promise<T>, mar
 
 const realSleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms))
 const MIN_GAP_MS = 800 // Telegram: около одного сообщения в секунду в один чат
+const VIDEO_NOTE_MAX_BYTES = 12 * 1024 * 1024
 const BUDGET_MS = 15_000 // сколько этот запрос может ждать Telegram; дальше воронка продолжится по расписанию
 const is429 = (e: unknown) => (e as { error_code?: number }).error_code === 429
 const retryAfterMs = (e: unknown) => (((e as { parameters?: { retry_after?: number } }).parameters?.retry_after ?? 5) + 0.5) * 1000
@@ -173,6 +174,8 @@ export function telegramOut(api: Api, repo: Repo, groupChatId: number | null, op
         // Подписи у кружка нет, поэтому текст (если он есть) уходит следующим сообщением под кружком, вместе с кнопками.
         try {
           const bytes = await download(url)
+          // Telegram принимает кружки до 12 МБ (ошибка «too big for a video note»): тяжёлый файл сразу уходит обычным видео
+          if (bytes.byteLength > VIDEO_NOTE_MAX_BYTES) throw new Error(`video note file is ${bytes.byteLength} bytes, Telegram limit is ${VIDEO_NOTE_MAX_BYTES}`)
           const info = mp4Info(bytes)
           const extra = {
             length: info ? Math.min(info.width, info.height) : 480,

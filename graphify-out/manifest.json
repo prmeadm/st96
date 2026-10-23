@@ -1038,9 +1038,9 @@
     "semantic_hash": ""
   },
   "server/bot/telegramOut.ts": {
-    "mtime": 1792744960.6227562,
-    "seen": 1792744981.659033,
-    "ast_hash": "2689a7a84f684f7458e451d6df4943fd",
+    "mtime": 1792752867.9444518,
+    "seen": 1792753032.9271302,
+    "ast_hash": "3452b1b7d8b02670ad320094eb252652",
     "semantic_hash": ""
   },
   "server/funnels/demo.ts": {
@@ -1206,9 +1206,9 @@
     "semantic_hash": ""
   },
   "docs/PLATFORM.md": {
-    "mtime": 1792747651.2420447,
-    "seen": 1792747665.650908,
-    "ast_hash": "d8d27bfb8cca5b01ae327fd55e691148",
+    "mtime": 1792753022.6961267,
+    "seen": 1792753032.927295,
+    "ast_hash": "cabbec503c358e0b55b4a3a0a53ac199",
     "semantic_hash": ""
   },
   "api/send-template.ts": {
@@ -1884,9 +1884,9 @@
     "semantic_hash": ""
   },
   "server/bot/videonote.test.ts": {
-    "mtime": 1792744913.5524743,
-    "seen": 1792744981.659035,
-    "ast_hash": "2b856a4e2b950227f58a77d3010a943d",
+    "mtime": 1792752867.9448535,
+    "seen": 1792753032.927132,
+    "ast_hash": "63ecd7eb965419c1c730fd9f44028e50",
     "semantic_hash": ""
   },
   "server/funnels/realFunnel.test.ts": {
@@ -1926,9 +1926,9 @@
     "semantic_hash": ""
   },
   "src/admin/ui/VideoNoteField.tsx": {
-    "mtime": 1792747542.3944168,
-    "seen": 1792747665.650783,
-    "ast_hash": "7569f03d75ee3d96c4cc1b35946f675b",
+    "mtime": 1792752956.239442,
+    "seen": 1792753032.927194,
+    "ast_hash": "eb81549cc2a1bf4fd669888ef172473b",
     "semantic_hash": ""
   },
   "src/components/sections/AiServices.tsx": {

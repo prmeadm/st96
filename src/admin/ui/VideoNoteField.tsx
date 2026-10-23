@@ -7,13 +7,15 @@ import { Icon } from './Icon'
 const SIZE = 480 // сторона квадрата: Telegram рекомендует до 640
 const MAX_SEC = 59 // Telegram принимает кружки до 60 с; запас в секунду, иначе запись на 1:00 придёт обычным видео
 const fmt = (t: number) => `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, '0')}`
-const MAX_MB = 20
+const NOTE_MAX_BYTES = 12 * 1024 * 1024 // предел Telegram для кружка (12 582 912 байт); больше — Telegram покажет обычное видео
+// Браузеры превышают заказанный битрейт почти вдвое: 700 кбит/с дают ~1,4 Мбит/с, это ~10 МБ за 59 с
+const NOTE_BPS = 700_000
 
 /** MP4, который понимает Telegram. WebM (старый Chrome, Firefox) кружком не отправится. */
 const mp4Mime = () => (typeof MediaRecorder === 'undefined' ? null : ['video/mp4;codecs=avc1.42E01E,mp4a.40.2', 'video/mp4;codecs=avc1', 'video/mp4'].find((m) => MediaRecorder.isTypeSupported(m)) ?? null)
 
 /** Пишет квадрат из центра кадра: видео рисуется на холст, звук берётся из переданных дорожек. */
-function recordSquare(video: HTMLVideoElement, audio: MediaStreamTrack[], mime: string, opts: { mirror?: boolean; onTick?: (sec: number) => void; until?: Promise<void> }) {
+function recordSquare(video: HTMLVideoElement, audio: MediaStreamTrack[], mime: string, opts: { mirror?: boolean; onTick?: (sec: number) => void; until?: Promise<void>; bps?: number }) {
   const canvas = document.createElement('canvas')
   canvas.width = SIZE
   canvas.height = SIZE
@@ -35,19 +37,21 @@ function recordSquare(video: HTMLVideoElement, audio: MediaStreamTrack[], mime: 
   draw()
   const stream = canvas.captureStream(30)
   audio.forEach((t) => stream.addTrack(t))
-  const rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 1_200_000 })
+  const rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: opts.bps ?? NOTE_BPS }) // audioBitsPerSecond не задаём: Chrome с ним падает на MP4
+  let failed = false
+  rec.onerror = () => { failed = true }
   const chunks: Blob[] = []
   rec.ondataavailable = (e) => { if (e.data.size) chunks.push(e.data) }
   const t0 = Date.now()
   const tick = window.setInterval(() => opts.onTick?.(Math.min(MAX_SEC, Math.floor((Date.now() - t0) / 1000))), 250)
   const limit = window.setTimeout(() => { if (rec.state === 'recording') rec.stop() }, MAX_SEC * 1000) // ровно 59 с, дольше записать нельзя
-  // null: ни одного кадра с камеры или из ролика, получилось бы чёрное видео
+  // null: ни одного кадра с камеры или из ролика (было бы чёрное видео) или запись сорвалась
   const done = new Promise<Blob | null>((resolve) => {
     rec.onstop = () => {
       cancelAnimationFrame(raf)
       window.clearInterval(tick)
       window.clearTimeout(limit)
-      resolve(frames ? new Blob(chunks, { type: 'video/mp4' }) : null)
+      resolve(frames && !failed ? new Blob(chunks, { type: 'video/mp4' }) : null)
     }
   })
   rec.start(500)
@@ -80,8 +84,12 @@ export function VideoNoteField({ value, onChange, folder }: { value: string; onC
     void v.play().catch(() => {})
   }, [cam])
 
-  const upload = async (blob: Blob) => {
-    if (blob.size > MAX_MB * 1024 * 1024) return setMsg(`Кружок получился ${(blob.size / 1048576).toFixed(1)} МБ, допустимо до ${MAX_MB} МБ. Сделайте короче.`)
+  const upload = async (blob: Blob, shrunk = false): Promise<void> => {
+    if (blob.size > NOTE_MAX_BYTES) {
+      // тяжелее 12 МБ Telegram кружок не принимает: один раз пережимаем с меньшим битрейтом
+      if (!shrunk) return makeNote(URL.createObjectURL(blob), 0, Infinity, { bps: Math.floor(NOTE_BPS * (NOTE_MAX_BYTES / blob.size) * 0.7), shrunk: true })
+      return setMsg(`Кружок получился ${(blob.size / 1048576).toFixed(1)} МБ, а Telegram принимает до 12 МБ. Сделайте его короче.`)
+    }
     setBusy('Загружаю…')
     const path = `${folder}/videonote-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.mp4`
     const { error } = await supabase.storage.from('media').upload(path, blob, { contentType: 'video/mp4', cacheControl: '31536000' })
@@ -139,7 +147,7 @@ export function VideoNoteField({ value, onChange, folder }: { value: string; onC
       URL.revokeObjectURL(url)
       return setMsg('Не получилось открыть видео. Попробуйте другой файл (MP4 или MOV).')
     }
-    if (v.videoWidth === v.videoHeight && v.duration <= MAX_SEC && /mp4/.test(file.type)) {
+    if (v.videoWidth === v.videoHeight && v.duration <= MAX_SEC && /mp4/.test(file.type) && file.size <= NOTE_MAX_BYTES) {
       URL.revokeObjectURL(url)
       return upload(file)
     }
@@ -148,9 +156,9 @@ export function VideoNoteField({ value, onChange, folder }: { value: string; onC
   }
 
   /** Перекодирует кусок [start, end] ролика в квадратный кружок (в реальном времени) и загружает. */
-  const makeNote = async (url: string, start: number, end: number) => {
-    const len = Math.min(MAX_SEC, Math.ceil(end - start))
-    setBusy(`Готовлю кружок: ${len} с…`)
+  const makeNote = async (url: string, start: number, end: number, opts: { bps?: number; shrunk?: boolean } = {}) => {
+    const label = opts.shrunk ? 'Сжимаю кружок до 12 МБ' : 'Готовлю кружок'
+    setBusy(`${label}…`)
     const v = document.createElement('video')
     v.src = url
     v.playsInline = true
@@ -158,6 +166,7 @@ export function VideoNoteField({ value, onChange, folder }: { value: string; onC
     try {
       await new Promise<void>((res, rej) => { v.onloadeddata = () => res(); v.onerror = () => rej(new Error('bad')) })
       if (start > 0) await new Promise<void>((res) => { v.onseeked = () => res(); v.currentTime = start })
+      if (!Number.isFinite(v.duration)) await new Promise<void>((res) => { v.ondurationchange = () => { if (Number.isFinite(v.duration)) res() }; setTimeout(res, 1500) })
     } catch {
       URL.revokeObjectURL(url)
       setBusy('')
@@ -167,19 +176,20 @@ export function VideoNoteField({ value, onChange, folder }: { value: string; onC
     const ac = new AudioContext()
     const dest = ac.createMediaStreamDestination()
     ac.createMediaElementSource(v).connect(dest)
+    const len = Math.min(MAX_SEC, Math.ceil(Math.min(end, Number.isFinite(v.duration) ? v.duration : MAX_SEC) - start))
     const reached = new Promise<void>((res) => {
       v.onended = () => res()
       v.ontimeupdate = () => { if (v.currentTime >= end) res() }
     })
     await v.play()
-    const r = recordSquare(v, dest.stream.getAudioTracks(), mime!, { until: reached, onTick: (s) => setBusy(`Готовлю кружок: ${s} из ${len} с…`) })
+    const r = recordSquare(v, dest.stream.getAudioTracks(), mime!, { until: reached, bps: opts.bps, onTick: (s) => setBusy(`${label}: ${s} из ${len} с…`) })
     const blob = await r.done
     v.pause()
     await ac.close()
     URL.revokeObjectURL(url)
     setBusy('')
     if (!blob) return setMsg('Не получилось прочитать кадры видео. Попробуйте другой файл.')
-    await upload(blob)
+    await upload(blob, opts.shrunk)
   }
 
   // превью выбранного куска крутится по кругу от начала до конца
