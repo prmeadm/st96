@@ -78,6 +78,7 @@ export function VideoNoteField({ value, onChange, folder }: { value: string; onC
   const [trim, setTrim] = useState<Trim | null>(null)
   const [converting, setConverting] = useState(false)
   const [needTap, setNeedTap] = useState(false)
+  const [previewPlaying, setPreviewPlaying] = useState(false)
   const trimVideo = useRef<HTMLVideoElement>(null)
   const live = useRef<HTMLVideoElement>(null)
   const stream = useRef<MediaStream | null>(null)
@@ -326,18 +327,30 @@ export function VideoNoteField({ value, onChange, folder }: { value: string; onC
       {value && <video className="vnote-prev" src={value} controls playsInline />}
       {trim ? (
         <div className="vnote-trim">
-          <video ref={trimVideo} className="vnote-prev" muted playsInline preload="auto" />
+          <div className="vnote-trim-view">
+            <video ref={trimVideo} className="vnote-prev" muted playsInline preload="auto" onPlay={() => setPreviewPlaying(true)} onPause={() => setPreviewPlaying(false)} />
+            {/* iPhone (особенно в энергосбережении) сам видео не запускает: смотреть кусок можно нажатием на круг */}
+            {!!trim.duration && !converting && (
+              <button type="button" className="vnote-play" aria-label={previewPlaying ? 'Пауза' : 'Смотреть'} onClick={() => {
+                const v = trimVideo.current
+                if (!v) return
+                if (!v.paused) return v.pause()
+                if (v.currentTime < trim.start || v.currentTime >= trim.end) v.currentTime = trim.start
+                void v.play().catch((e: unknown) => trace('preview-play-failed', { e: String(e) }))
+              }}>{!previewPlaying && <span><Icon name="play" size={26} fill /></span>}</button>
+            )}
+          </div>
           {!trim.duration ? (needTap
             ? <button type="button" className="btn primary" onClick={() => { trace('tap'); void trimVideo.current?.play().catch((e: unknown) => trace('tap-play-failed', { e: String(e) })) }}>Нажмите, чтобы открыть видео</button>
             : <div className="hint">Открываю видео…</div>) : <>
-          <div className="vnote-trim-len">{fmt(trim.start)} – {fmt(trim.end)} · {Math.round(trim.end - trim.start)} с из {fmt(trim.duration)}</div>
+          <div className="vnote-trim-len">{fmt(trim.start)} – {fmt(trim.end)} · {Math.floor(trim.end - trim.start)} с из {fmt(trim.duration)}</div>
           <div className="vnote-trim-track">
             <div className="vnote-trim-sel" style={{ left: `${(trim.start / trim.duration) * 100}%`, width: `${((trim.end - trim.start) / trim.duration) * 100}%` }} />
             <input type="range" min={0} max={trim.duration} step={0.1} value={trim.start} disabled={converting || trim.duration <= 1} onChange={(e) => moveTrim('start', Number(e.target.value))} aria-label="Начало куска" />
             <input type="range" min={0} max={trim.duration} step={0.1} value={trim.end} disabled={converting || trim.duration <= 1} onChange={(e) => moveTrim('end', Number(e.target.value))} aria-label="Конец куска" />
           </div>
           </>}
-          <div className="hint">{!trim.duration ? '' : converting ? busy : trim.duration > MAX_SEC ? 'Ролик длиннее 59 секунд. Выберите кусок: перетащите начало и конец.' : 'Можно укоротить: перетащите начало и конец.'}</div>
+          <div className="hint">{!trim.duration ? '' : converting ? busy : trim.duration > MAX_SEC ? 'Ролик длиннее 59 секунд. Выберите кусок: перетащите начало и конец, нажмите на круг, чтобы посмотреть.' : 'Нажмите на круг, чтобы посмотреть. Можно укоротить: перетащите начало и конец.'}</div>
           <div className="vnote-trim-btns">
             <button type="button" className="btn" disabled={converting} onClick={cancelTrim}>Отмена</button>
             <button type="button" className="btn primary" disabled={converting || !trim.duration} onClick={convert}>{trim.shrink ? 'Сжать кружок' : 'Сделать кружок'}</button>

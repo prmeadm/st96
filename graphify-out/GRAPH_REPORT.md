@@ -1,7 +1,7 @@
 # Graph Report - St96  (2026-10-23)
 
 ## Corpus Check
-- 212 files · ~1,184,869 words
+- 212 files · ~1,184,996 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 69 file(s) not represented in the graph (top: .woff2 52, .css 14, (none) 1)
 
@@ -11,7 +11,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `66406ea4`
+- Built from commit: `110fdf92`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -411,7 +411,7 @@ Nodes (5): AuthCtx, AuthGate(), Ctx, Login(), State
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `react` connect `react` to `package.json`, `ServicePage.tsx`, `AnalyticsPage.tsx`, `ClientPage.tsx`, `Editor.tsx`, `AgentScene.tsx`, `Icon`, `MediaField.tsx`, `Home.tsx`, `BroadcastPage.tsx`, `useUi`, `Reveal.tsx`, `LeadCapture.tsx`, `SolutionScene.tsx`, `i18n.ts`, `BookPage.tsx`, `BookingPage.tsx`, `filter.ts`, `PhoneField.tsx`, `auth.tsx`?**
-  _High betweenness centrality (0.124) - this node is a cross-community bridge._
+  _High betweenness centrality (0.127) - this node is a cross-community bridge._
 - **Are the 10 inferred relationships involving `createBot()` (e.g. with `.claimUpdate()` and `.findActiveRun()`) actually correct?**
   _`createBot()` has 10 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `@types/node`, `@types/react`, `@types/react-dom` to the rest of the system?**
@@ -423,4 +423,4 @@ _Questions this graph is uniquely positioned to answer:_
 - **Should `dialog.ts` be split into smaller, more focused modules?**
   _Cohesion score 0.12550607287449392 - nodes in this community are weakly interconnected._
 - **Why does `grammy` connect `repo.ts` to `package.json`, `agent/engine.ts`, `dialog.ts`, `deps.ts`, `booking.test.ts`, `bot.test.ts`, `tools.ts`, `broadcasts.ts`, `service.ts`, `funnels/types.ts`, `memoryRepo.ts`, `realFunnel.test.ts`, `ST96 «нейросотрудник»: состояние проекта`, `bot.ts`?**
-  _High betweenness centrality (0.038) - this node is a cross-community bridge._
+  _High betweenness centrality (0.037) - this node is a cross-community bridge._
