@@ -30,9 +30,9 @@
 - `CameraCapture()` (src/admin/ui/CameraCapture.tsx:L12)
 - `TPL_KINDS` (server/templates.ts:L20)
 - `handler()` (api/send-template.ts:L9)
-- `TPL_VARS` (server/templates.ts:L26)
+- `toVoiceFile()` (src/admin/ui/MediaField.tsx:L28)
 - `TPL_GOALS` (server/templates.ts:L22)
-- `TPL_SERVICES` (server/templates.ts:L25)
+- `TPL_TASKS` (server/templates.ts:L21)
 
 ## От чего зависит (вызовы в другие разделы)
 

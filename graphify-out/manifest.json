@@ -1038,9 +1038,9 @@
     "semantic_hash": ""
   },
   "server/bot/telegramOut.ts": {
-    "mtime": 1792763307.5202706,
-    "seen": 1792763330.1010199,
-    "ast_hash": "80e3beb09d45e5cd3b6bb3b02896a879",
+    "mtime": 1792765747.0762844,
+    "seen": 1792765825.758025,
+    "ast_hash": "7b5fe8482d0bf1baefad17d7a9b5ccb9",
     "semantic_hash": ""
   },
   "server/funnels/demo.ts": {
@@ -1206,9 +1206,9 @@
     "semantic_hash": ""
   },
   "docs/PLATFORM.md": {
-    "mtime": 1792763320.089231,
-    "seen": 1792763330.101171,
-    "ast_hash": "d7690f9b6cdcaf59b5ca5379e6dd738f",
+    "mtime": 1792765822.6467807,
+    "seen": 1792765825.758188,
+    "ast_hash": "b3edc4d795d2424df01c960cceb9110a",
     "semantic_hash": ""
   },
   "api/send-template.ts": {
@@ -1890,9 +1890,9 @@
     "semantic_hash": ""
   },
   "server/funnels/realFunnel.test.ts": {
-    "mtime": 1792763307.520805,
-    "seen": 1792763330.1010282,
-    "ast_hash": "877be37d73ce7176501da1b5eb93ac24",
+    "mtime": 1792765747.0768895,
+    "seen": 1792765825.7580328,
+    "ast_hash": "f8f4a386ed9728dbaff8b6d0b0bdd630",
     "semantic_hash": ""
   },
   "server/funnels/retry.ts": {
@@ -2559,6 +2559,12 @@
     "mtime": 1792758835.7928684,
     "seen": 1792758864.77941,
     "ast_hash": "7cbf4d79b9c761f6e246063045d31204",
+    "semantic_hash": ""
+  },
+  "public/yt.html": {
+    "mtime": 1792765747.0258675,
+    "seen": 1792765825.758213,
+    "ast_hash": "869df627a6cc3775a3755877dd9d8d22",
     "semantic_hash": ""
   }
 }

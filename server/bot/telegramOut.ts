@@ -40,6 +40,12 @@ const is429 = (e: unknown) => (e as { error_code?: number }).error_code === 429
 const retryAfterMs = (e: unknown) => (((e as { parameters?: { retry_after?: number } }).parameters?.retry_after ?? 5) + 0.5) * 1000
 
 /** Отправка из воронок через Telegram. */
+/** Наш плеер YouTube для мини-приложения Telegram (public/yt.html), с временем старта из ссылки, если оно есть. */
+function watchPage(link: string, id: string): string {
+  const t = new URL(link).searchParams.get('t')?.replace(/s$/, '')
+  return `https://st96.by/yt.html?v=${id}${t && /^\d+$/.test(t) ? `&t=${t}` : ''}`
+}
+
 async function downloadFile(url: string): Promise<Uint8Array> {
   const r = await fetch(url)
   if (!r.ok) throw new Error(`video note download failed: ${r.status}`)
@@ -108,22 +114,26 @@ export function telegramOut(api: Api, repo: Repo, groupChatId: number | null, op
     const yt = youtubeId(link)
     if (yt && (await embeddable(yt))) {
       // Встраивание разрешено: одно сообщение, плеер YouTube над текстом, видео играет прямо в Telegram (текст до 4096 знаков).
-      // На 429 не сдаёмся на обложку (её кнопка открывает YouTube вне Telegram): ждём и повторяем, а если ждать долго,
-      // движок продолжит воронку позже с тем же плеером. Обложка — только если Telegram не смог построить предпросмотр.
+      // Одна попытка без ожидания: на некоторые ролики Telegram при построении предпросмотра раз за разом отвечает 429,
+      // повторы ничего не дают и только задерживают воронку. Тогда уходит обложка, а её кнопка тоже открывает ролик внутри Telegram.
       const text = caption?.trim() ? caption : link
       if (text.length <= 4096) {
+        const gap = (last.get(chatId) ?? 0) + MIN_GAP_MS - Date.now()
+        if (gap > 0) await sleep(gap)
         try {
-          await paced(chatId, () => withKeyboardFallback((markup) => api.sendMessage(chatId, text, { reply_markup: markup, link_preview_options: { url: link, prefer_large_media: true, show_above_text: true } }), kb))
+          await withKeyboardFallback((markup) => api.sendMessage(chatId, text, { reply_markup: markup, link_preview_options: { url: link, prefer_large_media: true, show_above_text: true } }), kb)
+          last.set(chatId, Date.now())
           return
         } catch (e) {
-          if (e instanceof RetryLaterError) throw e
+          last.set(chatId, Date.now())
           console.error('youtube player preview failed, sending cover:', errorText(e).slice(0, 160))
         }
       }
     }
     if (yt) {
-      // Встраивание запрещено (или предпросмотр не построился): обложка ролика и кнопка «Смотреть видео».
-      const watch = new InlineKeyboard().url('▶️ Смотреть видео', link).row()
+      // Обложка ролика и кнопка «Смотреть видео». Если встраивание разрешено, кнопка открывает наш плеер st96.by/yt.html
+      // как мини-приложение Telegram: ролик играет внутри Telegram. Иначе остаётся только ссылка на YouTube.
+      const watch = (await embeddable(yt) ? new InlineKeyboard().webApp('▶️ Смотреть видео', watchPage(link, yt)) : new InlineKeyboard().url('▶️ Смотреть видео', link)).row()
       const merged = kb ? InlineKeyboard.from([...watch.inline_keyboard, ...kb.inline_keyboard]) : watch
       const cover = youtubeThumb(yt)
       if (caption && caption.length > CAPTION_LIMIT) return sendAbove(chatId, cover, caption, merged, () => api.sendPhoto(chatId, cover))
