@@ -28,9 +28,9 @@
 - `ensureClient()` (server/bot/bot.ts:L29)
 - `relayToAdmins()` (server/bot/dialog.ts:L51)
 - `ensureTopic()` (server/bot/dialog.ts:L37)
-- `linkLeadClient()` (server/bot/bot.ts:L20)
 - `cardText()` (server/bot/dialog.ts:L22)
 - `handler()` (api/telegram.ts:L10)
+- `linkLeadClient()` (server/bot/bot.ts:L20)
 - `showTemplateMenu()` (server/bot/dialog.ts:L153)
 - `notifyTopic()` (server/bot/dialog.ts:L140)
 

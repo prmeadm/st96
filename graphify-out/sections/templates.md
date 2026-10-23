@@ -27,12 +27,12 @@
 - `TemplateKind` (server/templates.ts:L4)
 - `Editor()` (src/admin/pages/TemplatesPage.tsx:L150)
 - `fillTemplate()` (server/templates.ts:L29)
-- `TPL_KINDS` (server/templates.ts:L20)
 - `CameraCapture()` (src/admin/ui/CameraCapture.tsx:L12)
+- `TPL_KINDS` (server/templates.ts:L20)
 - `handler()` (api/send-template.ts:L9)
-- `TPL_SERVICES` (server/templates.ts:L25)
+- `preview()` (src/admin/pages/TemplatesPage.tsx:L13)
 - `toVoiceFile()` (src/admin/ui/MediaField.tsx:L28)
-- `TPL_VARS` (server/templates.ts:L26)
+- `TPL_TASKS` (server/templates.ts:L21)
 
 ## От чего зависит (вызовы в другие разделы)
 

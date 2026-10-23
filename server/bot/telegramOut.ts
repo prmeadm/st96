@@ -40,14 +40,6 @@ const is429 = (e: unknown) => (e as { error_code?: number }).error_code === 429
 const retryAfterMs = (e: unknown) => (((e as { parameters?: { retry_after?: number } }).parameters?.retry_after ?? 5) + 0.5) * 1000
 
 /** Отправка из воронок через Telegram. */
-/** Разные виды ссылки на один ролик YouTube: Telegram строит и кэширует предпросмотр для каждой отдельно. */
-function youtubeVariants(original: string, id: string): string[] {
-  const watch = canonicalVideoUrl(original)
-  const out = [watch, `https://youtu.be/${id}`]
-  if (/\/shorts\//.test(original)) out.push(`https://www.youtube.com/shorts/${id}`)
-  return out
-}
-
 /** Наш плеер YouTube для мини-приложения Telegram (public/yt.html), с временем старта из ссылки, если оно есть. */
 function watchPage(link: string, id: string): string {
   const t = new URL(link).searchParams.get('t')?.replace(/s$/, '')
@@ -122,25 +114,23 @@ export function telegramOut(api: Api, repo: Repo, groupChatId: number | null, op
     const yt = youtubeId(link)
     if (yt && (await embeddable(yt))) {
       // Встраивание разрешено: одно сообщение, плеер YouTube над текстом, видео играет прямо в Telegram (текст до 4096 знаков).
-      // Ссылка стоит в самом тексте (невидимый символ со ссылкой в начале): предпросмотр по ссылке, которой нет в тексте,
-      // Telegram строит иначе и на части роликов раз за разом отвечает 429. Пробуем несколько видов ссылки на тот же ролик
-      // (watch, youtu.be, shorts), каждую один раз без ожидания; не вышло — обложка, её кнопка тоже открывает ролик внутри Telegram.
+      // Ссылка стоит и в самом тексте (невидимый символ со ссылкой в начале). Одна попытка со ссылкой watch: если Telegram
+      // не может построить плеер, он отвечает 429, и мы это видим. Другие виды ссылки (youtu.be) не пробуем: на них Telegram
+      // молча отправлял сообщение вовсе без видео (так было с закрытым по ссылке Shorts 4d_aLiguxss). Тогда уходит обложка,
+      // её кнопка открывает ролик внутри Telegram.
       const body = caption?.trim() ? caption : link
       if (body.length < 4096) {
         const text = `\u2060${body}`
-        for (const variant of youtubeVariants(url, yt)) {
-          const gap = (last.get(chatId) ?? 0) + MIN_GAP_MS - Date.now()
-          if (gap > 0) await sleep(gap)
-          try {
-            await withKeyboardFallback((markup) => api.sendMessage(chatId, text, { entities: [{ type: 'text_link', offset: 0, length: 1, url: variant }], reply_markup: markup, link_preview_options: { url: variant, prefer_large_media: true, show_above_text: true } }), kb)
-            last.set(chatId, Date.now())
-            return
-          } catch (e) {
-            last.set(chatId, Date.now())
-            console.error(`youtube player preview failed (${variant}):`, errorText(e).slice(0, 160))
-          }
+        const gap = (last.get(chatId) ?? 0) + MIN_GAP_MS - Date.now()
+        if (gap > 0) await sleep(gap)
+        try {
+          await withKeyboardFallback((markup) => api.sendMessage(chatId, text, { entities: [{ type: 'text_link', offset: 0, length: 1, url: link }], reply_markup: markup, link_preview_options: { url: link, prefer_large_media: true, show_above_text: true } }), kb)
+          last.set(chatId, Date.now())
+          return
+        } catch (e) {
+          last.set(chatId, Date.now())
+          console.error('youtube player preview failed, sending cover:', errorText(e).slice(0, 160))
         }
-        console.error('youtube player: no link form worked, sending cover')
       }
     }
     if (yt) {
