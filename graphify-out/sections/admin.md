@@ -2,7 +2,7 @@
 
 Каркас /admin: вход, навигация, общие UI-компоненты, стили, уведомление о новой версии.
 
-Граф раздела: `graphify-out/sections/admin/graph.json` (55 узлов, 78 внутренних связей).
+Граф раздела: `graphify-out/sections/admin/graph.json` (60 узлов, 91 внутренних связей).
 
 ## С чего начать сессию
 
@@ -15,36 +15,37 @@
 
 - `src/admin/types.ts` — 11 узл.
 - `src/admin/auth.tsx` — 7 узл.
-- `src/admin/ui/Seg.tsx` — 6 узл.
 - `src/admin/ui/QuickNav.tsx` — 6 узл.
+- `src/admin/ui/Seg.tsx` — 6 узл.
 - `src/admin/AdminApp.tsx` — 5 узл.
+- `src/admin/pages/FilterBar.tsx` — 5 узл.
 - `src/admin/ui/Icon.tsx` — 4 узл.
-- `src/admin/ui/SaveButton.tsx` — 3 узл.
-- `src/admin/supabase.ts` — 3 узл.
 - `src/admin/highlight.tsx` — 3 узл.
-- `src/admin/ui/BackLink.tsx` — 2 узл.
-- `src/admin/ui/RowActions.tsx` — 2 узл.
+- `src/admin/supabase.ts` — 3 узл.
+- `src/admin/ui/SaveButton.tsx` — 3 узл.
 - `src/admin/api.ts` — 2 узл.
+- `src/admin/ui/RowActions.tsx` — 2 узл.
+- `src/admin/ui/BackLink.tsx` — 2 узл.
 - `src/admin/main.tsx` — 1 узл.
 
 ## Главные узлы (больше всего связей)
 
 - `Icon()` (src/admin/ui/Icon.tsx:L43)
-- `fmtDate()` (src/admin/types.ts:L61)
 - `supabase` (src/admin/supabase.ts:L4)
+- `fmtDate()` (src/admin/types.ts:L61)
 - `Shell()` (src/admin/AdminApp.tsx:L47)
 - `callApi()` (src/admin/api.ts:L4)
 - `RowActions()` (src/admin/ui/RowActions.tsx:L5)
 - `clientTitle()` (src/admin/types.ts:L64)
 - `BackLink()` (src/admin/ui/BackLink.tsx:L6)
+- `FilterBar()` (src/admin/pages/FilterBar.tsx:L12)
 - `Seg()` (src/admin/ui/Seg.tsx:L6)
 - `pickKind()` (src/admin/ui/Seg.tsx:L31)
 - `SERVICES` (src/admin/types.ts:L51)
-- `useAuth()` (src/admin/auth.tsx:L7)
 
 ## От чего зависит (вызовы в другие разделы)
 
-- **Заявки и клиенты** (12): `ClientPage()`, `ClientPage.tsx`, `ClientsPage()`, `ClientsPage.tsx`, `LeadsPage()`, `LeadsPage.tsx`
+- **Заявки и клиенты** (25): `ClientPage()`, `ClientPage.tsx`, `ClientsPage()`, `ClientsPage.tsx`, `Cond`, `CondValue`
 - **Агент, ИИ и аналитика** (9): `AgentPage()`, `AgentPage.tsx`, `AnalyticsPage()`, `AnalyticsPage.tsx`, `SettingsPage()`, `SettingsPage.tsx`
 - **Воронки** (6): `FunnelPage()`, `FunnelPage.tsx`, `FunnelsPage()`, `FunnelsPage.tsx`
 - **Рассылки** (6): `BroadcastPage()`, `BroadcastPage.tsx`, `BroadcastsPage()`, `BroadcastsPage.tsx`
@@ -55,7 +56,7 @@
 
 ## Кто зависит от раздела (менять осторожно)
 
-- **Заявки и клиенты** (82): `BackLink()`, `BackLink.tsx`, `Client`, `GROUP_LINK_ID`, `Highlight()`, `Icon()`
+- **Заявки и клиенты** (91): `BackLink()`, `BackLink.tsx`, `Client`, `FilterBar()`, `FilterBar.tsx`, `GROUP_LINK_ID`
 - **Агент, ИИ и аналитика** (44): `BackLink()`, `BackLink.tsx`, `Icon()`, `Icon.tsx`, `KIND_OPTIONS`, `RowActions()`
 - **Рассылки** (31): `BackLink()`, `BackLink.tsx`, `Icon()`, `Icon.tsx`, `PICK_KINDS`, `RowActions()`
 - **Воронки** (29): `BackLink()`, `BackLink.tsx`, `Icon()`, `Icon.tsx`, `RowActions()`, `RowActions.tsx`

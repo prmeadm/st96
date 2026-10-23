@@ -1038,9 +1038,9 @@
     "semantic_hash": ""
   },
   "server/bot/telegramOut.ts": {
-    "mtime": 1792700525.0655239,
-    "seen": 1792701827.0158389,
-    "ast_hash": "d08ca7e380d4596937f6815742904607",
+    "mtime": 1792744960.6227562,
+    "seen": 1792744981.659033,
+    "ast_hash": "2689a7a84f684f7458e451d6df4943fd",
     "semantic_hash": ""
   },
   "server/funnels/demo.ts": {
@@ -1056,9 +1056,9 @@
     "semantic_hash": ""
   },
   "server/funnels/engine.ts": {
-    "mtime": 1792681261.4799387,
-    "seen": 1792701827.0159192,
-    "ast_hash": "92fc5f62546f98ea950d7bd728d62248",
+    "mtime": 1792744913.5519533,
+    "seen": 1792744981.659041,
+    "ast_hash": "f3706e087476776eb0d7c811744f61b5",
     "semantic_hash": ""
   },
   "server/funnels/triggers.ts": {
@@ -1146,9 +1146,9 @@
     "semantic_hash": ""
   },
   "src/admin/pages/ClientsPage.tsx": {
-    "mtime": 1792506555.3290608,
-    "seen": 1792506578.943532,
-    "ast_hash": "c01856c92d45d9e6df098c6b71cd256b",
+    "mtime": 1792745792.6256714,
+    "seen": 1792745870.660476,
+    "ast_hash": "5e7ecf7dcbb2b03a66de559e10a6e1f2",
     "semantic_hash": ""
   },
   "src/admin/pages/FunnelPage.tsx": {
@@ -1164,9 +1164,9 @@
     "semantic_hash": ""
   },
   "src/admin/pages/LeadsPage.tsx": {
-    "mtime": 1792565107.860926,
-    "seen": 1792565169.265244,
-    "ast_hash": "d0f6c2302a07ce12042c915faaf51788",
+    "mtime": 1792745792.6253123,
+    "seen": 1792745870.660481,
+    "ast_hash": "93a77718acda8565003e0f71bdf91734",
     "semantic_hash": ""
   },
   "src/admin/pages/NotesPage.tsx": {
@@ -1206,9 +1206,9 @@
     "semantic_hash": ""
   },
   "docs/PLATFORM.md": {
-    "mtime": 1792681355.6869056,
-    "seen": 1792701827.017776,
-    "ast_hash": "f116d229fbd48e8f8c9f8f38d01f33a3",
+    "mtime": 1792746058.9964778,
+    "seen": 1792746060.9803991,
+    "ast_hash": "98ac0f91d400c5bbc619acbb88166fd7",
     "semantic_hash": ""
   },
   "api/send-template.ts": {
@@ -1884,9 +1884,9 @@
     "semantic_hash": ""
   },
   "server/bot/videonote.test.ts": {
-    "mtime": 1792681281.9610875,
-    "seen": 1792701827.015841,
-    "ast_hash": "6184305d244935921b47d54c9ea8f064",
+    "mtime": 1792744913.5524743,
+    "seen": 1792744981.659035,
+    "ast_hash": "2b856a4e2b950227f58a77d3010a943d",
     "semantic_hash": ""
   },
   "server/funnels/realFunnel.test.ts": {
@@ -1908,9 +1908,9 @@
     "semantic_hash": ""
   },
   "server/media.ts": {
-    "mtime": 1792700525.0657861,
-    "seen": 1792701827.015991,
-    "ast_hash": "6dd4a34d76d7a73110381093bbf7f1c7",
+    "mtime": 1792744913.5507262,
+    "seen": 1792744981.659055,
+    "ast_hash": "33adf6b5e9eb920a971cbc567f154f7e",
     "semantic_hash": ""
   },
   "src/admin/builder/Edges.tsx": {
@@ -1926,9 +1926,9 @@
     "semantic_hash": ""
   },
   "src/admin/ui/VideoNoteField.tsx": {
-    "mtime": 1792704705.7776046,
-    "seen": 1792704716.914172,
-    "ast_hash": "ca1d1602a751e197bef6c704fb4ae748",
+    "mtime": 1792744913.552814,
+    "seen": 1792744981.6590998,
+    "ast_hash": "19b3632f8a557a3f5b92c7306f0a3c06",
     "semantic_hash": ""
   },
   "src/components/sections/AiServices.tsx": {
@@ -2529,6 +2529,30 @@
     "mtime": 1792620412.1950727,
     "seen": 1792704286.570274,
     "ast_hash": "9011703c05ee6b93880cd84befeee2a1",
+    "semantic_hash": ""
+  },
+  "server/leads/filter.test.ts": {
+    "mtime": 1792745792.6265223,
+    "seen": 1792745870.660442,
+    "ast_hash": "f80670a5b9d80641eb569c0251e4ba8d",
+    "semantic_hash": ""
+  },
+  "server/leads/filter.ts": {
+    "mtime": 1792740570.0095258,
+    "seen": 1792740770.160745,
+    "ast_hash": "75445a33565825fd419d76631ee95a06",
+    "semantic_hash": ""
+  },
+  "src/admin/pages/FilterBar.tsx": {
+    "mtime": 1792745792.6260915,
+    "seen": 1792745870.660477,
+    "ast_hash": "40a4c0116b47b665cfd874b6fe79a22b",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/0013_filter_presets.sql": {
+    "mtime": 1792740487.4573226,
+    "seen": 1792740770.1608472,
+    "ast_hash": "f4f9f6f4b1e194f3650b61204f146183",
     "semantic_hash": ""
   }
 }

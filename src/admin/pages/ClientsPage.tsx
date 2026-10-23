@@ -2,10 +2,54 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../supabase'
 import { deleteClient } from '../clientDelete'
-import { SERVICES, clientTitle, fmtDate, type Client } from '../types'
+import { SERVICES, SOURCES, STATUSES, clientTitle, fmtDate, type Client, type Lead } from '../types'
 import { RowActions } from '../ui/RowActions'
+import { FilterBar } from './FilterBar'
+import { applyFilter, flattenJson, inferFields, parseConds, type Cond, type Flat, type KnownField } from '../../../server/leads/filter'
+import './leads.css'
 
-type Row = Client & { leads: { service_key: string | null; company: string | null; created_at: string }[] }
+type Row = Client & {
+  vars: Record<string, unknown> | null; dialog_closed_at: string | null
+  leads: { service_key: string | null; source: string; status: Lead['status']; company: string | null; created_at: string }[]
+  client_tags: { tags: { name: string } | null }[]
+}
+
+// Поля фильтра, которые знаем заранее; vars.* и ответы воронок (ans.*) фильтр находит в данных сам
+const KNOWN: Record<string, KnownField> = {
+  name: { label: 'Имя', group: 'Клиент', kind: 'text' },
+  tg_username: { label: 'Ник в Telegram', group: 'Клиент', kind: 'text' },
+  phone: { label: 'Телефон', group: 'Клиент', kind: 'text' },
+  email: { label: 'Email', group: 'Клиент', kind: 'text' },
+  company: { label: 'Компания', group: 'Клиент', kind: 'text' },
+  language: { label: 'Язык', group: 'Клиент', options: { ru: 'Русский', en: 'English' } },
+  source: { label: 'Откуда пришёл', group: 'Клиент' },
+  tags: { label: 'Теги', group: 'Клиент', kind: 'enum' },
+  consent: { label: 'Согласен на рассылки', group: 'Клиент', kind: 'bool' },
+  opted_out: { label: 'Отписан от рассылок', group: 'Клиент', kind: 'bool' },
+  bot: { label: 'Пишет боту', group: 'Клиент', kind: 'bool' },
+  created_at: { label: 'Добавлен', group: 'Клиент', kind: 'date' },
+  last_seen_at: { label: 'Последняя активность', group: 'Клиент', kind: 'date' },
+  dialog_closed_at: { label: 'Диалог закрыт', group: 'Клиент', kind: 'date' },
+  'lead.service': { label: 'Услуга в заявках', group: 'Заявки клиента', options: SERVICES },
+  'lead.source': { label: 'Источник заявок', group: 'Заявки клиента', options: SOURCES },
+  'lead.status': { label: 'Статус заявок', group: 'Заявки клиента', options: STATUSES },
+  'lead.count': { label: 'Число заявок', group: 'Заявки клиента', kind: 'number' },
+  'lead.last': { label: 'Последняя заявка', group: 'Заявки клиента', kind: 'date' },
+  'lead.company': { label: 'Компания в заявках', group: 'Заявки клиента', kind: 'text' },
+}
+const DEFAULTS = ['tags', 'lead.service', 'consent', 'created_at', 'name', 'phone']
+const uniq = <T,>(a: (T | null)[]) => [...new Set(a.filter((x): x is T => x !== null && x !== ''))]
+
+const flatOf = (answers: Map<string, Flat>) => (c: Row): Flat => ({
+  name: c.name, tg_username: c.tg_username, phone: c.phone, email: c.email, company: c.company, language: c.language, source: c.source,
+  tags: uniq(c.client_tags.map((t) => t.tags?.name ?? null)),
+  consent: !!(c.consent_at && !c.opted_out_at), opted_out: !!c.opted_out_at, bot: !!c.tg_user_id,
+  created_at: c.created_at, last_seen_at: c.last_seen_at, dialog_closed_at: c.dialog_closed_at,
+  'lead.service': uniq(c.leads.map((l) => l.service_key)), 'lead.source': uniq(c.leads.map((l) => l.source)), 'lead.status': uniq(c.leads.map((l) => l.status)),
+  'lead.count': c.leads.length, 'lead.last': c.leads.map((l) => l.created_at).sort().at(-1) ?? null, 'lead.company': uniq(c.leads.map((l) => l.company)),
+  ...flattenJson('vars.', c.vars),
+  ...answers.get(c.id),
+})
 
 const words = (s: string | null) => (s ?? '').split(',').map((x) => x.trim()).filter(Boolean)
 
@@ -13,13 +57,14 @@ export default function ClientsPage() {
   const [sp, setSp] = useSearchParams()
   const nav = useNavigate()
   const q = sp.get('q') ?? ''
-  const svc = sp.get('svc') ?? ''
-  const consent = sp.get('consent') ?? ''
+  const conds = useMemo(() => parseConds(sp.get('f')), [sp])
   const anyW = sp.get('any') ?? ''
   const allW = sp.get('all') ?? ''
   const noneW = sp.get('none') ?? ''
 
   const [rows, setRows] = useState<Row[] | null>(null)
+  // Ответы из воронок («Сохранить в переменную») по клиенту: последний ответ на ключ побеждает
+  const [answers, setAnswers] = useState<Map<string, Flat>>(new Map())
   const [error, setError] = useState('')
   const [ids, setIds] = useState<Set<string> | null>(null)
   const [open, setOpen] = useState(!!(anyW || allW || noneW))
@@ -35,10 +80,15 @@ export default function ClientsPage() {
   useEffect(() => {
     supabase
       .from('clients')
-      .select('*, leads(service_key, company, created_at)')
+      .select('*, leads(service_key, source, status, company, created_at), client_tags(tags(name))')
       .order('created_at', { ascending: false })
       .limit(1000)
-      .then(({ data, error: e }) => (e ? setError('Не удалось загрузить клиентов') : setRows((data ?? []) as Row[])))
+      .then(({ data, error: e }) => (e ? setError('Не удалось загрузить клиентов') : setRows((data ?? []) as unknown as Row[])))
+    supabase.from('funnel_runs').select('client_id, vars').order('created_at').limit(5000).then(({ data }) => {
+      const m = new Map<string, Flat>()
+      for (const r of (data ?? []) as { client_id: string; vars: unknown }[]) m.set(r.client_id, flattenJson('ans.', r.vars, m.get(r.client_id) ?? {}))
+      setAnswers(m)
+    })
   }, [])
 
   useEffect(() => {
@@ -64,37 +114,21 @@ export default function ClientsPage() {
     return () => { alive = false }
   }, [anyW, allW, noneW])
 
-  const list = useMemo(() => {
-    const t = q.trim().toLowerCase().replace(/^@/, '')
-    return (rows ?? []).filter((c) => {
-      if (ids && !ids.has(c.id)) return false
-      if (svc && !c.leads.some((l) => l.service_key === svc)) return false
-      if (consent === 'yes' && !(c.consent_at && !c.opted_out_at)) return false
-      if (consent === 'no' && c.consent_at && !c.opted_out_at) return false
-      if (!t) return true
-      return [c.name, c.tg_username, c.phone, c.email, c.company, ...c.leads.map((l) => l.company)].some((v) => v?.toLowerCase().includes(t))
-    })
-  }, [rows, ids, q, svc, consent])
+  const flat = useMemo(() => flatOf(answers), [answers])
+  const fields = useMemo(() => inferFields((rows ?? []).map(flat), KNOWN, { 'vars.': 'Доп. поля клиента', 'ans.': 'Ответы в воронках' }), [rows, flat])
+  const list = useMemo(() => applyFilter((rows ?? []).filter((c) => !ids || ids.has(c.id)), flat, conds, q, fields), [rows, ids, flat, conds, q, fields])
+  const setFilter = (c: Cond[], text: string) => patch({ f: c.length ? JSON.stringify(c) : '', q: text })
 
   const hl = [...words(anyW), ...words(allW)].join(',')
   const filtersOn = !!(anyW || allW || noneW)
-  const reset = () => { setDraft({ any: '', all: '', none: '' }); setSp(new URLSearchParams(), { replace: true }) }
+  const reset = () => { setDraft({ any: '', all: '', none: '' }); patch({ any: '', all: '', none: '' }) }
 
   return (
     <div className="wrap">
       <h1 className="h1">Клиенты <span className="chip">{rows ? list.length : '…'}{rows && list.length !== rows.length ? ` из ${rows.length}` : ''}</span></h1>
       <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <input type="search" placeholder="Поиск: имя, @ник, телефон, компания" value={q} onChange={(e) => patch({ q: e.target.value })} aria-label="Поиск клиентов" />
+        <FilterBar page="clients" fields={fields} defaults={DEFAULTS} conds={conds} q={q} onChange={setFilter} placeholder="Поиск: имя, @ник, телефон, компания" />
         <div className="row">
-          <select value={svc} onChange={(e) => patch({ svc: e.target.value })} aria-label="Услуга" style={{ flex: 1, minWidth: 150 }}>
-            <option value="">Любая услуга</option>
-            {Object.entries(SERVICES).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-          </select>
-          <select value={consent} onChange={(e) => patch({ consent: e.target.value })} aria-label="Рассылки" style={{ flex: 1, minWidth: 150 }}>
-            <option value="">Рассылки: любые</option>
-            <option value="yes">Согласны на рассылки</option>
-            <option value="no">Нет согласия или отписаны</option>
-          </select>
           <button className={`btn${filtersOn ? ' primary' : ''}`} onClick={() => setOpen(!open)}>Слова в заметках{filtersOn && <i className="dot" aria-label="фильтр включён" />}</button>
         </div>
         {open && (
@@ -105,7 +139,7 @@ export default function ClientsPage() {
             <div className="hint" style={{ gridColumn: '1 / -1' }}>Слова через запятую. Ищется часть слова без учёта регистра, «дорог» найдёт «дорого» и «дорогой». «Не содержит»: ни в одной заметке клиента нет этих слов.</div>
           </div>
         )}
-        {(filtersOn || q || svc || consent) && <div><button className="btn" onClick={reset}>Сбросить фильтры</button></div>}
+        {filtersOn && <div><button className="btn" onClick={reset}>Сбросить слова</button></div>}
       </div>
       {error && <div className="err" role="alert">{error}</div>}
       {rows === null && !error && <div className="empty">Загрузка…</div>}

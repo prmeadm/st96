@@ -1,25 +1,66 @@
-import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useEffect, useMemo, useState } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
 import { supabase } from '../supabase'
 import { SERVICES, SOURCES, STATUSES, WARNINGS, fmtDate, type Lead } from '../types'
 import { Icon } from '../ui/Icon'
 import { RowActions } from '../ui/RowActions'
 import { ContactLinks } from '../ui/ContactLinks'
 import { LeadEditor } from './LeadEditor'
+import { FilterBar } from './FilterBar'
+import { applyFilter, flattenJson, inferFields, parseConds, type Cond, type Flat, type KnownField } from '../../../server/leads/filter'
 import './leads.css'
 
-type Row = Lead & { clients: { id: string; name: string | null; tg_username: string | null } | null }
+type Row = Lead & {
+  interest: string | null; lang: string | null; landing: string | null; utm: Record<string, unknown> | null; raw_text: string | null; updated_at: string
+  clients: { id: string; name: string | null; tg_username: string | null; client_tags: { tags: { name: string } | null }[] } | null
+}
+
+// Поля фильтра, которые знаем заранее; остальное (utm.*) фильтр находит в данных сам
+const KNOWN: Record<string, KnownField> = {
+  status: { label: 'Статус', group: 'Заявка', options: STATUSES },
+  source: { label: 'Источник', group: 'Заявка', options: SOURCES },
+  service_key: { label: 'Услуга', group: 'Заявка', options: SERVICES },
+  created_at: { label: 'Создана', group: 'Заявка', kind: 'date' },
+  updated_at: { label: 'Изменена', group: 'Заявка', kind: 'date' },
+  name: { label: 'Имя', group: 'Контакты', kind: 'text' },
+  phone: { label: 'Телефон', group: 'Контакты', kind: 'text' },
+  telegram: { label: 'Telegram', group: 'Контакты', kind: 'text' },
+  email: { label: 'Email', group: 'Контакты', kind: 'text' },
+  company: { label: 'Компания', group: 'Контакты', kind: 'text' },
+  title: { label: 'Заголовок', group: 'Заявка', kind: 'text' },
+  topic: { label: 'Тема', group: 'Заявка', kind: 'text' },
+  comment: { label: 'Комментарий', group: 'Заявка', kind: 'text' },
+  interest: { label: 'Интерес', group: 'Заявка' },
+  lang: { label: 'Язык', group: 'Заявка' },
+  landing: { label: 'Страница входа', group: 'Заявка' },
+  warnings: { label: 'Предупреждения разбора', group: 'Заявка', options: WARNINGS },
+  'client.name': { label: 'Клиент', group: 'Клиент', kind: 'text' },
+  'client.found': { label: 'Клиент определён', group: 'Клиент', kind: 'bool' },
+  'client.tags': { label: 'Теги клиента', group: 'Клиент', kind: 'enum' },
+}
+const DEFAULTS = ['status', 'source', 'service_key', 'created_at', 'name', 'phone']
+
+const flat = (l: Row): Flat => ({
+  status: l.status, source: l.source, service_key: l.service_key, created_at: l.created_at, updated_at: l.updated_at,
+  name: l.name, phone: l.phone, telegram: l.telegram, email: l.email, company: l.company, title: l.title, topic: l.topic, comment: l.comment,
+  interest: l.interest, lang: l.lang, landing: l.landing, warnings: l.warnings, raw_text: l.raw_text,
+  'client.name': l.clients ? [l.clients.name, l.clients.tg_username].filter(Boolean).join(' @') : null,
+  'client.found': !!l.clients,
+  'client.tags': (l.clients?.client_tags ?? []).map((t) => t.tags?.name).filter(Boolean) as string[],
+  ...flattenJson('utm.', l.utm),
+})
 
 export default function LeadsPage() {
   const [rows, setRows] = useState<Row[] | null>(null)
-  const [status, setStatus] = useState('')
-  const [source, setSource] = useState('')
+  const [sp, setSp] = useSearchParams()
+  const q = sp.get('q') ?? ''
+  const conds = useMemo(() => parseConds(sp.get('f')), [sp])
   const [error, setError] = useState('')
   const [edit, setEdit] = useState<Lead | 'new' | null>(null)
   const [info, setInfo] = useState('')
 
   const load = () =>
-    supabase.from('leads').select('*, clients(id, name, tg_username)').order('created_at', { ascending: false }).limit(500)
+    supabase.from('leads').select('*, clients(id, name, tg_username, client_tags(tags(name)))').order('created_at', { ascending: false }).limit(500)
       .then(({ data, error: e }) => (e ? setError('Не удалось загрузить заявки') : setRows((data ?? []) as unknown as Row[])))
   useEffect(() => { void load() }, [])
 
@@ -37,26 +78,35 @@ export default function LeadsPage() {
     if (e) { setRows(prev); setError('Не удалось сменить статус') } else setError('')
   }
 
-  const list = (rows ?? []).filter((l) => (!status || l.status === status) && (!source || l.source === source))
+  const setFilter = (c: Cond[], text: string) => {
+    const next = new URLSearchParams(sp)
+    if (c.length) next.set('f', JSON.stringify(c)); else next.delete('f')
+    if (text) next.set('q', text); else next.delete('q')
+    setSp(next, { replace: true })
+  }
+  const flats = useMemo(() => (rows ?? []).map(flat), [rows])
+  const fields = useMemo(() => inferFields(flats, KNOWN, { 'utm.': 'UTM-метки' }), [flats])
+  const list = useMemo(() => applyFilter(rows ?? [], flat, conds, q, fields), [rows, conds, q, fields])
+  // Быстрые вкладки статусов — то же условие «Статус», что и в окне фильтра
+  const statusCond = conds.find((c) => c.field === 'status')
+  const oneStatus = Array.isArray(statusCond?.value) && statusCond.value.length === 1 ? statusCond.value[0] : ''
+  const pickStatus = (k: string) => setFilter([...conds.filter((c) => c.field !== 'status'), ...(k ? [{ field: 'status', value: [k] }] : [])], q)
   const tone = (s: Lead['status']) => (s === 'won' ? 'green' : s === 'lost' || s === 'spam' ? 'red' : s === 'in_progress' ? 'amber' : 'blue')
 
   return (
     <div className="wrap">
-      <h1 className="h1">Заявки <span className="chip">{rows ? list.length : '…'}</span><span className="sp" /><button type="button" className="btn primary" onClick={() => setEdit('new')}><Icon name="plus" size={18} />Добавить заявку</button></h1>
+      <h1 className="h1">Заявки <span className="chip">{rows ? list.length : '…'}{rows && list.length !== rows.length ? ` из ${rows.length}` : ''}</span><span className="sp" /><button type="button" className="btn primary" onClick={() => setEdit('new')}><Icon name="plus" size={18} />Добавить заявку</button></h1>
       {info && <div className="hint" role="status">{info}</div>}
       <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <FilterBar page="leads" fields={fields} defaults={DEFAULTS} conds={conds} q={q} onChange={setFilter} placeholder="Поиск: имя, телефон, ник, комментарий" />
         <div className="chips">
-          <button className={!status ? 'on' : ''} onClick={() => setStatus('')}>Все</button>
-          {Object.entries(STATUSES).map(([k, v]) => <button key={k} className={status === k ? 'on' : ''} onClick={() => setStatus(k)}>{v}</button>)}
-        </div>
-        <div className="chips">
-          <button className={!source ? 'on' : ''} onClick={() => setSource('')}>Все источники</button>
-          {Object.entries(SOURCES).filter(([k]) => k !== 'bot').map(([k, v]) => <button key={k} className={source === k ? 'on' : ''} onClick={() => setSource(k)}>{v}</button>)}
+          <button className={!statusCond ? 'on' : ''} onClick={() => pickStatus('')}>Все</button>
+          {Object.entries(STATUSES).map(([k, v]) => <button key={k} className={oneStatus === k ? 'on' : ''} onClick={() => pickStatus(k)}>{v}</button>)}
         </div>
       </div>
       {error && <div className="err" role="alert">{error}</div>}
       {rows === null && !error && <div className="empty">Загрузка…</div>}
-      {rows && list.length === 0 && <div className="empty">Заявок нет</div>}
+      {rows && list.length === 0 && <div className="empty">{rows.length ? 'Ничего не найдено' : 'Заявок нет'}</div>}
       {list.map((l) => (
         <div key={l.id} className="item">
           <div className="lead-top">
