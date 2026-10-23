@@ -2,7 +2,7 @@
 
 Движок воронок (запуск, кнопки, условия, действия, паузы, запись из воронки, повторы при сбоях), отправка в Telegram (медиа с подписью, YouTube, кружки, 429), конструктор в админке.
 
-Граф раздела: `graphify-out/sections/funnels/graph.json` (189 узлов, 444 внутренних связей).
+Граф раздела: `graphify-out/sections/funnels/graph.json` (188 узлов, 442 внутренних связей).
 
 ## С чего начать сессию
 
@@ -21,18 +21,18 @@
 - `src/admin/builder/Editor.tsx` — 11 узл.
 - `server/funnels/realFunnel.test.ts` — 10 узл.
 - `server/bot/telegramOut.ts` — 9 узл.
-- `src/admin/ui/VideoNoteField.tsx` — 8 узл.
 - `server/funnels/engine.test.ts` — 8 узл.
+- `src/admin/ui/VideoNoteField.tsx` — 7 узл.
 - `src/admin/builder/Builder.tsx` — 6 узл.
 - `server/funnels/retry.ts` — 6 узл.
-- `server/funnels/triggers.ts` — 4 узл.
-- `src/admin/pages/FunnelPage.tsx` — 4 узл.
 - `src/admin/builder/Preview.tsx` — 4 узл.
 - `src/admin/pages/FunnelsPage.tsx` — 4 узл.
-- `server/funnels/demo.ts` — 3 узл.
+- `src/admin/pages/FunnelPage.tsx` — 4 узл.
+- `server/funnels/triggers.ts` — 4 узл.
 - `src/admin/builder/Edges.tsx` — 3 узл.
-- `server/funnels/validate.ts` — 3 узл.
 - `server/bot/videonote.test.ts` — 3 узл.
+- `server/funnels/validate.ts` — 3 узл.
+- `server/funnels/demo.ts` — 3 узл.
 - `server/media.test.ts` — 2 узл.
 - `server/bot/keyboard.test.ts` — 2 узл.
 
@@ -44,11 +44,11 @@
 - `Inner()` (src/admin/builder/Builder.tsx:L23)
 - `Editor()` (src/admin/builder/Editor.tsx:L86)
 - `Shell()` (src/admin/builder/Nodes.tsx:L25)
-- `Graph` (server/funnels/types.ts:L10)
-- `VideoNoteField()` (src/admin/ui/VideoNoteField.tsx:L79)
 - `Funnel` (server/funnels/types.ts:L12)
-- `asArray()` (server/funnels/types.ts:L35)
+- `Graph` (server/funnels/types.ts:L10)
+- `str()` (server/funnels/types.ts:L36)
 - `TRIGGER` (server/funnels/types.ts:L27)
+- `validateGraph()` (server/funnels/validate.ts:L6)
 - `handleClick()` (server/funnels/engine.ts:L119)
 
 ## От чего зависит (вызовы в другие разделы)

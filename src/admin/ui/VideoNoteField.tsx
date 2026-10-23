@@ -60,21 +60,8 @@ function recordSquare(video: HTMLVideoElement, audio: MediaStreamTrack[], mime: 
   return { stop: () => { if (rec.state === 'recording') rec.stop() }, done }
 }
 
-type Trim = { url: string; duration: number; start: number; end: number; shrink?: { bps: number } }
-
-/** Длительность ролика по его метаданным (их Safari на iPhone тоже отдаёт без запуска). */
-function probe(url: string): Promise<{ duration: number; width: number; height: number } | null> {
-  const v = document.createElement('video')
-  v.preload = 'metadata'
-  v.muted = true
-  v.playsInline = true
-  v.src = url
-  return new Promise((res) => {
-    v.onloadedmetadata = () => res({ duration: v.duration, width: v.videoWidth, height: v.videoHeight })
-    v.onerror = () => res(null)
-    setTimeout(() => res(null), 15_000)
-  })
-}
+// duration 0: ролик ещё открывается; file: исходник из галереи (готовый квадратный MP4 уходит без перекодирования)
+type Trim = { url: string; duration: number; start: number; end: number; file?: File; shrink?: { bps: number } }
 
 export function VideoNoteField({ value, onChange, folder }: { value: string; onChange: (url: string) => void; folder: string }) {
   const [busy, setBusy] = useState('')
@@ -112,11 +99,8 @@ export function VideoNoteField({ value, onChange, folder }: { value: string; onC
     if (blob.size > NOTE_MAX_BYTES) {
       // тяжелее 12 МБ Telegram кружок не принимает: один раз пережимаем с меньшим битрейтом
       if (!shrunk) {
-        const url = URL.createObjectURL(blob)
-        const info = await probe(url)
-        const duration = info && Number.isFinite(info.duration) ? info.duration : MAX_SEC
         setMsg(`Кружок получился ${(blob.size / 1048576).toFixed(1)} МБ, а Telegram принимает до 12 МБ. Нажмите «Сжать кружок».`)
-        return setTrim({ url, duration, start: 0, end: Math.min(duration, MAX_SEC), shrink: { bps: Math.floor(NOTE_BPS * (NOTE_MAX_BYTES / blob.size) * 0.7) } })
+        return setTrim({ url: URL.createObjectURL(blob), duration: 0, start: 0, end: 0, shrink: { bps: Math.floor(NOTE_BPS * (NOTE_MAX_BYTES / blob.size) * 0.7) } })
       }
       return setMsg(`Кружок получился ${(blob.size / 1048576).toFixed(1)} МБ, а Telegram принимает до 12 МБ. Сделайте его короче.`)
     }
@@ -203,20 +187,46 @@ export function VideoNoteField({ value, onChange, folder }: { value: string; onC
     setMsg('')
     if (!file.type.startsWith('video/')) return setMsg('Нужен видеофайл')
     if (!mime) return setMsg('Этот браузер не умеет готовить MP4. Откройте админку в Safari или в Chrome последней версии.')
-    const url = URL.createObjectURL(file)
-    setBusy('Открываю видео…')
-    const info = await probe(url)
-    setBusy('')
-    if (!info) {
-      URL.revokeObjectURL(url)
-      return setMsg('Не получилось открыть видео. Попробуйте другой файл (MP4 или MOV).')
-    }
-    if (info.width === info.height && info.duration <= MAX_SEC && /mp4/.test(file.type) && file.size <= NOTE_MAX_BYTES) {
-      URL.revokeObjectURL(url)
-      return upload(file)
-    }
-    setTrim({ url, duration: info.duration, start: 0, end: Math.min(info.duration, MAX_SEC) })
+    // ролик открываем сразу в окне выбора: Safari на iPhone не читает видео, которого нет на странице и которое не запущено
+    setTrim({ url: URL.createObjectURL(file), duration: 0, start: 0, end: 0, file })
   }
+
+  // подключаем ролик к превью без звука и сразу запускаем: только так iPhone начинает его читать
+  useEffect(() => {
+    const v = trimVideo.current
+    const url = trim?.url
+    if (!v || !url) return
+    const file = trim.file
+    const fail = () => {
+      URL.revokeObjectURL(url)
+      setTrim(null)
+      setMsg('Не получилось открыть видео. Попробуйте другой файл (MP4 или MOV).')
+    }
+    const opened = () => {
+      const d = v.duration
+      if (!Number.isFinite(d) || d <= 0) return
+      window.clearTimeout(timer)
+      v.onloadedmetadata = v.ondurationchange = null
+      if (file && v.videoWidth === v.videoHeight && d <= MAX_SEC && /mp4/.test(file.type) && file.size <= NOTE_MAX_BYTES) {
+        URL.revokeObjectURL(url)
+        setTrim(null)
+        return void upload(file)
+      }
+      setTrim((x) => (x && x.url === url ? { ...x, duration: d, end: Math.min(d, MAX_SEC) } : x))
+    }
+    const timer = window.setTimeout(fail, 30_000)
+    v.defaultMuted = true
+    v.muted = true
+    v.setAttribute('muted', '')
+    v.setAttribute('playsinline', '')
+    v.onloadedmetadata = v.ondurationchange = opened
+    v.onerror = () => { window.clearTimeout(timer); fail() }
+    v.src = url
+    void v.play().catch(() => {})
+    return () => window.clearTimeout(timer)
+    // открываем один раз на каждый новый ролик
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [trim?.url])
 
   /**
    * Перекодирует выбранный кусок в квадратный кружок в реальном времени и загружает.
@@ -224,7 +234,7 @@ export function VideoNoteField({ value, onChange, folder }: { value: string; onC
    */
   const convert = () => {
     const v = trimVideo.current
-    if (!trim || !v || converting) return
+    if (!trim || !trim.duration || !v || converting) return
     const t = trim
     // звук ролика через Web Audio: так он попадает в запись, но не играет в колонках
     const ac = new AudioContext()
@@ -269,7 +279,7 @@ export function VideoNoteField({ value, onChange, folder }: { value: string; onC
   // превью выбранного куска крутится по кругу от начала до конца
   useEffect(() => {
     const v = trimVideo.current
-    if (!trim || !v || converting) return
+    if (!trim || !trim.duration || !v || converting) return
     if (v.currentTime < trim.start || v.currentTime > trim.end) v.currentTime = trim.start
     v.ontimeupdate = () => { if (v.currentTime >= trim.end) v.currentTime = trim.start }
   }, [trim, converting])
@@ -299,17 +309,19 @@ export function VideoNoteField({ value, onChange, folder }: { value: string; onC
       {value && <video className="vnote-prev" src={value} controls playsInline />}
       {trim ? (
         <div className="vnote-trim">
-          <video ref={trimVideo} className="vnote-prev" src={trim.url} autoPlay muted playsInline preload="auto" />
+          <video ref={trimVideo} className="vnote-prev" muted playsInline preload="auto" />
+          {!trim.duration ? <div className="hint">Открываю видео…</div> : <>
           <div className="vnote-trim-len">{fmt(trim.start)} – {fmt(trim.end)} · {Math.round(trim.end - trim.start)} с из {fmt(trim.duration)}</div>
           <div className="vnote-trim-track">
             <div className="vnote-trim-sel" style={{ left: `${(trim.start / trim.duration) * 100}%`, width: `${((trim.end - trim.start) / trim.duration) * 100}%` }} />
             <input type="range" min={0} max={trim.duration} step={0.1} value={trim.start} disabled={converting || trim.duration <= 1} onChange={(e) => moveTrim('start', Number(e.target.value))} aria-label="Начало куска" />
             <input type="range" min={0} max={trim.duration} step={0.1} value={trim.end} disabled={converting || trim.duration <= 1} onChange={(e) => moveTrim('end', Number(e.target.value))} aria-label="Конец куска" />
           </div>
-          <div className="hint">{converting ? busy : trim.duration > MAX_SEC ? 'Ролик длиннее 59 секунд. Выберите кусок: перетащите начало и конец.' : 'Можно укоротить: перетащите начало и конец.'}</div>
+          </>}
+          <div className="hint">{!trim.duration ? '' : converting ? busy : trim.duration > MAX_SEC ? 'Ролик длиннее 59 секунд. Выберите кусок: перетащите начало и конец.' : 'Можно укоротить: перетащите начало и конец.'}</div>
           <div className="vnote-trim-btns">
             <button type="button" className="btn" disabled={converting} onClick={cancelTrim}>Отмена</button>
-            <button type="button" className="btn primary" disabled={converting} onClick={convert}>{trim.shrink ? 'Сжать кружок' : 'Сделать кружок'}</button>
+            <button type="button" className="btn primary" disabled={converting || !trim.duration} onClick={convert}>{trim.shrink ? 'Сжать кружок' : 'Сделать кружок'}</button>
           </div>
         </div>
       ) : cam ? (
