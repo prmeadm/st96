@@ -19,22 +19,22 @@
 - `server/agent/models.ts` — 14 узл.
 - `server/agent/tools.ts` — 13 узл.
 - `src/admin/pages/AnalyticsPage.tsx` — 12 узл.
-- `server/agent/llm.ts` — 10 узл.
 - `server/agent/types.ts` — 10 узл.
+- `server/agent/llm.ts` — 10 узл.
 - `server/agent/agent.test.ts` — 8 узл.
 - `src/admin/pages/AgentPage.tsx` — 6 узл.
 - `server/translate.ts` — 6 узл.
 - `server/agent/deps.ts` — 5 узл.
 - `src/admin/pages/SettingsPage.tsx` — 4 узл.
-- `api/analytics-admin.ts` — 3 узл.
 - `src/admin/pages/ModelPicker.tsx` — 3 узл.
-- `api/agent-model.ts` — 3 узл.
 - `api/agent.ts` — 3 узл.
+- `api/analytics-admin.ts` — 3 узл.
 - `api/status.ts` — 3 узл.
 - `api/translate.ts` — 3 узл.
-- `src/admin/ui/TranslateButton.tsx` — 2 узл.
+- `api/agent-model.ts` — 3 узл.
 - `server/translate.test.ts` — 2 узл.
 - `server/usage.test.ts` — 2 узл.
+- `src/admin/ui/TranslateButton.tsx` — 2 узл.
 - `server/agent/llm.test.ts` — 1 узл.
 
 ## Главные узлы (больше всего связей)
@@ -45,12 +45,12 @@
 - `handler()` (api/agent.ts:L11)
 - `makePlan()` (server/agent/engine.ts:L58)
 - `resolveLlm()` (server/agent/deps.ts:L12)
-- `openAiCompatible()` (server/agent/llm.ts:L27)
-- `reload()` (server/agent/engine.ts:L15)
-- `importSlice()` (server/agent/groupImport.ts:L66)
 - `parseCustom()` (server/agent/models.ts:L72)
+- `openAiCompatible()` (server/agent/llm.ts:L27)
+- `importSlice()` (server/agent/groupImport.ts:L66)
 - `agentDeps()` (server/agent/deps.ts:L26)
-- `parseJson()` (server/agent/llm.ts:L68)
+- `reload()` (server/agent/engine.ts:L15)
+- `translateToEnglish()` (server/translate.ts:L27)
 
 ## От чего зависит (вызовы в другие разделы)
 

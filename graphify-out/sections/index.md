@@ -4,7 +4,7 @@
 
 | Раздел | Что внутри | Узлов | Файлов | Справка |
 |---|---|---|---|---|
-| Воронки | Движок воронок | 185 | 22 | [`funnels.md`](funnels.md) |
+| Воронки | Движок воронок | 186 | 22 | [`funnels.md`](funnels.md) |
 | Бот и диалоги | Вебхук Telegram | 37 | 5 | [`bot.md`](bot.md) |
 | Заявки и клиенты | Приём заявок | 127 | 18 | [`leads.md`](leads.md) |
 | Запись на встречу | Расписание и слоты | 137 | 14 | [`booking.md`](booking.md) |
@@ -38,5 +38,5 @@
 - `tsconfig.json`
 - `vercel.json`
 - `vite.config.ts`
-- `libphonenumber-js`
 - `@breezystack/lamejs`
+- `libphonenumber-js`

@@ -6,6 +6,7 @@ import { Icon } from './Icon'
 // поэтому файл кладём в хранилище, а бот при отправке скачивает его и загружает в Telegram.
 const SIZE = 480 // сторона квадрата: Telegram рекомендует до 640
 const MAX_SEC = 59 // Telegram принимает кружки до 60 с; запас в секунду, иначе запись на 1:00 придёт обычным видео
+const fmt = (t: number) => `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, '0')}`
 const MAX_MB = 20
 
 /** MP4, который понимает Telegram. WebM (старый Chrome, Firefox) кружком не отправится. */
@@ -38,16 +39,14 @@ function recordSquare(video: HTMLVideoElement, audio: MediaStreamTrack[], mime: 
   const chunks: Blob[] = []
   rec.ondataavailable = (e) => { if (e.data.size) chunks.push(e.data) }
   const t0 = Date.now()
-  const tick = window.setInterval(() => {
-    const sec = Math.floor((Date.now() - t0) / 1000)
-    opts.onTick?.(sec)
-    if (sec >= MAX_SEC && rec.state === 'recording') rec.stop()
-  }, 250)
+  const tick = window.setInterval(() => opts.onTick?.(Math.min(MAX_SEC, Math.floor((Date.now() - t0) / 1000))), 250)
+  const limit = window.setTimeout(() => { if (rec.state === 'recording') rec.stop() }, MAX_SEC * 1000) // ровно 59 с, дольше записать нельзя
   // null: ни одного кадра с камеры или из ролика, получилось бы чёрное видео
   const done = new Promise<Blob | null>((resolve) => {
     rec.onstop = () => {
       cancelAnimationFrame(raf)
       window.clearInterval(tick)
+      window.clearTimeout(limit)
       resolve(frames ? new Blob(chunks, { type: 'video/mp4' }) : null)
     }
   })
@@ -62,6 +61,9 @@ export function VideoNoteField({ value, onChange, folder }: { value: string; onC
   const [cam, setCam] = useState(false)
   const [sec, setSec] = useState<number | null>(null)
   const [ready, setReady] = useState(false)
+  // длинный ролик из галереи: выбор куска до 59 с, как в Telegram
+  const [trim, setTrim] = useState<{ url: string; duration: number; start: number; end: number } | null>(null)
+  const trimVideo = useRef<HTMLVideoElement>(null)
   const live = useRef<HTMLVideoElement>(null)
   const stream = useRef<MediaStream | null>(null)
   const recording = useRef<{ stop: () => void } | null>(null)
@@ -121,7 +123,7 @@ export function VideoNoteField({ value, onChange, folder }: { value: string; onC
     })
   }
 
-  /** Готовое видео: обрезаем до квадрата и до 60 секунд (перекодирование идёт в реальном времени). */
+  /** Готовое видео: квадратный MP4 до 59 с уходит как есть, короткое обрезаем до квадрата, у длинного сначала выбираем кусок. */
   const pickFile = async (file: File | undefined) => {
     if (!file) return
     setMsg('')
@@ -130,27 +132,47 @@ export function VideoNoteField({ value, onChange, folder }: { value: string; onC
     const url = URL.createObjectURL(file)
     const v = document.createElement('video')
     v.src = url
-    v.playsInline = true
-    v.preload = 'auto'
+    v.preload = 'metadata'
     try {
       await new Promise<void>((res, rej) => { v.onloadedmetadata = () => res(); v.onerror = () => rej(new Error('bad')) })
     } catch {
       URL.revokeObjectURL(url)
       return setMsg('Не получилось открыть видео. Попробуйте другой файл (MP4 или MOV).')
     }
-    const square = v.videoWidth === v.videoHeight
-    if (square && v.duration <= MAX_SEC && /mp4/.test(file.type)) {
+    if (v.videoWidth === v.videoHeight && v.duration <= MAX_SEC && /mp4/.test(file.type)) {
       URL.revokeObjectURL(url)
       return upload(file)
     }
-    setBusy(`Готовлю кружок: ${Math.min(Math.ceil(v.duration), MAX_SEC)} с…`)
+    if (v.duration > MAX_SEC) return setTrim({ url, duration: v.duration, start: 0, end: MAX_SEC })
+    await makeNote(url, 0, v.duration)
+  }
+
+  /** Перекодирует кусок [start, end] ролика в квадратный кружок (в реальном времени) и загружает. */
+  const makeNote = async (url: string, start: number, end: number) => {
+    const len = Math.min(MAX_SEC, Math.ceil(end - start))
+    setBusy(`Готовлю кружок: ${len} с…`)
+    const v = document.createElement('video')
+    v.src = url
+    v.playsInline = true
+    v.preload = 'auto'
+    try {
+      await new Promise<void>((res, rej) => { v.onloadeddata = () => res(); v.onerror = () => rej(new Error('bad')) })
+      if (start > 0) await new Promise<void>((res) => { v.onseeked = () => res(); v.currentTime = start })
+    } catch {
+      URL.revokeObjectURL(url)
+      setBusy('')
+      return setMsg('Не получилось открыть видео. Попробуйте другой файл (MP4 или MOV).')
+    }
     // звук ролика через Web Audio: так он попадает в запись, но не играет в колонках
     const ac = new AudioContext()
     const dest = ac.createMediaStreamDestination()
     ac.createMediaElementSource(v).connect(dest)
-    const ended = new Promise<void>((res) => { v.onended = () => res() })
+    const reached = new Promise<void>((res) => {
+      v.onended = () => res()
+      v.ontimeupdate = () => { if (v.currentTime >= end) res() }
+    })
     await v.play()
-    const r = recordSquare(v, dest.stream.getAudioTracks(), mime, { until: ended, onTick: (s) => setBusy(`Готовлю кружок: ${s} из ${Math.min(Math.ceil(v.duration), MAX_SEC)} с…`) })
+    const r = recordSquare(v, dest.stream.getAudioTracks(), mime!, { until: reached, onTick: (s) => setBusy(`Готовлю кружок: ${s} из ${len} с…`) })
     const blob = await r.done
     v.pause()
     await ac.close()
@@ -160,22 +182,71 @@ export function VideoNoteField({ value, onChange, folder }: { value: string; onC
     await upload(blob)
   }
 
+  // превью выбранного куска крутится по кругу от начала до конца
+  useEffect(() => {
+    const v = trimVideo.current
+    if (!trim || !v) return
+    if (v.currentTime < trim.start || v.currentTime > trim.end) v.currentTime = trim.start
+    v.ontimeupdate = () => { if (v.currentTime >= trim.end) v.currentTime = trim.start }
+  }, [trim])
+
+  /** Двигаем начало или конец; кусок не длиннее 59 с и не короче 1 с, второй край едет следом. */
+  const moveTrim = (edge: 'start' | 'end', t: number) => setTrim((x) => {
+    if (!x) return x
+    let { start, end } = x
+    if (edge === 'start') {
+      start = Math.min(t, x.duration - 1)
+      if (end - start > MAX_SEC) end = start + MAX_SEC
+      if (end <= start) end = Math.min(x.duration, start + 1)
+      if (trimVideo.current) trimVideo.current.currentTime = start
+    } else {
+      end = Math.max(t, 1)
+      if (end - start > MAX_SEC) start = end - MAX_SEC
+      if (start >= end) start = Math.max(0, end - 1)
+      if (trimVideo.current) trimVideo.current.currentTime = Math.max(start, end - 2)
+    }
+    return { ...x, start, end }
+  })
+
+  const cancelTrim = () => { if (trim) URL.revokeObjectURL(trim.url); setTrim(null) }
+  const confirmTrim = () => {
+    if (!trim) return
+    const { url, start, end } = trim
+    setTrim(null)
+    void makeNote(url, start, end)
+  }
+
   return (
     <div className="mfield vnote">
       {value && <video className="vnote-prev" src={value} controls playsInline />}
-      {cam ? (
+      {trim ? (
+        <div className="vnote-trim">
+          <video ref={trimVideo} className="vnote-prev" src={trim.url} autoPlay muted playsInline loop={false} />
+          <div className="vnote-trim-len">{fmt(trim.start)} – {fmt(trim.end)} · {Math.round(trim.end - trim.start)} с из {fmt(trim.duration)}</div>
+          <div className="vnote-trim-track">
+            <div className="vnote-trim-sel" style={{ left: `${(trim.start / trim.duration) * 100}%`, width: `${((trim.end - trim.start) / trim.duration) * 100}%` }} />
+            <input type="range" min={0} max={trim.duration} step={0.1} value={trim.start} onChange={(e) => moveTrim('start', Number(e.target.value))} aria-label="Начало куска" />
+            <input type="range" min={0} max={trim.duration} step={0.1} value={trim.end} onChange={(e) => moveTrim('end', Number(e.target.value))} aria-label="Конец куска" />
+          </div>
+          <div className="hint">Ролик длиннее 59 секунд. Выберите кусок: перетащите начало и конец.</div>
+          <div className="vnote-trim-btns">
+            <button type="button" className="btn" onClick={cancelTrim}>Отмена</button>
+            <button type="button" className="btn primary" onClick={confirmTrim}>Сделать кружок</button>
+          </div>
+        </div>
+      ) : cam ? (
         <div className="vnote-cam">
           <video ref={live} className="vnote-live" autoPlay muted playsInline />
           <div className="ibtns">
             {sec === null
               ? <div className="ibw"><button type="button" className="ibtn rec-btn" disabled={!ready} onClick={startRec} title="Начать запись" aria-label="Начать запись"><Icon name="video" size={20} /></button><span>{ready ? 'Записать' : 'Включаю камеру…'}</span></div>
-              : <div className="ibw"><button type="button" className="ibtn stop-btn" onClick={() => recording.current?.stop()} title="Остановить" aria-label="Остановить"><Icon name="stop" size={18} /></button><span>{`0:${String(sec).padStart(2, '0')} / 1:00`}</span></div>}
+              : <div className="ibw"><button type="button" className="ibtn stop-btn" onClick={() => recording.current?.stop()} title="Остановить" aria-label="Остановить"><Icon name="stop" size={18} /></button><span>{`${fmt(sec)} / ${fmt(MAX_SEC)}`}</span></div>}
             {sec === null && <div className="ibw"><button type="button" className="ibtn" onClick={() => { setCam(false); stopCamera() }} title="Закрыть камеру" aria-label="Закрыть камеру"><Icon name="trash" size={18} /></button><span>Отмена</span></div>}
           </div>
         </div>
       ) : (
         <div className="drop">
-          <div className="drop-hint"><Icon name="video" size={22} /><span>{busy || 'Кружок: квадратное видео до 1 минуты'}</span></div>
+          <div className="drop-hint"><Icon name="video" size={22} /><span>{busy || 'Кружок: квадратное видео до 59 секунд'}</span></div>
           <div className="ibtns">
             <div className="ibw"><button type="button" className="ibtn" disabled={!!busy} onClick={openCamera} title="Записать кружок камерой" aria-label="Записать кружок камерой"><Icon name="camera" size={20} /></button><span>Записать</span></div>
             <div className="ibw">
