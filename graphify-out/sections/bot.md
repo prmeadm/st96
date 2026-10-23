@@ -23,16 +23,16 @@
 
 - `createBot()` (server/bot/bot.ts:L63)
 - `sendContent()` (server/bot/dialog.ts:L167)
-- `sendTemplate()` (server/bot/dialog.ts:L233)
 - `handleTopicMessage()` (server/bot/dialog.ts:L79)
+- `sendTemplate()` (server/bot/dialog.ts:L233)
 - `ensureClient()` (server/bot/bot.ts:L29)
 - `relayToAdmins()` (server/bot/dialog.ts:L51)
 - `ensureTopic()` (server/bot/dialog.ts:L37)
-- `handler()` (api/telegram.ts:L10)
 - `linkLeadClient()` (server/bot/bot.ts:L20)
 - `cardText()` (server/bot/dialog.ts:L22)
-- `notifyTopic()` (server/bot/dialog.ts:L140)
+- `handler()` (api/telegram.ts:L10)
 - `showTemplateMenu()` (server/bot/dialog.ts:L153)
+- `notifyTopic()` (server/bot/dialog.ts:L140)
 
 ## От чего зависит (вызовы в другие разделы)
 

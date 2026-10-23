@@ -21,10 +21,10 @@
 - `src/admin/AdminApp.tsx` — 5 узл.
 - `src/admin/ui/Icon.tsx` — 4 узл.
 - `src/admin/highlight.tsx` — 3 узл.
-- `src/admin/ui/SaveButton.tsx` — 3 узл.
 - `src/admin/supabase.ts` — 3 узл.
-- `src/admin/api.ts` — 2 узл.
+- `src/admin/ui/SaveButton.tsx` — 3 узл.
 - `src/admin/ui/RowActions.tsx` — 2 узл.
+- `src/admin/api.ts` — 2 узл.
 - `src/admin/ui/BackLink.tsx` — 2 узл.
 - `src/admin/main.tsx` — 1 узл.
 
@@ -40,8 +40,8 @@
 - `BackLink()` (src/admin/ui/BackLink.tsx:L6)
 - `FilterBar()` (src/admin/pages/FilterBar.tsx:L12)
 - `Seg()` (src/admin/ui/Seg.tsx:L6)
-- `SERVICES` (src/admin/types.ts:L51)
 - `pickKind()` (src/admin/ui/Seg.tsx:L31)
+- `SERVICES` (src/admin/types.ts:L51)
 
 ## От чего зависит (вызовы в другие разделы)
 

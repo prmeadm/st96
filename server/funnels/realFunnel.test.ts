@@ -188,10 +188,37 @@ test('живая воронка: ролик с разрешённым встра
   assert.deepEqual(buttons(block[0]!), ['Коммерческий промоушн', 'Обсудим проект?'])
 })
 
-test('живая воронка: если Telegram не построил плеер (429), уходит обложка, кнопка открывает ролик внутри Telegram', async () => {
-  const { repo, tg, env, funnel, client } = await setup((method, _n) => (method === 'sendMessage' && tg.sent.some((s) => buttons(s).includes('Вернемся со сметой за 48 часов')) && !tg.sent.some((s) => String(s.body).includes('Видео продакшн')) && failOnce() ? 8 : null), true)
-  let failed = false
-  function failOnce() { if (failed) return false; failed = true; return true }
+test('живая воронка: ссылка на ролик стоит в тексте сообщения (невидимый символ), не только в предпросмотре', async () => {
+  const { repo, tg, env, funnel, client } = await setup(undefined, true)
+  await startFunnel(env, funnel, client)
+  await handleClick(env, client, lastRun(repo), 'q1', 'm1')
+  const before = tg.sent.length
+  await handleClick(env, client, lastRun(repo), 'quz25fc', 'nto3rtb')
+  const msg = tg.sent.slice(before)[0]!
+  assert.ok(String(msg.body).startsWith('\u2060'))
+  assert.deepEqual((msg.extra as { entities?: unknown }).entities, [{ type: 'text_link', offset: 0, length: 1, url: 'https://www.youtube.com/watch?v=O3M6Ox3-Mhs' }])
+})
+
+test('живая воронка: если на один вид ссылки Telegram ответил 429, плеер уходит с другим видом ссылки', async () => {
+  let fails = 0
+  const { repo, tg, env, funnel, client } = await setup((method) => (method === 'sendMessage' && lastPreview?.includes('watch?v=') && fails++ === 0 ? 8 : null), true)
+  let lastPreview: string | undefined
+  const orig = tg.api.sendMessage.bind(tg.api)
+  ;(tg.api as unknown as { sendMessage: unknown }).sendMessage = (chat: unknown, body: unknown, extra?: { link_preview_options?: { url?: string } }) => { lastPreview = extra?.link_preview_options?.url; return orig(chat as number, body as string, extra as never) }
+  await startFunnel(env, funnel, client)
+  await handleClick(env, client, lastRun(repo), 'q1', 'm1')
+  const before = tg.sent.length
+  await handleClick(env, client, lastRun(repo), 'quz25fc', 'nto3rtb')
+  const block = tg.sent.slice(before)
+  assert.equal(block.length, 1, 'одно сообщение, без дубля')
+  assert.deepEqual(preview(block[0]!), { url: 'https://youtu.be/O3M6Ox3-Mhs', prefer_large_media: true, show_above_text: true })
+})
+
+test('живая воронка: если Telegram не построил плеер ни по одной ссылке (429), уходит обложка, кнопка открывает ролик внутри Telegram', async () => {
+  let lastPreview: string | undefined
+  const { repo, tg, env, funnel, client } = await setup((method) => (method === 'sendMessage' && /youtu/.test(lastPreview ?? '') ? 8 : null), true)
+  const orig = tg.api.sendMessage.bind(tg.api)
+  ;(tg.api as unknown as { sendMessage: unknown }).sendMessage = (chat: unknown, body: unknown, extra?: { link_preview_options?: { url?: string } }) => { lastPreview = extra?.link_preview_options?.url; return orig(chat as number, body as string, extra as never) }
   await startFunnel(env, funnel, client)
   await handleClick(env, client, lastRun(repo), 'q1', 'm1')
   const before = tg.sent.length

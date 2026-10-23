@@ -17,14 +17,14 @@
 - `server/booking/service.ts` — 31 узл.
 - `src/admin/pages/BookingPage.tsx` — 12 узл.
 - `src/book/BookPage.tsx` — 8 узл.
-- `server/booking/booking.test.ts` — 7 узл.
 - `server/booking/notify.ts` — 7 узл.
+- `server/booking/booking.test.ts` — 7 узл.
 - `src/booking/MonthGrid.tsx` — 6 узл.
 - `server/booking/types.ts` — 5 узл.
 - `server/booking/ics.ts` — 4 узл.
 - `src/data/serviceOptions.ts` — 4 узл.
-- `api/booking-admin.ts` — 3 узл.
 - `api/booking.ts` — 3 узл.
+- `api/booking-admin.ts` — 3 узл.
 - `src/data/bookingGoals.ts` — 2 узл.
 - `src/book/main.tsx` — 1 узл.
 
@@ -33,14 +33,14 @@
 - `createBooking()` (server/booking/service.ts:L98)
 - `ScheduleTab()` (src/admin/pages/BookingPage.tsx:L146)
 - `dayInfo` (server/booking/schedule.ts:L114)
+- `normalizeSchedule()` (server/booking/schedule.ts:L72)
 - `notifyClientDecision()` (server/booking/notify.ts:L48)
 - `BookingRow` (server/booking/types.ts:L4)
-- `normalizeSchedule()` (server/booking/schedule.ts:L72)
-- `handler()` (api/booking-admin.ts:L10)
-- `addDays()` (server/booking/schedule.ts:L44)
-- `handler()` (api/booking.ts:L15)
 - `bookingUrl()` (server/booking/schedule.ts:L179)
 - `decideBooking()` (server/booking/service.ts:L174)
+- `addDays()` (server/booking/schedule.ts:L44)
+- `handler()` (api/booking.ts:L15)
+- `handler()` (api/booking-admin.ts:L10)
 - `whenLabel()` (server/booking/schedule.ts:L171)
 
 ## От чего зависит (вызовы в другие разделы)
