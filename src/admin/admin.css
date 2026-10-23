@@ -308,7 +308,7 @@ body { overflow-wrap: break-word; }
 
 /* Кружок Telegram: превью и живая камера в круге */
 .vnote-prev, .vnote-live { width: 200px; height: 200px; border-radius: 50%; object-fit: cover; background: var(--bg); display: block; margin: 0 auto 8px; }
-.vnote-live { transform: scaleX(-1); }
+.vnote-live.front { transform: scaleX(-1); }
 .vnote-cam { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 8px 0; }
 .vnote-trim { display: flex; flex-direction: column; align-items: stretch; gap: 8px; padding: 8px 0; }
 .vnote-trim-len { text-align: center; font-size: 13px; font-variant-numeric: tabular-nums; }

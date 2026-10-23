@@ -6,6 +6,7 @@ import { Icon } from './Icon'
 // поэтому файл кладём в хранилище, а бот при отправке скачивает его и загружает в Telegram.
 const SIZE = 480 // сторона квадрата: Telegram рекомендует до 640
 const MAX_SEC = 59 // Telegram принимает кружки до 60 с; запас в секунду, иначе запись на 1:00 придёт обычным видео
+const camVideo = (facingMode: 'user' | 'environment'): MediaTrackConstraints => ({ facingMode, width: { ideal: 720 }, height: { ideal: 720 } })
 const fmt = (t: number) => `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, '0')}`
 const NOTE_MAX_BYTES = 12 * 1024 * 1024 // предел Telegram для кружка (12 582 912 байт); больше — Telegram покажет обычное видео
 // Браузеры превышают заказанный битрейт почти вдвое: 700 кбит/с дают ~1,4 Мбит/с, это ~10 МБ за 59 с
@@ -15,7 +16,7 @@ const NOTE_BPS = 700_000
 const mp4Mime = () => (typeof MediaRecorder === 'undefined' ? null : ['video/mp4;codecs=avc1.42E01E,mp4a.40.2', 'video/mp4;codecs=avc1', 'video/mp4'].find((m) => MediaRecorder.isTypeSupported(m)) ?? null)
 
 /** Пишет квадрат из центра кадра: видео рисуется на холст, звук берётся из переданных дорожек. */
-function recordSquare(video: HTMLVideoElement, audio: MediaStreamTrack[], mime: string, opts: { mirror?: boolean; onTick?: (sec: number) => void; until?: Promise<void>; bps?: number }) {
+function recordSquare(video: HTMLVideoElement, audio: MediaStreamTrack[], mime: string, opts: { mirror?: () => boolean; onTick?: (sec: number) => void; until?: Promise<void>; bps?: number }) {
   const canvas = document.createElement('canvas')
   canvas.width = SIZE
   canvas.height = SIZE
@@ -28,7 +29,7 @@ function recordSquare(video: HTMLVideoElement, audio: MediaStreamTrack[], mime: 
       frames++
       const s = Math.min(vw, vh)
       ctx.save()
-      if (opts.mirror) { ctx.translate(SIZE, 0); ctx.scale(-1, 1) }
+      if (opts.mirror?.()) { ctx.translate(SIZE, 0); ctx.scale(-1, 1) }
       ctx.drawImage(video, (vw - s) / 2, (vh - s) / 2, s, s, 0, 0, SIZE, SIZE)
       ctx.restore()
     }
@@ -71,6 +72,11 @@ export function VideoNoteField({ value, onChange, folder }: { value: string; onC
   const live = useRef<HTMLVideoElement>(null)
   const stream = useRef<MediaStream | null>(null)
   const recording = useRef<{ stop: () => void } | null>(null)
+  // фронтальная камера (зеркалим, как в Telegram) или основная; переключать можно и во время записи
+  const [facing, setFacing] = useState<'user' | 'environment'>('user')
+  const [multiCam, setMultiCam] = useState(false)
+  const [switching, setSwitching] = useState(false)
+  const mirror = useRef(true)
   const mime = mp4Mime()
   const stopCamera = () => { stream.current?.getTracks().forEach((t) => t.stop()); stream.current = null }
   useEffect(() => () => stopCamera(), [])
@@ -103,7 +109,7 @@ export function VideoNoteField({ value, onChange, folder }: { value: string; onC
     setMsg('')
     if (!mime) return setMsg('Этот браузер не умеет записывать MP4, а Telegram принимает кружки только в MP4. Откройте админку в Safari или в Chrome последней версии.')
     try {
-      stream.current = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 720 }, height: { ideal: 720 } }, audio: true })
+      stream.current = await navigator.mediaDevices.getUserMedia({ video: camVideo('user'), audio: true })
     } catch {
       return setMsg('Нет доступа к камере или микрофону. Разрешите их в настройках браузера.')
     }
@@ -111,7 +117,43 @@ export function VideoNoteField({ value, onChange, folder }: { value: string; onC
       stopCamera()
       return setMsg('Камера не отдаёт изображение. Закройте другие программы, которые её используют, и попробуйте снова.')
     }
+    setFacing('user')
+    mirror.current = true
+    // названия камер видны только после разрешения, поэтому считаем их здесь
+    const devices = await navigator.mediaDevices.enumerateDevices().catch(() => [])
+    setMultiCam(devices.filter((d) => d.kind === 'videoinput').length > 1)
     setCam(true)
+  }
+
+  /** Меняет камеру на лету: запись идёт с того же <video>, микрофон остаётся прежним, поэтому кружок не прерывается. */
+  const switchCamera = async () => {
+    const s = stream.current, v = live.current
+    if (!s || !v || switching) return
+    const next = facing === 'user' ? 'environment' : 'user'
+    setSwitching(true)
+    const current = s.getVideoTracks()[0]?.getSettings().deviceId
+    const other = (await navigator.mediaDevices.enumerateDevices().catch(() => [])).find((d) => d.kind === 'videoinput' && d.deviceId && d.deviceId !== current)?.deviceId
+    // старую камеру отпускаем заранее: многие телефоны не открывают две камеры сразу
+    s.getVideoTracks().forEach((t) => t.stop())
+    // телефон: камеру выбираем по направлению; компьютер с двумя камерами направления не знает, тогда берём другую по списку
+    const tries: MediaTrackConstraints[] = [{ ...camVideo(next), facingMode: { exact: next } }]
+    if (other) tries.push({ ...camVideo(next), facingMode: undefined, deviceId: { exact: other } })
+    let fresh: MediaStream | null = null
+    for (const video of tries) {
+      try { fresh = await navigator.mediaDevices.getUserMedia({ video }); break } catch { /* следующий способ */ }
+    }
+    if (fresh) {
+      setFacing(next)
+      mirror.current = next === 'user'
+    } else {
+      setMsg('Не удалось включить другую камеру.')
+      fresh = await navigator.mediaDevices.getUserMedia({ video: camVideo(facing) }).catch(() => null)
+    }
+    setSwitching(false)
+    if (!fresh) return setMsg('Камера отключилась. Закройте запись и откройте снова.')
+    stream.current = new MediaStream([...s.getAudioTracks(), ...fresh.getVideoTracks()])
+    v.srcObject = stream.current
+    void v.play().catch(() => {})
   }
 
   const startRec = () => {
@@ -119,7 +161,7 @@ export function VideoNoteField({ value, onChange, folder }: { value: string; onC
     if (!live.current.videoWidth) return setMsg('Камера ещё включается, подождите секунду.')
     setMsg('')
     setSec(0)
-    const r = recordSquare(live.current, stream.current.getAudioTracks(), mime, { mirror: true, onTick: setSec })
+    const r = recordSquare(live.current, stream.current.getAudioTracks(), mime, { mirror: () => mirror.current, onTick: setSec })
     recording.current = r
     void r.done.then(async (blob) => {
       recording.current = null
@@ -246,11 +288,12 @@ export function VideoNoteField({ value, onChange, folder }: { value: string; onC
         </div>
       ) : cam ? (
         <div className="vnote-cam">
-          <video ref={live} className="vnote-live" autoPlay muted playsInline />
+          <video ref={live} className={facing === 'user' ? 'vnote-live front' : 'vnote-live'} autoPlay muted playsInline />
           <div className="ibtns">
             {sec === null
               ? <div className="ibw"><button type="button" className="ibtn rec-btn" disabled={!ready} onClick={startRec} title="Начать запись" aria-label="Начать запись"><Icon name="video" size={20} /></button><span>{ready ? 'Записать' : 'Включаю камеру…'}</span></div>
               : <div className="ibw"><button type="button" className="ibtn stop-btn" onClick={() => recording.current?.stop()} title="Остановить" aria-label="Остановить"><Icon name="stop" size={18} /></button><span>{`${fmt(sec)} / ${fmt(MAX_SEC)}`}</span></div>}
+            {multiCam && <div className="ibw"><button type="button" className="ibtn" disabled={switching || !ready} onClick={() => void switchCamera()} title="Сменить камеру" aria-label="Сменить камеру"><Icon name="flip" size={20} /></button><span>{facing === 'user' ? 'Основная' : 'Фронтальная'}</span></div>}
             {sec === null && <div className="ibw"><button type="button" className="ibtn" onClick={() => { setCam(false); stopCamera() }} title="Закрыть камеру" aria-label="Закрыть камеру"><Icon name="trash" size={18} /></button><span>Отмена</span></div>}
           </div>
         </div>

@@ -1,26 +1,26 @@
 # Graph Report - St96  (2026-10-23)
 
 ## Corpus Check
-- 211 files · ~1,183,834 words
+- 211 files · ~1,184,226 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 69 file(s) not represented in the graph (top: .woff2 52, .css 14, (none) 1)
 
 ## Summary
-- 1461 nodes · 3895 edges · 85 communities (63 shown, 22 thin omitted)
+- 1462 nodes · 3897 edges · 82 communities (59 shown, 23 thin omitted)
 - Extraction: 97% EXTRACTED · 3% INFERRED · 0% AMBIGUOUS · INFERRED: 134 edges (avg confidence: 0.87)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `2feb9edf`
+- Built from commit: `0dc92821`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
 ## Community Hubs (Navigation)
-- server/catalog.ts
+- content.ts
 - package.json
 - App.tsx
 - dialog.ts
-- booking.test.ts
+- Статус
 - variants-duplex/build.mjs
 - AnalyticsPage.tsx
 - compilerOptions
@@ -45,46 +45,43 @@
 - ClientPage.tsx
 - Editor.tsx
 - AgentScene.tsx
-- broadcasts.ts
+- repo.ts
 - Repo
 - План: редизайн визуального слоя админки ST96 в брендовом стиле сайта
 - Icon
-- ModelPicker.tsx
+- react
 - service.ts
-- parse.ts
-- useUi
+- lead.ts
+- useLang
 - DESIGN-IS-2026-10-20/00-scope.md
 - DESIGN-IS-2026-10-20/02-scorecard.md
 - DESIGN-IS-2026-10-20/03-verdict.md
 - BroadcastPage.tsx
 - funnels/engine.ts
 - manual.ts
-- react
+- framer-motion
 - 0001_core.sql
-- repo.ts
-- Reveal
+- tools.ts
 - LeadCapture.tsx
+- attribution.ts
 - SolutionScene.tsx
-- leads/ingest.ts
-- notify.ts
+- parse.ts
+- booking.test.ts
 - i18n.ts
-- groupImport.ts
+- LeadsPage.tsx
 - bot.ts
 - BookPage.tsx
-- agent/engine.ts
+- ThemeToggle.tsx
 - engine.test.ts
 - normalizeSchedule
 - BookingPage.tsx
-- LeadsPage.tsx
-- memoryRepo.ts
-- QuickNav.tsx
+- filter.ts
+- videonote.test.ts
 - geo.ts
 - avatar/build.mjs
-- agent.test.ts
-- FunnelPage.tsx
+- agent/engine.ts
+- funnels/types.ts
 - realFunnel.test.ts
-- supabaseRepo
-- llm.ts
 - 0010_analytics.sql
 - public.bookings
 - 0005_broadcasts.sql
@@ -122,27 +119,27 @@
 ## Import Cycles
 - None detected.
 
-## Communities (85 total, 22 thin omitted)
+## Communities (82 total, 23 thin omitted)
 
-### Community 0 - "server/catalog.ts"
-Cohesion: 0.17
-Nodes (18): servicesBrief(), SiteService, STOP_WORDS, homeEn, servicesEn, ServiceText, studioAccent, studioAdvantages (+10 more)
+### Community 0 - "content.ts"
+Cohesion: 0.21
+Nodes (15): homeEn, servicesEn, ServiceText, studioAccent, studioAdvantages, studioAdvantagesLead, studioProcess, studioProcessLead (+7 more)
 
 ### Community 1 - "package.json"
 Cohesion: 0.04
 Nodes (44): dependencies, @breezystack/lamejs, clsx, framer-motion, grammy, libphonenumber-js, lucide-react, react (+36 more)
 
 ### Community 2 - "App.tsx"
-Cohesion: 0.13
-Nodes (23): App(), CookieBanner(), Toggle(), CustomCursor(), ThemeToggle(), reachGoal(), trackClicks(), trackLanguageSwitch() (+15 more)
+Cohesion: 0.16
+Nodes (19): react-dom, App(), CookieBanner(), Toggle(), CustomCursor(), reachGoal(), trackClicks(), trackLanguageSwitch() (+11 more)
 
 ### Community 3 - "dialog.ts"
-Cohesion: 0.13
-Nodes (27): cardText(), Content, ensureTopic(), notifyTopic(), sendContent(), TopicMessage, topicTitle(), is429() (+19 more)
+Cohesion: 0.14
+Nodes (26): cardText(), Content, ensureTopic(), notifyTopic(), sendContent(), TopicMessage, topicTitle(), is429() (+18 more)
 
-### Community 4 - "booking.test.ts"
-Cohesion: 0.11
-Nodes (20): config, handler(), input, NOW, S, S30, DayBooking, cleanNick() (+12 more)
+### Community 4 - "Статус"
+Cohesion: 0.23
+Nodes (11): config, handler(), Статус, decideBooking(), isHttps(), loadMeetDefault(), saveDirectAdmins(), saveMeetDefault() (+3 more)
 
 ### Community 5 - "variants-duplex/build.mjs"
 Cohesion: 0.10
@@ -150,7 +147,7 @@ Nodes (11): finals, opentype, overview, { PDFDocument }, people, QRCode, qrSvg, 
 
 ### Community 6 - "AnalyticsPage.tsx"
 Cohesion: 0.14
-Nodes (25): UsageRow, costUsd(), DEFAULT_PRICES, FEATURE_LABELS, featureLabel(), parsePrices(), periodStart(), popularityScore() (+17 more)
+Nodes (24): costUsd(), DEFAULT_PRICES, FEATURE_LABELS, featureLabel(), parsePrices(), periodStart(), popularityScore(), Price (+16 more)
 
 ### Community 7 - "compilerOptions"
 Cohesion: 0.10
@@ -173,8 +170,8 @@ Cohesion: 0.24
 Nodes (5): [src, outDir], [src, out], css, urls, pdf-lib
 
 ### Community 12 - "bot.test.ts"
-Cohesion: 0.15
-Nodes (8): priv, setup(), staff, START_ENT, user, seed(), setup(), memoryRepo
+Cohesion: 0.25
+Nodes (4): priv, staff, START_ENT, user
 
 ### Community 13 - "variants/build.mjs"
 Cohesion: 0.22
@@ -201,160 +198,144 @@ Cohesion: 0.50
 Nodes (3): graphify, Platform handoff, Короткие сессии по разделам (экономия лимитов)
 
 ### Community 27 - "ClientPage.tsx"
-Cohesion: 0.15
-Nodes (22): useAuth(), deleteClient(), esc(), Highlight(), ClientPage(), SendTemplate(), blank, Form (+14 more)
+Cohesion: 0.13
+Nodes (23): @supabase/supabase-js, fillTemplate(), AuthCtx, AuthGate(), Ctx, Login(), State, deleteClient() (+15 more)
 
 ### Community 28 - "Editor.tsx"
 Cohesion: 0.07
-Nodes (64): @xyflow/react, Builder(), Inner(), isMobile(), Props, Snap, ACT_TYPES, actText() (+56 more)
+Nodes (65): @xyflow/react, Builder(), Inner(), isMobile(), Props, Snap, ACT_TYPES, actText() (+57 more)
 
 ### Community 29 - "AgentScene.tsx"
 Cohesion: 0.12
 Nodes (20): AgentScene(), AgentSceneCard(), COPY, Dst, DST_ICON, DST_ORDER, flight(), Live (+12 more)
 
-### Community 30 - "broadcasts.ts"
-Cohesion: 0.13
-Nodes (13): AudienceClient, BROADCAST_STATUS, BroadcastRow, BroadcastStatus, canReceive(), FOOTER, inAudience(), isRateLimit() (+5 more)
+### Community 30 - "repo.ts"
+Cohesion: 0.10
+Nodes (19): AgentStats, BookingInsert, AudienceClient, BroadcastRow, BroadcastStatus, canReceive(), FOOTER, inAudience() (+11 more)
 
 ### Community 31 - "Repo"
-Cohesion: 0.08
-Nodes (3): AgentTask, RunRow, Repo
+Cohesion: 0.07
+Nodes (4): AgentTask, showTemplateMenu(), RunRow, Repo
 
 ### Community 32 - "План: редизайн визуального слоя админки ST96 в брендовом стиле сайта"
 Cohesion: 0.05
 Nodes (38): Evidence, Бренд (сверка админки с сайтом), Вес, Визуал, Структура, Тексты, Phase 0: Факты (уже собраны, не перепроверять без нужды), Phase 1: Токены (один слой) (+30 more)
 
 ### Community 33 - "Icon"
-Cohesion: 0.14
-Nodes (27): AdminApp(), readMin(), Shell(), useNewVersion(), AuthCtx, AuthGate(), Ctx, Login() (+19 more)
+Cohesion: 0.15
+Nodes (27): react-router-dom, AdminApp(), readMin(), Shell(), useNewVersion(), useAuth(), AgentPage(), LIVE (+19 more)
 
-### Community 34 - "ModelPicker.tsx"
-Cohesion: 0.23
-Nodes (9): CustomModel, MODELS, PRESETS, callApi(), Check, ModelPicker(), Row(), SettingsPage() (+1 more)
+### Community 34 - "react"
+Cohesion: 0.10
+Nodes (22): react, Check, ModelPicker(), Row(), SettingsPage(), Status, CameraCapture(), isSafari (+14 more)
 
 ### Community 35 - "service.ts"
-Cohesion: 0.14
-Nodes (30): config, handler(), notifyAdminsNewBooking(), FORMAT_KEYS, isDate(), minskNow(), slotAvailable(), toInstant() (+22 more)
-
-### Community 36 - "parse.ts"
 Cohesion: 0.13
-Nodes (22): Attribution, clip(), config, handler(), json(), LeadPayload, sendAdEvents(), sha256() (+14 more)
+Nodes (30): config, handler(), addDays(), FORMAT_KEYS, FORMAT_LABEL, fromDayNum(), isDate(), minskNow() (+22 more)
 
-### Community 37 - "useUi"
-Cohesion: 0.21
-Nodes (18): clsx, Advantages(), AdvantagesData, ProcessData, ProcessTabs(), Results(), ResultsData, ServicesGrid() (+10 more)
+### Community 36 - "lead.ts"
+Cohesion: 0.29
+Nodes (10): Attribution, clip(), config, handler(), json(), LeadPayload, sendAdEvents(), sha256() (+2 more)
+
+### Community 37 - "useLang"
+Cohesion: 0.17
+Nodes (26): Advantages(), AdvantagesData, AiServices(), LeadCapture(), ProcessData, ProcessTabs(), Results(), ResultsData (+18 more)
 
 ### Community 42 - "BroadcastPage.tsx"
-Cohesion: 0.08
-Nodes (42): validateBroadcast(), fillTemplate(), TemplateKind, TemplateRow, TPL_GENERAL, TPL_GOALS, TPL_KINDS, TPL_SERVICES (+34 more)
+Cohesion: 0.11
+Nodes (30): BROADCAST_STATUS, validateBroadcast(), TemplateKind, TemplateRow, TPL_GOALS, TPL_KINDS, TPL_SERVICES, TPL_TASKS (+22 more)
 
 ### Community 43 - "funnels/engine.ts"
 Cohesion: 0.12
 Nodes (26): serviceByLabel(), advance(), Btn, CondCtx, DOW, evalRule(), fill(), FORMAT_BY_LABEL (+18 more)
 
 ### Community 44 - "manual.ts"
-Cohesion: 0.16
-Nodes (15): Статус, showTemplateMenu(), detectServiceInText(), UNKNOWN_SERVICE, asParsed(), clean(), cleanFields(), createManualLead() (+7 more)
+Cohesion: 0.12
+Nodes (18): setup(), seed(), detectServiceInText(), setup(), asParsed(), clean(), cleanFields(), createManualLead() (+10 more)
 
-### Community 45 - "react"
-Cohesion: 0.15
-Nodes (18): framer-motion, lucide-react, react, react-dom, HomeHero(), ServiceHero(), Aurora(), HeroVideo() (+10 more)
+### Community 45 - "framer-motion"
+Cohesion: 0.19
+Nodes (15): clsx, framer-motion, lucide-react, HomeHero(), ServiceHero(), Aurora(), HeroVideo(), Props (+7 more)
 
 ### Community 46 - "0001_core.sql"
 Cohesion: 0.10
 Nodes (38): clients_phone_key, clients_updated, clients_username_key, funnel_runs_client_idx, funnel_runs_wake_idx, funnels_updated, jobs_due_idx, lead_notes_client_idx (+30 more)
 
-### Community 47 - "repo.ts"
-Cohesion: 0.11
-Nodes (19): @supabase/supabase-js, askJson(), history(), PLANNABLE, prompt(), SERVICE_KEYS, Tool, TOOL_BY_NAME (+11 more)
+### Community 47 - "tools.ts"
+Cohesion: 0.07
+Nodes (33): emptyStats(), ExportMsg, flattenText(), IMPORT_TAG, ImportPlan, importSlice(), ImportStats, MAX_EXPORT_BYTES (+25 more)
 
-### Community 48 - "Reveal"
-Cohesion: 0.28
-Nodes (13): Reveal(), OPERATOR, POLICY_DATE_LABEL, POLICY_DATE_LABEL_EN, SeoOptions, setAlternate(), setMeta(), useSeo() (+5 more)
+### Community 48 - "LeadCapture.tsx"
+Cohesion: 0.23
+Nodes (14): CONTACTS, Props, trustIcons, Reveal(), OPERATOR, POLICY_DATE_LABEL, POLICY_DATE_LABEL_EN, POLICY_PATH (+6 more)
 
-### Community 49 - "LeadCapture.tsx"
-Cohesion: 0.19
-Nodes (13): CONTACTS, Props, trustIcons, POLICY_PATH, POLICY_VERSION, Attribution, captureAttribution(), clean() (+5 more)
+### Community 49 - "attribution.ts"
+Cohesion: 0.33
+Nodes (8): Attribution, captureAttribution(), clean(), CLICK_KEYS, cookie(), readAdIdentifiers(), readAttribution(), UTM_KEYS
 
 ### Community 50 - "SolutionScene.tsx"
 Cohesion: 0.14
 Nodes (18): ACCENT_POS, COPY, EASE_OUT, EASE_SNAP, enter(), exit(), MOTIF_ROTATE, MOTIF_SCALE (+10 more)
 
-### Community 51 - "leads/ingest.ts"
-Cohesion: 0.14
-Nodes (14): config, handler(), json(), GroupMessage, GroupResult, IngestCtx, ingestGroupMessage(), ingestLead() (+6 more)
+### Community 51 - "parse.ts"
+Cohesion: 0.11
+Nodes (23): config, handler(), json(), planImport(), detectServiceKey(), GroupMessage, GroupResult, IngestCtx (+15 more)
 
-### Community 52 - "notify.ts"
-Cohesion: 0.28
-Nodes (14): buildIcs(), esc(), utc(), adminText(), chatOf(), minutes(), notifyClientDecision(), tickBookingReminders() (+6 more)
+### Community 52 - "booking.test.ts"
+Cohesion: 0.14
+Nodes (22): input, NOW, S, S30, buildIcs(), esc(), utc(), adminText() (+14 more)
 
 ### Community 53 - "i18n.ts"
-Cohesion: 0.28
-Nodes (17): react-router-dom, Footer(), Header(), Layout(), AiServices(), LeadCapture(), MagneticButton(), getServiceBySlug() (+9 more)
+Cohesion: 0.25
+Nodes (13): Footer(), Header(), Layout(), MagneticButton(), Props, tags, getServices(), Ui (+5 more)
 
-### Community 54 - "groupImport.ts"
-Cohesion: 0.17
-Nodes (13): emptyStats(), ExportMsg, flattenText(), IMPORT_TAG, ImportPlan, importSlice(), ImportStats, MAX_EXPORT_BYTES (+5 more)
+### Community 54 - "LeadsPage.tsx"
+Cohesion: 0.14
+Nodes (24): flattenJson(), KnownField, parseConds(), ClientsPage(), DEFAULTS, flatOf(), KNOWN, Row (+16 more)
 
 ### Community 55 - "bot.ts"
-Cohesion: 0.15
-Nodes (14): createBot(), ensureClient(), From, fullName(), langOf(), linkLeadClient(), messageKind(), handleTopicMessage() (+6 more)
+Cohesion: 0.18
+Nodes (16): config, handler(), json(), createBot(), ensureClient(), From, fullName(), langOf() (+8 more)
 
 ### Community 56 - "BookPage.tsx"
 Cohesion: 0.10
 Nodes (16): libphonenumber-js, BookPage(), Cfg, Lang, qs, Slot, T, detectCountry() (+8 more)
 
-### Community 57 - "agent/engine.ts"
-Cohesion: 0.16
-Nodes (26): config, handler(), config, runTick(), agentDeps(), approveTask(), catalog(), confirmStep() (+18 more)
+### Community 57 - "ThemeToggle.tsx"
+Cohesion: 0.52
+Nodes (5): ThemeToggle(), applyTheme(), COLORS, readTheme(), Theme
 
 ### Community 58 - "engine.test.ts"
 Cohesion: 0.22
-Nodes (4): blankGraph, demoGraph, Call, TRIGGER
+Nodes (4): blankGraph, demoGraph, Call, Graph
 
 ### Community 59 - "normalizeSchedule"
 Cohesion: 0.28
-Nodes (9): clampInt(), cleanWin(), cleanWins(), defaultSchedule(), isTime(), normalizeSchedule(), tm(), BookingPage() (+1 more)
+Nodes (8): clampInt(), cleanWin(), cleanWins(), defaultSchedule(), isTime(), normalizeSchedule(), tm(), loadSchedule()
 
 ### Community 60 - "BookingPage.tsx"
-Cohesion: 0.09
-Nodes (41): addDays(), Block, BOOK_ORIGIN, dayInfo, dayNum(), DOW, DOW_EN, DOW_RU (+33 more)
-
-### Community 61 - "LeadsPage.tsx"
 Cohesion: 0.08
-Nodes (51): applyFilter(), Cond, condLabel(), CondValue, DateValue, ENUM_MAX, FieldDef, FieldKind (+43 more)
+Nodes (43): Block, BOOK_ORIGIN, dayInfo, dayNum(), DOW, DOW_EN, DOW_RU, dowOf() (+35 more)
 
-### Community 62 - "memoryRepo.ts"
-Cohesion: 0.22
-Nodes (9): ActionItem, FEdge, FNode, Funnel, JobRow, Link, Quick, Rule (+1 more)
-
-### Community 63 - "QuickNav.tsx"
-Cohesion: 0.40
-Nodes (4): ADMIN, L, SITE, SITE_EN
+### Community 61 - "filter.ts"
+Cohesion: 0.10
+Nodes (35): applyFilter(), Cond, condLabel(), CondValue, DateValue, ENUM_MAX, FieldDef, FieldKind (+27 more)
 
 ### Community 65 - "avatar/build.mjs"
 Cohesion: 0.25
 Nodes (7): fit(), font, glyphs(), opentype, report, require, variants
 
-### Community 66 - "agent.test.ts"
-Cohesion: 0.13
-Nodes (25): config, handler(), exportJson(), input, leadText(), mockLlm(), setup(), fail() (+17 more)
+### Community 66 - "agent/engine.ts"
+Cohesion: 0.06
+Nodes (81): config, handler(), config, handler(), config, handler(), config, handler() (+73 more)
 
-### Community 67 - "FunnelPage.tsx"
-Cohesion: 0.18
-Nodes (13): Incoming, norm(), pickFunnel(), asArray(), Graph, parseDelay(), Part, str() (+5 more)
+### Community 67 - "funnels/types.ts"
+Cohesion: 0.17
+Nodes (16): Incoming, norm(), pickFunnel(), ActionItem, asArray(), FEdge, FNode, Link (+8 more)
 
 ### Community 68 - "realFunnel.test.ts"
-Cohesion: 0.13
-Nodes (7): Env, groupParts(), resumeRun(), fakeTelegram(), graph, Sent, setup()
-
-### Community 69 - "supabaseRepo"
-Cohesion: 0.19
-Nodes (19): config, handler(), config, handler(), config, handler(), config, handler() (+11 more)
-
-### Community 70 - "llm.ts"
-Cohesion: 0.22
-Nodes (10): DEFAULT_BASE_URL, DEFAULT_MODELS, Llm, LlmError, parseJson(), count(), MAX_TRANSLATE_CHARS, missingTokens() (+2 more)
+Cohesion: 0.15
+Nodes (6): Env, fakeTelegram(), graph, Sent, setup(), Funnel
 
 ### Community 72 - "0010_analytics.sql"
 Cohesion: 0.31
@@ -379,22 +360,22 @@ Nodes (3): agent_tasks_status, agent_tasks_touch, public.agent_tasks
 ## Knowledge Gaps
 - **7 isolated node(s):** `@types/node`, `@types/react`, `@types/react-dom`, `oxlint`, `tailwindcss` (+2 more)
   These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 500 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
-- **22 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **23 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `react` connect `react` to `package.json`, `App.tsx`, `AnalyticsPage.tsx`, `ClientPage.tsx`, `Editor.tsx`, `AgentScene.tsx`, `Icon`, `ModelPicker.tsx`, `useUi`, `BroadcastPage.tsx`, `Reveal`, `LeadCapture.tsx`, `SolutionScene.tsx`, `i18n.ts`, `BookPage.tsx`, `BookingPage.tsx`, `LeadsPage.tsx`, `QuickNav.tsx`, `FunnelPage.tsx`?**
-  _High betweenness centrality (0.111) - this node is a cross-community bridge._
+- **Why does `react` connect `react` to `package.json`, `Icon`, `App.tsx`, `useLang`, `AnalyticsPage.tsx`, `BroadcastPage.tsx`, `framer-motion`, `BookingPage.tsx`, `LeadCapture.tsx`, `AgentScene.tsx`, `SolutionScene.tsx`, `i18n.ts`, `LeadsPage.tsx`, `BookPage.tsx`, `ThemeToggle.tsx`, `ClientPage.tsx`, `Editor.tsx`, `filter.ts`?**
+  _High betweenness centrality (0.114) - this node is a cross-community bridge._
 - **Are the 10 inferred relationships involving `createBot()` (e.g. with `.claimUpdate()` and `.findActiveRun()`) actually correct?**
   _`createBot()` has 10 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `@types/node`, `@types/react`, `@types/react-dom` to the rest of the system?**
   _7 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `package.json` be split into smaller, more focused modules?**
   _Cohesion score 0.04343971631205674 - nodes in this community are weakly interconnected._
-- **Why does `Repo` connect `Repo` to `План: редизайн визуального слоя админки ST96 в брендовом стиле сайта`, `agent.test.ts`, `service.ts`, `dialog.ts`, `FunnelPage.tsx`, `realFunnel.test.ts`, `booking.test.ts`, `BroadcastPage.tsx`, `funnels/engine.ts`, `manual.ts`, `repo.ts`, `leads/ingest.ts`, `notify.ts`, `groupImport.ts`, `bot.ts`, `memoryRepo.ts`, `agent/engine.ts`, `broadcasts.ts`?**
+- **Why does `Repo` connect `Repo` to `План: редизайн визуального слоя админки ST96 в брендовом стиле сайта`, `agent/engine.ts`, `service.ts`, `dialog.ts`, `funnels/types.ts`, `Статус`, `realFunnel.test.ts`, `BroadcastPage.tsx`, `funnels/engine.ts`, `manual.ts`, `tools.ts`, `parse.ts`, `booking.test.ts`, `repo.ts`, `bot.ts`, `normalizeSchedule`, `videonote.test.ts`?**
   _High betweenness centrality (0.072) - this node is a cross-community bridge._
-- **Should `App.tsx` be split into smaller, more focused modules?**
-  _Cohesion score 0.12878787878787878 - nodes in this community are weakly interconnected._
-- **Why does `grammy` connect `supabaseRepo` to `package.json`, `agent.test.ts`, `service.ts`, `booking.test.ts`, `dialog.ts`, `FunnelPage.tsx`, `realFunnel.test.ts`, `bot.test.ts`, `repo.ts`, `notify.ts`, `bot.ts`, `agent/engine.ts`, `broadcasts.ts`?**
+- **Should `dialog.ts` be split into smaller, more focused modules?**
+  _Cohesion score 0.13663663663663664 - nodes in this community are weakly interconnected._
+- **Why does `grammy` connect `agent/engine.ts` to `package.json`, `service.ts`, `Статус`, `dialog.ts`, `funnels/types.ts`, `realFunnel.test.ts`, `bot.test.ts`, `manual.ts`, `tools.ts`, `booking.test.ts`, `repo.ts`, `bot.ts`, `videonote.test.ts`?**
   _High betweenness centrality (0.039) - this node is a cross-community bridge._

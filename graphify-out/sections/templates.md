@@ -25,14 +25,14 @@
 - `TemplatesPage()` (src/admin/pages/TemplatesPage.tsx:L18)
 - `TemplateRow` (server/templates.ts:L5)
 - `TemplateKind` (server/templates.ts:L4)
-- `Editor()` (src/admin/pages/TemplatesPage.tsx:L150)
 - `fillTemplate()` (server/templates.ts:L29)
-- `CameraCapture()` (src/admin/ui/CameraCapture.tsx:L12)
+- `Editor()` (src/admin/pages/TemplatesPage.tsx:L150)
 - `TPL_KINDS` (server/templates.ts:L20)
+- `CameraCapture()` (src/admin/ui/CameraCapture.tsx:L12)
 - `handler()` (api/send-template.ts:L9)
 - `TPL_GOALS` (server/templates.ts:L22)
 - `preview()` (src/admin/pages/TemplatesPage.tsx:L13)
-- `TPL_TASKS` (server/templates.ts:L21)
+- `toVoiceFile()` (src/admin/ui/MediaField.tsx:L28)
 
 ## От чего зависит (вызовы в другие разделы)
 

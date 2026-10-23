@@ -21,14 +21,14 @@
 
 ## Главные узлы (больше всего связей)
 
-- `tickBroadcasts()` (server/broadcasts.ts:L56)
 - `BroadcastPage()` (src/admin/pages/BroadcastPage.tsx:L19)
+- `tickBroadcasts()` (server/broadcasts.ts:L56)
 - `startBroadcast()` (server/broadcasts.ts:L101)
 - `BroadcastRow` (server/broadcasts.ts:L9)
-- `Segment` (server/broadcasts.ts:L7)
-- `BroadcastsPage()` (src/admin/pages/BroadcastsPage.tsx:L11)
 - `handler()` (api/broadcast.ts:L12)
 - `inAudience()` (server/broadcasts.ts:L34)
+- `Segment` (server/broadcasts.ts:L7)
+- `BroadcastsPage()` (src/admin/pages/BroadcastsPage.tsx:L11)
 - `validateBroadcast()` (server/broadcasts.ts:L43)
 - `AudienceClient` (server/broadcasts.ts:L25)
 - `BROADCAST_STATUS` (server/broadcasts.ts:L27)
