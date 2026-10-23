@@ -31,8 +31,8 @@
 - `handler()` (api/telegram.ts:L10)
 - `linkLeadClient()` (server/bot/bot.ts:L20)
 - `cardText()` (server/bot/dialog.ts:L22)
-- `notifyTopic()` (server/bot/dialog.ts:L140)
 - `showTemplateMenu()` (server/bot/dialog.ts:L153)
+- `notifyTopic()` (server/bot/dialog.ts:L140)
 
 ## От чего зависит (вызовы в другие разделы)
 

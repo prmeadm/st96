@@ -18,14 +18,14 @@
 - `api/lead.ts` — 10 узл.
 - `server/leads/ingest.ts` — 9 узл.
 - `src/admin/pages/LeadEditor.tsx` — 6 узл.
-- `src/admin/pages/NotesPage.tsx` — 4 узл.
 - `src/admin/pages/ClientsPage.tsx` — 4 узл.
+- `src/admin/pages/NotesPage.tsx` — 4 узл.
 - `api/ingest.ts` — 4 узл.
-- `src/admin/ui/ContactLinks.tsx` — 3 узл.
 - `server/leads/ingest.test.ts` — 3 узл.
 - `src/admin/pages/ClientPage.tsx` — 3 узл.
 - `api/lead-admin.ts` — 3 узл.
 - `src/admin/pages/LeadsPage.tsx` — 3 узл.
+- `src/admin/ui/ContactLinks.tsx` — 3 узл.
 - `src/admin/clientDelete.ts` — 2 узл.
 - `server/leads/parse.test.ts` — 2 узл.
 - `server/leads/manual.test.ts` — 1 узл.
@@ -42,7 +42,7 @@
 - `createManualLead()` (server/leads/manual.ts:L137)
 - `clickablePhone()` (server/leads/parse.ts:L64)
 - `ContactLinks()` (src/admin/ui/ContactLinks.tsx:L7)
-- `normalizeTelegram()` (server/leads/parse.ts:L69)
+- `upsertClientFromLead()` (server/leads/ingest.ts:L19)
 - `ClientsPage()` (src/admin/pages/ClientsPage.tsx:L12)
 
 ## От чего зависит (вызовы в другие разделы)

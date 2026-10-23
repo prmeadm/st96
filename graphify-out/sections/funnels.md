@@ -20,36 +20,36 @@
 - `server/media.ts` — 13 узл.
 - `src/admin/builder/Editor.tsx` — 11 узл.
 - `server/funnels/realFunnel.test.ts` — 10 узл.
-- `server/bot/telegramOut.ts` — 8 узл.
 - `server/funnels/engine.test.ts` — 8 узл.
-- `server/funnels/retry.ts` — 6 узл.
+- `server/bot/telegramOut.ts` — 8 узл.
 - `src/admin/builder/Builder.tsx` — 6 узл.
-- `src/admin/pages/FunnelPage.tsx` — 4 узл.
+- `server/funnels/retry.ts` — 6 узл.
+- `src/admin/ui/VideoNoteField.tsx` — 4 узл.
 - `server/funnels/triggers.ts` — 4 узл.
 - `src/admin/pages/FunnelsPage.tsx` — 4 узл.
 - `src/admin/builder/Preview.tsx` — 4 узл.
-- `src/admin/ui/VideoNoteField.tsx` — 4 узл.
-- `server/funnels/validate.ts` — 3 узл.
+- `src/admin/pages/FunnelPage.tsx` — 4 узл.
 - `server/funnels/demo.ts` — 3 узл.
 - `src/admin/builder/Edges.tsx` — 3 узл.
-- `server/bot/keyboard.test.ts` — 2 узл.
+- `server/funnels/validate.ts` — 3 узл.
 - `server/bot/videonote.test.ts` — 2 узл.
 - `server/media.test.ts` — 2 узл.
+- `server/bot/keyboard.test.ts` — 2 узл.
 
 ## Главные узлы (больше всего связей)
 
 - `advance()` (server/funnels/engine.ts:L210)
 - `telegramOut()` (server/bot/telegramOut.ts:L42)
 - `Ic()` (src/admin/builder/Nodes.tsx:L21)
-- `Inner()` (src/admin/builder/Builder.tsx:L23)
 - `Editor()` (src/admin/builder/Editor.tsx:L86)
+- `Inner()` (src/admin/builder/Builder.tsx:L23)
 - `Shell()` (src/admin/builder/Nodes.tsx:L25)
-- `Funnel` (server/funnels/types.ts:L12)
 - `Graph` (server/funnels/types.ts:L10)
-- `validateGraph()` (server/funnels/validate.ts:L6)
-- `RunRow` (server/funnels/types.ts:L14)
+- `Funnel` (server/funnels/types.ts:L12)
+- `handleClick()` (server/funnels/engine.ts:L119)
 - `TRIGGER` (server/funnels/types.ts:L27)
-- `asArray()` (server/funnels/types.ts:L35)
+- `str()` (server/funnels/types.ts:L36)
+- `validateGraph()` (server/funnels/validate.ts:L6)
 
 ## От чего зависит (вызовы в другие разделы)
 

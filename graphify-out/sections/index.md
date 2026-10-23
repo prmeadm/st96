@@ -11,7 +11,7 @@
 | Рассылки | Массовые рассылки по сегментам | 31 | 5 | [`broadcasts.md`](broadcasts.md) |
 | Шаблоны и медиа | Библиотека шаблонов | 34 | 5 | [`templates.md`](templates.md) |
 | Агент, ИИ и аналитика | Задания агента | 165 | 23 | [`agent.md`](agent.md) |
-| Данные и инфраструктура | Доступ к базе | 96 | 6 | [`core.md`](core.md) |
+| Данные и инфраструктура | Доступ к базе | 172 | 18 | [`core.md`](core.md) |
 | Оболочка админки | Каркас /admin: вход | 55 | 13 | [`admin.md`](admin.md) |
 | Сайт st96.by | Публичный сайт | 204 | 48 | [`site.md`](site.md) |
 
@@ -26,15 +26,16 @@
 ## Файлы вне разделов (не продуктовый код или конфиги)
 
 - `package.json`
+- ``
 - `tsconfig.app.json`
 - `tsconfig.node.json`
-- ``
 - `docs/PLATFORM.md`
 - `HANDOFF.md`
 - `README.md`
 - `.oxlintrc.json`
-- `tsconfig.json`
+- `scripts/graph-sections.py`
 - `CLAUDE.md`
+- `tsconfig.json`
 - `vercel.json`
 - `vite.config.ts`
 - `libphonenumber-js`

@@ -18,9 +18,11 @@ function recordSquare(video: HTMLVideoElement, audio: MediaStreamTrack[], mime: 
   canvas.height = SIZE
   const ctx = canvas.getContext('2d')!
   let raf = 0
+  let frames = 0
   const draw = () => {
     const vw = video.videoWidth, vh = video.videoHeight
     if (vw && vh) {
+      frames++
       const s = Math.min(vw, vh)
       ctx.save()
       if (opts.mirror) { ctx.translate(SIZE, 0); ctx.scale(-1, 1) }
@@ -41,11 +43,12 @@ function recordSquare(video: HTMLVideoElement, audio: MediaStreamTrack[], mime: 
     opts.onTick?.(sec)
     if (sec >= MAX_SEC && rec.state === 'recording') rec.stop()
   }, 250)
-  const done = new Promise<Blob>((resolve) => {
+  // null: ни одного кадра с камеры или из ролика, получилось бы чёрное видео
+  const done = new Promise<Blob | null>((resolve) => {
     rec.onstop = () => {
       cancelAnimationFrame(raf)
       window.clearInterval(tick)
-      resolve(new Blob(chunks, { type: 'video/mp4' }))
+      resolve(frames ? new Blob(chunks, { type: 'video/mp4' }) : null)
     }
   })
   rec.start(500)
@@ -58,12 +61,22 @@ export function VideoNoteField({ value, onChange, folder }: { value: string; onC
   const [msg, setMsg] = useState('')
   const [cam, setCam] = useState(false)
   const [sec, setSec] = useState<number | null>(null)
+  const [ready, setReady] = useState(false)
   const live = useRef<HTMLVideoElement>(null)
   const stream = useRef<MediaStream | null>(null)
   const recording = useRef<{ stop: () => void } | null>(null)
   const mime = mp4Mime()
   const stopCamera = () => { stream.current?.getTracks().forEach((t) => t.stop()); stream.current = null }
   useEffect(() => () => stopCamera(), [])
+  // поток подключаем после того, как <video> появился на странице: иначе круг остаётся пустым, а кружок выходит чёрным
+  useEffect(() => {
+    const v = live.current
+    if (!cam || !v || !stream.current) return
+    setReady(false)
+    v.srcObject = stream.current
+    v.onloadeddata = () => setReady(v.videoWidth > 0)
+    void v.play().catch(() => {})
+  }, [cam])
 
   const upload = async (blob: Blob) => {
     if (blob.size > MAX_MB * 1024 * 1024) return setMsg(`Кружок получился ${(blob.size / 1048576).toFixed(1)} МБ, допустимо до ${MAX_MB} МБ. Сделайте короче.`)
@@ -84,12 +97,17 @@ export function VideoNoteField({ value, onChange, folder }: { value: string; onC
     } catch {
       return setMsg('Нет доступа к камере или микрофону. Разрешите их в настройках браузера.')
     }
+    if (!stream.current.getVideoTracks().some((t) => t.readyState === 'live')) {
+      stopCamera()
+      return setMsg('Камера не отдаёт изображение. Закройте другие программы, которые её используют, и попробуйте снова.')
+    }
     setCam(true)
-    requestAnimationFrame(() => { if (live.current && stream.current) { live.current.srcObject = stream.current; void live.current.play() } })
   }
 
   const startRec = () => {
     if (!live.current || !stream.current || !mime) return
+    if (!live.current.videoWidth) return setMsg('Камера ещё включается, подождите секунду.')
+    setMsg('')
     setSec(0)
     const r = recordSquare(live.current, stream.current.getAudioTracks(), mime, { mirror: true, onTick: setSec })
     recording.current = r
@@ -98,6 +116,7 @@ export function VideoNoteField({ value, onChange, folder }: { value: string; onC
       setSec(null)
       setCam(false)
       stopCamera()
+      if (!blob) return setMsg('С камеры не пришло изображение, кружок не сохранён. Попробуйте ещё раз.')
       await upload(blob)
     })
   }
@@ -136,6 +155,8 @@ export function VideoNoteField({ value, onChange, folder }: { value: string; onC
     v.pause()
     await ac.close()
     URL.revokeObjectURL(url)
+    setBusy('')
+    if (!blob) return setMsg('Не получилось прочитать кадры видео. Попробуйте другой файл.')
     await upload(blob)
   }
 
@@ -144,10 +165,10 @@ export function VideoNoteField({ value, onChange, folder }: { value: string; onC
       {value && <video className="vnote-prev" src={value} controls playsInline />}
       {cam ? (
         <div className="vnote-cam">
-          <video ref={live} className="vnote-live" muted playsInline />
+          <video ref={live} className="vnote-live" autoPlay muted playsInline />
           <div className="ibtns">
             {sec === null
-              ? <div className="ibw"><button type="button" className="ibtn rec-btn" onClick={startRec} title="Начать запись" aria-label="Начать запись"><Icon name="video" size={20} /></button><span>Записать</span></div>
+              ? <div className="ibw"><button type="button" className="ibtn rec-btn" disabled={!ready} onClick={startRec} title="Начать запись" aria-label="Начать запись"><Icon name="video" size={20} /></button><span>{ready ? 'Записать' : 'Включаю камеру…'}</span></div>
               : <div className="ibw"><button type="button" className="ibtn stop-btn" onClick={() => recording.current?.stop()} title="Остановить" aria-label="Остановить"><Icon name="stop" size={18} /></button><span>{`0:${String(sec).padStart(2, '0')} / 1:00`}</span></div>}
             {sec === null && <div className="ibw"><button type="button" className="ibtn" onClick={() => { setCam(false); stopCamera() }} title="Закрыть камеру" aria-label="Закрыть камеру"><Icon name="trash" size={18} /></button><span>Отмена</span></div>}
           </div>
