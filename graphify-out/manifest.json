@@ -1206,9 +1206,9 @@
     "semantic_hash": ""
   },
   "docs/PLATFORM.md": {
-    "mtime": 1792757957.2127633,
-    "seen": 1792757967.4451761,
-    "ast_hash": "70e78602de08e4d91d38f872c4147df0",
+    "mtime": 1792758862.700502,
+    "seen": 1792758864.7796018,
+    "ast_hash": "071a24e164a639c4ca847b728e48881d",
     "semantic_hash": ""
   },
   "api/send-template.ts": {
@@ -1926,9 +1926,9 @@
     "semantic_hash": ""
   },
   "src/admin/ui/VideoNoteField.tsx": {
-    "mtime": 1792757906.9394138,
-    "seen": 1792757967.4450822,
-    "ast_hash": "4bf86d539e9cfb187b1e69a2ff9e5a99",
+    "mtime": 1792758846.889503,
+    "seen": 1792758864.779507,
+    "ast_hash": "39c482b081bf4ccebdd2ab95aa8b61c4",
     "semantic_hash": ""
   },
   "src/components/sections/AiServices.tsx": {
@@ -2553,6 +2553,12 @@
     "mtime": 1792740487.4573226,
     "seen": 1792740770.1608472,
     "ast_hash": "f4f9f6f4b1e194f3650b61204f146183",
+    "semantic_hash": ""
+  },
+  "api/client-log.ts": {
+    "mtime": 1792758835.7928684,
+    "seen": 1792758864.77941,
+    "ast_hash": "7cbf4d79b9c761f6e246063045d31204",
     "semantic_hash": ""
   }
 }

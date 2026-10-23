@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { callApi } from '../api'
 import { supabase } from '../supabase'
 import { Icon } from './Icon'
 
@@ -60,6 +61,9 @@ function recordSquare(video: HTMLVideoElement, audio: MediaStreamTrack[], mime: 
   return { stop: () => { if (rec.state === 'recording') rec.stop() }, done }
 }
 
+/** Шаг загрузки кружка в логи Vercel (client-log): на телефоне иначе не видно, где всё остановилось. */
+const trace = (step: string, data?: Record<string, unknown>) => { void callApi('/api/client-log', { where: 'videonote', step, ...data }).catch(() => {}) }
+
 // duration 0: ролик ещё открывается; file: исходник из галереи (готовый квадратный MP4 уходит без перекодирования)
 type Trim = { url: string; duration: number; start: number; end: number; file?: File; shrink?: { bps: number } }
 
@@ -73,6 +77,7 @@ export function VideoNoteField({ value, onChange, folder }: { value: string; onC
   // iPhone запускает видео со звуком только по нажатию, без него перекодирование не начнётся
   const [trim, setTrim] = useState<Trim | null>(null)
   const [converting, setConverting] = useState(false)
+  const [needTap, setNeedTap] = useState(false)
   const trimVideo = useRef<HTMLVideoElement>(null)
   const live = useRef<HTMLVideoElement>(null)
   const stream = useRef<MediaStream | null>(null)
@@ -84,7 +89,7 @@ export function VideoNoteField({ value, onChange, folder }: { value: string; onC
   const mirror = useRef(true)
   const mime = mp4Mime()
   const stopCamera = () => { stream.current?.getTracks().forEach((t) => t.stop()); stream.current = null }
-  useEffect(() => () => stopCamera(), [])
+  useEffect(() => { trace('mount'); return () => { trace('unmount'); stopCamera() } }, [])
   // поток подключаем после того, как <video> появился на странице: иначе круг остаётся пустым, а кружок выходит чёрным
   useEffect(() => {
     const v = live.current
@@ -183,11 +188,13 @@ export function VideoNoteField({ value, onChange, folder }: { value: string; onC
 
   /** Готовое видео: квадратный MP4 до 59 с и до 12 МБ уходит как есть, остальное перекодируем после выбора куска. */
   const pickFile = async (file: File | undefined) => {
+    trace('pick', file ? { name: file.name, type: file.type, mb: +(file.size / 1048576).toFixed(1), mime } : { file: null })
     if (!file) return
     setMsg('')
     if (!file.type.startsWith('video/')) return setMsg('Нужен видеофайл')
     if (!mime) return setMsg('Этот браузер не умеет готовить MP4. Откройте админку в Safari или в Chrome последней версии.')
     // ролик открываем сразу в окне выбора: Safari на iPhone не читает видео, которого нет на странице и которое не запущено
+    setNeedTap(false)
     setTrim({ url: URL.createObjectURL(file), duration: 0, start: 0, end: 0, file })
   }
 
@@ -198,6 +205,7 @@ export function VideoNoteField({ value, onChange, folder }: { value: string; onC
     if (!v || !url) return
     const file = trim.file
     const fail = () => {
+      trace('open-failed', { err: v.error?.code, msg: v.error?.message, rs: v.readyState, ns: v.networkState })
       URL.revokeObjectURL(url)
       setTrim(null)
       setMsg('Не получилось открыть видео. Попробуйте другой файл (MP4 или MOV).')
@@ -206,6 +214,9 @@ export function VideoNoteField({ value, onChange, folder }: { value: string; onC
       const d = v.duration
       if (!Number.isFinite(d) || d <= 0) return
       window.clearTimeout(timer)
+      window.clearTimeout(hint)
+      setNeedTap(false)
+      trace('opened', { d, w: v.videoWidth, h: v.videoHeight })
       v.onloadedmetadata = v.ondurationchange = null
       if (file && v.videoWidth === v.videoHeight && d <= MAX_SEC && /mp4/.test(file.type) && file.size <= NOTE_MAX_BYTES) {
         URL.revokeObjectURL(url)
@@ -214,7 +225,10 @@ export function VideoNoteField({ value, onChange, folder }: { value: string; onC
       }
       setTrim((x) => (x && x.url === url ? { ...x, duration: d, end: Math.min(d, MAX_SEC) } : x))
     }
-    const timer = window.setTimeout(fail, 30_000)
+    const timer = window.setTimeout(fail, 60_000)
+    // iPhone в режиме энергосбережения не запускает видео сам: тогда просим нажать на круг
+    const hint = window.setTimeout(() => { setNeedTap(true); trace('need-tap', { rs: v.readyState, ns: v.networkState }) }, 3000)
+    trace('open', { file: !!file })
     v.defaultMuted = true
     v.muted = true
     v.setAttribute('muted', '')
@@ -222,8 +236,8 @@ export function VideoNoteField({ value, onChange, folder }: { value: string; onC
     v.onloadedmetadata = v.ondurationchange = opened
     v.onerror = () => { window.clearTimeout(timer); fail() }
     v.src = url
-    void v.play().catch(() => {})
-    return () => window.clearTimeout(timer)
+    void v.play().catch((e: unknown) => trace('autoplay-blocked', { e: String(e) }))
+    return () => { window.clearTimeout(timer); window.clearTimeout(hint) }
     // открываем один раз на каждый новый ролик
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [trim?.url])
@@ -261,7 +275,9 @@ export function VideoNoteField({ value, onChange, folder }: { value: string; onC
       }
       try {
         await started
-      } catch {
+        trace('convert-started', { start: t.start, end: t.end })
+      } catch (e) {
+        trace('convert-play-failed', { e: String(e) })
         return finish('Видео не запустилось. Попробуйте ещё раз или выберите другой файл.')
       }
       const reached = new Promise<void>((res) => {
@@ -270,6 +286,7 @@ export function VideoNoteField({ value, onChange, folder }: { value: string; onC
       })
       const r = recordSquare(v, dest.stream.getAudioTracks(), mime!, { until: reached, bps: t.shrink?.bps, onTick: (s) => setBusy(`${label}: ${s} из ${len} с…`) })
       const blob = await r.done
+      trace('converted', { mb: blob ? +(blob.size / 1048576).toFixed(2) : null })
       await finish()
       if (!blob) return setMsg('Не получилось прочитать кадры видео. Попробуйте другой файл.')
       await upload(blob, !!t.shrink)
@@ -310,7 +327,9 @@ export function VideoNoteField({ value, onChange, folder }: { value: string; onC
       {trim ? (
         <div className="vnote-trim">
           <video ref={trimVideo} className="vnote-prev" muted playsInline preload="auto" />
-          {!trim.duration ? <div className="hint">Открываю видео…</div> : <>
+          {!trim.duration ? (needTap
+            ? <button type="button" className="btn primary" onClick={() => { trace('tap'); void trimVideo.current?.play().catch((e: unknown) => trace('tap-play-failed', { e: String(e) })) }}>Нажмите, чтобы открыть видео</button>
+            : <div className="hint">Открываю видео…</div>) : <>
           <div className="vnote-trim-len">{fmt(trim.start)} – {fmt(trim.end)} · {Math.round(trim.end - trim.start)} с из {fmt(trim.duration)}</div>
           <div className="vnote-trim-track">
             <div className="vnote-trim-sel" style={{ left: `${(trim.start / trim.duration) * 100}%`, width: `${((trim.end - trim.start) / trim.duration) * 100}%` }} />
@@ -343,7 +362,7 @@ export function VideoNoteField({ value, onChange, folder }: { value: string; onC
             <div className="ibw">
               <label className="ibtn" title="Выбрать видео" aria-label="Выбрать видео" aria-disabled={!!busy}>
                 <Icon name="upload" size={20} />
-                <input type="file" hidden accept="video/*" disabled={!!busy} onChange={(e) => { void pickFile(e.target.files?.[0]); e.target.value = '' }} />
+                <input type="file" hidden accept="video/*" disabled={!!busy} onClick={() => trace('picker-open')} onChange={(e) => { void pickFile(e.target.files?.[0]); e.target.value = '' }} />
               </label>
               <span>Из галереи</span>
             </div>

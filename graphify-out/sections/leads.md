@@ -19,15 +19,15 @@
 - `api/lead.ts` — 10 узл.
 - `server/leads/ingest.ts` — 9 узл.
 - `src/admin/pages/ClientsPage.tsx` — 8 узл.
-- `src/admin/pages/LeadEditor.tsx` — 6 узл.
 - `src/admin/pages/LeadsPage.tsx` — 6 узл.
+- `src/admin/pages/LeadEditor.tsx` — 6 узл.
 - `server/leads/filter.test.ts` — 5 узл.
 - `src/admin/pages/NotesPage.tsx` — 4 узл.
 - `api/ingest.ts` — 4 узл.
-- `api/lead-admin.ts` — 3 узл.
 - `src/admin/pages/ClientPage.tsx` — 3 узл.
 - `src/admin/ui/ContactLinks.tsx` — 3 узл.
 - `server/leads/ingest.test.ts` — 3 узл.
+- `api/lead-admin.ts` — 3 узл.
 - `src/admin/clientDelete.ts` — 2 узл.
 - `server/leads/parse.test.ts` — 2 узл.
 - `server/leads/manual.test.ts` — 1 узл.
@@ -42,10 +42,10 @@
 - `updateManualLead()` (server/leads/manual.ts:L148)
 - `ingestGroupMessage()` (server/leads/ingest.ts:L81)
 - `normalizePhone()` (server/leads/parse.ts:L51)
-- `createManualLead()` (server/leads/manual.ts:L137)
 - `inferFields()` (server/leads/filter.ts:L42)
+- `createManualLead()` (server/leads/manual.ts:L137)
 - `parseManualText()` (server/leads/manual.ts:L37)
-- `clickablePhone()` (server/leads/parse.ts:L64)
+- `applyFilter()` (server/leads/filter.ts:L156)
 
 ## От чего зависит (вызовы в другие разделы)
 

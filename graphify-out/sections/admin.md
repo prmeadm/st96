@@ -15,24 +15,24 @@
 
 - `src/admin/types.ts` — 11 узл.
 - `src/admin/auth.tsx` — 7 узл.
-- `src/admin/ui/Seg.tsx` — 6 узл.
 - `src/admin/ui/QuickNav.tsx` — 6 узл.
+- `src/admin/ui/Seg.tsx` — 6 узл.
 - `src/admin/pages/FilterBar.tsx` — 5 узл.
 - `src/admin/AdminApp.tsx` — 5 узл.
 - `src/admin/ui/Icon.tsx` — 4 узл.
-- `src/admin/supabase.ts` — 3 узл.
-- `src/admin/highlight.tsx` — 3 узл.
 - `src/admin/ui/SaveButton.tsx` — 3 узл.
+- `src/admin/highlight.tsx` — 3 узл.
+- `src/admin/supabase.ts` — 3 узл.
 - `src/admin/ui/BackLink.tsx` — 2 узл.
-- `src/admin/api.ts` — 2 узл.
 - `src/admin/ui/RowActions.tsx` — 2 узл.
+- `src/admin/api.ts` — 2 узл.
 - `src/admin/main.tsx` — 1 узл.
 
 ## Главные узлы (больше всего связей)
 
 - `Icon()` (src/admin/ui/Icon.tsx:L44)
-- `supabase` (src/admin/supabase.ts:L4)
 - `fmtDate()` (src/admin/types.ts:L61)
+- `supabase` (src/admin/supabase.ts:L4)
 - `Shell()` (src/admin/AdminApp.tsx:L47)
 - `callApi()` (src/admin/api.ts:L4)
 - `RowActions()` (src/admin/ui/RowActions.tsx:L5)
@@ -40,8 +40,8 @@
 - `BackLink()` (src/admin/ui/BackLink.tsx:L6)
 - `FilterBar()` (src/admin/pages/FilterBar.tsx:L12)
 - `Seg()` (src/admin/ui/Seg.tsx:L6)
-- `pickKind()` (src/admin/ui/Seg.tsx:L31)
 - `SERVICES` (src/admin/types.ts:L51)
+- `pickKind()` (src/admin/ui/Seg.tsx:L31)
 
 ## От чего зависит (вызовы в другие разделы)
 
@@ -58,8 +58,8 @@
 
 - **Заявки и клиенты** (91): `BackLink()`, `BackLink.tsx`, `Client`, `FilterBar()`, `FilterBar.tsx`, `GROUP_LINK_ID`
 - **Агент, ИИ и аналитика** (44): `BackLink()`, `BackLink.tsx`, `Icon()`, `Icon.tsx`, `KIND_OPTIONS`, `RowActions()`
+- **Воронки** (32): `BackLink()`, `BackLink.tsx`, `Icon()`, `Icon.tsx`, `RowActions()`, `RowActions.tsx`
 - **Рассылки** (31): `BackLink()`, `BackLink.tsx`, `Icon()`, `Icon.tsx`, `PICK_KINDS`, `RowActions()`
-- **Воронки** (29): `BackLink()`, `BackLink.tsx`, `Icon()`, `Icon.tsx`, `RowActions()`, `RowActions.tsx`
 - **Шаблоны и медиа** (26): `Icon()`, `Icon.tsx`, `IconName`, `KIND_OPTIONS`, `PICK_KINDS`, `Seg()`
 - **Запись на встречу** (17): `Icon()`, `Icon.tsx`, `Seg()`, `Seg.tsx`, `admin/types.ts`, `api.ts`
 

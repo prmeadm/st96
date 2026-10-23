@@ -2,7 +2,7 @@
 
 Движок воронок (запуск, кнопки, условия, действия, паузы, запись из воронки, повторы при сбоях), отправка в Telegram (медиа с подписью, YouTube, кружки, 429), конструктор в админке.
 
-Граф раздела: `graphify-out/sections/funnels/graph.json` (188 узлов, 442 внутренних связей).
+Граф раздела: `graphify-out/sections/funnels/graph.json` (189 узлов, 444 внутренних связей).
 
 ## С чего начать сессию
 
@@ -22,17 +22,17 @@
 - `server/funnels/realFunnel.test.ts` — 10 узл.
 - `server/bot/telegramOut.ts` — 9 узл.
 - `server/funnels/engine.test.ts` — 8 узл.
-- `src/admin/ui/VideoNoteField.tsx` — 7 узл.
-- `src/admin/builder/Builder.tsx` — 6 узл.
+- `src/admin/ui/VideoNoteField.tsx` — 8 узл.
 - `server/funnels/retry.ts` — 6 узл.
-- `src/admin/builder/Preview.tsx` — 4 узл.
+- `src/admin/builder/Builder.tsx` — 6 узл.
 - `src/admin/pages/FunnelsPage.tsx` — 4 узл.
-- `src/admin/pages/FunnelPage.tsx` — 4 узл.
 - `server/funnels/triggers.ts` — 4 узл.
+- `src/admin/builder/Preview.tsx` — 4 узл.
+- `src/admin/pages/FunnelPage.tsx` — 4 узл.
 - `src/admin/builder/Edges.tsx` — 3 узл.
-- `server/bot/videonote.test.ts` — 3 узл.
-- `server/funnels/validate.ts` — 3 узл.
 - `server/funnels/demo.ts` — 3 узл.
+- `server/funnels/validate.ts` — 3 узл.
+- `server/bot/videonote.test.ts` — 3 узл.
 - `server/media.test.ts` — 2 узл.
 - `server/bot/keyboard.test.ts` — 2 узл.
 
@@ -44,16 +44,16 @@
 - `Inner()` (src/admin/builder/Builder.tsx:L23)
 - `Editor()` (src/admin/builder/Editor.tsx:L86)
 - `Shell()` (src/admin/builder/Nodes.tsx:L25)
-- `Funnel` (server/funnels/types.ts:L12)
 - `Graph` (server/funnels/types.ts:L10)
-- `str()` (server/funnels/types.ts:L36)
-- `TRIGGER` (server/funnels/types.ts:L27)
+- `VideoNoteField()` (src/admin/ui/VideoNoteField.tsx:L70)
+- `Funnel` (server/funnels/types.ts:L12)
+- `asArray()` (server/funnels/types.ts:L35)
+- `RunRow` (server/funnels/types.ts:L14)
 - `validateGraph()` (server/funnels/validate.ts:L6)
-- `handleClick()` (server/funnels/engine.ts:L119)
 
 ## От чего зависит (вызовы в другие разделы)
 
-- **Оболочка админки** (29): `BackLink()`, `BackLink.tsx`, `Icon()`, `Icon.tsx`, `RowActions()`, `RowActions.tsx`
+- **Оболочка админки** (32): `BackLink()`, `BackLink.tsx`, `Icon()`, `Icon.tsx`, `RowActions()`, `RowActions.tsx`
 - **Данные и инфраструктура** (28): `ClientRow`, `Repo`, `SITE_SERVICES`, `memoryRepo`, `memoryRepo.ts`, `repo.ts`
 - **Запись на встречу** (10): `FORMAT_KEYS`, `FormatKey`, `ServiceKey`, `bookingUrl()`, `hasFreeSlots()`, `schedule.ts`
 - **Шаблоны и медиа** (6): `MediaField()`, `MediaField.tsx`, `TPL_KINDS`, `TemplateRow`, `templates.ts`
