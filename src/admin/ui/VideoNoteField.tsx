@@ -60,14 +60,32 @@ function recordSquare(video: HTMLVideoElement, audio: MediaStreamTrack[], mime: 
   return { stop: () => { if (rec.state === 'recording') rec.stop() }, done }
 }
 
+type Trim = { url: string; duration: number; start: number; end: number; shrink?: { bps: number } }
+
+/** Длительность ролика по его метаданным (их Safari на iPhone тоже отдаёт без запуска). */
+function probe(url: string): Promise<{ duration: number; width: number; height: number } | null> {
+  const v = document.createElement('video')
+  v.preload = 'metadata'
+  v.muted = true
+  v.playsInline = true
+  v.src = url
+  return new Promise((res) => {
+    v.onloadedmetadata = () => res({ duration: v.duration, width: v.videoWidth, height: v.videoHeight })
+    v.onerror = () => res(null)
+    setTimeout(() => res(null), 15_000)
+  })
+}
+
 export function VideoNoteField({ value, onChange, folder }: { value: string; onChange: (url: string) => void; folder: string }) {
   const [busy, setBusy] = useState('')
   const [msg, setMsg] = useState('')
   const [cam, setCam] = useState(false)
   const [sec, setSec] = useState<number | null>(null)
   const [ready, setReady] = useState(false)
-  // длинный ролик из галереи: выбор куска до 59 с, как в Telegram
-  const [trim, setTrim] = useState<{ url: string; duration: number; start: number; end: number } | null>(null)
+  // ролик, который нужно перекодировать: выбор куска до 59 с, как в Telegram. Кнопка «Сделать кружок» нужна и для короткого:
+  // iPhone запускает видео со звуком только по нажатию, без него перекодирование не начнётся
+  const [trim, setTrim] = useState<Trim | null>(null)
+  const [converting, setConverting] = useState(false)
   const trimVideo = useRef<HTMLVideoElement>(null)
   const live = useRef<HTMLVideoElement>(null)
   const stream = useRef<MediaStream | null>(null)
@@ -93,7 +111,13 @@ export function VideoNoteField({ value, onChange, folder }: { value: string; onC
   const upload = async (blob: Blob, shrunk = false): Promise<void> => {
     if (blob.size > NOTE_MAX_BYTES) {
       // тяжелее 12 МБ Telegram кружок не принимает: один раз пережимаем с меньшим битрейтом
-      if (!shrunk) return makeNote(URL.createObjectURL(blob), 0, Infinity, { bps: Math.floor(NOTE_BPS * (NOTE_MAX_BYTES / blob.size) * 0.7), shrunk: true })
+      if (!shrunk) {
+        const url = URL.createObjectURL(blob)
+        const info = await probe(url)
+        const duration = info && Number.isFinite(info.duration) ? info.duration : MAX_SEC
+        setMsg(`Кружок получился ${(blob.size / 1048576).toFixed(1)} МБ, а Telegram принимает до 12 МБ. Нажмите «Сжать кружок».`)
+        return setTrim({ url, duration, start: 0, end: Math.min(duration, MAX_SEC), shrink: { bps: Math.floor(NOTE_BPS * (NOTE_MAX_BYTES / blob.size) * 0.7) } })
+      }
       return setMsg(`Кружок получился ${(blob.size / 1048576).toFixed(1)} МБ, а Telegram принимает до 12 МБ. Сделайте его короче.`)
     }
     setBusy('Загружаю…')
@@ -173,74 +197,82 @@ export function VideoNoteField({ value, onChange, folder }: { value: string; onC
     })
   }
 
-  /** Готовое видео: квадратный MP4 до 59 с уходит как есть, короткое обрезаем до квадрата, у длинного сначала выбираем кусок. */
+  /** Готовое видео: квадратный MP4 до 59 с и до 12 МБ уходит как есть, остальное перекодируем после выбора куска. */
   const pickFile = async (file: File | undefined) => {
     if (!file) return
     setMsg('')
     if (!file.type.startsWith('video/')) return setMsg('Нужен видеофайл')
     if (!mime) return setMsg('Этот браузер не умеет готовить MP4. Откройте админку в Safari или в Chrome последней версии.')
     const url = URL.createObjectURL(file)
-    const v = document.createElement('video')
-    v.src = url
-    v.preload = 'metadata'
-    try {
-      await new Promise<void>((res, rej) => { v.onloadedmetadata = () => res(); v.onerror = () => rej(new Error('bad')) })
-    } catch {
+    setBusy('Открываю видео…')
+    const info = await probe(url)
+    setBusy('')
+    if (!info) {
       URL.revokeObjectURL(url)
       return setMsg('Не получилось открыть видео. Попробуйте другой файл (MP4 или MOV).')
     }
-    if (v.videoWidth === v.videoHeight && v.duration <= MAX_SEC && /mp4/.test(file.type) && file.size <= NOTE_MAX_BYTES) {
+    if (info.width === info.height && info.duration <= MAX_SEC && /mp4/.test(file.type) && file.size <= NOTE_MAX_BYTES) {
       URL.revokeObjectURL(url)
       return upload(file)
     }
-    if (v.duration > MAX_SEC) return setTrim({ url, duration: v.duration, start: 0, end: MAX_SEC })
-    await makeNote(url, 0, v.duration)
+    setTrim({ url, duration: info.duration, start: 0, end: Math.min(info.duration, MAX_SEC) })
   }
 
-  /** Перекодирует кусок [start, end] ролика в квадратный кружок (в реальном времени) и загружает. */
-  const makeNote = async (url: string, start: number, end: number, opts: { bps?: number; shrunk?: boolean } = {}) => {
-    const label = opts.shrunk ? 'Сжимаю кружок до 12 МБ' : 'Готовлю кружок'
-    setBusy(`${label}…`)
-    const v = document.createElement('video')
-    v.src = url
-    v.playsInline = true
-    v.preload = 'auto'
-    try {
-      await new Promise<void>((res, rej) => { v.onloadeddata = () => res(); v.onerror = () => rej(new Error('bad')) })
-      if (start > 0) await new Promise<void>((res) => { v.onseeked = () => res(); v.currentTime = start })
-      if (!Number.isFinite(v.duration)) await new Promise<void>((res) => { v.ondurationchange = () => { if (Number.isFinite(v.duration)) res() }; setTimeout(res, 1500) })
-    } catch {
-      URL.revokeObjectURL(url)
-      setBusy('')
-      return setMsg('Не получилось открыть видео. Попробуйте другой файл (MP4 или MOV).')
-    }
+  /**
+   * Перекодирует выбранный кусок в квадратный кружок в реальном времени и загружает.
+   * Вызывается прямо из нажатия: Safari на iPhone запускает видео со звуком и Web Audio только так.
+   */
+  const convert = () => {
+    const v = trimVideo.current
+    if (!trim || !v || converting) return
+    const t = trim
     // звук ролика через Web Audio: так он попадает в запись, но не играет в колонках
     const ac = new AudioContext()
     const dest = ac.createMediaStreamDestination()
     ac.createMediaElementSource(v).connect(dest)
-    const len = Math.min(MAX_SEC, Math.ceil(Math.min(end, Number.isFinite(v.duration) ? v.duration : MAX_SEC) - start))
-    const reached = new Promise<void>((res) => {
-      v.onended = () => res()
-      v.ontimeupdate = () => { if (v.currentTime >= end) res() }
-    })
-    await v.play()
-    const r = recordSquare(v, dest.stream.getAudioTracks(), mime!, { until: reached, bps: opts.bps, onTick: (s) => setBusy(`${label}: ${s} из ${len} с…`) })
-    const blob = await r.done
+    v.ontimeupdate = null
     v.pause()
-    await ac.close()
-    URL.revokeObjectURL(url)
-    setBusy('')
-    if (!blob) return setMsg('Не получилось прочитать кадры видео. Попробуйте другой файл.')
-    await upload(blob, opts.shrunk)
+    v.muted = false
+    v.currentTime = t.start
+    const started = v.play() // синхронно в обработчике нажатия
+    setConverting(true)
+    const label = t.shrink ? 'Сжимаю кружок' : 'Готовлю кружок'
+    const len = Math.max(1, Math.round(t.end - t.start))
+    setBusy(`${label}: 0 из ${len} с…`)
+    void (async () => {
+      const finish = async (msgText?: string) => {
+        v.pause()
+        await ac.close().catch(() => {})
+        URL.revokeObjectURL(t.url)
+        setConverting(false)
+        setTrim(null)
+        setBusy('')
+        if (msgText) setMsg(msgText)
+      }
+      try {
+        await started
+      } catch {
+        return finish('Видео не запустилось. Попробуйте ещё раз или выберите другой файл.')
+      }
+      const reached = new Promise<void>((res) => {
+        v.onended = () => res()
+        v.ontimeupdate = () => { if (v.currentTime >= t.end) res() }
+      })
+      const r = recordSquare(v, dest.stream.getAudioTracks(), mime!, { until: reached, bps: t.shrink?.bps, onTick: (s) => setBusy(`${label}: ${s} из ${len} с…`) })
+      const blob = await r.done
+      await finish()
+      if (!blob) return setMsg('Не получилось прочитать кадры видео. Попробуйте другой файл.')
+      await upload(blob, !!t.shrink)
+    })()
   }
 
   // превью выбранного куска крутится по кругу от начала до конца
   useEffect(() => {
     const v = trimVideo.current
-    if (!trim || !v) return
+    if (!trim || !v || converting) return
     if (v.currentTime < trim.start || v.currentTime > trim.end) v.currentTime = trim.start
     v.ontimeupdate = () => { if (v.currentTime >= trim.end) v.currentTime = trim.start }
-  }, [trim])
+  }, [trim, converting])
 
   /** Двигаем начало или конец; кусок не длиннее 59 с и не короче 1 с, второй край едет следом. */
   const moveTrim = (edge: 'start' | 'end', t: number) => setTrim((x) => {
@@ -260,30 +292,24 @@ export function VideoNoteField({ value, onChange, folder }: { value: string; onC
     return { ...x, start, end }
   })
 
-  const cancelTrim = () => { if (trim) URL.revokeObjectURL(trim.url); setTrim(null) }
-  const confirmTrim = () => {
-    if (!trim) return
-    const { url, start, end } = trim
-    setTrim(null)
-    void makeNote(url, start, end)
-  }
+  const cancelTrim = () => { if (trim) URL.revokeObjectURL(trim.url); setTrim(null); setMsg('') }
 
   return (
     <div className="mfield vnote">
       {value && <video className="vnote-prev" src={value} controls playsInline />}
       {trim ? (
         <div className="vnote-trim">
-          <video ref={trimVideo} className="vnote-prev" src={trim.url} autoPlay muted playsInline loop={false} />
+          <video ref={trimVideo} className="vnote-prev" src={trim.url} autoPlay muted playsInline preload="auto" />
           <div className="vnote-trim-len">{fmt(trim.start)} – {fmt(trim.end)} · {Math.round(trim.end - trim.start)} с из {fmt(trim.duration)}</div>
           <div className="vnote-trim-track">
             <div className="vnote-trim-sel" style={{ left: `${(trim.start / trim.duration) * 100}%`, width: `${((trim.end - trim.start) / trim.duration) * 100}%` }} />
-            <input type="range" min={0} max={trim.duration} step={0.1} value={trim.start} onChange={(e) => moveTrim('start', Number(e.target.value))} aria-label="Начало куска" />
-            <input type="range" min={0} max={trim.duration} step={0.1} value={trim.end} onChange={(e) => moveTrim('end', Number(e.target.value))} aria-label="Конец куска" />
+            <input type="range" min={0} max={trim.duration} step={0.1} value={trim.start} disabled={converting || trim.duration <= 1} onChange={(e) => moveTrim('start', Number(e.target.value))} aria-label="Начало куска" />
+            <input type="range" min={0} max={trim.duration} step={0.1} value={trim.end} disabled={converting || trim.duration <= 1} onChange={(e) => moveTrim('end', Number(e.target.value))} aria-label="Конец куска" />
           </div>
-          <div className="hint">Ролик длиннее 59 секунд. Выберите кусок: перетащите начало и конец.</div>
+          <div className="hint">{converting ? busy : trim.duration > MAX_SEC ? 'Ролик длиннее 59 секунд. Выберите кусок: перетащите начало и конец.' : 'Можно укоротить: перетащите начало и конец.'}</div>
           <div className="vnote-trim-btns">
-            <button type="button" className="btn" onClick={cancelTrim}>Отмена</button>
-            <button type="button" className="btn primary" onClick={confirmTrim}>Сделать кружок</button>
+            <button type="button" className="btn" disabled={converting} onClick={cancelTrim}>Отмена</button>
+            <button type="button" className="btn primary" disabled={converting} onClick={convert}>{trim.shrink ? 'Сжать кружок' : 'Сделать кружок'}</button>
           </div>
         </div>
       ) : cam ? (

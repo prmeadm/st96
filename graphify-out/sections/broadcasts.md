@@ -25,14 +25,14 @@
 - `tickBroadcasts()` (server/broadcasts.ts:L56)
 - `startBroadcast()` (server/broadcasts.ts:L101)
 - `BroadcastRow` (server/broadcasts.ts:L9)
-- `handler()` (api/broadcast.ts:L12)
 - `inAudience()` (server/broadcasts.ts:L34)
 - `Segment` (server/broadcasts.ts:L7)
+- `handler()` (api/broadcast.ts:L12)
 - `BroadcastsPage()` (src/admin/pages/BroadcastsPage.tsx:L11)
 - `validateBroadcast()` (server/broadcasts.ts:L43)
 - `AudienceClient` (server/broadcasts.ts:L25)
-- `BROADCAST_STATUS` (server/broadcasts.ts:L27)
 - `fromRow()` (src/admin/pages/BroadcastPage.tsx:L16)
+- `BROADCAST_STATUS` (server/broadcasts.ts:L27)
 
 ## От чего зависит (вызовы в другие разделы)
 
