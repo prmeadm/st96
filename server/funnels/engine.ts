@@ -194,8 +194,7 @@ export function groupParts(parts: Part[]): { media?: Part; text?: Part }[] {
   const units: { order: number; media?: Part; text?: Part }[] = []
   parts.forEach((p, i) => {
     if (p.kind === 'text') return
-    // у кружка в Telegram не бывает подписи: он идёт отдельным сообщением, соседний текст остаётся сам по себе
-    if (p.kind === 'videonote') return void units.push({ order: i, media: p })
+    // у кружка подписи нет: соседний текст уходит следующим сообщением прямо под кружком (это делает отправка)
     const free = (j: number) => parts[j]?.kind === 'text' && !used.has(j)
     const t = free(i - 1) ? i - 1 : free(i + 1) ? i + 1 : -1
     if (t >= 0) used.add(t)

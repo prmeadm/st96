@@ -5,7 +5,7 @@ import { Icon } from './Icon'
 // Видеосообщение-«кружок» Telegram: квадратное видео MP4 до 60 секунд. Telegram отправляет кружки только загруженным файлом,
 // поэтому файл кладём в хранилище, а бот при отправке скачивает его и загружает в Telegram.
 const SIZE = 480 // сторона квадрата: Telegram рекомендует до 640
-const MAX_SEC = 60
+const MAX_SEC = 59 // Telegram принимает кружки до 60 с; запас в секунду, иначе запись на 1:00 придёт обычным видео
 const MAX_MB = 20
 
 /** MP4, который понимает Telegram. WebM (старый Chrome, Firefox) кружком не отправится. */
@@ -190,7 +190,7 @@ export function VideoNoteField({ value, onChange, folder }: { value: string; onC
         </div>
       )}
       {msg && !busy && <div className="hint" role="status">{msg}</div>}
-      <div className="hint">Кружок уходит отдельным сообщением: подписи у кружков в Telegram нет, текст блока придёт рядом.</div>
+      <div className="hint">Кружок приходит первым, текст блока и кнопки — следующим сообщением прямо под ним (подписи у кружков в Telegram нет).</div>
     </div>
   )
 }

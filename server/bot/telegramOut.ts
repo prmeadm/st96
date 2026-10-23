@@ -2,7 +2,7 @@ import { InlineKeyboard, InputFile, type Api } from 'grammy'
 import type { Btn, Out } from '../funnels/engine'
 import { RetryLaterError } from '../funnels/retry'
 import type { Repo } from '../repo'
-import { CAPTION_LIMIT, NOT_A_FILE_ERROR, canonicalVideoUrl, youtubeEmbeddable, errorText, firstVideoUrl, isVideoPageUrl, splitText, youtubeId, youtubeThumb } from '../media'
+import { CAPTION_LIMIT, NOT_A_FILE_ERROR, canonicalVideoUrl, mp4Info, youtubeEmbeddable, errorText, firstVideoUrl, isVideoPageUrl, splitText, youtubeId, youtubeThumb } from '../media'
 import { notifyTopic } from './dialog'
 
 type Markup = InlineKeyboard | undefined
@@ -22,13 +22,13 @@ export const keyboard = (buttons?: Btn[][]): Markup => {
 
 /** Если Telegram не принял клавиатуру (кривая кнопка), сообщение всё равно уходит клиенту, без кнопок. */
 const KEYBOARD_ERROR = /can't parse (InlineKeyboardButton|reply markup)|BUTTON_[A-Z_]+_INVALID|Text buttons are not allowed|reply markup/i
-async function withKeyboardFallback(send: (markup: Markup) => Promise<unknown>, markup: Markup) {
+async function withKeyboardFallback<T>(send: (markup: Markup) => Promise<T>, markup: Markup): Promise<T> {
   try {
-    await send(markup)
+    return await send(markup)
   } catch (e) {
     if (!markup || !KEYBOARD_ERROR.test(errorText(e))) throw e
     console.error('keyboard rejected, resending without buttons:', errorText(e).slice(0, 160))
-    await send(undefined)
+    return await send(undefined)
   }
 }
 
@@ -39,8 +39,15 @@ const is429 = (e: unknown) => (e as { error_code?: number }).error_code === 429
 const retryAfterMs = (e: unknown) => (((e as { parameters?: { retry_after?: number } }).parameters?.retry_after ?? 5) + 0.5) * 1000
 
 /** Отправка из воронок через Telegram. */
-export function telegramOut(api: Api, repo: Repo, groupChatId: number | null, opts: { sleep?: (ms: number) => Promise<void>; budgetMs?: number; embeddable?: (youtubeId: string) => Promise<boolean> } = {}): Out {
+async function downloadFile(url: string): Promise<Uint8Array> {
+  const r = await fetch(url)
+  if (!r.ok) throw new Error(`video note download failed: ${r.status}`)
+  return new Uint8Array(await r.arrayBuffer())
+}
+
+export function telegramOut(api: Api, repo: Repo, groupChatId: number | null, opts: { sleep?: (ms: number) => Promise<void>; budgetMs?: number; embeddable?: (youtubeId: string) => Promise<boolean>; download?: (url: string) => Promise<Uint8Array> } = {}): Out {
   const embeddable = opts.embeddable ?? youtubeEmbeddable
+  const download = opts.download ?? downloadFile
   const sleep = opts.sleep ?? realSleep
   const deadline = Date.now() + (opts.budgetMs ?? BUDGET_MS)
   const last = new Map<number, number>()
@@ -162,9 +169,17 @@ export function telegramOut(api: Api, repo: Repo, groupChatId: number | null, op
       if (isVideoPageUrl(url)) return sendVideoLink(chatId, url, caption, kb)
       if (kind === 'videonote') {
         // Кружок Telegram принимает только загруженным файлом (по ссылке нельзя): бот скачивает его и загружает сам.
-        // Подписи у кружка нет, поэтому текст (если он есть) уходит следующим сообщением вместе с кнопками.
+        // Диаметр и длительность передаём явно: без них Telegram показывает запись из браузера обычным квадратным видео.
+        // Подписи у кружка нет, поэтому текст (если он есть) уходит следующим сообщением под кружком, вместе с кнопками.
         try {
-          await paced(chatId, () => withKeyboardFallback((markup) => api.sendVideoNote(chatId, new InputFile(new URL(url)), { reply_markup: caption ? undefined : markup }), kb))
+          const bytes = await download(url)
+          const info = mp4Info(bytes)
+          const extra = {
+            length: info ? Math.min(info.width, info.height) : 480,
+            ...(info && info.duration > 0 ? { duration: Math.min(60, Math.round(info.duration)) } : {}),
+          }
+          const sent = await paced(chatId, () => withKeyboardFallback((markup) => api.sendVideoNote(chatId, new InputFile(bytes, 'videonote.mp4'), { ...extra, reply_markup: caption ? undefined : markup }), kb))
+          if (sent && typeof sent === 'object' && !('video_note' in sent)) console.error('video note delivered as a regular video:', JSON.stringify({ url, info }))
         } catch (e) {
           if (e instanceof RetryLaterError) throw e
           // не квадрат, не MP4 или файл недоступен: клиент всё равно получает видео, обычным сообщением
@@ -174,7 +189,7 @@ export function telegramOut(api: Api, repo: Repo, groupChatId: number | null, op
         if (caption) await sendPlain(chatId, caption, kb, { is_disabled: true })
         return
       }
-      const file = (cap: string | undefined, markup: Markup) => {
+      const file = (cap: string | undefined, markup: Markup): Promise<unknown> => {
         const extra = { caption: cap, reply_markup: markup }
         if (kind === 'image') return api.sendPhoto(chatId, url, extra)
         if (kind === 'video') return api.sendVideo(chatId, url, extra)

@@ -83,3 +83,34 @@ export async function youtubeEmbeddable(id: string): Promise<boolean> {
   embedCache.set(id, ok)
   return ok
 }
+
+/**
+ * Размер кадра и длительность MP4 из его заголовков (moov: mvhd и tkhd видеодорожки).
+ * Нужны для кружка: без явного диаметра Telegram не всегда узнаёт в записи из браузера кружок и показывает её обычным видео.
+ */
+export function mp4Info(buf: Uint8Array): { width: number; height: number; duration: number } | null {
+  const dv = new DataView(buf.buffer, buf.byteOffset, buf.byteLength)
+  const out = { width: 0, height: 0, duration: 0 }
+  const walk = (start: number, end: number) => {
+    for (let p = start; p + 8 <= end; ) {
+      let size = dv.getUint32(p)
+      const type = String.fromCharCode(buf[p + 4]!, buf[p + 5]!, buf[p + 6]!, buf[p + 7]!)
+      let head = 8
+      if (size === 1 && p + 16 <= end) { size = Number(dv.getBigUint64(p + 8)); head = 16 } else if (size === 0) size = end - p
+      if (size < head || p + size > end) return
+      if (type === 'moov' || type === 'trak') walk(p + head, p + size)
+      else if (type === 'mvhd') {
+        const v1 = buf[p + head] === 1
+        const scale = dv.getUint32(p + head + (v1 ? 20 : 12))
+        const dur = v1 ? Number(dv.getBigUint64(p + head + 24)) : dv.getUint32(p + head + 16)
+        if (scale) out.duration = dur / scale
+      } else if (type === 'tkhd' && size >= head + 8) {
+        const w = dv.getUint32(p + size - 8) / 65536, h = dv.getUint32(p + size - 4) / 65536
+        if (w && h && !out.width) { out.width = Math.round(w); out.height = Math.round(h) }
+      }
+      p += size
+    }
+  }
+  try { walk(0, buf.byteLength) } catch { return null }
+  return out.width ? out : null
+}
