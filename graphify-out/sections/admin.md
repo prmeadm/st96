@@ -13,39 +13,39 @@
 
 ## Файлы
 
-- `src/admin/types.ts` — 11 узл.
-- `src/admin/auth.tsx` — 7 узл.
-- `src/admin/ui/QuickNav.tsx` — 6 узл.
-- `src/admin/ui/Seg.tsx` — 6 узл.
-- `src/admin/pages/FilterBar.tsx` — 5 узл.
-- `src/admin/AdminApp.tsx` — 5 узл.
-- `src/admin/ui/Icon.tsx` — 4 узл.
-- `src/admin/supabase.ts` — 3 узл.
-- `src/admin/ui/SaveButton.tsx` — 3 узл.
-- `src/admin/highlight.tsx` — 3 узл.
-- `src/admin/api.ts` — 2 узл.
-- `src/admin/ui/RowActions.tsx` — 2 узл.
-- `src/admin/ui/BackLink.tsx` — 2 узл.
-- `src/admin/main.tsx` — 1 узл.
+- `crm/admin/types.ts` — 11 узл.
+- `crm/admin/auth.tsx` — 7 узл.
+- `crm/admin/ui/QuickNav.tsx` — 6 узл.
+- `crm/admin/ui/Seg.tsx` — 6 узл.
+- `crm/admin/pages/FilterBar.tsx` — 5 узл.
+- `crm/admin/AdminApp.tsx` — 5 узл.
+- `crm/admin/ui/Icon.tsx` — 4 узл.
+- `crm/admin/ui/SaveButton.tsx` — 3 узл.
+- `crm/admin/highlight.tsx` — 3 узл.
+- `crm/admin/supabase.ts` — 3 узл.
+- `crm/admin/ui/RowActions.tsx` — 2 узл.
+- `crm/admin/ui/BackLink.tsx` — 2 узл.
+- `crm/admin/api.ts` — 2 узл.
+- `crm/admin/main.tsx` — 1 узл.
 
 ## Главные узлы (больше всего связей)
 
-- `Icon()` (src/admin/ui/Icon.tsx:L45)
-- `supabase` (src/admin/supabase.ts:L4)
-- `fmtDate()` (src/admin/types.ts:L61)
-- `Shell()` (src/admin/AdminApp.tsx:L47)
-- `callApi()` (src/admin/api.ts:L4)
-- `RowActions()` (src/admin/ui/RowActions.tsx:L5)
-- `clientTitle()` (src/admin/types.ts:L64)
-- `BackLink()` (src/admin/ui/BackLink.tsx:L6)
-- `FilterBar()` (src/admin/pages/FilterBar.tsx:L12)
-- `Seg()` (src/admin/ui/Seg.tsx:L6)
-- `pickKind()` (src/admin/ui/Seg.tsx:L31)
-- `SERVICES` (src/admin/types.ts:L51)
+- `Icon()` (crm/admin/ui/Icon.tsx:L45)
+- `fmtDate()` (crm/admin/types.ts:L65)
+- `supabase` (crm/admin/supabase.ts:L4)
+- `Shell()` (crm/admin/AdminApp.tsx:L47)
+- `callApi()` (crm/admin/api.ts:L4)
+- `RowActions()` (crm/admin/ui/RowActions.tsx:L5)
+- `clientTitle()` (crm/admin/types.ts:L68)
+- `BackLink()` (crm/admin/ui/BackLink.tsx:L6)
+- `FilterBar()` (crm/admin/pages/FilterBar.tsx:L12)
+- `Seg()` (crm/admin/ui/Seg.tsx:L6)
+- `SERVICES` (crm/admin/types.ts:L55)
+- `pickKind()` (crm/admin/ui/Seg.tsx:L31)
 
 ## От чего зависит (вызовы в другие разделы)
 
-- **Заявки и клиенты** (25): `ClientPage()`, `ClientPage.tsx`, `ClientsPage()`, `ClientsPage.tsx`, `Cond`, `CondValue`
+- **Заявки и клиенты** (28): `ClientPage()`, `ClientPage.tsx`, `ClientsPage()`, `ClientsPage.tsx`, `Cond`, `CondValue`
 - **Агент, ИИ и аналитика** (9): `AgentPage()`, `AgentPage.tsx`, `AnalyticsPage()`, `AnalyticsPage.tsx`, `SettingsPage()`, `SettingsPage.tsx`
 - **Воронки** (6): `FunnelPage()`, `FunnelPage.tsx`, `FunnelsPage()`, `FunnelsPage.tsx`
 - **Рассылки** (6): `BroadcastPage()`, `BroadcastPage.tsx`, `BroadcastsPage()`, `BroadcastsPage.tsx`

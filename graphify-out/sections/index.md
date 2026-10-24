@@ -4,14 +4,14 @@
 
 | Раздел | Что внутри | Узлов | Файлов | Справка |
 |---|---|---|---|---|
-| Воронки | Движок воронок | 189 | 22 | [`funnels.md`](funnels.md) |
+| Воронки | Движок воронок | 190 | 22 | [`funnels.md`](funnels.md) |
 | Бот и диалоги | Вебхук Telegram | 37 | 5 | [`bot.md`](bot.md) |
-| Заявки и клиенты | Приём заявок | 127 | 18 | [`leads.md`](leads.md) |
+| Заявки и клиенты | Приём заявок | 131 | 19 | [`leads.md`](leads.md) |
 | Запись на встречу | Расписание и слоты | 137 | 14 | [`booking.md`](booking.md) |
 | Рассылки | Массовые рассылки по сегментам | 31 | 5 | [`broadcasts.md`](broadcasts.md) |
 | Шаблоны и медиа | Библиотека шаблонов | 34 | 5 | [`templates.md`](templates.md) |
 | Агент, ИИ и аналитика | Задания агента | 165 | 23 | [`agent.md`](agent.md) |
-| Данные и инфраструктура | Доступ к базе | 175 | 19 | [`core.md`](core.md) |
+| Данные и инфраструктура | Доступ к базе | 177 | 20 | [`core.md`](core.md) |
 | Оболочка админки | Каркас /admin: вход | 60 | 14 | [`admin.md`](admin.md) |
 | Сайт st96.by | Публичный сайт | 204 | 48 | [`site.md`](site.md) |
 
@@ -32,12 +32,12 @@
 - `docs/PLATFORM.md`
 - `HANDOFF.md`
 - `README.md`
+- `vite.config.ts`
 - `.oxlintrc.json`
-- `scripts/graph-sections.py`
 - `CLAUDE.md`
+- `scripts/graph-sections.py`
 - `api/client-log.ts`
 - `tsconfig.json`
 - `vercel.json`
-- `vite.config.ts`
 - `@breezystack/lamejs`
 - `libphonenumber-js`

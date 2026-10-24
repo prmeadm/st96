@@ -1,8 +1,8 @@
 import { Api } from 'grammy'
-import { requireAdmin, json } from '../server/adminAuth'
-import { agentDeps } from '../server/agent/deps'
-import { approveTask, confirmStep, createTask, deleteTask, rejectTask, reviseTask } from '../server/agent/engine'
-import { supabaseRepo } from '../server/repo'
+import { requireAdmin, json } from '../crm/server/adminAuth'
+import { agentDeps } from '../crm/server/agent/deps'
+import { approveTask, confirmStep, createTask, deleteTask, rejectTask, reviseTask } from '../crm/server/agent/engine'
+import { supabaseRepo } from '../crm/server/repo'
 
 export const config = { runtime: 'edge' }
 

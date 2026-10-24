@@ -9,30 +9,30 @@
 1. Прочитать этот файл (и только его, не весь проект).
 2. Найти нужное место в графе раздела: `graphify explain "<имя>" --graph graphify-out/sections/bot/graph.json` или путь между узлами: `graphify path "A" "B" --graph graphify-out/sections/bot/graph.json`.
 3. Открывать только файлы и строки, которые показал граф.
-4. Проверка: `npx tsx --test server/bot/bot.test.ts`.
+4. Проверка: `npx tsx --test crm/server/bot/bot.test.ts`.
 
 ## Файлы
 
-- `server/bot/dialog.ts` — 13 узл.
-- `server/bot/bot.test.ts` — 9 узл.
-- `server/bot/bot.ts` — 8 узл.
+- `crm/server/bot/dialog.ts` — 13 узл.
+- `crm/server/bot/bot.test.ts` — 9 узл.
+- `crm/server/bot/bot.ts` — 8 узл.
 - `api/telegram.ts` — 4 узл.
-- `server/bot/texts.ts` — 3 узл.
+- `crm/server/bot/texts.ts` — 3 узл.
 
 ## Главные узлы (больше всего связей)
 
-- `createBot()` (server/bot/bot.ts:L63)
-- `sendContent()` (server/bot/dialog.ts:L167)
-- `handleTopicMessage()` (server/bot/dialog.ts:L79)
-- `sendTemplate()` (server/bot/dialog.ts:L233)
-- `ensureClient()` (server/bot/bot.ts:L29)
-- `relayToAdmins()` (server/bot/dialog.ts:L51)
-- `ensureTopic()` (server/bot/dialog.ts:L37)
-- `cardText()` (server/bot/dialog.ts:L22)
+- `createBot()` (crm/server/bot/bot.ts:L63)
+- `sendContent()` (crm/server/bot/dialog.ts:L167)
+- `sendTemplate()` (crm/server/bot/dialog.ts:L233)
+- `handleTopicMessage()` (crm/server/bot/dialog.ts:L79)
+- `ensureClient()` (crm/server/bot/bot.ts:L29)
+- `ensureTopic()` (crm/server/bot/dialog.ts:L37)
+- `relayToAdmins()` (crm/server/bot/dialog.ts:L51)
 - `handler()` (api/telegram.ts:L10)
-- `linkLeadClient()` (server/bot/bot.ts:L20)
-- `showTemplateMenu()` (server/bot/dialog.ts:L153)
-- `notifyTopic()` (server/bot/dialog.ts:L140)
+- `cardText()` (crm/server/bot/dialog.ts:L22)
+- `linkLeadClient()` (crm/server/bot/bot.ts:L20)
+- `notifyTopic()` (crm/server/bot/dialog.ts:L140)
+- `showTemplateMenu()` (crm/server/bot/dialog.ts:L153)
 
 ## От чего зависит (вызовы в другие разделы)
 

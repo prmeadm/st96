@@ -1,8 +1,8 @@
 import { Api } from 'grammy'
-import { requireAdmin, json } from '../server/adminAuth'
-import { notifyClientDecision } from '../server/booking/notify'
-import { createBooking, decideBooking, saveDirectAdmins, saveMeetDefault, saveSchedule, setMeetUrl } from '../server/booking/service'
-import { supabaseRepo } from '../server/repo'
+import { requireAdmin, json } from '../crm/server/adminAuth'
+import { notifyClientDecision } from '../crm/server/booking/notify'
+import { createBooking, decideBooking, saveDirectAdmins, saveMeetDefault, saveSchedule, setMeetUrl } from '../crm/server/booking/service'
+import { supabaseRepo } from '../crm/server/repo'
 
 export const config = { runtime: 'edge' }
 

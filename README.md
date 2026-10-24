@@ -6,19 +6,19 @@
 ## Стек
 
 - Vite + React 19 + TypeScript
-- Tailwind CSS v4 (токены темы — в `src/index.css`)
+- Tailwind CSS v4 (токены темы — в `site/src/index.css`)
 - Framer Motion — анимации, переходы между страницами, интерактивные элементы
 - React Router — навигация между главной и страницами услуг
 
 ## Структура
 
-- `src/data/services.ts` — контент и акцентные цвета каждой услуги (продюсирование, промоушн,
+- `shared/data/services.ts` — контент и акцентные цвета каждой услуги (продюсирование, промоушн,
   продакшн, AI-разработка)
-- `src/data/home.ts` — контент главной страницы
-- `src/components/sections/*` — блоки страниц (герой, преимущества, табы процесса, результаты,
+- `site/src/data/home.ts` — контент главной страницы
+- `site/src/components/sections/*` — блоки страниц (герой, преимущества, табы процесса, результаты,
   захват лида)
-- `src/pages/Home.tsx` — главная страница
-- `src/pages/ServicePage.tsx` — общий шаблон страницы услуги, наполняется данными по slug из URL
+- `site/src/pages/Home.tsx` — главная страница
+- `site/src/pages/ServicePage.tsx` — общий шаблон страницы услуги, наполняется данными по slug из URL
 
 ## Запуск
 
@@ -37,7 +37,7 @@ npm run build
 
 ## Заявки с сайта в Telegram
 
-Форма заявки (`src/components/sections/LeadCapture.tsx`) отправляет данные на серверную функцию
+Форма заявки (`site/src/components/sections/LeadCapture.tsx`) отправляет данные на серверную функцию
 `api/lead.ts`, которая пересылает их в Telegram через Bot API. Нужны две переменные окружения в
 настройках проекта на Vercel (**Settings → Environment Variables**):
 
@@ -47,5 +47,5 @@ npm run build
 После добавления переменных нужен redeploy, чтобы функция их подхватила. Без этих переменных
 эндпоинт отвечает ошибкой 500, и форма на сайте покажет резервное сообщение с прямыми контактами.
 
-Контакты (email, телефон, Telegram) заданы в `src/components/layout/Footer.tsx` в объекте
+Контакты (email, телефон, Telegram) заданы в `site/src/components/layout/Footer.tsx` в объекте
 `CONTACTS` — там же их удобно поменять при необходимости.

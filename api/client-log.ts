@@ -1,4 +1,4 @@
-import { requireAdmin, json } from '../server/adminAuth'
+import { requireAdmin, json } from '../crm/server/adminAuth'
 
 export const config = { runtime: 'edge' }
 

@@ -1,11 +1,11 @@
 import { Api } from 'grammy'
-import { resumeBooking, resumeRun } from '../server/funnels/engine'
-import { telegramOut } from '../server/bot/telegramOut'
-import { supabaseRepo } from '../server/repo'
-import { tickBroadcasts } from '../server/broadcasts'
-import { tickBookingReminders } from '../server/booking/notify'
-import { agentDeps } from '../server/agent/deps'
-import { tickAgentTasks } from '../server/agent/engine'
+import { resumeBooking, resumeRun } from '../crm/server/funnels/engine'
+import { telegramOut } from '../crm/server/bot/telegramOut'
+import { supabaseRepo } from '../crm/server/repo'
+import { tickBroadcasts } from '../crm/server/broadcasts'
+import { tickBookingReminders } from '../crm/server/booking/notify'
+import { agentDeps } from '../crm/server/agent/deps'
+import { tickAgentTasks } from '../crm/server/agent/engine'
 
 export const config = { runtime: 'edge' }
 

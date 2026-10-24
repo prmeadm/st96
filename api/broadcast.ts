@@ -1,7 +1,7 @@
 import { Api } from 'grammy'
-import { requireAdmin, json } from '../server/adminAuth'
-import { inAudience, startBroadcast, type Segment } from '../server/broadcasts'
-import { supabaseRepo } from '../server/repo'
+import { requireAdmin, json } from '../crm/server/adminAuth'
+import { inAudience, startBroadcast, type Segment } from '../crm/server/broadcasts'
+import { supabaseRepo } from '../crm/server/repo'
 
 export const config = { runtime: 'edge' }
 

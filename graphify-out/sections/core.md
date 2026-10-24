@@ -2,7 +2,7 @@
 
 Доступ к базе (Repo, Supabase, тестовая память), каталог услуг сайта, задания по расписанию /api/jobs, миграции Supabase, вход в админку.
 
-Граф раздела: `graphify-out/sections/core/graph.json` (175 узлов, 220 внутренних связей).
+Граф раздела: `graphify-out/sections/core/graph.json` (177 узлов, 221 внутренних связей).
 
 ## С чего начать сессию
 
@@ -13,39 +13,40 @@
 
 ## Файлы
 
-- `server/repo.ts` — 73 узл.
-- `supabase/migrations/0001_core.sql` — 40 узл.
-- `server/catalog.ts` — 11 узл.
-- `supabase/migrations/0010_analytics.sql` — 8 узл.
-- `supabase/migrations/0005_broadcasts.sql` — 6 узл.
-- `supabase/migrations/0008_booking.sql` — 5 узл.
-- `supabase/migrations/0004_templates.sql` — 4 узл.
+- `crm/server/repo.ts` — 73 узл.
+- `crm/supabase/migrations/0001_core.sql` — 40 узл.
+- `crm/server/catalog.ts` — 11 узл.
+- `crm/supabase/migrations/0010_analytics.sql` — 8 узл.
+- `crm/supabase/migrations/0005_broadcasts.sql` — 6 узл.
+- `crm/supabase/migrations/0008_booking.sql` — 5 узл.
 - `api/jobs.ts` — 4 узл.
-- `supabase/migrations/0006_agent.sql` — 4 узл.
+- `crm/supabase/migrations/0006_agent.sql` — 4 узл.
+- `crm/supabase/migrations/0004_templates.sql` — 4 узл.
+- `crm/supabase/migrations/0013_filter_presets.sql` — 3 узл.
 - `api/geo.ts` — 3 узл.
-- `supabase/migrations/0013_filter_presets.sql` — 3 узл.
-- `server/adminAuth.ts` — 3 узл.
-- `supabase/migrations/0011_tg_links.sql` — 2 узл.
-- `server/memoryRepo.ts` — 2 узл.
-- `supabase/migrations/0002_dialogs.sql` — 2 узл.
-- `supabase/migrations/0007_settings.sql` — 2 узл.
-- `supabase/migrations/0009_site_services.sql` — 1 узл.
-- `supabase/migrations/0012_site_consent.sql` — 1 узл.
-- `supabase/migrations/0003_funnels_runtime.sql` — 1 узл.
+- `crm/server/adminAuth.ts` — 3 узл.
+- `crm/supabase/migrations/0011_tg_links.sql` — 2 узл.
+- `crm/server/memoryRepo.ts` — 2 узл.
+- `crm/supabase/migrations/0002_dialogs.sql` — 2 узл.
+- `crm/supabase/migrations/0007_settings.sql` — 2 узл.
+- `crm/supabase/migrations/0014_lead_interests.sql` — 2 узл.
+- `crm/supabase/migrations/0003_funnels_runtime.sql` — 1 узл.
+- `crm/supabase/migrations/0009_site_services.sql` — 1 узл.
+- `crm/supabase/migrations/0012_site_consent.sql` — 1 узл.
 
 ## Главные узлы (больше всего связей)
 
-- `Repo` (server/repo.ts:L72)
-- `supabaseRepo()` (server/repo.ts:L159)
-- `json()` (server/adminAuth.ts:L3)
-- `requireAdmin()` (server/adminAuth.ts:L6)
-- `memoryRepo` (server/memoryRepo.ts:L32)
-- `serviceLabel()` (server/catalog.ts:L26)
-- `ClientRow` (server/repo.ts:L11)
-- `SITE_SERVICES` (server/catalog.ts:L8)
-- `public.leads` (supabase/migrations/0001_core.sql:L84)
-- `public.clients` (supabase/migrations/0001_core.sql:L29)
-- `.findClient()` (server/repo.ts:L75)
+- `Repo` (crm/server/repo.ts:L72)
+- `supabaseRepo()` (crm/server/repo.ts:L159)
+- `json()` (crm/server/adminAuth.ts:L3)
+- `requireAdmin()` (crm/server/adminAuth.ts:L6)
+- `memoryRepo` (crm/server/memoryRepo.ts:L32)
+- `serviceLabel()` (crm/server/catalog.ts:L26)
+- `ClientRow` (crm/server/repo.ts:L11)
+- `SITE_SERVICES` (crm/server/catalog.ts:L8)
+- `public.clients` (crm/supabase/migrations/0001_core.sql:L29)
+- `.findClient()` (crm/server/repo.ts:L75)
+- `public.leads` (crm/supabase/migrations/0001_core.sql:L84)
 - `runTick()` (api/jobs.ts:L39)
 
 ## От чего зависит (вызовы в другие разделы)

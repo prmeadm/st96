@@ -1,6 +1,6 @@
-import { requireAdmin, json } from '../server/adminAuth'
-import { createManualLead, parseManualText, updateManualLead, type LeadFields } from '../server/leads/manual'
-import { supabaseRepo } from '../server/repo'
+import { requireAdmin, json } from '../crm/server/adminAuth'
+import { createManualLead, parseManualText, updateManualLead, type LeadFields } from '../crm/server/leads/manual'
+import { supabaseRepo } from '../crm/server/repo'
 
 export const config = { runtime: 'edge' }
 

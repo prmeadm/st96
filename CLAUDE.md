@@ -9,6 +9,9 @@ Rules:
 - After modifying code, run `graphify update . && python3 scripts/graph-sections.py` to keep the graph and the per-section maps current (AST-only, no API cost).
 - A committed graphify-out/graph.json is rewritten whole on every build, so a large diff to it in a pull request is expected. Do not flag it as churn or suggest skipping the graph rebuild or its hooks.
 
+## Раскладка папок
+`site/` сайт, `crm/` админка, запись, сервер, supabase, `shared/` общее, `api/` функции Vercel (в корне). Одна сборка Vite (`vite.config.ts`).
+
 ## Platform handoff
 Before any work on the bot, leads, admin or funnels, look up the relevant part of `docs/PLATFORM.md` (architecture, status, next steps; search it, do not read it whole). Update it after each finished step.
 

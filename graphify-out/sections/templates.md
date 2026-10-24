@@ -9,30 +9,30 @@
 1. Прочитать этот файл (и только его, не весь проект).
 2. Найти нужное место в графе раздела: `graphify explain "<имя>" --graph graphify-out/sections/templates/graph.json` или путь между узлами: `graphify path "A" "B" --graph graphify-out/sections/templates/graph.json`.
 3. Открывать только файлы и строки, которые показал граф.
-4. Проверка: `npx tsx --test server/bot/bot.test.ts  # шаблоны в темах`.
+4. Проверка: `npx tsx --test crm/server/bot/bot.test.ts  # шаблоны в темах`.
 
 ## Файлы
 
-- `server/templates.ts` — 10 узл.
-- `src/admin/pages/TemplatesPage.tsx` — 8 узл.
-- `src/admin/ui/MediaField.tsx` — 7 узл.
-- `src/admin/ui/CameraCapture.tsx` — 6 узл.
+- `crm/server/templates.ts` — 10 узл.
+- `crm/admin/pages/TemplatesPage.tsx` — 8 узл.
+- `crm/admin/ui/MediaField.tsx` — 7 узл.
+- `crm/admin/ui/CameraCapture.tsx` — 6 узл.
 - `api/send-template.ts` — 3 узл.
 
 ## Главные узлы (больше всего связей)
 
-- `MediaField()` (src/admin/ui/MediaField.tsx:L48)
-- `TemplatesPage()` (src/admin/pages/TemplatesPage.tsx:L18)
-- `TemplateRow` (server/templates.ts:L5)
-- `TemplateKind` (server/templates.ts:L4)
-- `Editor()` (src/admin/pages/TemplatesPage.tsx:L150)
-- `fillTemplate()` (server/templates.ts:L29)
-- `CameraCapture()` (src/admin/ui/CameraCapture.tsx:L12)
-- `TPL_KINDS` (server/templates.ts:L20)
+- `MediaField()` (crm/admin/ui/MediaField.tsx:L48)
+- `TemplatesPage()` (crm/admin/pages/TemplatesPage.tsx:L18)
+- `TemplateRow` (crm/server/templates.ts:L5)
+- `TemplateKind` (crm/server/templates.ts:L4)
+- `Editor()` (crm/admin/pages/TemplatesPage.tsx:L150)
+- `fillTemplate()` (crm/server/templates.ts:L29)
+- `CameraCapture()` (crm/admin/ui/CameraCapture.tsx:L12)
+- `TPL_KINDS` (crm/server/templates.ts:L20)
 - `handler()` (api/send-template.ts:L9)
-- `preview()` (src/admin/pages/TemplatesPage.tsx:L13)
-- `toVoiceFile()` (src/admin/ui/MediaField.tsx:L28)
-- `TPL_TASKS` (server/templates.ts:L21)
+- `TPL_SERVICES` (crm/server/templates.ts:L25)
+- `TPL_VARS` (crm/server/templates.ts:L26)
+- `preview()` (crm/admin/pages/TemplatesPage.tsx:L13)
 
 ## От чего зависит (вызовы в другие разделы)
 
@@ -47,8 +47,8 @@
 - **Агент, ИИ и аналитика** (11): `MediaField()`, `MediaField.tsx`, `TPL_GENERAL`, `TPL_GOALS`, `TPL_KINDS`, `TPL_SERVICES`
 - **Рассылки** (11): `MediaField()`, `MediaField.tsx`, `TPL_VARS`, `TemplateKind`, `TemplateRow`, `fillTemplate()`
 - **Данные и инфраструктура** (8): `TemplateKind`, `TemplateRow`, `templates.ts`
-- **Бот и диалоги** (6): `TPL_KINDS`, `TemplateKind`, `TemplateRow`, `fillTemplate()`, `templates.ts`
 - **Воронки** (6): `MediaField()`, `MediaField.tsx`, `TPL_KINDS`, `TemplateRow`, `templates.ts`
+- **Бот и диалоги** (6): `TPL_KINDS`, `TemplateKind`, `TemplateRow`, `fillTemplate()`, `templates.ts`
 - **Заявки и клиенты** (5): `TPL_KINDS`, `TemplateRow`, `fillTemplate()`, `templates.ts`
 - **Оболочка админки** (3): `TemplatesPage()`, `TemplatesPage.tsx`
 

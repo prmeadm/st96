@@ -1,11 +1,11 @@
 import { Api } from 'grammy'
-import { json } from '../server/adminAuth'
-import { buildIcs } from '../server/booking/ics'
-import { notifyAdminsNewBooking } from '../server/booking/notify'
-import { FORMAT_KEYS, FORMAT_LABEL, isDate, minskNow, type FormatKey } from '../server/booking/schedule'
-import { SITE_SERVICES } from '../server/catalog'
-import { clientContacts, createBooking, loadDay, loadMonth } from '../server/booking/service'
-import { supabaseRepo } from '../server/repo'
+import { json } from '../crm/server/adminAuth'
+import { buildIcs } from '../crm/server/booking/ics'
+import { notifyAdminsNewBooking } from '../crm/server/booking/notify'
+import { FORMAT_KEYS, FORMAT_LABEL, isDate, minskNow, type FormatKey } from '../crm/server/booking/schedule'
+import { SITE_SERVICES } from '../crm/server/catalog'
+import { clientContacts, createBooking, loadDay, loadMonth } from '../crm/server/booking/service'
+import { supabaseRepo } from '../crm/server/repo'
 
 export const config = { runtime: 'edge' }
 

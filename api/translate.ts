@@ -1,9 +1,9 @@
 import { Api } from 'grammy'
-import { requireAdmin, json } from '../server/adminAuth'
-import { agentDeps } from '../server/agent/deps'
-import { LlmError } from '../server/agent/llm'
-import { supabaseRepo } from '../server/repo'
-import { translateToEnglish } from '../server/translate'
+import { requireAdmin, json } from '../crm/server/adminAuth'
+import { agentDeps } from '../crm/server/agent/deps'
+import { LlmError } from '../crm/server/agent/llm'
+import { supabaseRepo } from '../crm/server/repo'
+import { translateToEnglish } from '../crm/server/translate'
 
 export const config = { runtime: 'edge' }
 

@@ -1,7 +1,7 @@
 import { Api } from 'grammy'
-import { requireAdmin, json } from '../server/adminAuth'
-import { sendTemplate } from '../server/bot/dialog'
-import { supabaseRepo } from '../server/repo'
+import { requireAdmin, json } from '../crm/server/adminAuth'
+import { sendTemplate } from '../crm/server/bot/dialog'
+import { supabaseRepo } from '../crm/server/repo'
 
 export const config = { runtime: 'edge' }
 

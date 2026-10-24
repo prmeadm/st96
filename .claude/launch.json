@@ -10,7 +10,7 @@
     {
       "name": "admin-prototype",
       "runtimeExecutable": "python3",
-      "runtimeArgs": ["-m", "http.server", "5180", "--directory", "admin-prototype"],
+      "runtimeArgs": ["-m", "http.server", "5180", "--directory", "crm/admin-prototype"],
       "port": 5180
     }
   ]

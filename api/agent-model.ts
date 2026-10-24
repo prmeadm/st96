@@ -1,8 +1,8 @@
-import { requireAdmin, json } from '../server/adminAuth'
-import { MODEL_SETTING } from '../server/agent/deps'
-import { testModel } from '../server/agent/llm'
-import { AUTO_MODEL, CUSTOM_PREFIX, CUSTOM_SETTING, MAX_CUSTOM_MODELS, isKnownModel, parseCustom, validateCustom } from '../server/agent/models'
-import { supabaseRepo } from '../server/repo'
+import { requireAdmin, json } from '../crm/server/adminAuth'
+import { MODEL_SETTING } from '../crm/server/agent/deps'
+import { testModel } from '../crm/server/agent/llm'
+import { AUTO_MODEL, CUSTOM_PREFIX, CUSTOM_SETTING, MAX_CUSTOM_MODELS, isKnownModel, parseCustom, validateCustom } from '../crm/server/agent/models'
+import { supabaseRepo } from '../crm/server/repo'
 
 export const config = { runtime: 'edge' }
 

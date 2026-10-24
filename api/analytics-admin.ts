@@ -1,6 +1,6 @@
-import { requireAdmin, json } from '../server/adminAuth'
-import { PRICE_SETTING, parsePrices } from '../server/usage'
-import { supabaseRepo } from '../server/repo'
+import { requireAdmin, json } from '../crm/server/adminAuth'
+import { PRICE_SETTING, parsePrices } from '../crm/server/usage'
+import { supabaseRepo } from '../crm/server/repo'
 
 export const config = { runtime: 'edge' }
 

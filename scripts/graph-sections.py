@@ -26,10 +26,10 @@ SECTIONS = [
         'key': 'funnels', 'title': 'Воронки',
         'about': 'Движок воронок (запуск, кнопки, условия, действия, паузы, запись из воронки, повторы при сбоях), '
                  'отправка в Telegram (медиа с подписью, YouTube, кружки, 429), конструктор в админке.',
-        'paths': [r'^server/funnels/', r'^server/bot/telegramOut\.ts$', r'^server/media\.ts$', r'^src/admin/builder/',
-                  r'^src/admin/pages/Funnel', r'^src/admin/ui/VideoNoteField', r'^server/bot/(keyboard|videonote)\.test\.ts$',
-                  r'^server/media\.test\.ts$'],
-        'tests': 'npx tsx --test server/funnels/*.test.ts server/media.test.ts server/bot/keyboard.test.ts server/bot/videonote.test.ts',
+        'paths': [r'^crm/server/funnels/', r'^crm/server/bot/telegramOut\.ts$', r'^crm/server/media\.ts$', r'^crm/admin/builder/',
+                  r'^crm/admin/pages/Funnel', r'^crm/admin/ui/VideoNoteField', r'^crm/server/bot/(keyboard|videonote)\.test\.ts$',
+                  r'^crm/server/media\.test\.ts$'],
+        'tests': 'npx tsx --test crm/server/funnels/*.test.ts crm/server/media.test.ts crm/server/bot/keyboard.test.ts crm/server/bot/videonote.test.ts',
         'tasks': ['новый тип блока или действия', 'поведение кнопок и веток', 'как выглядит сообщение в Telegram',
                   'статистика воронок', 'блок «ИИ-ответ»'],
     },
@@ -37,75 +37,75 @@ SECTIONS = [
         'key': 'bot', 'title': 'Бот и диалоги',
         'about': 'Вебхук Telegram, /start и /stop, темы клиентов в группе «Лиды ST96», команды сотрудников '
                  '(/shablon, /book, //заметка, /close), пересылка диалога человеку.',
-        'paths': [r'^server/bot/', r'^api/telegram\.ts$'],
-        'tests': 'npx tsx --test server/bot/bot.test.ts',
+        'paths': [r'^crm/server/bot/', r'^api/telegram\.ts$'],
+        'tests': 'npx tsx --test crm/server/bot/bot.test.ts',
         'tasks': ['новая команда в теме', 'тексты бота RU/EN', 'поведение /start', 'передача диалога человеку'],
     },
     {
         'key': 'leads', 'title': 'Заявки и клиенты',
         'about': 'Приём заявок (форма сайта, стенд, группа, вручную), разбор полей, клиенты, заметки сотрудников, '
                  'страницы «Клиенты», «Заявки», «Заметки» в админке.',
-        'paths': [r'^server/leads/', r'^api/(lead|ingest|lead-admin)\.ts$', r'^src/admin/pages/(Leads|LeadEditor|Clients|Client|Notes)',
-                  r'^src/admin/clientDelete', r'^src/admin/ui/ContactLinks'],
-        'tests': 'npx tsx --test server/leads/*.test.ts',
+        'paths': [r'^crm/server/leads/', r'^api/(lead|ingest|lead-admin)\.ts$', r'^crm/admin/pages/(Leads|LeadEditor|Clients|Client|Notes)',
+                  r'^crm/admin/clientDelete', r'^crm/admin/ui/ContactLinks'],
+        'tests': 'npx tsx --test crm/server/leads/*.test.ts',
         'tasks': ['разбор заявки', 'поиск и фильтры клиентов', 'карточка клиента', 'форма заявки на сайте (вместе с разделом «Сайт»)'],
     },
     {
         'key': 'booking', 'title': 'Запись на встречу',
         'about': 'Расписание и слоты, заявки на встречу, подтверждение кнопками, уведомления и .ics, напоминания, '
                  'страница /book, раздел «Запись» в админке.',
-        'paths': [r'^server/booking/', r'^api/booking', r'^src/book/', r'^src/booking/', r'^src/admin/pages/Booking',
-                  r'^src/data/(bookingGoals|serviceOptions)'],
-        'tests': 'npx tsx --test server/booking/*.test.ts',
+        'paths': [r'^crm/server/booking/', r'^api/booking', r'^crm/book/', r'^crm/booking/', r'^crm/admin/pages/Booking',
+                  r'^shared/data/(bookingGoals|serviceOptions)'],
+        'tests': 'npx tsx --test crm/server/booking/*.test.ts',
         'tasks': ['расписание и исключения', 'страница /book', 'уведомления о встрече', 'Google Meet и календарь'],
     },
     {
         'key': 'broadcasts', 'title': 'Рассылки',
         'about': 'Массовые рассылки по сегментам (только с согласием), пачки, паузы на 429, прогресс в админке.',
-        'paths': [r'^server/broadcasts', r'^api/broadcast\.ts$', r'^src/admin/pages/Broadcast'],
-        'tests': 'npx tsx --test server/broadcasts.test.ts',
+        'paths': [r'^crm/server/broadcasts', r'^api/broadcast\.ts$', r'^crm/admin/pages/Broadcast'],
+        'tests': 'npx tsx --test crm/server/broadcasts.test.ts',
         'tasks': ['сегменты', 'расписание рассылки', 'медиа в рассылке'],
     },
     {
         'key': 'templates', 'title': 'Шаблоны и медиа',
         'about': 'Библиотека шаблонов, отправка шаблона клиенту, загрузка и съёмка медиа (фото, видео, голос, файл).',
-        'paths': [r'^server/templates', r'^api/send-template\.ts$', r'^src/admin/pages/Templates', r'^src/admin/ui/(MediaField|CameraCapture)'],
-        'tests': 'npx tsx --test server/bot/bot.test.ts  # шаблоны в темах',
+        'paths': [r'^crm/server/templates', r'^api/send-template\.ts$', r'^crm/admin/pages/Templates', r'^crm/admin/ui/(MediaField|CameraCapture)'],
+        'tests': 'npx tsx --test crm/server/bot/bot.test.ts  # шаблоны в темах',
         'tasks': ['поля шаблона', 'фильтры и рейтинг', 'камера и запись голоса'],
     },
     {
         'key': 'agent', 'title': 'Агент, ИИ и аналитика',
         'about': 'Задания агента (план, согласование, шаги), модель Gemini и свои модели, перевод на английский, '
                  'учёт токенов, разделы «Агент», «Настройки», «Аналитика».',
-        'paths': [r'^server/agent/', r'^server/(translate|usage)', r'^api/(agent|agent-model|translate|analytics-admin|status)\.ts$',
-                  r'^src/admin/pages/(Agent|ModelPicker|Settings|Analytics)', r'^src/admin/ui/TranslateButton'],
-        'tests': 'npx tsx --test server/agent/*.test.ts server/translate.test.ts server/usage.test.ts',
+        'paths': [r'^crm/server/agent/', r'^crm/server/(translate|usage)', r'^api/(agent|agent-model|translate|analytics-admin|status)\.ts$',
+                  r'^crm/admin/pages/(Agent|ModelPicker|Settings|Analytics)', r'^crm/admin/ui/TranslateButton'],
+        'tests': 'npx tsx --test crm/server/agent/*.test.ts crm/server/translate.test.ts crm/server/usage.test.ts',
         'tasks': ['новый инструмент агента', 'выбор модели', 'перевод', 'аналитика расходов'],
     },
     {
         'key': 'core', 'title': 'Данные и инфраструктура',
         'about': 'Доступ к базе (Repo, Supabase, тестовая память), каталог услуг сайта, задания по расписанию /api/jobs, '
                  'миграции Supabase, вход в админку.',
-        'paths': [r'^server/(repo|memoryRepo|catalog|adminAuth)', r'^api/(jobs|geo)\.ts$', r'^supabase/'],
+        'paths': [r'^crm/server/(repo|memoryRepo|catalog|adminAuth)', r'^api/(jobs|geo)\.ts$', r'^crm/supabase/'],
         'tests': 'npm run test:server',
         'tasks': ['новая таблица или миграция', 'метод Repo', 'расписание задач'],
     },
     {
         'key': 'admin', 'title': 'Оболочка админки',
         'about': 'Каркас /admin: вход, навигация, общие UI-компоненты, стили, уведомление о новой версии.',
-        'paths': [r'^src/admin/', r'^admin/'],
+        'paths': [r'^crm/admin/'],
         'tests': 'npx tsc -b && npm run build',
         'tasks': ['навигация', 'общие компоненты', 'стили админки'],
     },
     {
         'key': 'site', 'title': 'Сайт st96.by',
         'about': 'Публичный сайт (RU/EN): страницы услуг, форма заявки, аналитика и согласие на cookie.',
-        'paths': [r'^src/(components|pages|data|lib|hooks)/', r'^src/[^/]+\.(tsx?|css)$', r'^index\.html$', r'^public/'],
+        'paths': [r'^site/src/(components|pages|data|lib|hooks)/', r'^site/src/[^/]+\.(tsx?|css)$', r'^site/index\.html$', r'^site/public/', r'^shared/'],
         'tests': 'npx tsc -b && npm run build',
         'tasks': ['тексты и страницы', 'форма заявки', 'аналитика'],
     },
 ]
-SKIP = re.compile(r'^(print/|brand/|DESIGN-IS|graphify-out/|node_modules/|\.claude/|admin-prototype/|screens-b-leasing/)')
+SKIP = re.compile(r'^(print/|brand/|DESIGN-IS|graphify-out/|node_modules/|\.claude/|crm/admin-prototype/|screens-b-leasing/)')
 
 
 def section_of(path: str):

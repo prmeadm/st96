@@ -2,54 +2,54 @@
 
 Движок воронок (запуск, кнопки, условия, действия, паузы, запись из воронки, повторы при сбоях), отправка в Telegram (медиа с подписью, YouTube, кружки, 429), конструктор в админке.
 
-Граф раздела: `graphify-out/sections/funnels/graph.json` (189 узлов, 445 внутренних связей).
+Граф раздела: `graphify-out/sections/funnels/graph.json` (190 узлов, 447 внутренних связей).
 
 ## С чего начать сессию
 
 1. Прочитать этот файл (и только его, не весь проект).
 2. Найти нужное место в графе раздела: `graphify explain "<имя>" --graph graphify-out/sections/funnels/graph.json` или путь между узлами: `graphify path "A" "B" --graph graphify-out/sections/funnels/graph.json`.
 3. Открывать только файлы и строки, которые показал граф.
-4. Проверка: `npx tsx --test server/funnels/*.test.ts server/media.test.ts server/bot/keyboard.test.ts server/bot/videonote.test.ts`.
+4. Проверка: `npx tsx --test crm/server/funnels/*.test.ts crm/server/media.test.ts crm/server/bot/keyboard.test.ts crm/server/bot/videonote.test.ts`.
 
 ## Файлы
 
-- `server/funnels/engine.ts` — 27 узл.
-- `src/admin/builder/catalog.ts` — 23 узл.
-- `server/funnels/types.ts` — 18 узл.
-- `src/admin/builder/Nodes.tsx` — 17 узл.
-- `server/media.ts` — 14 узл.
-- `src/admin/builder/Editor.tsx` — 11 узл.
-- `server/bot/telegramOut.ts` — 10 узл.
-- `server/funnels/realFunnel.test.ts` — 9 узл.
-- `server/funnels/engine.test.ts` — 8 узл.
-- `src/admin/ui/VideoNoteField.tsx` — 8 узл.
-- `server/funnels/retry.ts` — 6 узл.
-- `src/admin/builder/Builder.tsx` — 6 узл.
-- `server/funnels/triggers.ts` — 4 узл.
-- `src/admin/pages/FunnelsPage.tsx` — 4 узл.
-- `src/admin/pages/FunnelPage.tsx` — 4 узл.
-- `src/admin/builder/Preview.tsx` — 4 узл.
-- `src/admin/builder/Edges.tsx` — 3 узл.
-- `server/bot/videonote.test.ts` — 3 узл.
-- `server/funnels/demo.ts` — 3 узл.
-- `server/funnels/validate.ts` — 3 узл.
-- `server/media.test.ts` — 2 узл.
-- `server/bot/keyboard.test.ts` — 2 узл.
+- `crm/server/funnels/engine.ts` — 27 узл.
+- `crm/admin/builder/catalog.ts` — 23 узл.
+- `crm/server/funnels/types.ts` — 18 узл.
+- `crm/admin/builder/Nodes.tsx` — 17 узл.
+- `crm/server/media.ts` — 14 узл.
+- `crm/admin/builder/Editor.tsx` — 12 узл.
+- `crm/server/bot/telegramOut.ts` — 10 узл.
+- `crm/server/funnels/realFunnel.test.ts` — 9 узл.
+- `crm/server/funnels/engine.test.ts` — 8 узл.
+- `crm/admin/ui/VideoNoteField.tsx` — 8 узл.
+- `crm/server/funnels/retry.ts` — 6 узл.
+- `crm/admin/builder/Builder.tsx` — 6 узл.
+- `crm/server/funnels/triggers.ts` — 4 узл.
+- `crm/admin/pages/FunnelPage.tsx` — 4 узл.
+- `crm/admin/pages/FunnelsPage.tsx` — 4 узл.
+- `crm/admin/builder/Preview.tsx` — 4 узл.
+- `crm/server/funnels/demo.ts` — 3 узл.
+- `crm/server/funnels/validate.ts` — 3 узл.
+- `crm/server/bot/videonote.test.ts` — 3 узл.
+- `crm/admin/builder/Edges.tsx` — 3 узл.
+- `crm/server/media.test.ts` — 2 узл.
+- `crm/server/bot/keyboard.test.ts` — 2 узл.
 
 ## Главные узлы (больше всего связей)
 
-- `advance()` (server/funnels/engine.ts:L209)
-- `telegramOut()` (server/bot/telegramOut.ts:L55)
-- `Ic()` (src/admin/builder/Nodes.tsx:L21)
-- `Editor()` (src/admin/builder/Editor.tsx:L86)
-- `Inner()` (src/admin/builder/Builder.tsx:L23)
-- `Shell()` (src/admin/builder/Nodes.tsx:L25)
-- `Graph` (server/funnels/types.ts:L10)
-- `VideoNoteField()` (src/admin/ui/VideoNoteField.tsx:L70)
-- `Funnel` (server/funnels/types.ts:L12)
-- `RunRow` (server/funnels/types.ts:L14)
-- `TRIGGER` (server/funnels/types.ts:L27)
-- `handleClick()` (server/funnels/engine.ts:L119)
+- `advance()` (crm/server/funnels/engine.ts:L209)
+- `telegramOut()` (crm/server/bot/telegramOut.ts:L55)
+- `Ic()` (crm/admin/builder/Nodes.tsx:L21)
+- `Editor()` (crm/admin/builder/Editor.tsx:L118)
+- `Inner()` (crm/admin/builder/Builder.tsx:L23)
+- `Shell()` (crm/admin/builder/Nodes.tsx:L25)
+- `Graph` (crm/server/funnels/types.ts:L10)
+- `VideoNoteField()` (crm/admin/ui/VideoNoteField.tsx:L70)
+- `Funnel` (crm/server/funnels/types.ts:L12)
+- `asArray()` (crm/server/funnels/types.ts:L35)
+- `RunRow` (crm/server/funnels/types.ts:L14)
+- `validateGraph()` (crm/server/funnels/validate.ts:L6)
 
 ## От чего зависит (вызовы в другие разделы)
 
