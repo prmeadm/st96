@@ -32,4 +32,5 @@ dist-ssr
 
 # Browser tool artifacts and print node_modules
 .playwright-mcp/
-print/**/node_modules/
+PRINT ST96/print/
+PRINT ST96/screens-b-leasing/
