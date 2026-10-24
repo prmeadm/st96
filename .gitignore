@@ -29,3 +29,7 @@ dist-ssr
 .env.prod
 .env.*.local
 .env*
+
+# Browser tool artifacts and print node_modules
+.playwright-mcp/
+print/**/node_modules/
