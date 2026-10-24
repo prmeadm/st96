@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useState, type ReactNode } from 'react'
+import { useLayoutEffect, useRef, useState, type ReactNode, type TextareaHTMLAttributes } from 'react'
 import type { Node } from '@xyflow/react'
 import { TRIGGER } from '../../../server/funnels/types'
 import { ACT_TYPES, COND_TYPES, DAYS, FORMATS, P, SERVICES, TRIGGERS, TYPES, uid, type D } from './catalog'
@@ -10,6 +10,38 @@ import { VideoNoteField } from '../ui/VideoNoteField'
 import { supabase } from '../supabase'
 import type { TemplateRow } from '../../../server/templates'
 import { TPL_KINDS } from '../../../server/templates'
+
+/**
+ * Поле основного текста: сразу по высоте текста (до половины экрана), а ниже ручка, которой его тянут по вертикали.
+ * Ручка своя: Safari на iPhone не даёт растягивать textarea за уголок.
+ */
+function TallText(props: TextareaHTMLAttributes<HTMLTextAreaElement> & { value: string }) {
+  const ref = useRef<HTMLTextAreaElement>(null)
+  const manual = useRef(false)
+  useLayoutEffect(() => {
+    const t = ref.current
+    if (!t || manual.current) return
+    t.style.height = 'auto'
+    t.style.height = `${Math.min(Math.max(t.scrollHeight + 2, 160), window.innerHeight * 0.5)}px`
+  }, [props.value])
+  const drag = (e: React.PointerEvent<HTMLDivElement>) => {
+    const t = ref.current
+    if (!t) return
+    e.preventDefault()
+    const y0 = e.clientY, h0 = t.offsetHeight
+    manual.current = true
+    const move = (ev: PointerEvent) => { t.style.height = `${Math.max(96, h0 + ev.clientY - y0)}px` }
+    const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up) }
+    window.addEventListener('pointermove', move)
+    window.addEventListener('pointerup', up)
+  }
+  return (
+    <div className="tall">
+      <textarea ref={ref} {...props} />
+      <div className="tall-grip" onPointerDown={drag} role="separator" aria-orientation="horizontal" aria-label="Потяните, чтобы изменить высоту поля" title="Потяните вниз или вверх" />
+    </div>
+  )
+}
 
 /** Выбор шаблона из библиотеки: текст копируется в блок, поздние правки шаблона опубликованные воронки не меняют */
 function TemplatePicker({ onPick }: { onPick: (t: TemplateRow) => void }) {
@@ -106,7 +138,7 @@ export function Editor({ node, patch, remove, duplicate, close }: { node: Node; 
         <div className="ih"><span>{PART_NAMES[p.kind] ?? 'Блок'}</span>
           <button type="button" className="x" onClick={() => set({ parts: d.parts.filter((x: D) => x.id !== p.id) })} aria-label="Удалить" title="Удалить"><Ic d={P.close} size={14} /></button></div>
         {p.kind === 'text' ? (<>
-          <textarea value={p.text ?? ''} placeholder="Текст сообщения. Можно {имя}, {компания}, {запись}" onChange={(e) => set({ parts: d.parts.map((x: D) => x.id === p.id ? { ...x, text: e.target.value } : x) })} />
+          <TallText value={p.text ?? ''} placeholder="Текст сообщения. Можно {имя}, {компания}, {запись}" onChange={(e) => set({ parts: d.parts.map((x: D) => x.id === p.id ? { ...x, text: e.target.value } : x) })} />
           <div className="lblrow"><span className="hint">English</span><TranslateButton source={p.text ?? ''} target={p.en ?? ''} onDone={(t) => set({ parts: d.parts.map((x: D) => x.id === p.id ? { ...x, en: t } : x) })} /></div>
           <textarea className="en" value={p.en ?? ''} placeholder="English (необязательно, для клиентов с английским)" onChange={(e) => set({ parts: d.parts.map((x: D) => x.id === p.id ? { ...x, en: e.target.value } : x) })} />
         </>) : p.kind === 'videonote' ? (
@@ -185,7 +217,7 @@ export function Editor({ node, patch, remove, duplicate, close }: { node: Node; 
 
   if (type === 'booking') body = (<>
     <div className="aibox teal">Клиент получает кнопку «Выбрать время» с личной ссылкой на календарь. Воронка ждёт решения администратора: по выходу «Админ подтвердил» или «Админ отклонил / другое время».</div>
-    <Field label="Сообщение клиенту"><textarea value={d.message ?? ''} placeholder="Выберите удобное время для встречи:" onChange={(e) => set({ message: e.target.value })} /></Field>
+    <Field label="Сообщение клиенту"><TallText value={d.message ?? ''} placeholder="Выберите удобное время для встречи:" onChange={(e) => set({ message: e.target.value })} /></Field>
     <div className="lblrow"><span className="hint">English</span><TranslateButton source={d.message ?? ''} target={d.messageEn ?? ''} onDone={(t) => set({ messageEn: t })} /></div>
     <textarea className="en" value={d.messageEn ?? ''} placeholder="English (необязательно)" onChange={(e) => set({ messageEn: e.target.value })} />
     <div className="h2">Услуги на выбор</div>
@@ -196,13 +228,13 @@ export function Editor({ node, patch, remove, duplicate, close }: { node: Node; 
   </>)
 
   if (type === 'handoff') body = (<>
-    <Field label="Что увидит клиент"><textarea value={d.message ?? ''} onChange={(e) => set({ message: e.target.value })} /></Field>
+    <Field label="Что увидит клиент"><TallText value={d.message ?? ''} onChange={(e) => set({ message: e.target.value })} /></Field>
     <Check checked={!!d.notify} onChange={(v) => set({ notify: v })}>Уведомить администратора в Telegram</Check>
     <div className="hint">После этого блока бот молчит 12 часов или пока администратор не закроет диалог.</div>
   </>)
 
   if (type === 'ai') body = <div className="aibox">ИИ-ответ пока не подключён: шаг пропускается.</div>
-  if (type === 'note') body = <Field label="Заметка"><textarea value={d.text ?? ''} onChange={(e) => set({ text: e.target.value })} /></Field>
+  if (type === 'note') body = <Field label="Заметка"><TallText value={d.text ?? ''} onChange={(e) => set({ text: e.target.value })} /></Field>
 
   return (
     <div className="panel"><span className="sheet-grip" />

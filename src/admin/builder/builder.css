@@ -67,6 +67,11 @@
 .fb .chk input { width: auto; }
 .fb textarea { resize: vertical; min-height: 84px; }
 .fb textarea.en { min-height: 56px; }
+/* основной текст: высота по тексту и ручка снизу (тянется пальцем и мышью) */
+.fb .tall { display: flex; flex-direction: column; }
+.fb .tall textarea { min-height: 96px; border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+.fb .tall-grip { height: 18px; margin-top: -1px; border: 1px solid var(--line-strong); border-top: 0; border-radius: 0 0 10px 10px; background: var(--bg); cursor: ns-resize; touch-action: none; position: relative; }
+.fb .tall-grip::after { content: ''; position: absolute; left: 50%; top: 7px; width: 36px; height: 4px; margin-left: -18px; border-radius: 2px; background: var(--line-strong); }
 .fb .aibox { background: var(--violet-soft); color: var(--violet); border-radius: 12px; padding: 10px 12px; font-size: var(--fs-sm); line-height: 1.4; }
 .fb .aibox.teal { background: var(--teal-soft); color: var(--teal); }
 
