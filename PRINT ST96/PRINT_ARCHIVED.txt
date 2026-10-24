@@ -1,0 +1,4 @@
+print/ (визитки, флаер, node_modules) перенесён в Google Диск 2026-10-25:
+  Мой диск/Архив Mac/st96-print-2026-10-25.tar
+Восстановить: cd "/Users/dmitriy/Documents/Cloude/St96/PRINT ST96" && tar xf "<путь к архиву>"
+Скрипт brand/avatar/build.mjs берёт шрифт и библиотеки из print/business-cards, без восстановления он не запустится.
