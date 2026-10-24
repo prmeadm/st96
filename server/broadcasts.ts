@@ -4,7 +4,7 @@ import { sendContent } from './bot/dialog'
 import type { ClientRow, Repo } from './repo'
 import type { TemplateKind } from './templates'
 
-export type Segment = { services?: string[]; tags?: string[]; language?: '' | 'ru' | 'en' }
+export type Segment = { services?: string[]; interests?: string[]; tags?: string[]; language?: '' | 'ru' | 'en' }
 export type BroadcastStatus = 'draft' | 'scheduled' | 'sending' | 'done' | 'canceled'
 export type BroadcastRow = {
   id: string
@@ -22,7 +22,7 @@ export type BroadcastRow = {
   created_at: string
   finished_at: string | null
 }
-export type AudienceClient = ClientRow & { services: string[]; tags: string[] }
+export type AudienceClient = ClientRow & { services: string[]; interests: string[]; tags: string[] }
 
 export const BROADCAST_STATUS: Record<BroadcastStatus, string> = { draft: 'Черновик', scheduled: 'Запланирована', sending: 'Отправляется', done: 'Отправлена', canceled: 'Отменена' }
 const FOOTER = { ru: '\n\nОтписаться: /stop', en: '\n\nUnsubscribe: /stop' }
@@ -35,6 +35,7 @@ export function inAudience(c: AudienceClient, seg: Segment): boolean {
   if (!canReceive(c)) return false
   if (seg.language && c.language !== seg.language) return false
   if (seg.services?.length && !seg.services.some((s) => c.services.includes(s))) return false
+  if (seg.interests?.length && !seg.interests.some((i) => c.interests.includes(i))) return false
   if (seg.tags?.length && !seg.tags.some((t) => c.tags.includes(t))) return false
   return true
 }

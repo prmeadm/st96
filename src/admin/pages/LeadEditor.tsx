@@ -1,18 +1,18 @@
 import { useEffect, useState } from 'react'
 import { SITE_SERVICES } from '../../../server/catalog'
 import { callApi } from '../api'
-import { SERVICES, STATUSES, WARNINGS, type Lead } from '../types'
+import { INTERESTS, SERVICES, STATUSES, WARNINGS, type Lead } from '../types'
 import { Icon } from '../ui/Icon'
 import { PhoneField } from '../../components/ui/PhoneField'
 
 
-type Form = { service_key: string; name: string; phone: string; telegram: string; email: string; company: string; comment: string; status: Lead['status'] }
+type Form = { service_key: string; name: string; phone: string; telegram: string; email: string; company: string; comment: string; status: Lead['status']; interests: Lead['interests'] }
 type Saved = { clientId: string | null; clientCreated: boolean; leadsOfClient: number }
 
-const blank: Form = { service_key: 'other', name: '', phone: '', telegram: '', email: '', company: '', comment: '', status: 'new' }
+const blank: Form = { service_key: 'other', name: '', phone: '', telegram: '', email: '', company: '', comment: '', status: 'new', interests: [] }
 const fromLead = (l: Lead): Form => ({
   service_key: l.service_key && SERVICES[l.service_key] ? l.service_key : 'other', name: l.name ?? '', phone: l.phone ?? '', telegram: l.telegram ?? '',
-  email: l.email ?? '', company: l.company ?? '', comment: l.comment ?? '', status: l.status,
+  email: l.email ?? '', company: l.company ?? '', comment: l.comment ?? '', status: l.status, interests: l.interests ?? [],
 })
 
 /** Окно заявки: новая (вставить текст из Telegram, поля разложатся сами) или правка по карандашу. */
@@ -32,7 +32,7 @@ export function LeadEditor({ lead, onClose, onSaved }: { lead: Lead | null; onCl
 
   const parse = async () => {
     setBusy(true); setErr('')
-    const r = await callApi<{ fields: Omit<Form, 'status'>; warnings: string[] }>('/api/lead-admin', { action: 'parse', text })
+    const r = await callApi<{ fields: Omit<Form, 'status' | 'interests'>; warnings: string[] }>('/api/lead-admin', { action: 'parse', text })
     setBusy(false)
     if (!r.ok) return setErr(r.error)
     setF((x) => ({ ...x, ...r.data.fields }))
@@ -75,6 +75,11 @@ export function LeadEditor({ lead, onClose, onSaved }: { lead: Lead | null; onCl
             <div className="fld"><label>Telegram</label><input value={f.telegram} onChange={(e) => up({ telegram: e.target.value })} placeholder="@ник" /></div>
             <div className="fld lx-wide"><label>Почта</label><input type="email" value={f.email} onChange={(e) => up({ email: e.target.value })} /></div>
           </div>
+          <div className="fld"><label>Интересы (для групп и рассылок)</label>
+            <div className="chips">{(Object.entries(INTERESTS) as [Lead['interests'][number], string][]).map(([k, v]) => {
+              const on = f.interests.includes(k)
+              return <button type="button" key={k} className={on ? 'on' : ''} aria-pressed={on} onClick={() => up({ interests: on ? f.interests.filter((x) => x !== k) : [...f.interests, k] })}>{v}</button>
+            })}</div></div>
           <div className="fld"><label>Комментарий</label><textarea value={f.comment} onChange={(e) => up({ comment: e.target.value })} /></div>
           <div className="hint">Клиент определяется по телефону, затем по нику Telegram. Если такого клиента нет, он создаётся сам. У одного клиента может быть сколько угодно заявок.</div>
           {err && <div className="err" role="alert">{err}</div>}

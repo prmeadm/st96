@@ -1,4 +1,7 @@
 import { SITE_SERVICES } from '../../server/catalog'
+import type { InterestKey } from '../../server/leads/interests'
+
+export { INTERESTS } from '../../server/leads/interests'
 
 export type Client = {
   id: string
@@ -25,6 +28,7 @@ export type Lead = {
   title: string | null
   topic: string | null
   status: 'new' | 'in_progress' | 'won' | 'lost' | 'spam'
+  interests: InterestKey[]
   name: string | null
   phone: string | null
   telegram: string | null

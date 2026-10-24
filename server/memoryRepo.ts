@@ -8,7 +8,7 @@ import type { BookingInsert, BookingRow } from './booking/types'
 
 export type MemoryRepo = Repo & {
   clients: ClientRow[]
-  leads: (LeadInsert & { id: string })[]
+  leads: (LeadInsert & { id: string; interests?: string[] })[]
   notes: NoteInsert[]
   messages: MessageInsert[]
   funnels: Funnel[]
@@ -106,6 +106,7 @@ export function memoryRepo(): MemoryRepo {
       return r.clients.filter((c) => c.tg_user_id && c.consent_at && !c.opted_out_at).map((c): AudienceClient => ({
         ...c,
         services: [...new Set(r.leads.filter((l) => l.client_id === c.id && l.service_key).map((l) => l.service_key!))],
+        interests: [...new Set(r.leads.filter((l) => l.client_id === c.id).flatMap((l) => l.interests ?? []))],
         tags: [...(r.tags.get(c.id) ?? [])],
       }))
     },

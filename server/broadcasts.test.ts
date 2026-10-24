@@ -39,7 +39,20 @@ test('в аудиторию попадают только согласившие
   assert.deepEqual(all.map((c) => c.tg_user_id).sort(), [1, 2])
   assert.equal(all.filter((c) => inAudience(c, { language: 'en' })).length, 1)
   assert.equal(all.filter((c) => inAudience(c, { tags: ['VIP'] })).length, 0)
-  assert.equal(inAudience({ ...repo.clients[2], services: [], tags: [] }, {}), false)
+  assert.equal(inAudience({ ...repo.clients[2], services: [], interests: [], tags: [] }, {}), false)
+})
+
+test('сегмент по интересам: клиент попадает, если у любой его заявки есть любой из выбранных интересов', async () => {
+  const repo = await seed()
+  const [c1, c2] = repo.clients
+  const { id } = await repo.insertLead({ client_id: c1.id, source: 'manual', service_key: null, title: null, topic: null, name: null, phone: null, telegram: null, email: null, company: null, comment: null, interest: null, lang: null, landing: null, utm: null, raw_text: null, warnings: [], tg_chat_id: null, tg_message_id: null } as never)
+  await repo.updateLead(id, { interests: ['neuro_photo', 'ai'] })
+  const all = await repo.listAudience()
+  const ids = (seg: Parameters<typeof inAudience>[1]) => all.filter((c) => inAudience(c, seg)).map((c) => c.id)
+  assert.deepEqual(ids({ interests: ['ai'] }), [c1.id])
+  assert.deepEqual(ids({ interests: ['producing', 'neuro_photo'] }), [c1.id])
+  assert.deepEqual(ids({ interests: ['crm_supaoffice'] }), [])
+  assert.equal(ids({}).includes(c2.id), true)
 })
 
 test('рассылка уходит с подстановкой имени, языком клиента и ссылкой отписки', async () => {

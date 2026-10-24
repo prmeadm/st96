@@ -84,7 +84,7 @@ export interface Repo {
   /** Контакты из последних заявок клиента: для случаев, когда в карточке чего-то не хватает */
   leadContacts(clientId: string): Promise<{ name: string | null; phone: string | null; telegram: string | null; company: string | null }[]>
   getLead(id: string): Promise<(LeadInsert & { id: string }) | null>
-  updateLead(id: string, patch: Partial<LeadInsert> & { status?: string }): Promise<void>
+  updateLead(id: string, patch: Partial<LeadInsert> & { status?: string; interests?: string[] }): Promise<void>
   findLeadByMessage(chatId: number, messageId: number): Promise<{ id: string; client_id: string | null } | null>
   findLeadByContact(by: { phone?: string; username?: string }): Promise<{ id: string; client_id: string | null } | null>
   insertNote(n: NoteInsert): Promise<void>
@@ -305,10 +305,11 @@ export function supabaseRepo(url: string, key: string): Repo {
       if (t) ok(await db.from('templates').update({ used: t.used + 1 }).eq('id', id), 'bumpTemplateUsed')
     },
     async listAudience() {
-      const rows = (ok(await db.from('clients').select('*, leads(service_key), client_tags(tags(name))').not('tg_user_id', 'is', null).not('consent_at', 'is', null).is('opted_out_at', null).limit(5000), 'listAudience') ?? []) as unknown as (ClientRow & { leads: { service_key: string | null }[]; client_tags: { tags: { name: string } | null }[] })[]
+      const rows = (ok(await db.from('clients').select('*, leads(service_key, interests), client_tags(tags(name))').not('tg_user_id', 'is', null).not('consent_at', 'is', null).is('opted_out_at', null).limit(5000), 'listAudience') ?? []) as unknown as (ClientRow & { leads: { service_key: string | null; interests: string[] | null }[]; client_tags: { tags: { name: string } | null }[] })[]
       return rows.map(({ leads, client_tags, ...c }) => ({
         ...c,
         services: [...new Set(leads.map((l) => l.service_key).filter((x): x is string => !!x))],
+        interests: [...new Set(leads.flatMap((l) => l.interests ?? []))],
         tags: client_tags.map((t) => t.tags?.name).filter((x): x is string => !!x),
       }))
     },

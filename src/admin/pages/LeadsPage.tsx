@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { supabase } from '../supabase'
-import { SERVICES, SOURCES, STATUSES, WARNINGS, fmtDate, type Lead } from '../types'
+import { INTERESTS, SERVICES, SOURCES, STATUSES, WARNINGS, fmtDate, type Lead } from '../types'
 import { Icon } from '../ui/Icon'
 import { RowActions } from '../ui/RowActions'
 import { ContactLinks } from '../ui/ContactLinks'
@@ -20,6 +20,7 @@ const KNOWN: Record<string, KnownField> = {
   status: { label: 'Статус', group: 'Заявка', options: STATUSES },
   source: { label: 'Источник', group: 'Заявка', options: SOURCES },
   service_key: { label: 'Услуга', group: 'Заявка', options: SERVICES },
+  interests: { label: 'Интересы', group: 'Заявка', options: INTERESTS },
   created_at: { label: 'Создана', group: 'Заявка', kind: 'date' },
   updated_at: { label: 'Изменена', group: 'Заявка', kind: 'date' },
   name: { label: 'Имя', group: 'Контакты', kind: 'text' },
@@ -41,7 +42,7 @@ const KNOWN: Record<string, KnownField> = {
 const DEFAULTS = ['status', 'source', 'service_key', 'created_at', 'name', 'phone']
 
 const flat = (l: Row): Flat => ({
-  status: l.status, source: l.source, service_key: l.service_key, created_at: l.created_at, updated_at: l.updated_at,
+  status: l.status, source: l.source, service_key: l.service_key, interests: l.interests ?? [], created_at: l.created_at, updated_at: l.updated_at,
   name: l.name, phone: l.phone, telegram: l.telegram, email: l.email, company: l.company, title: l.title, topic: l.topic, comment: l.comment,
   interest: l.interest, lang: l.lang, landing: l.landing, warnings: l.warnings, raw_text: l.raw_text,
   'client.name': l.clients ? [l.clients.name, l.clients.tg_username].filter(Boolean).join(' @') : null,
@@ -58,6 +59,7 @@ export default function LeadsPage() {
   const [error, setError] = useState('')
   const [edit, setEdit] = useState<Lead | 'new' | null>(null)
   const [info, setInfo] = useState('')
+  const [pickFor, setPickFor] = useState<string | null>(null) // у какой заявки открыт выбор интересов
 
   const load = () =>
     supabase.from('leads').select('*, clients(id, name, tg_username, client_tags(tags(name)))').order('created_at', { ascending: false }).limit(500)
@@ -77,6 +79,14 @@ export default function LeadsPage() {
     const { error: e } = await supabase.from('leads').update({ status: s }).eq('id', id)
     if (e) { setRows(prev); setError('Не удалось сменить статус') } else setError('')
   }
+  const toggleInterest = async (l: Lead, k: Lead['interests'][number]) => {
+    const prev = rows
+    const cur = l.interests ?? []
+    const next = (Object.keys(INTERESTS) as Lead['interests']).filter((x) => (x === k ? !cur.includes(k) : cur.includes(x)))
+    setRows((r) => r && r.map((x) => (x.id === l.id ? { ...x, interests: next } : x)))
+    const { error: e } = await supabase.from('leads').update({ interests: next }).eq('id', l.id)
+    if (e) { setRows(prev); setError('Не удалось сохранить интересы') } else setError('')
+  }
 
   const setFilter = (c: Cond[], text: string) => {
     const next = new URLSearchParams(sp)
@@ -91,6 +101,13 @@ export default function LeadsPage() {
   const statusCond = conds.find((c) => c.field === 'status')
   const oneStatus = Array.isArray(statusCond?.value) && statusCond.value.length === 1 ? statusCond.value[0] : ''
   const pickStatus = (k: string) => setFilter([...conds.filter((c) => c.field !== 'status'), ...(k ? [{ field: 'status', value: [k] }] : [])], q)
+  // Быстрый выбор интересов — условие «Интересы» (любой из выбранных), как группа для рассылки
+  const intCond = conds.find((c) => c.field === 'interests')
+  const intOn = Array.isArray(intCond?.value) ? intCond.value : []
+  const pickInterest = (k: string) => {
+    const v = k ? (intOn.includes(k) ? intOn.filter((x) => x !== k) : [...intOn, k]) : []
+    setFilter([...conds.filter((c) => c.field !== 'interests'), ...(v.length ? [{ field: 'interests', value: v }] : [])], q)
+  }
   const tone = (s: Lead['status']) => (s === 'won' ? 'green' : s === 'lost' || s === 'spam' ? 'red' : s === 'in_progress' ? 'amber' : 'blue')
 
   return (
@@ -102,6 +119,10 @@ export default function LeadsPage() {
         <div className="chips">
           <button className={!statusCond ? 'on' : ''} onClick={() => pickStatus('')}>Все</button>
           {Object.entries(STATUSES).map(([k, v]) => <button key={k} className={oneStatus === k ? 'on' : ''} onClick={() => pickStatus(k)}>{v}</button>)}
+        </div>
+        <div className="chips" aria-label="Интересы">
+          <button className={!intOn.length ? 'on' : ''} onClick={() => pickInterest('')}>Все интересы</button>
+          {Object.entries(INTERESTS).map(([k, v]) => <button key={k} className={intOn.includes(k) ? 'on' : ''} aria-pressed={intOn.includes(k)} onClick={() => pickInterest(k)}>{v}</button>)}
         </div>
       </div>
       {error && <div className="err" role="alert">{error}</div>}
@@ -124,11 +145,21 @@ export default function LeadsPage() {
           {l.warnings.length > 0 && <div className="chips" style={{ marginTop: 8 }}>{l.warnings.map((w) => <span key={w} className="chip amber">{WARNINGS[w] ?? w}</span>)}</div>}
           <div className="row" style={{ marginTop: 10 }}>
             <span className={`chip ${tone(l.status)}`}>{STATUSES[l.status]}</span>
+            {(l.interests ?? []).map((k) => <span key={k} className="chip">{INTERESTS[k] ?? k}</span>)}
+            <button type="button" className="btn" aria-expanded={pickFor === l.id} onClick={() => setPickFor(pickFor === l.id ? null : l.id)}>{l.interests?.length ? 'Интересы' : '+ Интерес'}</button>
             <span className="sp" />
             <select style={{ width: 'auto' }} value={l.status} onChange={(e) => setLeadStatus(l.id, e.target.value as Lead['status'])} aria-label="Статус заявки">
               {Object.entries(STATUSES).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
             </select>
           </div>
+          {pickFor === l.id && (
+            <div className="chips" style={{ marginTop: 8 }} aria-label="Интересы заявки">
+              {(Object.entries(INTERESTS) as [Lead['interests'][number], string][]).map(([k, v]) => {
+                const on = (l.interests ?? []).includes(k)
+                return <button type="button" key={k} className={on ? 'on' : ''} aria-pressed={on} onClick={() => toggleInterest(l, k)}>{v}</button>
+              })}
+            </div>
+          )}
         </div>
       ))}
       {edit && (

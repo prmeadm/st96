@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../supabase'
 import { callApi } from '../api'
-import { SERVICES, clientTitle, fmtDate } from '../types'
+import { INTERESTS, SERVICES, clientTitle, fmtDate } from '../types'
 import { BackLink } from '../ui/BackLink'
 import { MediaField } from '../ui/MediaField'
 import { TranslateButton } from '../ui/TranslateButton'
@@ -70,7 +70,7 @@ export default function BroadcastPage() {
 
   const up = (p: Partial<Draft>) => setD({ ...d, ...p })
   const seg = (p: Partial<Segment>) => up({ segment: { ...d.segment, ...p } })
-  const toggle = (k: 'services' | 'tags', v: string) => { const cur = d.segment[k] ?? []; seg({ [k]: cur.includes(v) ? cur.filter((x) => x !== v) : [...cur, v] }) }
+  const toggle = (k: 'services' | 'interests' | 'tags', v: string) => { const cur = d.segment[k] ?? []; seg({ [k]: cur.includes(v) ? cur.filter((x) => x !== v) : [...cur, v] }) }
   const draft = b.status === 'draft'
   const problem = validateBroadcast({ title: d.title, kind: d.kind, body: d.body, body_en: d.body_en, media_url: d.media_url })
   const when = d.when === 'later' && d.at ? new Date(d.at).toISOString() : null
@@ -155,6 +155,8 @@ export default function BroadcastPage() {
         <fieldset className="plain" disabled={!draft}>
           <div className="fld"><label>Услуга из заявок (любая из выбранных)</label>
             <div className="chips">{Object.entries(SERVICES).map(([k, l]) => <button type="button" key={k} className={d.segment.services?.includes(k) ? 'on' : ''} aria-pressed={!!d.segment.services?.includes(k)} onClick={() => toggle('services', k)}>{l}</button>)}</div></div>
+          <div className="fld"><label>Интересы из заявок (группа: любой из выбранных)</label>
+            <div className="chips">{Object.entries(INTERESTS).map(([k, l]) => <button type="button" key={k} className={d.segment.interests?.includes(k) ? 'on' : ''} aria-pressed={!!d.segment.interests?.includes(k)} onClick={() => toggle('interests', k)}>{l}</button>)}</div></div>
           {tags.length > 0 && <div className="fld"><label>Теги клиента (любой из выбранных)</label>
             <div className="chips">{tags.map((t) => <button type="button" key={t} className={d.segment.tags?.includes(t) ? 'on' : ''} aria-pressed={!!d.segment.tags?.includes(t)} onClick={() => toggle('tags', t)}>{t}</button>)}</div></div>}
           <div className="fld"><label>Язык клиента</label>

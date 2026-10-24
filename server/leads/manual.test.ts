@@ -80,6 +80,19 @@ test('правка заявки: поля меняются, при смене т
   assert.equal((await updateManualLead(repo, 'нет', { name: 'x' })).ok, false)
 })
 
+test('интересы заявки: только известные, без повторов; без поля interests правка их не стирает', async () => {
+  const repo = memoryRepo()
+  const a = await createManualLead(repo, { name: 'Анна', phone: '+375291112233', service_key: 'ai', interests: ['neuro_photo', 'чужое', 'ai', 'ai'] as never }, '')
+  assert.ok(a.ok)
+  if (!a.ok) return
+  const lead = () => repo.leads.find((l) => l.id === a.leadId)!
+  assert.deepEqual(lead().interests, ['ai', 'neuro_photo'])
+  await updateManualLead(repo, a.leadId, { name: 'Анна', phone: '+375291112233', service_key: 'ai' })
+  assert.deepEqual(lead().interests, ['ai', 'neuro_photo'])
+  await updateManualLead(repo, a.leadId, { name: 'Анна', phone: '+375291112233', service_key: 'ai', interests: ['crm_supaoffice'] })
+  assert.deepEqual(lead().interests, ['crm_supaoffice'])
+})
+
 test('фраза без заглавных слов не становится именем', () => {
   const { fields } = parseManualText('Тест: Продюсирование\nhttps://t.me/test_zayavka_96\nХотим обсудить релиз альбома')
   assert.equal(fields.name, '')

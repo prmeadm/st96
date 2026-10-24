@@ -3,6 +3,7 @@
 import { UNKNOWN_SERVICE, detectServiceInText, serviceByLabel, serviceLabel } from '../catalog'
 import type { Repo } from '../repo'
 import { ingestLead, upsertClientFromLead } from './ingest'
+import { cleanInterests, type InterestKey } from './interests'
 import { normalizePhone, normalizeTelegram, parseLead, type ParsedLead } from './parse'
 
 export type LeadFields = {
@@ -14,6 +15,7 @@ export type LeadFields = {
   company: string
   comment: string
   status?: 'new' | 'in_progress' | 'won' | 'lost' | 'spam'
+  interests?: InterestKey[]
 }
 
 type Key = 'name' | 'phone' | 'telegram' | 'email' | 'company' | 'interest' | 'comment'
@@ -121,7 +123,7 @@ export function cleanFields(f: Partial<LeadFields>): { fields: LeadFields; warni
   if (!phone && !telegram && !email) warnings.push('no_contact')
   const status = f.status && ['new', 'in_progress', 'won', 'lost', 'spam'].includes(f.status) ? f.status : undefined
   return {
-    fields: { service_key: clean(f.service_key, 40) || UNKNOWN_SERVICE, name, phone, telegram, email, company: clean(f.company, 120), comment: clean(f.comment, 4000), status },
+    fields: { service_key: clean(f.service_key, 40) || UNKNOWN_SERVICE, name, phone, telegram, email, company: clean(f.company, 120), comment: clean(f.comment, 4000), status, interests: cleanInterests(f.interests) },
     warnings,
   }
 }
@@ -140,6 +142,7 @@ export async function createManualLead(repo: Repo, input: Partial<LeadFields>, r
   const before = (fields.phone && (await repo.findClient({ phone: fields.phone }))) || (fields.telegram && (await repo.findClient({ username: fields.telegram })))
   const r = await ingestLead(repo, asParsed(fields, warnings), { source: 'manual', rawText })
   if (fields.status && fields.status !== 'new') await repo.updateLead(r.leadId, { status: fields.status })
+  if (fields.interests?.length) await repo.updateLead(r.leadId, { interests: fields.interests })
   const leadsOfClient = r.clientId ? (await repo.countLeads(r.clientId)) : 1
   return { ok: true, leadId: r.leadId, clientId: r.clientId, clientCreated: !before && !!r.clientId, leadsOfClient }
 }
@@ -161,6 +164,7 @@ export async function updateManualLead(repo: Repo, id: string, input: Partial<Le
     client_id: clientId, service_key: fields.service_key, title: serviceLabel(fields.service_key), name: fields.name || null, phone: fields.phone || null,
     telegram: fields.telegram || null, email: fields.email || null, company: fields.company || null, comment: fields.comment || null, warnings,
     ...(fields.status ? { status: fields.status } : {}),
+    ...(fields.interests ? { interests: fields.interests } : {}),
   })
   return { ok: true, leadId: id, clientId, clientCreated, leadsOfClient: clientId ? await repo.countLeads(clientId) : 1 }
 }
