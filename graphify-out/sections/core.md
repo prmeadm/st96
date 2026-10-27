@@ -19,19 +19,19 @@
 - `crm/supabase/migrations/0010_analytics.sql` — 8 узл.
 - `crm/supabase/migrations/0005_broadcasts.sql` — 6 узл.
 - `crm/supabase/migrations/0008_booking.sql` — 5 узл.
-- `api/jobs.ts` — 4 узл.
 - `crm/supabase/migrations/0004_templates.sql` — 4 узл.
 - `crm/supabase/migrations/0006_agent.sql` — 4 узл.
+- `api/jobs.ts` — 4 узл.
 - `api/geo.ts` — 3 узл.
-- `crm/supabase/migrations/0013_filter_presets.sql` — 3 узл.
 - `crm/server/adminAuth.ts` — 3 узл.
-- `crm/supabase/migrations/0007_settings.sql` — 2 узл.
-- `crm/server/memoryRepo.ts` — 2 узл.
+- `crm/supabase/migrations/0013_filter_presets.sql` — 3 узл.
 - `crm/supabase/migrations/0011_tg_links.sql` — 2 узл.
 - `crm/supabase/migrations/0002_dialogs.sql` — 2 узл.
+- `crm/supabase/migrations/0007_settings.sql` — 2 узл.
 - `crm/supabase/migrations/0014_lead_interests.sql` — 2 узл.
-- `crm/supabase/migrations/0009_site_services.sql` — 1 узл.
+- `crm/server/memoryRepo.ts` — 2 узл.
 - `crm/supabase/migrations/0012_site_consent.sql` — 1 узл.
+- `crm/supabase/migrations/0009_site_services.sql` — 1 узл.
 - `crm/supabase/migrations/0003_funnels_runtime.sql` — 1 узл.
 
 ## Главные узлы (больше всего связей)
@@ -43,11 +43,11 @@
 - `memoryRepo` (crm/server/memoryRepo.ts:L34)
 - `serviceLabel()` (crm/server/catalog.ts:L26)
 - `ClientRow` (crm/server/repo.ts:L11)
-- `public.leads` (crm/supabase/migrations/0001_core.sql:L84)
 - `SITE_SERVICES` (crm/server/catalog.ts:L8)
-- `public.clients` (crm/supabase/migrations/0001_core.sql:L29)
 - `.findClient()` (crm/server/repo.ts:L75)
-- `runTick()` (api/jobs.ts:L39)
+- `public.leads` (crm/supabase/migrations/0001_core.sql:L84)
+- `public.clients` (crm/supabase/migrations/0001_core.sql:L29)
+- `.updateClient()` (crm/server/repo.ts:L78)
 
 ## От чего зависит (вызовы в другие разделы)
 
@@ -62,8 +62,8 @@
 
 - **Запись на встречу** (66): `.countRecentBookings()`, `.enqueueJob()`, `.findClient()`, `.findClientById()`, `.getBooking()`, `.getSetting()`
 - **Агент, ИИ и аналитика** (63): `.addTag()`, `.getAgentTask()`, `.getSetting()`, `.insertLlmUsage()`, `Repo`, `SITE_SERVICES`
-- **Заявки и клиенты** (57): `.countLeads()`, `.findClient()`, `.findLeadByContact()`, `.findLeadByMessage()`, `.getLead()`, `.insertClient()`
-- **Бот и диалоги** (51): `.bumpTemplateUsed()`, `.claimUpdate()`, `.findActiveRun()`, `.findClient()`, `.findClientById()`, `.getRun()`
+- **Заявки и клиенты** (54): `.countLeads()`, `.findClient()`, `.findLeadByContact()`, `.findLeadByMessage()`, `.getLead()`, `.insertClient()`
+- **Бот и диалоги** (50): `.bumpTemplateUsed()`, `.claimUpdate()`, `.findActiveRun()`, `.findClient()`, `.findClientById()`, `.getRun()`
 - **Воронки** (28): `ClientRow`, `Repo`, `SITE_SERVICES`, `memoryRepo`, `memoryRepo.ts`, `repo.ts`
 - **Рассылки** (24): `.claimRecipients()`, `.finishRecipient()`, `.getBroadcast()`, `.insertMessage()`, `.insertRecipients()`, `.listActiveBroadcasts()`
 - **Шаблоны и медиа** (10): `SITE_SERVICES`, `adminAuth.ts`, `json()`, `repo.ts`, `requireAdmin()`, `server/catalog.ts`

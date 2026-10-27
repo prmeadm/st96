@@ -14,8 +14,6 @@ const CONTACTS = {
   telegram: '@studia96',
   telegramHref: 'https://t.me/studia96',
   botName: 'st96_leads_bot',
-  /** Публичный числовой id бота (из oauth.telegram.org/embed/st96_leads_bot) для Telegram.Login.auth */
-  botId: 8965262704,
 }
 
 export default function Footer() {

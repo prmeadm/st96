@@ -36,10 +36,25 @@ export function trackClicks(e: MouseEvent) {
   else if (/^https?:\/\/t\.me\//.test(href)) reachGoal('click_telegram')
 }
 
-export function trackLead(eventId: string, lang = 'ru') {
-  reachGoal('lead_submit', { page_language: lang })
+/** Resolves when active systems confirmed the events (callbacks) or after 500 ms, whichever is first. */
+export function trackLead(eventId: string, lang = 'ru'): Promise<void> {
+  const waits: Promise<void>[] = []
+  if (typeof window.ym === 'function') {
+    waits.push(new Promise<void>((resolve) => {
+      window.ym?.(COUNTER_ID, 'reachGoal', 'lead_submit', { page_language: lang }, () => resolve())
+    }))
+  }
   if (readConsent()?.analytics) {
     window.dataLayer = window.dataLayer || []
-    window.dataLayer.push({ event: 'generate_lead', event_id: eventId, page_language: lang })
+    const gtmLoaded = !!(window as unknown as { google_tag_manager?: unknown }).google_tag_manager
+    waits.push(new Promise<void>((resolve) => {
+      window.dataLayer!.push({
+        event: 'generate_lead', event_id: eventId, page_language: lang,
+        ...(gtmLoaded ? { eventCallback: () => resolve(), eventTimeout: 500 } : {}),
+      })
+      if (!gtmLoaded) resolve() // GTM not loaded: nobody to wait for
+    }))
   }
+  if (!waits.length) return Promise.resolve()
+  return Promise.race([Promise.all(waits).then(() => undefined), new Promise<void>((r) => setTimeout(r, 500))])
 }

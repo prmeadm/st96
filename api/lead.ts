@@ -1,9 +1,6 @@
 import { ingestLead } from '../crm/server/leads/ingest'
 import { clickablePhone, parseLead } from '../crm/server/leads/parse'
-import { supabaseRepo, tracedRepo } from '../crm/server/repo'
-import { Api } from 'grammy'
-import { botWroteNow, startFromSiteLogin } from '../crm/server/bot/bot'
-import { verifyTelegramLogin, withDeadline, type EdgeCtx } from '../crm/server/bot/telegramLogin'
+import { supabaseRepo } from '../crm/server/repo'
 import { issueSiteRef } from '../crm/server/bot/siteRef'
 
 export const config = { runtime: 'edge' }
@@ -31,14 +28,9 @@ type LeadPayload = {
   lang?: string
   pageUrl?: string
   ads?: { fbp?: string; fbc?: string; ttp?: string; ttclid?: string }
-  /** Объект Telegram Login Widget (data-request-access="write") как есть: id, first_name, last_name?, username?, photo_url?, auth_date, hash */
-  tg?: unknown
 }
 
-/** Сколько форма ждёт запуска воронки в Telegram; дольше воронка дорабатывает в фоне. */
-const TG_START_WAIT_MS = 4000
-
-export default async function handler(req: Request, ctx?: EdgeCtx) {
+export default async function handler(req: Request) {
   if (req.method !== 'POST') {
     return json({ error: 'Method not allowed' }, 405)
   }
@@ -51,9 +43,8 @@ export default async function handler(req: Request, ctx?: EdgeCtx) {
   }
 
   const name = body.name?.trim()
-  let contact = body.contact?.trim()
-  let fromTelegram = false // контакт взят из входа Telegram, это не телефон и не email
-  if (!name) {
+  const contact = body.contact?.trim()
+  if (!name || !contact) {
     return json({ error: 'Missing fields' }, 400)
   }
 
@@ -67,14 +58,6 @@ export default async function handler(req: Request, ctx?: EdgeCtx) {
     return json({ error: 'Server not configured' }, 500)
   }
 
-  // Без телефона/email заявка допустима только с проверенным входом через Telegram: контакт берём из него
-  if (!contact) {
-    const verified = body.tg ? await verifyTelegramLogin(body.tg, token).catch(() => null) : null
-    if (!verified) return json({ error: 'Missing fields' }, 400)
-    fromTelegram = true
-    contact = verified.username ? `@${verified.username}` : `tg:${verified.id}`
-  }
-
   const a = body.attribution ?? {}
   const t = (v?: string) => (typeof v === 'string' ? v.trim().slice(0, 100) : '')
   const utm = [a.utm_source, a.utm_medium, a.utm_campaign, a.utm_content, a.utm_term].map(t).filter(Boolean)
@@ -83,7 +66,7 @@ export default async function handler(req: Request, ctx?: EdgeCtx) {
   const text = [
     '\u{1F195} Новая заявка с сайта ST96',
     `Имя: ${name}`,
-    `Контакт: ${fromTelegram || contact.includes('@') ? contact : clickablePhone(contact)}`,
+    `Контакт: ${contact.includes('@') ? contact : clickablePhone(contact)}`,
     body.interest?.trim() && `Интересует: ${body.interest.trim()}`,
     body.message?.trim() && `Сообщение: ${body.message.trim()}`,
     `Язык сайта: ${body.lang === 'en' ? 'English (EN)' : 'Русский (RU)'}`,
@@ -110,8 +93,6 @@ export default async function handler(req: Request, ctx?: EdgeCtx) {
   }
 
   let saved = false
-  let clientId: string | null = null
-  let clientCreated = false
   /** Подписанный токен для /start site_ в ответе форме; только если эта заявка создала карточку */
   let ref: string | null = null
   if (body.internal !== true) {
@@ -133,8 +114,6 @@ export default async function handler(req: Request, ctx?: EdgeCtx) {
           utm: Object.keys(utmObj).length ? (utmObj as Record<string, string>) : null,
         })
         saved = true
-        clientId = ingested.clientId
-        clientCreated = ingested.clientCreated
         ref = await issueSiteRef(ingested, token).catch(() => null)
       }
     } catch (e) {
@@ -143,33 +122,9 @@ export default async function handler(req: Request, ctx?: EdgeCtx) {
   }
   if (!tgRes.ok && !saved) return json({ error: 'Telegram delivery failed' }, 502)
 
-  // Вход через Telegram в форме: бот пишет первым и запускает воронку сайта. Любая ошибка здесь заявку не роняет.
-  const tgStarted = body.tg ? await withDeadline(startTelegram(body.tg, token, Number(chatId), clientId, clientCreated, body.lang), TG_START_WAIT_MS, ctx) : false
+  if (body.internal !== true) await sendAdEvents(req, body, contact)
 
-  if (body.internal !== true) await sendAdEvents(req, body, fromTelegram ? '' : contact)
-
-  return json({ ok: true, ref, tgStarted }, 200)
-}
-
-async function startTelegram(raw: unknown, token: string, groupChatId: number, clientId: string | null, clientCreated: boolean, lang?: string): Promise<boolean> {
-  try {
-    const user = await verifyTelegramLogin(raw, token)
-    if (!user) {
-      console.warn('telegram login rejected: bad signature or expired')
-      return false
-    }
-    const url = process.env.SUPABASE_URL
-    const key = process.env.SUPABASE_SERVICE_ROLE_KEY
-    if (!url || !key) return false
-    const r = await startFromSiteLogin(new Api(token), tracedRepo(supabaseRepo(url, key)), Number.isFinite(groupChatId) ? groupChatId : null, user, {
-      clientId, clientCreated, lang: lang === 'en' ? 'en' : 'ru',
-    })
-    return botWroteNow(r)
-  } catch (e) {
-    // Например, человек не дал боту права писать (403 bot can't initiate conversation) или Telegram недоступен
-    console.error('telegram site start failed', e instanceof Error ? e.message : e)
-    return false
-  }
+  return json({ ok: true, ref }, 200)
 }
 
 function json(data: unknown, status: number) {

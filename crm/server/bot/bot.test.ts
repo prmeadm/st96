@@ -2,11 +2,10 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import type { Update } from 'grammy/types'
 import { memoryRepo } from '../memoryRepo'
-import { botWroteNow, createBot, SITE_START_LOCK_MS, startFromSiteLogin } from './bot'
+import { createBot, SITE_START_LOCK_MS } from './bot'
 import { issueSiteRef, signSiteRef, SITE_REF_TTL_S, verifySiteRef } from './siteRef'
 import { ingestLead } from '../leads/ingest'
 import { parseLead } from '../leads/parse'
-import { Api } from 'grammy'
 import { demoGraph } from '../funnels/demo'
 import { TRIGGER } from '../funnels/types'
 
@@ -373,104 +372,17 @@ test('нажатие кнопки воронки: кнопки ответов у
   assert.ok(calls.some((c) => c.method === 'answerCallbackQuery' && /администратор/.test(String(c.payload.text))))
 })
 
-function mockApi() {
-  const api = new Api('123:TEST')
-  const calls: { method: string; payload: Record<string, unknown> }[] = []
-  let seq = 500
-  api.config.use(async (_prev, method, payload) => {
-    calls.push({ method, payload: payload as Record<string, unknown> })
-    const result = method === 'createForumTopic' ? { message_thread_id: ++seq, name: 'x' } : method === 'sendMessage' || method === 'copyMessage' ? { message_id: ++seq } : true
-    return { ok: true, result } as never
-  })
-  return { api, calls }
-}
-const loginUser = { id: 555, first_name: 'Мария', username: 'maria_photo', auth_date: 1, hash: 'a'.repeat(64) }
-const login = (n: number) => ({ ...loginUser, hash: n.toString(16).padEnd(64, '0') })
-
-test('вход через Telegram в форме: бот пишет первым, карточка этой заявки привязана, воронка как у /start site_', async () => {
-  const { repo } = setup()
+test('повторный /start site_<токен> в течение 10 минут воронку не перезапускает, после окна начинает заново', async () => {
+  const { repo, send } = setup()
   publish(repo)
-  const lead = await repo.insertClient({ name: 'Анна', phone: '+375291112233', source: 'site' })
-  const { api, calls } = mockApi()
-  assert.equal(await startFromSiteLogin(api, repo, GROUP, login(1), { clientId: lead.id, clientCreated: true, lang: 'ru' }), 'started')
-  assert.equal(repo.clients.length, 1, 'дубль не создан')
-  assert.equal(repo.clients[0].tg_user_id, 555)
-  assert.equal(repo.runs.length, 1, 'воронка запущена')
-  assert.ok(calls.some((c) => c.method === 'sendMessage' && c.payload.chat_id === 555), 'сообщение ушло клиенту')
-})
-
-test('вход через Telegram без опубликованной воронки: бот всё равно пишет приветствие', async () => {
-  const { repo } = setup()
-  const { api, calls } = mockApi()
-  assert.equal(await startFromSiteLogin(api, repo, GROUP, login(2), { clientId: null, clientCreated: false }), 'started')
-  assert.equal(repo.clients.length, 1)
-  assert.equal(repo.clients[0].source, 'bot:site')
-  const toClient = calls.filter((c) => c.method === 'sendMessage' && c.payload.chat_id === 555)
-  assert.equal(toClient.length, 1)
-  assert.match(String(toClient[0]!.payload.text), /ST96/)
-})
-
-test('вход через Telegram: заявка попала в чужую карточку (найдена по телефону) — Telegram к ней не привязывается', async () => {
-  const { repo } = setup()
-  publish(repo)
-  const victim = await repo.insertClient({ name: 'Жертва', phone: '+375291112233', source: 'stand' })
-  const { api, calls } = mockApi()
-  assert.equal(await startFromSiteLogin(api, repo, GROUP, login(3), { clientId: victim.id, clientCreated: false }), 'started')
-  assert.equal(repo.clients.find((c) => c.id === victim.id)!.tg_user_id ?? null, null, 'чужая карточка без Telegram')
-  const own = repo.clients.find((c) => c.tg_user_id === 555)!
-  assert.notEqual(own.id, victim.id)
+  const lead = await repo.insertClient({ id: UID, name: 'Анна', phone: '+375291112233', source: 'site' })
+  const ref = await signSiteRef(lead.id, '123:TEST')
+  await send(msg(`/start site_${ref}`, START_ENT))
   assert.equal(repo.runs.length, 1)
-  assert.equal(repo.runs[0]!.client_id, own.id, 'воронку получил сам вошедший')
-  assert.ok(calls.some((c) => c.method === 'sendMessage' && c.payload.chat_id === 555))
-})
-
-test('повтор того же входа: воронка не перезапускается, диалог с сотрудником не сбрасывается', async () => {
-  const { repo } = setup()
-  publish(repo)
-  const { api, calls } = mockApi()
-  assert.equal(await startFromSiteLogin(api, repo, GROUP, login(4), { clientId: null, clientCreated: false }), 'started')
-  const sent = calls.length
-  assert.equal(await startFromSiteLogin(api, repo, GROUP, login(4), { clientId: null, clientCreated: false }), 'already')
-  assert.equal(repo.runs.length, 1)
-  assert.equal(calls.length, sent, 'повтор ничего не отправил')
-  // новый вход (другая подпись) сразу после старта: тоже не перезапуск
-  assert.equal(await startFromSiteLogin(api, repo, GROUP, login(5), { clientId: null, clientCreated: false }), 'already')
-  assert.equal(repo.runs.length, 1)
-  assert.equal(repo.runs[0]!.status === 'stopped', false)
-  // позже, когда сотрудник ведёт диалог: вход его не сбрасывает
+  await send(msg(`/start site_${ref}`, START_ENT))
+  assert.equal(repo.runs.length, 1, 'повтор не запускает вторую воронку')
+  assert.notEqual(repo.runs[0]!.status, 'stopped')
   repo.runStartedAt.set(repo.runs[0]!.id, new Date(Date.now() - SITE_START_LOCK_MS - 1000).toISOString())
-  const until = new Date(Date.now() + 3600_000).toISOString()
-  await repo.updateClient(repo.clients[0]!.id, { human_until: until })
-  assert.equal(await startFromSiteLogin(api, repo, GROUP, login(6), { clientId: null, clientCreated: false }), 'skipped')
-  assert.equal(repo.clients[0]!.human_until, until)
-  assert.equal(repo.runs.length, 1)
-})
-
-test('tgStarted только когда бот написал сейчас: повтор входа даёт редирект', () => {
-  assert.equal(botWroteNow('started'), true)
-  assert.equal(botWroteNow('already'), false)
-  assert.equal(botWroteNow('skipped'), false)
-})
-
-test('таймаут формы: вход уже запустил воронку, следом /start site_<ref> её не дублирует', async () => {
-  const { repo, send, calls } = setup()
-  publish(repo)
-  const lead = await repo.insertClient({ name: 'Анна', phone: '+375291112233', source: 'site' })
-  const { api } = mockApi()
-  await startFromSiteLogin(api, repo, GROUP, login(7), { clientId: lead.id, clientCreated: true })
-  const until = new Date(Date.now() + 3600_000).toISOString()
-  await repo.updateClient(lead.id, { human_until: until })
-  const before = calls.length
-  await send(msg(`/start site_${lead.id}`, START_ENT))
-  assert.equal(repo.runs.length, 1, 'вторая воронка не запущена')
-  assert.notEqual(repo.runs[0]!.status, 'stopped', 'первая не остановлена')
-  assert.equal(repo.clients.find((c) => c.id === lead.id)!.human_until, until, 'диалог с сотрудником не сброшен')
-  const replies = calls.slice(before).filter((c) => c.method === 'sendMessage' && c.payload.chat_id === 555)
-  assert.equal(replies.length, 1, 'человек получил ответ')
-  assert.match(String(replies[0]!.payload.text), /ST96/)
-  await repo.updateClient(lead.id, { human_until: null })
-  // через 10 минут явный /start site_ снова начинает с начала
-  repo.runStartedAt.set(repo.runs[0]!.id, new Date(Date.now() - SITE_START_LOCK_MS - 1000).toISOString())
-  await send(msg(`/start site_${lead.id}`, START_ENT))
+  await send(msg(`/start site_${ref}`, START_ENT))
   assert.equal(repo.runs.length, 2)
 })

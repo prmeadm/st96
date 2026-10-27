@@ -16,8 +16,8 @@
 - `crm/server/broadcasts.ts` — 15 узл.
 - `crm/admin/pages/BroadcastPage.tsx` — 6 узл.
 - `crm/server/broadcasts.test.ts` — 4 узл.
-- `api/broadcast.ts` — 3 узл.
 - `crm/admin/pages/BroadcastsPage.tsx` — 3 узл.
+- `api/broadcast.ts` — 3 узл.
 
 ## Главные узлы (больше всего связей)
 
@@ -25,14 +25,14 @@
 - `BroadcastPage()` (crm/admin/pages/BroadcastPage.tsx:L19)
 - `startBroadcast()` (crm/server/broadcasts.ts:L102)
 - `BroadcastRow` (crm/server/broadcasts.ts:L9)
-- `Segment` (crm/server/broadcasts.ts:L7)
 - `inAudience()` (crm/server/broadcasts.ts:L34)
-- `handler()` (api/broadcast.ts:L12)
 - `BroadcastsPage()` (crm/admin/pages/BroadcastsPage.tsx:L11)
+- `Segment` (crm/server/broadcasts.ts:L7)
+- `handler()` (api/broadcast.ts:L12)
 - `validateBroadcast()` (crm/server/broadcasts.ts:L44)
 - `AudienceClient` (crm/server/broadcasts.ts:L25)
-- `fromRow()` (crm/admin/pages/BroadcastPage.tsx:L16)
 - `BROADCAST_STATUS` (crm/server/broadcasts.ts:L27)
+- `fromRow()` (crm/admin/pages/BroadcastPage.tsx:L16)
 
 ## От чего зависит (вызовы в другие разделы)
 
