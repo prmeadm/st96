@@ -15,24 +15,24 @@
 
 - `crm/admin/types.ts` — 11 узл.
 - `crm/admin/auth.tsx` — 7 узл.
-- `crm/admin/ui/Seg.tsx` — 6 узл.
 - `crm/admin/ui/QuickNav.tsx` — 6 узл.
+- `crm/admin/ui/Seg.tsx` — 6 узл.
 - `crm/admin/AdminApp.tsx` — 5 узл.
 - `crm/admin/pages/FilterBar.tsx` — 5 узл.
 - `crm/admin/ui/Icon.tsx` — 4 узл.
-- `crm/admin/ui/SaveButton.tsx` — 3 узл.
-- `crm/admin/supabase.ts` — 3 узл.
 - `crm/admin/highlight.tsx` — 3 узл.
-- `crm/admin/ui/RowActions.tsx` — 2 узл.
-- `crm/admin/ui/BackLink.tsx` — 2 узл.
+- `crm/admin/supabase.ts` — 3 узл.
+- `crm/admin/ui/SaveButton.tsx` — 3 узл.
 - `crm/admin/api.ts` — 2 узл.
+- `crm/admin/ui/BackLink.tsx` — 2 узл.
+- `crm/admin/ui/RowActions.tsx` — 2 узл.
 - `crm/admin/main.tsx` — 1 узл.
 
 ## Главные узлы (больше всего связей)
 
 - `Icon()` (crm/admin/ui/Icon.tsx:L45)
-- `supabase` (crm/admin/supabase.ts:L4)
 - `fmtDate()` (crm/admin/types.ts:L65)
+- `supabase` (crm/admin/supabase.ts:L4)
 - `Shell()` (crm/admin/AdminApp.tsx:L47)
 - `callApi()` (crm/admin/api.ts:L4)
 - `RowActions()` (crm/admin/ui/RowActions.tsx:L5)

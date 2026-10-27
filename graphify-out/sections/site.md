@@ -15,51 +15,51 @@
 
 - `site/src/components/ui/AgentScene.tsx` — 16 узл.
 - `site/src/components/ui/SolutionScene.tsx` — 14 узл.
-- `shared/data/services.ts` — 9 узл.
 - `site/src/lib/attribution.ts` — 9 узл.
+- `shared/data/services.ts` — 9 узл.
 - `site/src/lib/i18n.ts` — 8 узл.
-- `site/src/lib/consent.ts` — 8 узл.
 - `site/src/data/home.ts` — 8 узл.
+- `site/src/lib/consent.ts` — 8 узл.
 - `site/src/lib/analytics.ts` — 7 узл.
 - `shared/ui/PhoneField.tsx` — 7 узл.
-- `site/src/data/solutionScenes.ts` — 6 узл.
 - `shared/data/privacy.ts` — 6 узл.
+- `site/src/data/solutionScenes.ts` — 6 узл.
 - `site/src/components/ui/Reveal.tsx` — 5 узл.
+- `site/src/components/sections/LeadCapture.tsx` — 5 узл.
 - `site/src/hooks/useSeo.ts` — 5 узл.
 - `site/src/lib/theme.ts` — 5 узл.
-- `site/src/components/sections/LeadCapture.tsx` — 5 узл.
-- `site/src/pages/Privacy.tsx` — 4 узл.
-- `site/src/data/aiServices.ts` — 4 узл.
-- `site/src/components/ui/MagneticButton.tsx` — 4 узл.
-- `shared/data/content.en.ts` — 4 узл.
 - `site/src/data/content.ts` — 4 узл.
-- `site/src/components/layout/Footer.tsx` — 3 узл.
+- `site/src/components/ui/MagneticButton.tsx` — 4 узл.
+- `site/src/data/aiServices.ts` — 4 узл.
+- `site/src/pages/Privacy.tsx` — 4 узл.
+- `shared/data/content.en.ts` — 4 узл.
 - `site/src/components/ui/KeywordOrbit.tsx` — 3 узл.
-- `site/src/components/sections/Advantages.tsx` — 3 узл.
-- `site/src/components/ui/SectionHeading.tsx` — 3 узл.
-- `site/src/components/ui/AnimatedCounter.tsx` — 3 узл.
-- `site/src/lib/internal.ts` — 3 узл.
-- `site/src/components/sections/Results.tsx` — 3 узл.
-- `site/src/components/ui/CookieBanner.tsx` — 3 узл.
-- `site/src/components/ui/RevealText.tsx` — 3 узл.
 - `site/src/components/sections/ProcessTabs.tsx` — 3 узл.
+- `site/src/lib/internal.ts` — 3 узл.
+- `site/src/components/ui/SectionHeading.tsx` — 3 узл.
+- `site/src/components/ui/CookieBanner.tsx` — 3 узл.
+- `site/src/components/sections/Advantages.tsx` — 3 узл.
+- `site/src/components/ui/RevealText.tsx` — 3 узл.
+- `site/src/components/sections/Results.tsx` — 3 узл.
+- `site/src/components/layout/Footer.tsx` — 3 узл.
 - `site/src/components/ui/HeroVideo.tsx` — 3 узл.
 - `site/src/components/ui/Marquee.tsx` — 3 узл.
-- `site/src/components/layout/Layout.tsx` — 2 узл.
-- `site/src/components/sections/AiServices.tsx` — 2 узл.
-- `site/src/components/ui/CustomCursor.tsx` — 2 узл.
-- `site/src/components/layout/Header.tsx` — 2 узл.
-- `site/src/pages/PrivacyEn.tsx` — 2 узл.
-- `site/src/components/ui/ThemeToggle.tsx` — 2 узл.
-- `site/src/components/sections/ServicesGrid.tsx` — 2 узл.
-- `site/src/pages/Home.tsx` — 2 узл.
-- `site/src/App.tsx` — 2 узл.
-- `site/src/components/sections/HomeHero.tsx` — 2 узл.
-- `site/src/components/ui/Aurora.tsx` — 2 узл.
-- `site/src/pages/PrivacyRoute.tsx` — 2 узл.
-- `site/src/components/sections/ServiceHero.tsx` — 2 узл.
+- `site/src/components/ui/AnimatedCounter.tsx` — 3 узл.
 - `site/src/pages/ServicePage.tsx` — 2 узл.
+- `site/src/components/layout/Header.tsx` — 2 узл.
+- `site/src/components/sections/ServiceHero.tsx` — 2 узл.
+- `site/src/components/ui/ThemeToggle.tsx` — 2 узл.
+- `site/src/components/layout/Layout.tsx` — 2 узл.
+- `site/src/components/sections/ServicesGrid.tsx` — 2 узл.
+- `site/src/components/ui/Aurora.tsx` — 2 узл.
+- `site/src/pages/Home.tsx` — 2 узл.
+- `site/src/pages/PrivacyEn.tsx` — 2 узл.
 - `site/src/data/ui.ts` — 2 узл.
+- `site/src/components/ui/CustomCursor.tsx` — 2 узл.
+- `site/src/components/sections/AiServices.tsx` — 2 узл.
+- `site/src/pages/PrivacyRoute.tsx` — 2 узл.
+- `site/src/components/sections/HomeHero.tsx` — 2 узл.
+- `site/src/App.tsx` — 2 узл.
 - `site/src/main.tsx` — 1 узл.
 
 ## Главные узлы (больше всего связей)
@@ -71,10 +71,10 @@
 - `Reveal()` (site/src/components/ui/Reveal.tsx:L13)
 - `reachGoal()` (site/src/lib/analytics.ts:L11)
 - `PhoneField()` (shared/ui/PhoneField.tsx:L27)
+- `ServicePage()` (site/src/pages/ServicePage.tsx:L12)
+- `MagneticButton()` (site/src/components/ui/MagneticButton.tsx:L18)
 - `useSeo()` (site/src/hooks/useSeo.ts:L28)
 - `Home()` (site/src/pages/Home.tsx:L11)
-- `MagneticButton()` (site/src/components/ui/MagneticButton.tsx:L18)
-- `ServicePage()` (site/src/pages/ServicePage.tsx:L12)
 - `getServices()` (site/src/data/content.ts:L14)
 
 ## Кто зависит от раздела (менять осторожно)

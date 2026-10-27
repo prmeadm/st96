@@ -27,12 +27,12 @@
 - `TemplateKind` (crm/server/templates.ts:L4)
 - `Editor()` (crm/admin/pages/TemplatesPage.tsx:L150)
 - `fillTemplate()` (crm/server/templates.ts:L29)
-- `CameraCapture()` (crm/admin/ui/CameraCapture.tsx:L12)
 - `TPL_KINDS` (crm/server/templates.ts:L20)
+- `CameraCapture()` (crm/admin/ui/CameraCapture.tsx:L12)
 - `handler()` (api/send-template.ts:L9)
-- `TPL_SERVICES` (crm/server/templates.ts:L25)
-- `TPL_GOALS` (crm/server/templates.ts:L22)
 - `TPL_VARS` (crm/server/templates.ts:L26)
+- `preview()` (crm/admin/pages/TemplatesPage.tsx:L13)
+- `TPL_SERVICES` (crm/server/templates.ts:L25)
 
 ## От чего зависит (вызовы в другие разделы)
 

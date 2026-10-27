@@ -23,8 +23,8 @@
 - `crm/server/booking/types.ts` — 5 узл.
 - `shared/data/serviceOptions.ts` — 4 узл.
 - `crm/server/booking/ics.ts` — 4 узл.
-- `api/booking.ts` — 3 узл.
 - `api/booking-admin.ts` — 3 узл.
+- `api/booking.ts` — 3 узл.
 - `shared/data/bookingGoals.ts` — 2 узл.
 - `crm/book/main.tsx` — 1 узл.
 
@@ -36,11 +36,11 @@
 - `BookingRow` (crm/server/booking/types.ts:L4)
 - `notifyClientDecision()` (crm/server/booking/notify.ts:L48)
 - `normalizeSchedule()` (crm/server/booking/schedule.ts:L72)
-- `handler()` (api/booking.ts:L15)
-- `decideBooking()` (crm/server/booking/service.ts:L174)
-- `handler()` (api/booking-admin.ts:L10)
-- `bookingUrl()` (crm/server/booking/schedule.ts:L179)
 - `addDays()` (crm/server/booking/schedule.ts:L44)
+- `handler()` (api/booking-admin.ts:L10)
+- `decideBooking()` (crm/server/booking/service.ts:L174)
+- `bookingUrl()` (crm/server/booking/schedule.ts:L179)
+- `handler()` (api/booking.ts:L15)
 - `whenLabel()` (crm/server/booking/schedule.ts:L171)
 
 ## От чего зависит (вызовы в другие разделы)

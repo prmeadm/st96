@@ -25,14 +25,14 @@
 - `BroadcastPage()` (crm/admin/pages/BroadcastPage.tsx:L19)
 - `startBroadcast()` (crm/server/broadcasts.ts:L102)
 - `BroadcastRow` (crm/server/broadcasts.ts:L9)
-- `inAudience()` (crm/server/broadcasts.ts:L34)
 - `Segment` (crm/server/broadcasts.ts:L7)
+- `inAudience()` (crm/server/broadcasts.ts:L34)
 - `handler()` (api/broadcast.ts:L12)
 - `BroadcastsPage()` (crm/admin/pages/BroadcastsPage.tsx:L11)
 - `validateBroadcast()` (crm/server/broadcasts.ts:L44)
 - `AudienceClient` (crm/server/broadcasts.ts:L25)
-- `BROADCAST_STATUS` (crm/server/broadcasts.ts:L27)
 - `fromRow()` (crm/admin/pages/BroadcastPage.tsx:L16)
+- `BROADCAST_STATUS` (crm/server/broadcasts.ts:L27)
 
 ## От чего зависит (вызовы в другие разделы)
 

@@ -45,9 +45,14 @@ export default function ProcessTabs({ service }: { service: ProcessData }) {
   useLayoutEffect(() => {
     const measure = () => setHeights(descRefs.current.slice(0, n).map((el) => el?.offsetHeight ?? 0))
     measure()
+    document.fonts?.ready.then(measure)
+    window.addEventListener('resize', measure)
     const ro = new ResizeObserver(measure)
     descRefs.current.slice(0, n).forEach((el) => el && ro.observe(el))
-    return () => ro.disconnect()
+    return () => {
+      ro.disconnect()
+      window.removeEventListener('resize', measure)
+    }
   }, [n, service.process])
 
   const running = auto && !reduced
@@ -97,8 +102,8 @@ export default function ProcessTabs({ service }: { service: ProcessData }) {
                   }}
                   aria-hidden={active !== i}
                 >
-                  <div ref={(el) => { descRefs.current[i] = el }}>
-                    <p className="mt-3 pl-9 text-paper-dim">{step.text}</p>
+                  <div ref={(el) => { descRefs.current[i] = el }} className="pt-3">
+                    <p className="pl-9 text-paper-dim">{step.text}</p>
                     <ul className="mt-3 space-y-2 pl-9 lg:hidden">
                       {step.points.map((p) => (
                         <li key={p} className="flex items-start gap-2 text-sm text-paper-dim">
