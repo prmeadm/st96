@@ -16,10 +16,10 @@
 - `crm/server/bot/bot.ts` — 14 узл.
 - `crm/server/bot/dialog.ts` — 13 узл.
 - `crm/server/bot/bot.test.ts` — 12 узл.
-- `crm/server/bot/siteRef.ts` — 11 узл.
 - `crm/server/bot/telegramLogin.ts` — 11 узл.
-- `crm/server/bot/telegramLogin.test.ts` — 4 узл.
+- `crm/server/bot/siteRef.ts` — 11 узл.
 - `api/telegram.ts` — 4 узл.
+- `crm/server/bot/telegramLogin.test.ts` — 4 узл.
 - `crm/server/bot/texts.ts` — 3 узл.
 
 ## Главные узлы (больше всего связей)
@@ -27,15 +27,15 @@
 - `createBot()` (crm/server/bot/bot.ts:L135)
 - `beginStart()` (crm/server/bot/bot.ts:L69)
 - `sendContent()` (crm/server/bot/dialog.ts:L167)
-- `handleTopicMessage()` (crm/server/bot/dialog.ts:L79)
-- `sendTemplate()` (crm/server/bot/dialog.ts:L233)
 - `startFromSiteLogin()` (crm/server/bot/bot.ts:L109)
+- `sendTemplate()` (crm/server/bot/dialog.ts:L233)
+- `handleTopicMessage()` (crm/server/bot/dialog.ts:L79)
 - `verifyTelegramLogin()` (crm/server/bot/telegramLogin.ts:L54)
 - `ensureClient()` (crm/server/bot/bot.ts:L32)
-- `relayToAdmins()` (crm/server/bot/dialog.ts:L51)
 - `ensureTopic()` (crm/server/bot/dialog.ts:L37)
+- `relayToAdmins()` (crm/server/bot/dialog.ts:L51)
 - `verifySiteRef()` (crm/server/bot/siteRef.ts:L41)
-- `issueSiteRef()` (crm/server/bot/siteRef.ts:L60)
+- `handler()` (api/telegram.ts:L10)
 
 ## От чего зависит (вызовы в другие разделы)
 

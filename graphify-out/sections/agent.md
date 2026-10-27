@@ -14,8 +14,8 @@
 ## Файлы
 
 - `crm/server/agent/engine.ts` — 22 узл.
-- `crm/server/agent/groupImport.ts` — 15 узл.
 - `crm/server/usage.ts` — 15 узл.
+- `crm/server/agent/groupImport.ts` — 15 узл.
 - `crm/server/agent/models.ts` — 14 узл.
 - `crm/server/agent/tools.ts` — 13 узл.
 - `crm/admin/pages/AnalyticsPage.tsx` — 12 узл.
@@ -26,31 +26,31 @@
 - `crm/admin/pages/AgentPage.tsx` — 6 узл.
 - `crm/server/agent/deps.ts` — 5 узл.
 - `crm/admin/pages/SettingsPage.tsx` — 4 узл.
-- `api/analytics-admin.ts` — 3 узл.
 - `api/status.ts` — 3 узл.
-- `crm/admin/pages/ModelPicker.tsx` — 3 узл.
-- `api/agent-model.ts` — 3 узл.
-- `api/agent.ts` — 3 узл.
 - `api/translate.ts` — 3 узл.
-- `crm/server/translate.test.ts` — 2 узл.
+- `api/agent-model.ts` — 3 узл.
+- `crm/admin/pages/ModelPicker.tsx` — 3 узл.
+- `api/analytics-admin.ts` — 3 узл.
+- `api/agent.ts` — 3 узл.
 - `crm/server/usage.test.ts` — 2 узл.
 - `crm/admin/ui/TranslateButton.tsx` — 2 узл.
+- `crm/server/translate.test.ts` — 2 узл.
 - `crm/server/agent/llm.test.ts` — 1 узл.
 
 ## Главные узлы (больше всего связей)
 
 - `AnalyticsPage()` (crm/admin/pages/AnalyticsPage.tsx:L22)
 - `LlmError` (crm/server/agent/llm.ts:L11)
-- `AgentTask` (crm/server/agent/types.ts:L7)
 - `handler()` (api/agent.ts:L11)
+- `AgentTask` (crm/server/agent/types.ts:L7)
 - `makePlan()` (crm/server/agent/engine.ts:L58)
+- `resolveLlm()` (crm/server/agent/deps.ts:L12)
+- `parseCustom()` (crm/server/agent/models.ts:L72)
+- `importSlice()` (crm/server/agent/groupImport.ts:L66)
 - `reload()` (crm/server/agent/engine.ts:L15)
 - `openAiCompatible()` (crm/server/agent/llm.ts:L27)
 - `agentDeps()` (crm/server/agent/deps.ts:L26)
-- `parseCustom()` (crm/server/agent/models.ts:L72)
-- `importSlice()` (crm/server/agent/groupImport.ts:L66)
-- `resolveLlm()` (crm/server/agent/deps.ts:L12)
-- `translateToEnglish()` (crm/server/translate.ts:L27)
+- `parseJson()` (crm/server/agent/llm.ts:L68)
 
 ## От чего зависит (вызовы в другие разделы)
 
