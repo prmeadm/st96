@@ -1,6 +1,9 @@
 import { ingestLead } from '../crm/server/leads/ingest'
 import { clickablePhone, parseLead } from '../crm/server/leads/parse'
-import { supabaseRepo } from '../crm/server/repo'
+import { supabaseRepo, tracedRepo } from '../crm/server/repo'
+import { Api } from 'grammy'
+import { botWroteNow, startFromSiteLogin } from '../crm/server/bot/bot'
+import { verifyTelegramLogin, withDeadline, type EdgeCtx } from '../crm/server/bot/telegramLogin'
 
 export const config = { runtime: 'edge' }
 
@@ -27,9 +30,14 @@ type LeadPayload = {
   lang?: string
   pageUrl?: string
   ads?: { fbp?: string; fbc?: string; ttp?: string; ttclid?: string }
+  /** Объект Telegram Login Widget (data-request-access="write") как есть: id, first_name, last_name?, username?, photo_url?, auth_date, hash */
+  tg?: unknown
 }
 
-export default async function handler(req: Request) {
+/** Сколько форма ждёт запуска воронки в Telegram; дольше воронка дорабатывает в фоне. */
+const TG_START_WAIT_MS = 4000
+
+export default async function handler(req: Request, ctx?: EdgeCtx) {
   if (req.method !== 'POST') {
     return json({ error: 'Method not allowed' }, 405)
   }
@@ -93,6 +101,7 @@ export default async function handler(req: Request) {
 
   let saved = false
   let ref: string | null = null
+  let clientCreated = false
   if (body.internal !== true) {
     try {
       const url = process.env.SUPABASE_URL
@@ -113,6 +122,7 @@ export default async function handler(req: Request) {
         })
         saved = true
         ref = ingested.clientId
+        clientCreated = ingested.clientCreated
       }
     } catch (e) {
       console.error('lead db save failed', e instanceof Error ? e.message : e)
@@ -120,9 +130,33 @@ export default async function handler(req: Request) {
   }
   if (!tgRes.ok && !saved) return json({ error: 'Telegram delivery failed' }, 502)
 
+  // Вход через Telegram в форме: бот пишет первым и запускает воронку сайта. Любая ошибка здесь заявку не роняет.
+  const tgStarted = body.tg ? await withDeadline(startTelegram(body.tg, token, Number(chatId), ref, clientCreated, body.lang), TG_START_WAIT_MS, ctx) : false
+
   if (body.internal !== true) await sendAdEvents(req, body, contact)
 
-  return json({ ok: true, ref }, 200)
+  return json({ ok: true, ref, tgStarted }, 200)
+}
+
+async function startTelegram(raw: unknown, token: string, groupChatId: number, ref: string | null, clientCreated: boolean, lang?: string): Promise<boolean> {
+  try {
+    const user = await verifyTelegramLogin(raw, token)
+    if (!user) {
+      console.warn('telegram login rejected: bad signature or expired')
+      return false
+    }
+    const url = process.env.SUPABASE_URL
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+    if (!url || !key) return false
+    const r = await startFromSiteLogin(new Api(token), tracedRepo(supabaseRepo(url, key)), Number.isFinite(groupChatId) ? groupChatId : null, user, {
+      clientId: ref, clientCreated, lang: lang === 'en' ? 'en' : 'ru',
+    })
+    return botWroteNow(r)
+  } catch (e) {
+    // Например, человек не дал боту права писать (403 bot can't initiate conversation) или Telegram недоступен
+    console.error('telegram site start failed', e instanceof Error ? e.message : e)
+    return false
+  }
 }
 
 function json(data: unknown, status: number) {

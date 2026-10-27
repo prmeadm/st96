@@ -8,6 +8,8 @@ import { telegramOut } from './telegramOut'
 import { notifyClientDecision } from '../booking/notify'
 import { decideBooking, loadDirectAdmins } from '../booking/service'
 import { T, type Lang } from './texts'
+import type { TelegramLoginData } from './telegramLogin'
+import type { Api } from 'grammy'
 
 const ACK_EVERY_MS = 12 * 3600 * 1000
 
@@ -48,6 +50,75 @@ export async function ensureClient(repo: Repo, from: From, source?: string): Pro
   if (!client.name && fullName(from)) patch.name = fullName(from)
   await repo.updateClient(client.id, patch)
   return { client: { ...client, ...patch }, isNew, prevSeen }
+}
+
+/** Окно, в котором повторный старт с сайта (повтор входа, /start site_ после таймаута формы) воронку не перезапускает. */
+export const SITE_START_LOCK_MS = 10 * 60 * 1000
+
+export type StartGuard =
+  /** вход через Telegram на сайте: не трогаем диалог с человеком и идущую воронку, не повторяем недавний старт */
+  | 'login'
+  /** /start site_<id>: не перезапускаем воронку, если она стартовала только что (например, уже запущена входом на сайте) */
+  | 'link'
+
+/**
+ * Общий вход в стартовую воронку: /start в боте и вход через Telegram в форме сайта.
+ * Привязка к клиенту из заявки, клиент, сброс диалога с человеком и прежней воронки, запуск воронки по payload.
+ */
+export async function beginStart(
+  repo: Repo, env: Env, from: From,
+  opts: { payload?: string; leadRef?: string; guard?: StartGuard; logIn?: { chatId: number; text: string; messageId: number | null } },
+): Promise<{ client: ClientRow; hasFunnel: boolean; started: boolean; skipped?: 'muted' | 'active' | 'recent' }> {
+  if (opts.leadRef) await linkLeadClient(repo, from, opts.leadRef)
+  const { client } = await ensureClient(repo, from, opts.payload ? `bot:${opts.payload}` : 'bot')
+  if (opts.logIn) await repo.insertMessage({ client_id: client.id, direction: 'in', kind: 'text', text: opts.logIn.text, tg_chat_id: opts.logIn.chatId, tg_message_id: opts.logIn.messageId })
+  const muted = !!client.human_until && Date.parse(client.human_until) > Date.now()
+  if (opts.guard) {
+    const last = await repo.lastRunStartedAt(client.id)
+    if (last && Date.now() - Date.parse(last) < SITE_START_LOCK_MS) return { client, hasFunnel: true, started: false, skipped: 'recent' }
+  }
+  const active = await repo.findActiveRun(client.id)
+  if (opts.guard === 'login') {
+    if (muted) return { client, hasFunnel: true, started: false, skipped: 'muted' }
+    if (active) return { client, hasFunnel: true, started: false, skipped: 'active' }
+  }
+  // Явный /start начинает всё заново: диалог у человека и прежняя воронка закрываются
+  if (muted) await repo.updateClient(client.id, { human_until: null })
+  if (active) await repo.updateRun(active.id, { status: 'stopped', finished_at: new Date().toISOString() })
+  const funnel = pickFunnel(await repo.listPublishedFunnels(), { kind: 'start', payload: opts.payload })
+  // Согласие на рассылки клиент уже дал в форме заявки на сайте, отдельный запрос в боте не нужен
+  const started = funnel ? (await startFunnel(env, funnel, { ...client, human_until: null })) !== null : false
+  return { client: { ...client, human_until: null }, hasFunnel: !!funnel, started }
+}
+
+/** tgStarted для формы: только если бот написал сейчас. При 'already' сообщение могло и не дойти, форма делает редирект. */
+export const botWroteNow = (r: 'started' | 'already' | 'skipped') => r === 'started'
+
+/** Ключ одноразового входа в processed_updates: отрицательный (у апдейтов Telegram ключи положительные), 52 бита подписи. */
+export const loginClaimKey = (hash: string) => -parseInt(hash.slice(0, 13), 16)
+
+/**
+ * Вход через Telegram Login Widget в форме заявки (data-request-access="write"): бот пишет первым
+ * и запускает ту же воронку, что /start site_<clientId>. Данные должны быть уже проверены verifyTelegramLogin.
+ * Привязка к карточке заявки только если карточку создала эта заявка (clientCreated): заявка, найденная
+ * по чужому телефону или нику, не должна получить Telegram того, кто вошёл.
+ *   started — бот написал сейчас; already — этот вход уже обработан или старт был только что (бот уже писал);
+ *   skipped — у человека идёт диалог с сотрудником или другая воронка, их не трогаем.
+ */
+export async function startFromSiteLogin(
+  api: Api, repo: Repo, groupChatId: number | null, user: TelegramLoginData,
+  opts: { clientId: string | null; clientCreated: boolean; lang?: Lang },
+): Promise<'started' | 'already' | 'skipped'> {
+  if (!(await repo.claimUpdate(loginClaimKey(user.hash)))) return 'already'
+  const from: From = { id: user.id, is_bot: false, first_name: user.first_name ?? '', last_name: user.last_name, username: user.username, language_code: opts.lang ?? 'ru' }
+  const env: Env = { repo, out: telegramOut(api, repo, groupChatId) }
+  const leadRef = opts.clientCreated && opts.clientId ? opts.clientId : undefined
+  const r = await beginStart(repo, env, from, { payload: 'site', leadRef, guard: 'login' })
+  if (r.skipped) return r.skipped === 'recent' ? 'already' : 'skipped'
+  if (r.started) return 'started'
+  // Воронки нет (или она одноразовая и уже пройдена): человек всё равно ждёт сообщения от бота
+  await api.sendMessage(user.id, T[r.client.language].welcome, { link_preview_options: { is_disabled: true } })
+  return 'started'
 }
 
 function messageKind(m: NonNullable<Context['message']>): MessageInsert['kind'] {
@@ -114,21 +185,11 @@ export function createBot(token: string, repo: Repo, opts: { groupChatId: number
     }
     const leadRef = rawPayload?.match(/^site_([A-Za-z0-9-]{1,40})$/)?.[1]
     const payload = leadRef ? 'site' : rawPayload
-    if (leadRef) await linkLeadClient(repo, ctx.from, leadRef)
-    const { client } = await ensureClient(repo, ctx.from, payload ? `bot:${payload}` : 'bot')
-    const t = T[client.language]
-    await repo.insertMessage({ client_id: client.id, direction: 'in', kind: 'text', text: ctx.message?.text ?? '/start', tg_chat_id: ctx.chat.id, tg_message_id: ctx.message?.message_id ?? null })
-    // Явный /start начинает всё заново: диалог у человека и прежняя воронка закрываются
-    if (isMuted(client)) await repo.updateClient(client.id, { human_until: null })
-    const active = await repo.findActiveRun(client.id)
-    if (active) await repo.updateRun(active.id, { status: 'stopped', finished_at: new Date().toISOString() })
-    const funnel = pickFunnel(await repo.listPublishedFunnels(), { kind: 'start', payload })
-    if (funnel) {
-      // Согласие на рассылки клиент уже дал в форме заявки на сайте, отдельный запрос в боте не нужен
-      await startFunnel(envFor(ctx.api), funnel, { ...client, human_until: null })
-    } else {
-      await ctx.reply(t.welcome, { link_preview_options: { is_disabled: true } })
-    }
+    const { client, hasFunnel, skipped } = await beginStart(repo, envFor(ctx.api), ctx.from, {
+      payload, leadRef, guard: leadRef ? 'link' : undefined, logIn: { chatId: ctx.chat.id, text: ctx.message?.text ?? '/start', messageId: ctx.message?.message_id ?? null },
+    })
+    // Воронки нет или она только что запущена входом на сайте (не перезапускаем): человек всё равно получает ответ
+    if (!hasFunnel || skipped) await ctx.reply(T[client.language].welcome, { link_preview_options: { is_disabled: true } })
   })
 
   // Кнопки быстрых ответов из воронок: fb:<запуск>:<кнопка>[:<блок>]

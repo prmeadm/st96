@@ -15,17 +15,17 @@
 
 - `crm/admin/types.ts` — 11 узл.
 - `crm/admin/auth.tsx` — 7 узл.
-- `crm/admin/ui/QuickNav.tsx` — 6 узл.
 - `crm/admin/ui/Seg.tsx` — 6 узл.
-- `crm/admin/pages/FilterBar.tsx` — 5 узл.
+- `crm/admin/ui/QuickNav.tsx` — 6 узл.
 - `crm/admin/AdminApp.tsx` — 5 узл.
+- `crm/admin/pages/FilterBar.tsx` — 5 узл.
 - `crm/admin/ui/Icon.tsx` — 4 узл.
-- `crm/admin/ui/SaveButton.tsx` — 3 узл.
 - `crm/admin/highlight.tsx` — 3 узл.
 - `crm/admin/supabase.ts` — 3 узл.
-- `crm/admin/ui/RowActions.tsx` — 2 узл.
-- `crm/admin/ui/BackLink.tsx` — 2 узл.
+- `crm/admin/ui/SaveButton.tsx` — 3 узл.
 - `crm/admin/api.ts` — 2 узл.
+- `crm/admin/ui/BackLink.tsx` — 2 узл.
+- `crm/admin/ui/RowActions.tsx` — 2 узл.
 - `crm/admin/main.tsx` — 1 узл.
 
 ## Главные узлы (больше всего связей)
@@ -40,8 +40,8 @@
 - `BackLink()` (crm/admin/ui/BackLink.tsx:L6)
 - `FilterBar()` (crm/admin/pages/FilterBar.tsx:L12)
 - `Seg()` (crm/admin/ui/Seg.tsx:L6)
-- `SERVICES` (crm/admin/types.ts:L55)
 - `pickKind()` (crm/admin/ui/Seg.tsx:L31)
+- `SERVICES` (crm/admin/types.ts:L55)
 
 ## От чего зависит (вызовы в другие разделы)
 

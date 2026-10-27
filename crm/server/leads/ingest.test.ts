@@ -20,6 +20,8 @@ test('заявка создаёт клиента и заявку, повтор �
   assert.equal(repo.clients.length, 1)
   assert.equal(repo.leads.length, 2)
   assert.equal(a.clientId, b.clientId)
+  assert.equal(a.clientCreated, true, 'первая заявка создала карточку')
+  assert.equal(b.clientCreated, false, 'вторая нашла чужую по телефону: для входа через Telegram привязывать нельзя')
   assert.equal(repo.clients[0].tg_username, 'Alex_Balashova')
   assert.equal(repo.leads[0].source, 'stand_form')
   assert.equal(repo.leads[0].service_key, 'production')

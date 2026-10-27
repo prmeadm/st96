@@ -8,6 +8,8 @@ import type { BookingInsert, BookingRow } from './booking/types'
 
 export type MemoryRepo = Repo & {
   clients: ClientRow[]
+  /** started_at запусков воронок (в RunRow этого поля нет) */
+  runStartedAt: Map<string, string>
   leads: (LeadInsert & { id: string; interests?: string[] })[]
   notes: NoteInsert[]
   messages: MessageInsert[]
@@ -34,7 +36,7 @@ export function memoryRepo(): MemoryRepo {
   const id = (p: string) => `${p}${++seq}`
   const seen = new Set<number>()
   const r: MemoryRepo = {
-    clients: [], leads: [], notes: [], messages: [], funnels: [], runs: [], events: [], tags: new Map(), templates: [], templateEvents: [], tgLinks: new Map(), llmUsage: [], broadcasts: [], agentTasks: [], settings: new Map(), bookings: [], clock: () => new Date(), recipients: [], jobs: [],
+    clients: [], leads: [], notes: [], messages: [], funnels: [], runs: [], events: [], tags: new Map(), templates: [], templateEvents: [], tgLinks: new Map(), llmUsage: [], broadcasts: [], agentTasks: [], settings: new Map(), bookings: [], clock: () => new Date(), recipients: [], jobs: [], runStartedAt: new Map(),
     async claimUpdate(u) { if (seen.has(u)) return false; seen.add(u); return true },
     async findClient({ tgUserId, phone, username, topicId }) {
       if (topicId) return r.clients.find((c) => c.admin_topic_id === topicId) ?? null
@@ -88,10 +90,15 @@ export function memoryRepo(): MemoryRepo {
     async findActiveRun(cid) { return [...r.runs].reverse().find((x) => x.client_id === cid && (x.status === 'running' || x.status === 'waiting')) ?? null },
     async insertRun(row) {
       const run: RunRow = { id: crypto.randomUUID(), status: 'running', wake_at: null, ...row }
+      r.runStartedAt.set(run.id, r.clock().toISOString())
       r.runs.push(run)
       return run
     },
     async updateRun(rid, patch) { Object.assign(r.runs.find((x) => x.id === rid)!, patch) },
+    async lastRunStartedAt(cid) {
+      const last = [...r.runs].reverse().find((x) => x.client_id === cid)
+      return last ? r.runStartedAt.get(last.id) ?? null : null
+    },
     async hasRun(cid, fid) { return r.runs.some((x) => x.client_id === cid && x.funnel_id === fid) },
     async insertEvent(e) { r.events.push(e) },
     async addTag(cid, name) { (r.tags.get(cid) ?? r.tags.set(cid, new Set()).get(cid)!).add(name) },

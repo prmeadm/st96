@@ -99,6 +99,8 @@ export interface Repo {
   getFunnel(id: string): Promise<Funnel | null>
   getRun(id: string): Promise<RunRow | null>
   findActiveRun(clientId: string): Promise<RunRow | null>
+  /** Время старта последнего запуска воронки клиента (любой статус) */
+  lastRunStartedAt(clientId: string): Promise<string | null>
   insertRun(r: { funnel_id: string; client_id: string; version: number; current_node: string | null; vars: Record<string, unknown> }): Promise<RunRow>
   updateRun(id: string, patch: Partial<Pick<RunRow, 'current_node' | 'status' | 'vars' | 'wake_at'>> & { finished_at?: string | null }): Promise<void>
   hasRun(clientId: string, funnelId: string): Promise<boolean>
@@ -266,6 +268,10 @@ export function supabaseRepo(url: string, key: string): Repo {
     },
     async updateRun(id, patch) {
       ok(await db.from('funnel_runs').update(patch).eq('id', id), 'updateRun')
+    },
+    async lastRunStartedAt(clientId) {
+      const r = ok(await db.from('funnel_runs').select('started_at').eq('client_id', clientId).order('started_at', { ascending: false }).limit(1).maybeSingle(), 'lastRunStartedAt') as { started_at: string } | null
+      return r?.started_at ?? null
     },
     async hasRun(clientId, funnelId) {
       const { count, error } = await db.from('funnel_runs').select('id', { count: 'exact', head: true }).eq('client_id', clientId).eq('funnel_id', funnelId)

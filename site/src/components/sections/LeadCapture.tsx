@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { ArrowUpRight, Check, Mail, Phone, Send, ShieldCheck, Timer } from 'lucide-react'
@@ -23,6 +23,16 @@ type Props = {
 
 const trustIcons = [Timer, ShieldCheck]
 
+type TgUser = {
+  id: number
+  first_name: string
+  last_name?: string
+  username?: string
+  photo_url?: string
+  auth_date: number
+  hash: string
+}
+
 export default function LeadCapture({ service, title, text }: Props) {
   const lang = useLang()
   const l = useUi().lead
@@ -39,8 +49,54 @@ export default function LeadCapture({ service, title, text }: Props) {
   const [redirectIn, setRedirectIn] = useState<number | null>(null) // секунды до автоперехода к боту; null = не переходить
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [tg, setTg] = useState<TgUser | null>(null)
+  const [tgStarted, setTgStarted] = useState(false)
+  const [tgWanted, setTgWanted] = useState(false) // виджет грузим лениво: форма на экране или первый фокус
+  const [tgFailed, setTgFailed] = useState(false)
+  const formRef = useRef<HTMLDivElement>(null)
+  const tgBoxRef = useRef<HTMLDivElement>(null)
 
-  const botUrl = `https://t.me/${CONTACTS.botName}?start=${tgRef ? `site_${tgRef}` : 'site'}`
+  useEffect(() => {
+    const el = formRef.current
+    if (!el || tgWanted) return
+    if (!('IntersectionObserver' in window)) { setTgWanted(true); return }
+    const io = new IntersectionObserver((entries) => {
+      if (entries.some((en) => en.isIntersecting)) { setTgWanted(true); io.disconnect() }
+    }, { rootMargin: '200px' })
+    io.observe(el)
+    return () => io.disconnect()
+  }, [tgWanted])
+
+  useEffect(() => {
+    const box = tgBoxRef.current
+    if (!tgWanted || tg || status !== 'idle' || !box) return
+    const w = window as unknown as Record<string, unknown>
+    w.st96TgAuth = (u: TgUser) => setTg(u)
+    const s = document.createElement('script')
+    s.async = true
+    s.src = 'https://telegram.org/js/telegram-widget.js?22'
+    s.setAttribute('data-telegram-login', CONTACTS.botName)
+    s.setAttribute('data-size', 'large')
+    s.setAttribute('data-request-access', 'write')
+    s.setAttribute('data-onauth', 'st96TgAuth(user)')
+    s.onerror = () => setTgFailed(true)
+    let timer: ReturnType<typeof setTimeout> | undefined
+    s.onload = () => {
+      timer = setTimeout(() => {
+        if (!box.querySelector('iframe')) setTgFailed(true)
+      }, 5000)
+    }
+    box.appendChild(s)
+    return () => {
+      if (timer) clearTimeout(timer)
+      delete w.st96TgAuth
+      box.innerHTML = ''
+    }
+  }, [tgWanted, tg, status])
+
+  const botUrl = tgStarted
+    ? `https://t.me/${CONTACTS.botName}`
+    : `https://t.me/${CONTACTS.botName}?start=${tgRef ? `site_${tgRef}` : 'site'}`
   // После отправки заявки через 3 секунды открываем бота, чтобы клиент сразу запустил диалог и подтвердил связь
   useEffect(() => {
     if (status !== 'sent' || redirectIn === null) return
@@ -97,14 +153,17 @@ export default function LeadCapture({ service, title, text }: Props) {
           ads: readAdIdentifiers(),
           pageUrl: location.href,
           internal: isInternal(),
+          ...(tg ? { tg } : {}),
         }),
       })
       if (!res.ok) throw new Error('request failed')
-      const ok = (await res.json().catch(() => null)) as { ref?: string | null } | null
+      const ok = (await res.json().catch(() => null)) as { ref?: string | null; tgStarted?: boolean } | null
+      const started = ok?.tgStarted === true
+      setTgStarted(started)
       setTgRef(typeof ok?.ref === 'string' && /^[0-9a-f-]{36}$/.test(ok.ref) ? ok.ref : null)
       trackLead(eventId, lang)
       setStatus('sent')
-      setRedirectIn(3)
+      setRedirectIn(started ? null : 3)
     } catch {
       setError(l.errSend)
     } finally {
@@ -162,7 +221,7 @@ export default function LeadCapture({ service, title, text }: Props) {
           </Reveal>
 
           <Reveal delay={0.1} className="min-w-0">
-            <div className="relative overflow-hidden rounded-2xl border border-ink-line bg-ink-soft p-6 sm:p-10">
+            <div ref={formRef} onFocusCapture={() => setTgWanted(true)} className="relative overflow-hidden rounded-2xl border border-ink-line bg-ink-soft p-6 sm:p-10">
               <div
                 className="pointer-events-none absolute -top-24 -right-24 h-64 w-64 rounded-full opacity-20 blur-[90px]"
                 style={{ background: accentSolid }}
@@ -268,6 +327,24 @@ export default function LeadCapture({ service, title, text }: Props) {
                       </span>
                     </label>
 
+                    {!tgFailed && (
+                      <div className="flex flex-col gap-2">
+                        {tg ? (
+                          <p className="text-sm text-paper-dim" role="status" aria-live="polite">
+                            {l.tgAs} {tg.first_name}{tg.username ? ` (@${tg.username})` : ''}{' '}
+                            <button type="button" onClick={() => setTg(null)} className="underline underline-offset-2 hover:text-paper">
+                              {l.tgRemove}
+                            </button>
+                          </p>
+                        ) : (
+                          <>
+                            <div ref={tgBoxRef} className="min-h-[40px]" />
+                            <p className="text-xs text-paper-dim">{l.tgLoginHint}</p>
+                          </>
+                        )}
+                      </div>
+                    )}
+
                     {error && <p className="text-sm text-pink">{error}</p>}
 
                     <MagneticButton
@@ -301,7 +378,7 @@ export default function LeadCapture({ service, title, text }: Props) {
                     <p className="max-w-xs text-paper-dim">
                       {l.sentText}
                     </p>
-                    <p className="max-w-xs text-sm text-paper-dim">{l.tgHint}</p>
+                    <p className="max-w-xs text-sm text-paper-dim" role="status" aria-live="polite">{tgStarted ? l.tgStarted : l.tgHint}</p>
                     <a
                       href={botUrl}
                       target="_blank"
@@ -310,7 +387,7 @@ export default function LeadCapture({ service, title, text }: Props) {
                       className="inline-flex items-center gap-2 rounded-full bg-acid px-6 py-3.5 text-sm font-semibold text-ink transition-transform hover:scale-[1.03]"
                     >
                       <Send className="h-4 w-4" />
-                      {l.openTg}
+                      {tgStarted ? l.openChat : l.openTg}
                     </a>
                     {redirectIn !== null && (
                       <p className="text-sm text-paper-dim" role="status" aria-live="polite">
@@ -321,7 +398,7 @@ export default function LeadCapture({ service, title, text }: Props) {
                       </p>
                     )}
                     <button
-                      onClick={() => { setRedirectIn(null); setStatus('idle') }}
+                      onClick={() => { setRedirectIn(null); setTgStarted(false); setStatus('idle') }}
                       className="text-xs text-paper-dim underline underline-offset-4"
                     >
                       {l.again}

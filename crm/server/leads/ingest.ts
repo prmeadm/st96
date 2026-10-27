@@ -17,15 +17,21 @@ const originSource = (p: ParsedLead): LeadInsert['source'] => (p.origin === 'sta
 
 /** Находит клиента по телефону, затем по нику; иначе создаёт. Недостающие поля дополняет. */
 export async function upsertClientFromLead(repo: Repo, p: ParsedLead, sourceTag: string): Promise<ClientRow | null> {
+  return (await upsertClientFromLeadEx(repo, p, sourceTag)).client
+}
+
+/** То же, плюс created: карточка создана этой заявкой (а не найдена по телефону или нику). */
+async function upsertClientFromLeadEx(repo: Repo, p: ParsedLead, sourceTag: string): Promise<{ client: ClientRow | null; created: boolean }> {
   let client: ClientRow | null = null
   if (p.phone) client = await repo.findClient({ phone: p.phone })
   if (!client && p.telegram) client = await repo.findClient({ username: p.telegram })
   if (!client) {
-    if (!p.phone && !p.telegram && !p.email) return null
-    return repo.insertClient({
+    if (!p.phone && !p.telegram && !p.email) return { client: null, created: false }
+    const created = await repo.insertClient({
       name: p.name || null, phone: p.phone || null, tg_username: p.telegram ? stripAt(p.telegram) : null,
       email: p.email || null, company: p.company || null, language: p.lang === 'en' ? 'en' : 'ru', source: sourceTag,
     })
+    return { client: created, created: true }
   }
   const patch: Partial<ClientRow> = {}
   if (!client.name && p.name) patch.name = p.name
@@ -43,7 +49,7 @@ export async function upsertClientFromLead(repo: Repo, p: ParsedLead, sourceTag:
     await repo.updateClient(client.id, patch)
     client = { ...client, ...patch }
   }
-  return client
+  return { client, created: false }
 }
 
 export async function ingestLead(repo: Repo, p: ParsedLead, ctx: IngestCtx = {}) {
@@ -51,9 +57,9 @@ export async function ingestLead(repo: Repo, p: ParsedLead, ctx: IngestCtx = {})
   // Повтор того же сообщения группы не создаёт вторую заявку
   if (ctx.tgChatId && ctx.tgMessageId) {
     const ex = await repo.findLeadByMessage(ctx.tgChatId, ctx.tgMessageId)
-    if (ex) return { leadId: ex.id, clientId: ex.client_id, created: false }
+    if (ex) return { leadId: ex.id, clientId: ex.client_id, created: false, clientCreated: false }
   }
-  const client = await upsertClientFromLead(repo, p, p.origin === 'unknown' ? source : p.origin)
+  const { client, created: clientCreated } = await upsertClientFromLeadEx(repo, p, p.origin === 'unknown' ? source : p.origin)
   if (ctx.consent && client && !client.consent_at && !client.opted_out_at) await repo.updateClient(client.id, { consent_at: new Date().toISOString() })
   const lead = await repo.insertLead({
     client_id: client?.id ?? null, source, service_key: p.service, title: p.title || null, topic: p.topic || null,
@@ -62,7 +68,7 @@ export async function ingestLead(repo: Repo, p: ParsedLead, ctx: IngestCtx = {})
     utm: ctx.utm ?? null, warnings: p.warnings, raw_text: ctx.rawText ?? null,
     tg_chat_id: ctx.tgChatId ?? null, tg_message_id: ctx.tgMessageId ?? null,
   })
-  return { leadId: lead.id, clientId: lead.client_id, created: lead.created }
+  return { leadId: lead.id, clientId: lead.client_id, created: lead.created, clientCreated: clientCreated && lead.created }
 }
 
 export type GroupMessage = {
