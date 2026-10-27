@@ -27,15 +27,15 @@
 - `createBot()` (crm/server/bot/bot.ts:L135)
 - `beginStart()` (crm/server/bot/bot.ts:L69)
 - `sendContent()` (crm/server/bot/dialog.ts:L167)
+- `handleTopicMessage()` (crm/server/bot/dialog.ts:L79)
 - `sendTemplate()` (crm/server/bot/dialog.ts:L233)
 - `startFromSiteLogin()` (crm/server/bot/bot.ts:L109)
-- `handleTopicMessage()` (crm/server/bot/dialog.ts:L79)
 - `verifyTelegramLogin()` (crm/server/bot/telegramLogin.ts:L54)
 - `ensureClient()` (crm/server/bot/bot.ts:L32)
+- `relayToAdmins()` (crm/server/bot/dialog.ts:L51)
 - `ensureTopic()` (crm/server/bot/dialog.ts:L37)
 - `verifySiteRef()` (crm/server/bot/siteRef.ts:L41)
-- `relayToAdmins()` (crm/server/bot/dialog.ts:L51)
-- `signSiteRef()` (crm/server/bot/siteRef.ts:L27)
+- `issueSiteRef()` (crm/server/bot/siteRef.ts:L60)
 
 ## От чего зависит (вызовы в другие разделы)
 
@@ -47,7 +47,7 @@
 
 ## Кто зависит от раздела (менять осторожно)
 
-- **Заявки и клиенты** (14): `EdgeCtx`, `bot.ts`, `botWroteNow()`, `issueSiteRef()`, `siteRef.ts`, `startFromSiteLogin()`
+- **Заявки и клиенты** (15): `EdgeCtx`, `bot.ts`, `botWroteNow()`, `issueSiteRef()`, `siteRef.ts`, `startFromSiteLogin()`
 - **Воронки** (5): `dialog.ts`, `notifyTopic()`, `sendContent()`
 - **Шаблоны и медиа** (3): `dialog.ts`, `sendTemplate()`
 - **Рассылки** (3): `dialog.ts`, `sendContent()`

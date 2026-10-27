@@ -101,3 +101,14 @@ test('заявка с сайта (consent) даёт клиенту соглас�
   await ingestLead(repo3, parseLead(text), { source: 'site_form' })
   assert.equal(repo3.clients[0].consent_at ?? null, null, 'без consent согласие не ставится')
 })
+
+test('заявка с сайта без телефона: контакт @username из Telegram даёт клиента, tg:<id> сохраняется без клиента', async () => {
+  const repo = memoryRepo()
+  const mk = (c: string) => ['Новая заявка с сайта ST96', 'Имя: Анна', `Контакт: ${c}`].join('\n')
+  await ingestLead(repo, parseLead(mk('@anna_tg1')), { source: 'site_form', consent: true })
+  assert.equal(repo.clients.length, 1)
+  assert.equal(repo.clients[0].tg_username, 'anna_tg1')
+  assert.equal(repo.clients[0].phone ?? null, null)
+  await ingestLead(repo, parseLead(mk('tg:123456')), { source: 'site_form', consent: true })
+  assert.equal(repo.leads.length, 2, 'заявка без нормального контакта не теряется')
+})

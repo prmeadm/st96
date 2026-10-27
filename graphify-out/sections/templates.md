@@ -30,9 +30,9 @@
 - `TPL_KINDS` (crm/server/templates.ts:L20)
 - `CameraCapture()` (crm/admin/ui/CameraCapture.tsx:L12)
 - `handler()` (api/send-template.ts:L9)
-- `TPL_VARS` (crm/server/templates.ts:L26)
-- `TPL_TASKS` (crm/server/templates.ts:L21)
+- `TPL_GOALS` (crm/server/templates.ts:L22)
 - `TPL_SERVICES` (crm/server/templates.ts:L25)
+- `preview()` (crm/admin/pages/TemplatesPage.tsx:L13)
 
 ## От чего зависит (вызовы в другие разделы)
 

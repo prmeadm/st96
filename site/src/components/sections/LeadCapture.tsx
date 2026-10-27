@@ -49,12 +49,10 @@ export default function LeadCapture({ service, title, text }: Props) {
   const [redirectIn, setRedirectIn] = useState<number | null>(null) // секунды до автоперехода к боту; null = не переходить
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
-  const [tg, setTg] = useState<TgUser | null>(null)
+  const [tgWaiting, setTgWaiting] = useState(false) // окно Telegram открыто
   const [tgStarted, setTgStarted] = useState(false)
-  const [tgWanted, setTgWanted] = useState(false) // виджет грузим лениво: форма на экране или первый фокус
-  const [tgFailed, setTgFailed] = useState(false)
+  const [tgWanted, setTgWanted] = useState(false) // скрипт Telegram грузим лениво: форма на экране или первый фокус
   const formRef = useRef<HTMLDivElement>(null)
-  const tgBoxRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const el = formRef.current
@@ -68,31 +66,13 @@ export default function LeadCapture({ service, title, text }: Props) {
   }, [tgWanted])
 
   useEffect(() => {
-    const box = tgBoxRef.current
-    if (!tgWanted || tg || status !== 'idle' || !box) return
-    const w = window as unknown as Record<string, unknown>
-    w.st96TgAuth = (u: TgUser) => setTg(u)
+    if (!tgWanted || document.querySelector('script[data-st96-tg]')) return
     const s = document.createElement('script')
     s.async = true
     s.src = 'https://telegram.org/js/telegram-widget.js?22'
-    s.setAttribute('data-telegram-login', CONTACTS.botName)
-    s.setAttribute('data-size', 'large')
-    s.setAttribute('data-request-access', 'write')
-    s.setAttribute('data-onauth', 'st96TgAuth(user)')
-    s.onerror = () => setTgFailed(true)
-    let timer: ReturnType<typeof setTimeout> | undefined
-    s.onload = () => {
-      timer = setTimeout(() => {
-        if (!box.querySelector('iframe')) setTgFailed(true)
-      }, 5000)
-    }
-    box.appendChild(s)
-    return () => {
-      if (timer) clearTimeout(timer)
-      delete w.st96TgAuth
-      box.innerHTML = ''
-    }
-  }, [tgWanted, tg, status])
+    s.setAttribute('data-st96-tg', '')
+    document.head.appendChild(s)
+  }, [tgWanted])
 
   const botUrl = tgStarted
     ? `https://t.me/${CONTACTS.botName}`
@@ -130,6 +110,28 @@ export default function LeadCapture({ service, title, text }: Props) {
       setError(l.errConsent)
       return
     }
+    await send(name, contact, null)
+  }
+
+  const handleTelegram = () => {
+    if (submitting || tgWaiting) return
+    if (!consent) {
+      setError(l.errConsent)
+      return
+    }
+    setError('')
+    const login = (window as unknown as { Telegram?: { Login?: { auth: (o: Record<string, unknown>, cb: (u: TgUser | false) => void) => void } } }).Telegram?.Login
+    if (!login) { setError(l.errSend); return }
+    setTgWaiting(true)
+    login.auth({ bot_id: CONTACTS.botId, request_access: 'write', lang }, (u) => {
+      setTgWaiting(false)
+      if (!u) return // отказ в окне Telegram: ничего не отправляем и ошибку не показываем
+      const tgName = [u.first_name, u.last_name].filter(Boolean).join(' ')
+      void send(name.trim() || tgName, contact.trim(), u)
+    })
+  }
+
+  const send = async (nameValue: string, contactValue: string, tg: TgUser | null) => {
     setError('')
     setSubmitting(true)
 
@@ -141,8 +143,8 @@ export default function LeadCapture({ service, title, text }: Props) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name,
-          contact,
+          name: nameValue,
+          contact: contactValue,
           interest: serviceLabel,
           message,
           consent: true,
@@ -327,24 +329,6 @@ export default function LeadCapture({ service, title, text }: Props) {
                       </span>
                     </label>
 
-                    {!tgFailed && (
-                      <div className="flex flex-col gap-2">
-                        {tg ? (
-                          <p className="text-sm text-paper-dim" role="status" aria-live="polite">
-                            {l.tgAs} {tg.first_name}{tg.username ? ` (@${tg.username})` : ''}{' '}
-                            <button type="button" onClick={() => setTg(null)} className="underline underline-offset-2 hover:text-paper">
-                              {l.tgRemove}
-                            </button>
-                          </p>
-                        ) : (
-                          <>
-                            <div ref={tgBoxRef} className="min-h-[40px]" />
-                            <p className="text-xs text-paper-dim">{l.tgLoginHint}</p>
-                          </>
-                        )}
-                      </div>
-                    )}
-
                     {error && <p className="text-sm text-pink">{error}</p>}
 
                     <MagneticButton
@@ -357,6 +341,19 @@ export default function LeadCapture({ service, title, text }: Props) {
                       {submitting ? l.sending : l.send}
                       <ArrowUpRight className="h-4 w-4" />
                     </MagneticButton>
+
+                    <MagneticButton
+                      as="button"
+                      type="button"
+                      onClick={handleTelegram}
+                      disabled={submitting || tgWaiting}
+                      className="inline-flex items-center justify-center gap-2 rounded-full border bg-transparent py-4 font-display text-sm font-semibold disabled:opacity-60"
+                      style={{ borderColor: accentSolid, color: accentSolid }}
+                    >
+                      <Send className="h-4 w-4" />
+                      {l.tgButton}
+                    </MagneticButton>
+                    <p className="-mt-2 text-center text-xs text-paper-dim">{l.tgNote}</p>
                   </motion.form>
                 ) : (
                   <motion.div

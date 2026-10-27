@@ -51,8 +51,9 @@ export default async function handler(req: Request, ctx?: EdgeCtx) {
   }
 
   const name = body.name?.trim()
-  const contact = body.contact?.trim()
-  if (!name || !contact) {
+  let contact = body.contact?.trim()
+  let fromTelegram = false // контакт взят из входа Telegram, это не телефон и не email
+  if (!name) {
     return json({ error: 'Missing fields' }, 400)
   }
 
@@ -66,6 +67,14 @@ export default async function handler(req: Request, ctx?: EdgeCtx) {
     return json({ error: 'Server not configured' }, 500)
   }
 
+  // Без телефона/email заявка допустима только с проверенным входом через Telegram: контакт берём из него
+  if (!contact) {
+    const verified = body.tg ? await verifyTelegramLogin(body.tg, token).catch(() => null) : null
+    if (!verified) return json({ error: 'Missing fields' }, 400)
+    fromTelegram = true
+    contact = verified.username ? `@${verified.username}` : `tg:${verified.id}`
+  }
+
   const a = body.attribution ?? {}
   const t = (v?: string) => (typeof v === 'string' ? v.trim().slice(0, 100) : '')
   const utm = [a.utm_source, a.utm_medium, a.utm_campaign, a.utm_content, a.utm_term].map(t).filter(Boolean)
@@ -74,7 +83,7 @@ export default async function handler(req: Request, ctx?: EdgeCtx) {
   const text = [
     '\u{1F195} Новая заявка с сайта ST96',
     `Имя: ${name}`,
-    `Контакт: ${contact.includes('@') ? contact : clickablePhone(contact)}`,
+    `Контакт: ${fromTelegram || contact.includes('@') ? contact : clickablePhone(contact)}`,
     body.interest?.trim() && `Интересует: ${body.interest.trim()}`,
     body.message?.trim() && `Сообщение: ${body.message.trim()}`,
     `Язык сайта: ${body.lang === 'en' ? 'English (EN)' : 'Русский (RU)'}`,
@@ -137,7 +146,7 @@ export default async function handler(req: Request, ctx?: EdgeCtx) {
   // Вход через Telegram в форме: бот пишет первым и запускает воронку сайта. Любая ошибка здесь заявку не роняет.
   const tgStarted = body.tg ? await withDeadline(startTelegram(body.tg, token, Number(chatId), clientId, clientCreated, body.lang), TG_START_WAIT_MS, ctx) : false
 
-  if (body.internal !== true) await sendAdEvents(req, body, contact)
+  if (body.internal !== true) await sendAdEvents(req, body, fromTelegram ? '' : contact)
 
   return json({ ok: true, ref, tgStarted }, 200)
 }
