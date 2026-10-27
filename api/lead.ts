@@ -4,6 +4,7 @@ import { supabaseRepo, tracedRepo } from '../crm/server/repo'
 import { Api } from 'grammy'
 import { botWroteNow, startFromSiteLogin } from '../crm/server/bot/bot'
 import { verifyTelegramLogin, withDeadline, type EdgeCtx } from '../crm/server/bot/telegramLogin'
+import { issueSiteRef } from '../crm/server/bot/siteRef'
 
 export const config = { runtime: 'edge' }
 
@@ -100,8 +101,10 @@ export default async function handler(req: Request, ctx?: EdgeCtx) {
   }
 
   let saved = false
-  let ref: string | null = null
+  let clientId: string | null = null
   let clientCreated = false
+  /** Подписанный токен для /start site_ в ответе форме; только если эта заявка создала карточку */
+  let ref: string | null = null
   if (body.internal !== true) {
     try {
       const url = process.env.SUPABASE_URL
@@ -121,8 +124,9 @@ export default async function handler(req: Request, ctx?: EdgeCtx) {
           utm: Object.keys(utmObj).length ? (utmObj as Record<string, string>) : null,
         })
         saved = true
-        ref = ingested.clientId
+        clientId = ingested.clientId
         clientCreated = ingested.clientCreated
+        ref = await issueSiteRef(ingested, token).catch(() => null)
       }
     } catch (e) {
       console.error('lead db save failed', e instanceof Error ? e.message : e)
@@ -131,14 +135,14 @@ export default async function handler(req: Request, ctx?: EdgeCtx) {
   if (!tgRes.ok && !saved) return json({ error: 'Telegram delivery failed' }, 502)
 
   // Вход через Telegram в форме: бот пишет первым и запускает воронку сайта. Любая ошибка здесь заявку не роняет.
-  const tgStarted = body.tg ? await withDeadline(startTelegram(body.tg, token, Number(chatId), ref, clientCreated, body.lang), TG_START_WAIT_MS, ctx) : false
+  const tgStarted = body.tg ? await withDeadline(startTelegram(body.tg, token, Number(chatId), clientId, clientCreated, body.lang), TG_START_WAIT_MS, ctx) : false
 
   if (body.internal !== true) await sendAdEvents(req, body, contact)
 
   return json({ ok: true, ref, tgStarted }, 200)
 }
 
-async function startTelegram(raw: unknown, token: string, groupChatId: number, ref: string | null, clientCreated: boolean, lang?: string): Promise<boolean> {
+async function startTelegram(raw: unknown, token: string, groupChatId: number, clientId: string | null, clientCreated: boolean, lang?: string): Promise<boolean> {
   try {
     const user = await verifyTelegramLogin(raw, token)
     if (!user) {
@@ -149,7 +153,7 @@ async function startTelegram(raw: unknown, token: string, groupChatId: number, r
     const key = process.env.SUPABASE_SERVICE_ROLE_KEY
     if (!url || !key) return false
     const r = await startFromSiteLogin(new Api(token), tracedRepo(supabaseRepo(url, key)), Number.isFinite(groupChatId) ? groupChatId : null, user, {
-      clientId: ref, clientCreated, lang: lang === 'en' ? 'en' : 'ru',
+      clientId, clientCreated, lang: lang === 'en' ? 'en' : 'ru',
     })
     return botWroteNow(r)
   } catch (e) {

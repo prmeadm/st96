@@ -9,6 +9,7 @@ import { notifyClientDecision } from '../booking/notify'
 import { decideBooking, loadDirectAdmins } from '../booking/service'
 import { T, type Lang } from './texts'
 import type { TelegramLoginData } from './telegramLogin'
+import { verifySiteRef } from './siteRef'
 import type { Api } from 'grammy'
 
 const ACK_EVERY_MS = 12 * 3600 * 1000
@@ -18,7 +19,7 @@ type From = NonNullable<Context['from']>
 const langOf = (from: From): Lang => (from.language_code?.toLowerCase().startsWith('en') ? 'en' : 'ru')
 const fullName = (f: From) => [f.first_name, f.last_name].filter(Boolean).join(' ')
 
-/** Переход из формы сайта (/start site_<id клиента>): привязываем Telegram к клиенту, созданному заявкой, чтобы не плодить дубль. */
+/** Переход из формы сайта (/start site_<токен>, см. siteRef): привязываем Telegram к клиенту, созданному заявкой, чтобы не плодить дубль. */
 export async function linkLeadClient(repo: Repo, from: From, clientId: string) {
   const c = await repo.findClientById(clientId)
   if (!c || c.tg_user_id) return
@@ -183,10 +184,13 @@ export function createBot(token: string, repo: Repo, opts: { groupChatId: number
         : (en ? 'You have no public Telegram username. Set one in Telegram: Settings → Username, then tap the button on the booking page again. Or enter your phone number.' : 'У вас в Telegram нет публичного ника. Задайте его в Telegram: Настройки → Имя пользователя, затем снова нажмите кнопку на странице записи. Или укажите телефон.'))
       return
     }
-    const leadRef = rawPayload?.match(/^site_([A-Za-z0-9-]{1,40})$/)?.[1]
-    const payload = leadRef ? 'site' : rawPayload
+    // site_<токен>: токен выдаётся только заявке, создавшей карточку. Битый, просроченный или старый с голым id:
+    // воронка сайта запускается, но без привязки к карточке
+    const siteRef = rawPayload?.match(/^site_([A-Za-z0-9_-]{1,59})$/)?.[1]
+    const leadRef = siteRef ? (await verifySiteRef(siteRef, token)) ?? undefined : undefined
+    const payload = siteRef ? 'site' : rawPayload
     const { client, hasFunnel, skipped } = await beginStart(repo, envFor(ctx.api), ctx.from, {
-      payload, leadRef, guard: leadRef ? 'link' : undefined, logIn: { chatId: ctx.chat.id, text: ctx.message?.text ?? '/start', messageId: ctx.message?.message_id ?? null },
+      payload, leadRef, guard: siteRef ? 'link' : undefined, logIn: { chatId: ctx.chat.id, text: ctx.message?.text ?? '/start', messageId: ctx.message?.message_id ?? null },
     })
     // Воронки нет или она только что запущена входом на сайте (не перезапускаем): человек всё равно получает ответ
     if (!hasFunnel || skipped) await ctx.reply(T[client.language].welcome, { link_preview_options: { is_disabled: true } })

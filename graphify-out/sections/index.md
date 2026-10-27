@@ -5,7 +5,7 @@
 | Раздел | Что внутри | Узлов | Файлов | Справка |
 |---|---|---|---|---|
 | Воронки | Движок воронок | 190 | 22 | [`funnels.md`](funnels.md) |
-| Бот и диалоги | Вебхук Telegram | 61 | 7 | [`bot.md`](bot.md) |
+| Бот и диалоги | Вебхук Telegram | 72 | 8 | [`bot.md`](bot.md) |
 | Заявки и клиенты | Приём заявок | 133 | 19 | [`leads.md`](leads.md) |
 | Запись на встречу | Расписание и слоты | 137 | 14 | [`booking.md`](booking.md) |
 | Рассылки | Массовые рассылки по сегментам | 31 | 5 | [`broadcasts.md`](broadcasts.md) |
@@ -41,5 +41,5 @@
 - `tsconfig.json`
 - `vercel.json`
 - `PRINT ST96/README.md`
-- `@breezystack/lamejs`
 - `libphonenumber-js`
+- `@breezystack/lamejs`

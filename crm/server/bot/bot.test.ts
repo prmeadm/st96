@@ -3,6 +3,9 @@ import assert from 'node:assert/strict'
 import type { Update } from 'grammy/types'
 import { memoryRepo } from '../memoryRepo'
 import { botWroteNow, createBot, SITE_START_LOCK_MS, startFromSiteLogin } from './bot'
+import { issueSiteRef, signSiteRef, SITE_REF_TTL_S, verifySiteRef } from './siteRef'
+import { ingestLead } from '../leads/ingest'
+import { parseLead } from '../leads/parse'
 import { Api } from 'grammy'
 import { demoGraph } from '../funnels/demo'
 import { TRIGGER } from '../funnels/types'
@@ -268,17 +271,48 @@ test('/book в теме отправляет клиенту личную ссы�
   assert.ok(repo.messages.some((m) => m.direction === 'admin' && /book\?c=/.test(String(m.text))))
 })
 
-test('/start site_<id> привязывает Telegram к клиенту из заявки с сайта без дубля', async () => {
+const UID = '0b9f3c2e-1d4a-4e5b-9c6d-7e8f90a1b2c3'
+
+test('/start site_<токен> привязывает Telegram к клиенту из заявки с сайта без дубля', async () => {
   const { repo, send } = setup()
-  const lead = await repo.insertClient({ name: 'Анна', phone: '+375291112233', source: 'site' })
-  await send(msg(`/start site_${lead.id}`, { entities: [{ type: 'bot_command', offset: 0, length: 6 }] }))
+  const lead = await repo.insertClient({ id: UID, name: 'Анна', phone: '+375291112233', source: 'site' })
+  const ref = await signSiteRef(lead.id, '123:TEST')
+  await send(msg(`/start site_${ref}`, { entities: [{ type: 'bot_command', offset: 0, length: 6 }] }))
   assert.equal(repo.clients.length, 1, 'новый клиент не создан')
   assert.equal(repo.clients[0].id, lead.id)
   assert.equal(repo.clients[0].tg_user_id, 555)
   assert.equal(repo.clients[0].phone, '+375291112233')
   // повторный переход с чужой ссылкой не перетирает уже привязанного
-  await send(msg(`/start site_${lead.id}`, { entities: [{ type: 'bot_command', offset: 0, length: 6 }] }))
+  await send(msg(`/start site_${ref}`, { entities: [{ type: 'bot_command', offset: 0, length: 6 }] }))
   assert.equal(repo.clients.length, 1)
+})
+
+test('заявка с чужим телефоном: ссылки на привязку нет, /start site_<id карточки> Telegram не привязывает', async () => {
+  const { repo, send } = setup()
+  publish(repo)
+  const victim = await repo.insertClient({ id: UID, name: 'Анна', phone: '+375291112233', source: 'site' })
+  const ingested = await ingestLead(repo, parseLead('\u{1F195} Новая заявка с сайта ST96\nИмя: Злоумышленник\nКонтакт: +375 29 111-22-33'), { source: 'site_form', consent: true })
+  assert.equal(ingested.clientId, victim.id, 'заявка нашла карточку жертвы по телефону')
+  assert.equal(ingested.clientCreated, false)
+  assert.equal(await issueSiteRef(ingested, '123:TEST'), null, 'форма не получает ссылку на чужую карточку')
+  // старый формат с голым id, подделанный и просроченный токены не привязывают
+  const forged = (await signSiteRef(victim.id, 'другой:токен'))
+  const expired = await signSiteRef(victim.id, '123:TEST', Math.floor(Date.now() / 1000) - SITE_REF_TTL_S - 10)
+  for (const p of [victim.id, forged, expired]) await send(msg(`/start site_${p}`, START_ENT))
+  assert.equal(repo.clients.find((c) => c.id === victim.id)!.tg_user_id, null, 'карточка жертвы не привязана')
+  assert.equal(repo.clients.length, 2, 'у вошедшего своя карточка')
+  assert.equal(repo.runs.length, 1, 'воронка сайта для вошедшего запущена')
+})
+
+test('токен site_: id восстанавливается, подпись и срок проверяются', async () => {
+  const ref = await signSiteRef(UID, '123:TEST', 1000)
+  assert.match(ref, /^[A-Za-z0-9_-]{43}$/)
+  assert.equal(await verifySiteRef(ref, '123:TEST', 1000), UID)
+  assert.equal(await verifySiteRef(ref, '123:TEST', 1000 + SITE_REF_TTL_S + 1), null)
+  assert.equal(await verifySiteRef(ref, '999:OTHER', 1000), null)
+  const tampered = (ref[0] === 'A' ? 'B' : 'A') + ref.slice(1)
+  assert.equal(await verifySiteRef(tampered, '123:TEST', 1000), null)
+  assert.equal(await issueSiteRef({ clientId: UID, clientCreated: true }, '123:TEST', 1000), ref)
 })
 
 test('/start bk_<токен> из страницы записи: ник сохраняется под токеном, клиент и воронка не создаются', async () => {

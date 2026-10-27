@@ -2,7 +2,7 @@
 
 Вебхук Telegram, /start и /stop, темы клиентов в группе «Лиды ST96», команды сотрудников (/shablon, /book, //заметка, /close), пересылка диалога человеку.
 
-Граф раздела: `graphify-out/sections/bot/graph.json` (61 узлов, 105 внутренних связей).
+Граф раздела: `graphify-out/sections/bot/graph.json` (72 узлов, 129 внутренних связей).
 
 ## С чего начать сессию
 
@@ -16,6 +16,7 @@
 - `crm/server/bot/bot.ts` — 14 узл.
 - `crm/server/bot/dialog.ts` — 13 узл.
 - `crm/server/bot/bot.test.ts` — 12 узл.
+- `crm/server/bot/siteRef.ts` — 11 узл.
 - `crm/server/bot/telegramLogin.ts` — 11 узл.
 - `crm/server/bot/telegramLogin.test.ts` — 4 узл.
 - `api/telegram.ts` — 4 узл.
@@ -23,30 +24,30 @@
 
 ## Главные узлы (больше всего связей)
 
-- `createBot()` (crm/server/bot/bot.ts:L134)
-- `beginStart()` (crm/server/bot/bot.ts:L68)
+- `createBot()` (crm/server/bot/bot.ts:L135)
+- `beginStart()` (crm/server/bot/bot.ts:L69)
 - `sendContent()` (crm/server/bot/dialog.ts:L167)
 - `sendTemplate()` (crm/server/bot/dialog.ts:L233)
+- `startFromSiteLogin()` (crm/server/bot/bot.ts:L109)
 - `handleTopicMessage()` (crm/server/bot/dialog.ts:L79)
-- `startFromSiteLogin()` (crm/server/bot/bot.ts:L108)
-- `ensureClient()` (crm/server/bot/bot.ts:L31)
 - `verifyTelegramLogin()` (crm/server/bot/telegramLogin.ts:L54)
-- `relayToAdmins()` (crm/server/bot/dialog.ts:L51)
+- `ensureClient()` (crm/server/bot/bot.ts:L32)
 - `ensureTopic()` (crm/server/bot/dialog.ts:L37)
-- `handler()` (api/telegram.ts:L10)
-- `linkLeadClient()` (crm/server/bot/bot.ts:L22)
+- `verifySiteRef()` (crm/server/bot/siteRef.ts:L41)
+- `relayToAdmins()` (crm/server/bot/dialog.ts:L51)
+- `signSiteRef()` (crm/server/bot/siteRef.ts:L27)
 
 ## От чего зависит (вызовы в другие разделы)
 
 - **Данные и инфраструктура** (51): `.bumpTemplateUsed()`, `.claimUpdate()`, `.findActiveRun()`, `.findClient()`, `.findClientById()`, `.getRun()`
 - **Воронки** (38): `CAPTION_LIMIT`, `Env`, `NOT_A_FILE_ERROR`, `TRIGGER`, `canonicalVideoUrl()`, `demo.ts`
 - **Запись на встречу** (13): `bookingUrl()`, `createBooking()`, `decideBooking()`, `loadDirectAdmins()`, `notify.ts`, `notifyClientDecision()`
-- **Заявки и клиенты** (6): `clickablePhone()`, `ingestGroupMessage()`, `leads/ingest.ts`, `parse.ts`
+- **Заявки и клиенты** (10): `clickablePhone()`, `ingestGroupMessage()`, `ingestLead()`, `leads/ingest.ts`, `parse.ts`, `parseLead()`
 - **Шаблоны и медиа** (6): `TPL_KINDS`, `TemplateKind`, `TemplateRow`, `fillTemplate()`, `templates.ts`
 
 ## Кто зависит от раздела (менять осторожно)
 
-- **Заявки и клиенты** (11): `EdgeCtx`, `bot.ts`, `botWroteNow()`, `startFromSiteLogin()`, `telegramLogin.ts`, `verifyTelegramLogin()`
+- **Заявки и клиенты** (14): `EdgeCtx`, `bot.ts`, `botWroteNow()`, `issueSiteRef()`, `siteRef.ts`, `startFromSiteLogin()`
 - **Воронки** (5): `dialog.ts`, `notifyTopic()`, `sendContent()`
 - **Шаблоны и медиа** (3): `dialog.ts`, `sendTemplate()`
 - **Рассылки** (3): `dialog.ts`, `sendContent()`

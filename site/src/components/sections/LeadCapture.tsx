@@ -160,7 +160,7 @@ export default function LeadCapture({ service, title, text }: Props) {
       const ok = (await res.json().catch(() => null)) as { ref?: string | null; tgStarted?: boolean } | null
       const started = ok?.tgStarted === true
       setTgStarted(started)
-      setTgRef(typeof ok?.ref === 'string' && /^[0-9a-f-]{36}$/.test(ok.ref) ? ok.ref : null)
+      setTgRef(typeof ok?.ref === 'string' && /^[A-Za-z0-9_-]{43}$/.test(ok.ref) ? ok.ref : null)
       trackLead(eventId, lang)
       setStatus('sent')
       setRedirectIn(started ? null : 3)
