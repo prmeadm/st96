@@ -42,6 +42,8 @@ export default function LeadCapture({ service, title, text }: Props) {
   const botUrl = `https://t.me/${CONTACTS.botName}?start=${tgRef ? `site_${tgRef}` : 'site'}`
 
   const accentSolid = service?.accent.solid ?? 'var(--color-acid)'
+  // твёрдые кнопки держат один цвет в обеих темах
+  const accentBtn = service?.accent.btn ?? 'var(--color-acid-solid)'
 
   // other sections (e.g. "Order" on a solution card) can prefill the message
   useEffect(() => {
@@ -269,8 +271,8 @@ export default function LeadCapture({ service, title, text }: Props) {
                       as="button"
                       type="submit"
                       disabled={submitting}
-                      className="mt-2 inline-flex items-center justify-center gap-2 rounded-full py-4 font-display text-sm font-semibold text-ink disabled:opacity-60"
-                      style={{ background: accentSolid }}
+                      className="mt-2 inline-flex items-center justify-center gap-2 rounded-full py-4 font-display text-sm font-semibold text-on-solid disabled:opacity-60"
+                      style={{ background: accentBtn }}
                     >
                       {submitting ? l.sending : l.send}
                       <ArrowUpRight className="h-4 w-4" />
@@ -315,7 +317,7 @@ export default function LeadCapture({ service, title, text }: Props) {
                       target="_blank"
                       rel="noreferrer"
                       data-cursor-hover
-                      className="inline-flex items-center gap-2 rounded-full bg-acid px-6 py-3.5 text-sm font-semibold text-ink transition-transform hover:scale-[1.03]"
+                      className="inline-flex items-center gap-2 rounded-full bg-acid-solid px-6 py-3.5 text-sm font-semibold text-on-solid transition-transform hover:scale-[1.03]"
                     >
                       <Send className="h-4 w-4" />
                       {l.openTg}

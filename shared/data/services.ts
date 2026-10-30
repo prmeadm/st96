@@ -2,6 +2,8 @@ export type Accent = {
   from: string
   to: string
   solid: string
+  /** фон твёрдой кнопки: один и тот же цвет в тёмной и светлой теме */
+  btn: string
   soft: string
 }
 
@@ -49,24 +51,28 @@ export const accents = {
     from: '#8b6bff',
     to: '#ff5fa8',
     solid: 'var(--accent-producing)',
+    btn: 'var(--accent-producing-solid)',
     soft: 'rgba(139,107,255,0.15)',
   },
   promotion: {
     from: '#d8ff3f',
     to: '#ff8a3d',
     solid: 'var(--accent-promotion)',
+    btn: 'var(--accent-promotion-solid)',
     soft: 'rgba(216,255,63,0.15)',
   },
   production: {
     from: '#35e6c8',
     to: '#4d7bff',
     solid: 'var(--accent-production)',
+    btn: 'var(--accent-production-solid)',
     soft: 'rgba(53,230,200,0.15)',
   },
   ai: {
     from: '#c084fc',
     to: '#35e6c8',
     solid: 'var(--accent-ai)',
+    btn: 'var(--accent-ai-solid)',
     soft: 'rgba(192,132,252,0.15)',
   },
 } satisfies Record<string, Accent>

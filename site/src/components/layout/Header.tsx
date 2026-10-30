@@ -154,7 +154,7 @@ export default function Header() {
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: navItems.length * 0.05, duration: 0.4 }}
-                className="mt-6 inline-flex items-center justify-center gap-1.5 rounded-full bg-acid px-6 py-3.5 text-center font-semibold text-ink"
+                className="mt-6 inline-flex items-center justify-center gap-1.5 rounded-full bg-acid-solid px-6 py-3.5 text-center font-semibold text-on-solid"
               >
                 {t.discuss}
                 <ArrowUpRight className="h-4 w-4" />

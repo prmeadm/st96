@@ -79,7 +79,7 @@ export default function HomeHero() {
           <MagneticButton
             as="a"
             href="#lead"
-            className="inline-flex items-center gap-2 rounded-full bg-acid px-7 py-4 font-display text-sm font-semibold text-ink"
+            className="inline-flex items-center gap-2 rounded-full bg-acid-solid px-7 py-4 font-display text-sm font-semibold text-on-solid"
           >
             {t.startProject}
             <ArrowUpRight className="h-4 w-4" />

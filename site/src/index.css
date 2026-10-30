@@ -11,6 +11,9 @@
   --color-paper-dim: #a6a6ac;
 
   --color-acid: #d8ff3f;
+  /* твёрдые кнопки: цвет не меняется при смене темы */
+  --color-acid-solid: #d8ff3f;
+  --color-on-solid: #09090b;
   --color-violet: #8b6bff;
   --color-pink: #ff5fa8;
   --color-cyan: #35e6c8;
@@ -50,6 +53,12 @@
   --accent-promotion: #d8ff3f;
   --accent-production: #35e6c8;
   --accent-ai: #c084fc;
+
+  /* фон твёрдых кнопок услуг: тот же цвет в обеих темах */
+  --accent-producing-solid: #8b6bff;
+  --accent-promotion-solid: #d8ff3f;
+  --accent-production-solid: #35e6c8;
+  --accent-ai-solid: #c084fc;
 }
 
 /* light theme: same tokens, inverted; acid becomes a deeper lime so it stays readable */

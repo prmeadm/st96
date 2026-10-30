@@ -57,8 +57,8 @@ export default function ServiceHero({ service }: { service: Service }) {
             <MagneticButton
               as="a"
               href="#lead"
-              className="inline-flex items-center gap-2 rounded-full px-7 py-4 font-display text-sm font-semibold text-ink"
-              style={{ background: service.accent.solid }}
+              className="inline-flex items-center gap-2 rounded-full px-7 py-4 font-display text-sm font-semibold text-on-solid"
+              style={{ background: service.accent.btn }}
             >
               {service.ctaTitle.includes('?') ? t.discuss : service.ctaTitle}
               <ArrowUpRight className="h-4 w-4" />

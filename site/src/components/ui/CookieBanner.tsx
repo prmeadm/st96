@@ -89,7 +89,7 @@ export default function CookieBanner() {
               type="button"
               onClick={() => choose(true)}
               data-cursor-hover
-              className="rounded-full bg-acid px-5 py-2.5 text-sm font-semibold text-ink"
+              className="rounded-full bg-acid-solid px-5 py-2.5 text-sm font-semibold text-on-solid"
             >
               {c.acceptAll}
             </button>

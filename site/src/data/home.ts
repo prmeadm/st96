@@ -4,6 +4,7 @@ export const studioAccent: Accent = {
   from: '#d8ff3f',
   to: '#8b6bff',
   solid: '#d8ff3f',
+  btn: 'var(--color-acid-solid)',
   soft: 'rgba(216,255,63,0.15)',
 }
 

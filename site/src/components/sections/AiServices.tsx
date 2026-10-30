@@ -179,8 +179,8 @@ export default function AiServices() {
           <MagneticButton
             as="a"
             href="#lead"
-            className="inline-flex items-center gap-2 rounded-full px-8 py-4 font-display text-sm font-semibold text-ink"
-            style={{ background: accent.solid }}
+            className="inline-flex items-center gap-2 rounded-full px-8 py-4 font-display text-sm font-semibold text-on-solid"
+            style={{ background: accent.btn }}
           >
             {t.cta}
             <ArrowUpRight className="h-4 w-4" />
