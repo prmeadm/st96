@@ -1,7 +1,7 @@
 # Инструменты и скиллы проекта: что использовалось и что доступно сейчас
 
 > Составлено 2026-10-31. Источники фактов: `.claude/settings.json`, `.claude/CLAUDE.md`,
-> `.claude/skills/graphify/`, `DESIGN-IS-2026-10-14/`, `DESIGN-IS-2026-10-20/`,
+> `.claude/skills/graphify/`, `brand/design-is-2026-10-14/`, `crm/docs/design-is-2026-10-20/`,
 > история коммитов (`git log`), `package.json`, `docs/PLATFORM.md`.
 > «Видно» = подтверждено файлом в репозитории, а не догадка.
 
@@ -11,7 +11,7 @@
 | --- | --- | --- | --- | --- |
 | `graphify` (скилл + CLI) | Граф кода `graphify-out/`, `query/path/explain` вместо чтения файлов, обновление графа после правок | `.claude/skills/graphify/SKILL.md`, `graphify-out/*`, `scripts/graph-sections.py` | **Есть** — глобальный `graphify-ds` (`/usr/local/bin/graphify-ds`) и скилл в `~/.dsh/skills/graphify` | Ничего не нужно |
 | Хуки graphify в Claude Code | `PreToolUse`-гварды: сначала граф, потом `grep`/`read` | `.claude/settings.json` (hooks `graphify hook-guard search/read`) | **Нет** — у меня нет хуков Claude, правило соблюдаю вручную | Только для Claude Code; в DSH-сессиях аналога нет |
-| `DESIGN-IS` (дизайн-аудит по шаблону) | Два аудита интерфейса админки: scope → evidence → scorecard → verdict → handoff-prompt → план редизайна | `DESIGN-IS-2026-10-14/`, `DESIGN-IS-2026-10-20/` | **Частично** — публичного пакета не нашёл, но методика зафиксирована в репозитории и воспроизводима | Ничего не ставить: работать по файлам `00-scope…05-plan` |
+| `DESIGN-IS` (дизайн-аудит по шаблону) | Два аудита интерфейса админки: scope → evidence → scorecard → verdict → handoff-prompt → план редизайна | `brand/design-is-2026-10-14/`, `crm/docs/design-is-2026-10-20/` | **Частично** — публичного пакета не нашёл, но методика зафиксирована в репозитории и воспроизводима | Ничего не ставить: работать по файлам `00-scope…05-plan` |
 | Playwright MCP | Живая проверка интерфейса в браузере (скриншоты, клики), логи в `.playwright-mcp/` | коммит `ce5476e` («ignore Playwright MCP logs») | **Нет** | `npx @playwright/mcp@latest` + `npx playwright install chromium` (≈300 МБ) |
 | Плагин `hyperframes@hyperframes` | Кадры/видео-сцены (по названию), сейчас выключен | `.claude/settings.json` → `enabledPlugins: false` | **Нет** | Ставится из маркетплейса плагинов Claude Code; в DSH не переносится |
 | Vercel CLI | Деплой, проекты, переменные окружения | все четыре проекта в команде `prmeadm` | **Есть** — `vercel@65.8.0`, вход выполнен, токен в `~/.local/share/com.vercel.cli/auth.json` | Ничего не нужно |

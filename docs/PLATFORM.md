@@ -17,7 +17,7 @@
 - Функции Vercel лежат в `api/`, импорты в `crm/server/` и `api/` только без расширения `.ts`.
 
 ## Структура кода
-- Папки верхнего уровня (2026-10-25): `site/` (сайт st96.by: `index.html`, `src/`, `public/`), `crm/` (`admin/`, `book/`, `booking/`, `server/`, `supabase/`, `admin-prototype/`), `shared/` (общее для сайта и CRM: `ui/PhoneField`, `data/` услуг, целей и политики), `api/` остаётся в корне (так Vercel находит функции). Сборка одна: `vite.config.ts` берёт три страницы и после сборки кладёт их в `dist/index.html`, `dist/admin/`, `dist/book/`, адреса и `vercel.json` прежние. Ниже пути указаны по новой раскладке.
+- Папки верхнего уровня (2026-11-05): `site/` (сайт st96.by: `index.html`, `src/`, `public/`, `VISUAL-GUIDE.md`), `crm/` (`admin/`, `book/`, `booking/`, `server/`, `supabase/`, `prototypes/`, `docs/`, `VISUAL-GUIDE.md`), `shared/` (общее для сайта и CRM: `ui/PhoneField`, `data/` услуг, целей и политики), `brand/` (бренд и печать, вне сборки), `docs/` (платформа, БД, аудит, гиды), `api/` остаётся в корне (так Vercel находит функции). Карта — `docs/STRUCTURE.md`, база — `docs/DATABASE.md`. Сборка одна: `vite.config.ts` берёт три страницы и после сборки кладёт их в `dist/index.html`, `dist/admin/`, `dist/book/`, адреса и `vercel.json` прежние. Ниже пути указаны по новой раскладке.
 - `crm/server/repo.ts`: интерфейс `Repo`, реализация Supabase и `tracedRepo`. `crm/server/memoryRepo.ts`: для тестов.
 - `crm/server/leads/`: `parse.ts` (разбор заявки по типу значения), `ingest.ts` (клиенты, заявки, заметки сотрудников), `filter.ts` (поля и условия окна «Фильтр» в админке).
 - `crm/server/bot/`: `bot.ts`, `dialog.ts` (темы, relay), `telegramOut.ts`, `texts.ts`.
@@ -25,7 +25,7 @@
 - `api/`: `telegram.ts`, `lead.ts` (форма сайта), `ingest.ts` (заявки из других проектов), `jobs.ts` (отложенные шаги).
 - `crm/admin/` (вместе с `index.html`): админка `/admin` (без GTM и аналитики, noindex, no-store).
 - `crm/supabase/migrations/0001..0011`: все применены в Supabase (0004 шаблоны, 0005 рассылки, 0006 агент, 0007 настройки, 0008 запись, 0009 услуги сайта, 0010 аналитика, 0011 ссылки Telegram для формы записи).
-- `crm/admin-prototype/index.html`: кликабельный прототип (воронки, расписание, задания агента, шаблоны) для порта.
+- `crm/prototypes/admin-v1.html`: кликабельный прототип (воронки, расписание, задания агента, шаблоны) для порта.
 
 ## Как это работает
 - Заявка (сайт, памятка, группа) разбирается `parseLead`, клиент ищется по телефону, затем по @нику.
@@ -44,6 +44,7 @@
   SQL-редактор: `window.monaco.editor.getModels()[0].setValue(...)`, затем кнопка Run.
 - Диагностика вебхука: GET `https://st96.by/api/telegram?setup=1` с заголовком `x-ingest-secret`.
 - `/api/jobs` намеренно без секрета (он только забирает очередь).
+- Схема данных: `SUPABASE_SCHEMA` и `VITE_SUPABASE_SCHEMA` = `crm` (миграция 0015 применена 2026-11-05, Exposed schemas: `public, graphql_public, crm`). Карта таблиц — `docs/DATABASE.md`.
 
 ## Проверки
 - `npm run test:server` (47 тестов), `npx tsc -p tsconfig.node.json --noEmit`, `npx tsc -b`, `npm run build`.
@@ -60,7 +61,7 @@
 (`crm/admin/pages/TemplatesPage.tsx`), выбор шаблона в блоке «Сообщение» (текст копируется в блок), команда `/shablon` в теме (раньше `/t`) клиента
 (`showTemplateMenu`/`sendTemplate` в `crm/server/bot/dialog.ts`, кнопки `tpl:<id>`). Тесты 49/49. Карточка клиента: кнопка «Отправить шаблон» через `api/send-template.ts` (проверка админа по токену входа) + блок в `ClientPage.tsx`. Медиа в шаблонах пока по ссылке.
 
-РЕШЕНИЕ ВЛАДЕЛЬЦА (2026-10-20): админка в отличие от сайта светлая, мягкие спокойные тона, без тёмной темы (в `admin.css` тёмной темы нет, проверено 2026-10-21); навигация с тонкими линейными иконками (`crm/admin/ui/Icon.tsx`), бренд Unbounded + Inter, акцент acid. Редизайн админки (план `DESIGN-IS-2026-10-20/05-redesign-plan.md`): фаза 1 (токены) выложена; дальше фаза 2 (общие Modal/Seg/TemplatePicker, фокус), 3 (тексты), 4 (страницы без инлайн-стилей), 5 (ленивый React Flow).
+РЕШЕНИЕ ВЛАДЕЛЬЦА (2026-10-20): админка в отличие от сайта светлая, мягкие спокойные тона, без тёмной темы (в `admin.css` тёмной темы нет, проверено 2026-10-21); навигация с тонкими линейными иконками (`crm/admin/ui/Icon.tsx`), бренд Unbounded + Inter, акцент acid. Редизайн админки (план `crm/docs/design-is-2026-10-20/05-redesign-plan.md`): фаза 1 (токены) выложена; дальше фаза 2 (общие Modal/Seg/TemplatePicker, фокус), 3 (тексты), 4 (страницы без инлайн-стилей), 5 (ленивый React Flow).
 
 Рассылки + медиа (шаг 3 дорожной карты), выложены на прод 2026-10-20 (0c25adb), живой тест рассылки на @studia96 пройден (имя подставилось, «Отписаться: /stop» на месте); миграция `0005_broadcasts.sql` применена в Supabase 2026-10-20 (проверено: таблицы, функция, бакет `media`, вид `voice`):
 - Таблицы `broadcasts`, `broadcast_recipients`, функция `claim_broadcast_recipients`, бакет Storage `media` (публичное чтение, запись админам), вид шаблона `voice`.
@@ -147,7 +148,7 @@
 Подробности и ограничения: `HANDOFF.md`.
 1. Живой сквозной прогон воронки (опубликовать демо, /start боту, кнопки, handoff, отложенный шаг, запись из воронки).
 2. Узел ИИ-консультанта; статистика воронок как в ChatPlace.
-3. Фаза 3–4 редизайна админки (общие Modal/Seg/TemplatePicker, фокус, страницы без инлайн-стилей): `DESIGN-IS-2026-10-20/05-redesign-plan.md`.
+3. Фаза 3–4 редизайна админки (общие Modal/Seg/TemplatePicker, фокус, страницы без инлайн-стилей): `crm/docs/design-is-2026-10-20/05-redesign-plan.md`.
 4. Загрузка файлов и камера в блоке «Сообщение» воронки (сейчас там только ссылки).
 5. Уникальные комнаты Google Meet на встречу и учёт занятости из Google Calendar (OAuth Google).
 

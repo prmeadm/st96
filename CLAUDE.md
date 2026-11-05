@@ -10,7 +10,7 @@ Rules:
 - A committed graphify-out/graph.json is rewritten whole on every build, so a large diff to it in a pull request is expected. Do not flag it as churn or suggest skipping the graph rebuild or its hooks.
 
 ## Раскладка папок
-`site/` сайт, `crm/` админка, запись, сервер, supabase, `shared/` общее, `api/` функции Vercel (в корне). Одна сборка Vite (`vite.config.ts`).
+`site/` сайт `st96.by` (+ `site/VISUAL-GUIDE.md`), `crm/` админка, запись, сервер, supabase, прототипы и `crm/VISUAL-GUIDE.md`, `shared/` общее для сайта и CRM, `api/` функции Vercel (в корне — так их находит Vercel), `brand/` бренд и печать (вне сборки), `docs/` платформа, БД, аудит, общий визуальный гид, `scripts/` служебные скрипты. Одна сборка Vite (`vite.config.ts`). Карта проекта и правила размещения — `docs/STRUCTURE.md`; база данных — `docs/DATABASE.md`.
 
 ## Platform handoff
 Before any work on the bot, leads, admin or funnels, look up the relevant part of `docs/PLATFORM.md` (architecture, status, next steps; search it, do not read it whole). Update it after each finished step.

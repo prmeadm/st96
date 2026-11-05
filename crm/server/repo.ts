@@ -1,6 +1,7 @@
 // Доступ к данным. Логика (server/leads, server/bot) работает через интерфейс Repo:
 // в проде это Supabase, в тестах — память.
 import { createClient } from '@supabase/supabase-js'
+import { dbSchema } from './env'
 import type { Funnel, JobRow, RunRow } from './funnels/types'
 import type { TemplateRow } from './templates'
 import type { AudienceClient, BroadcastRow, Segment } from './broadcasts'
@@ -174,7 +175,9 @@ export function supabaseRepo(url: string, key: string): Repo {
     }
     throw last
   }
-  const db = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false }, global: { fetch: timedFetch } })
+  // Схема данных: public (по умолчанию) или crm после миграции 0015 (переменная SUPABASE_SCHEMA)
+  const schema = dbSchema()
+  const db = createClient(url, key, { db: { schema }, auth: { persistSession: false, autoRefreshToken: false }, global: { fetch: timedFetch } })
   const ok = <T>(r: { data: T; error: { message: string; code?: string } | null }, what: string): T => {
     if (r.error) throw new Error(`${what}: ${r.error.message}`)
     return r.data

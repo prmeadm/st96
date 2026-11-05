@@ -12,6 +12,14 @@
 
 ## Структура
 
+Раскладка папок и правила размещения файлов — `docs/STRUCTURE.md`; визуальные гиды —
+`site/VISUAL-GUIDE.md`, `crm/VISUAL-GUIDE.md`, общая основа — `docs/VISUAL-GUIDE.md`.
+
+- `site/` — сайт `st96.by` (`index.html`, `src/`, `public/`)
+- `crm/` — админка `/admin`, запись `/book`, сервер (бот, заявки, воронки, рассылки, агент), `crm/supabase/` миграции
+- `shared/` — общее для сайта и CRM: `data/services.ts` (услуги и акцентные цвета), `data/`, `ui/`
+- `api/` — функции Vercel, `brand/` — бренд и печать, `docs/` — платформа, база, аудит
+
 - `shared/data/services.ts` — контент и акцентные цвета каждой услуги (продюсирование, промоушн,
   продакшн, AI-разработка)
 - `site/src/data/home.ts` — контент главной страницы
@@ -35,17 +43,15 @@ npm run dev
 npm run build
 ```
 
-## Заявки с сайта в Telegram
+## Заявки с сайта
 
 Форма заявки (`site/src/components/sections/LeadCapture.tsx`) отправляет данные на серверную функцию
-`api/lead.ts`, которая пересылает их в Telegram через Bot API. Нужны две переменные окружения в
-настройках проекта на Vercel (**Settings → Environment Variables**):
+`api/lead.ts`: заявка и клиент пишутся в Supabase (платформа CRM), а в Telegram-группу «Лиды ST96»
+уходит уведомление бота `@st96_leads_bot`. Секреты (`TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`,
+`SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`) задаются в переменных окружения Vercel
+(**Settings → Environment Variables**), после изменения нужен redeploy.
 
-- `TELEGRAM_BOT_TOKEN` — токен бота, полученный у [@BotFather](https://t.me/BotFather)
-- `TELEGRAM_CHAT_ID` — id чата/группы, куда бот пересылает заявки
-
-После добавления переменных нужен redeploy, чтобы функция их подхватила. Без этих переменных
-эндпоинт отвечает ошибкой 500, и форма на сайте покажет резервное сообщение с прямыми контактами.
+Архитектура, статус и подробности платформы — `docs/PLATFORM.md`; таблицы базы — `docs/DATABASE.md`.
 
 Контакты (email, телефон, Telegram) заданы в `site/src/components/layout/Footer.tsx` в объекте
 `CONTACTS` — там же их удобно поменять при необходимости.

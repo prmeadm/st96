@@ -134,10 +134,10 @@
     "semantic_hash": "0523d6482b71c4c6d69eaf90adefa331"
   },
   "docs/PLATFORM.md": {
-    "mtime": 1792879205.0994568,
-    "seen": 1792879212.688268,
-    "ast_hash": "5da35c37b961f0a94c3bcd349558bdf5",
-    "semantic_hash": ""
+    "mtime": 1793394939.1983414,
+    "seen": 1793511185.874282,
+    "ast_hash": "f179eadce55409cccb520e7dc1d1af18",
+    "semantic_hash": "f179eadce55409cccb520e7dc1d1af18"
   },
   "api/send-template.ts": {
     "mtime": 1793394939.1796498,
@@ -152,28 +152,28 @@
     "semantic_hash": "63f45d46196978fd7d737b49ebe9e15e"
   },
   "DESIGN-IS-2026-10-20/01-evidence.md": {
-    "mtime": 1792879028.0798714,
-    "seen": 1792879212.68826,
+    "mtime": 1793394939.1771104,
+    "seen": 1793425502.6807206,
     "ast_hash": "0d62862d9bfabb83863147ef21d56c8d",
-    "semantic_hash": ""
+    "semantic_hash": "0d62862d9bfabb83863147ef21d56c8d"
   },
   "DESIGN-IS-2026-10-20/02-scorecard.md": {
-    "mtime": 1792879028.0802968,
-    "seen": 1792879212.688261,
+    "mtime": 1793394939.1771104,
+    "seen": 1793425502.6807263,
     "ast_hash": "dcf889b59a6517c6e2cbeefd23d41df0",
-    "semantic_hash": ""
+    "semantic_hash": "dcf889b59a6517c6e2cbeefd23d41df0"
   },
   "DESIGN-IS-2026-10-20/03-verdict.md": {
-    "mtime": 1792879028.0804017,
-    "seen": 1792879212.688262,
+    "mtime": 1793394939.1771104,
+    "seen": 1793425502.6807292,
     "ast_hash": "b663fb58b8242461e72a30b4823a9bfd",
-    "semantic_hash": ""
+    "semantic_hash": "b663fb58b8242461e72a30b4823a9bfd"
   },
   "DESIGN-IS-2026-10-20/04-handoff-prompt.md": {
-    "mtime": 1792879028.0804992,
-    "seen": 1792879212.688263,
+    "mtime": 1793394939.1771104,
+    "seen": 1793425502.6807323,
     "ast_hash": "392295d6a235ccb8631753b99ec72b16",
-    "semantic_hash": ""
+    "semantic_hash": "392295d6a235ccb8631753b99ec72b16"
   },
   "DESIGN-IS-2026-10-20/05-redesign-plan.md": {
     "mtime": 1793394939.1771104,
@@ -830,88 +830,88 @@
     "semantic_hash": "dc9b4673855b2907ccba8341c1aef8b0"
   },
   "crm/supabase/migrations/0001_core.sql": {
-    "mtime": 1792879028.0969834,
-    "seen": 1792879212.688193,
-    "ast_hash": "",
-    "semantic_hash": ""
+    "mtime": 1793394939.1977837,
+    "seen": 1793683808.025596,
+    "ast_hash": "8bba2cad6d040b170b38e21e983709a5",
+    "semantic_hash": "8bba2cad6d040b170b38e21e983709a5"
   },
   "crm/supabase/migrations/0002_dialogs.sql": {
-    "mtime": 1792879028.0973594,
-    "seen": 1792879212.688194,
-    "ast_hash": "",
-    "semantic_hash": ""
+    "mtime": 1793394939.197955,
+    "seen": 1793683808.0256007,
+    "ast_hash": "c666df0e4e644db44ca0e48f3d24cf00",
+    "semantic_hash": "c666df0e4e644db44ca0e48f3d24cf00"
   },
   "crm/supabase/migrations/0003_funnels_runtime.sql": {
-    "mtime": 1792879028.0977123,
-    "seen": 1792879212.688194,
-    "ast_hash": "",
-    "semantic_hash": ""
+    "mtime": 1793394939.197955,
+    "seen": 1793683808.0256042,
+    "ast_hash": "f92cc6b55b4b729ee2879d7f1dac6e3a",
+    "semantic_hash": "f92cc6b55b4b729ee2879d7f1dac6e3a"
   },
   "crm/supabase/migrations/0004_templates.sql": {
-    "mtime": 1792879028.0978892,
-    "seen": 1792879212.688195,
-    "ast_hash": "",
-    "semantic_hash": ""
+    "mtime": 1793394939.197955,
+    "seen": 1793683808.0256078,
+    "ast_hash": "50c638a74980481656198908d964fa5f",
+    "semantic_hash": "50c638a74980481656198908d964fa5f"
   },
   "crm/supabase/migrations/0005_broadcasts.sql": {
-    "mtime": 1792879028.0981178,
-    "seen": 1792879212.6881962,
-    "ast_hash": "",
-    "semantic_hash": ""
+    "mtime": 1793394939.197955,
+    "seen": 1793683808.0256104,
+    "ast_hash": "034b3c9b9a94d2bfb4f027441c17b30d",
+    "semantic_hash": "034b3c9b9a94d2bfb4f027441c17b30d"
   },
   "crm/supabase/migrations/0006_agent.sql": {
-    "mtime": 1792879028.0983994,
-    "seen": 1792879212.6881971,
-    "ast_hash": "",
-    "semantic_hash": ""
+    "mtime": 1793394939.197955,
+    "seen": 1793683808.0256133,
+    "ast_hash": "0491629006f0348a7338ea58cfa81cfe",
+    "semantic_hash": "0491629006f0348a7338ea58cfa81cfe"
   },
   "crm/supabase/migrations/0007_settings.sql": {
-    "mtime": 1792879028.0987678,
-    "seen": 1792879212.6881971,
-    "ast_hash": "",
-    "semantic_hash": ""
+    "mtime": 1793394939.197955,
+    "seen": 1793683808.0256157,
+    "ast_hash": "5c54627862e255dc48602662dfa6e183",
+    "semantic_hash": "5c54627862e255dc48602662dfa6e183"
   },
   "crm/supabase/migrations/0008_booking.sql": {
-    "mtime": 1792879028.098913,
-    "seen": 1792879212.6881979,
-    "ast_hash": "",
-    "semantic_hash": ""
+    "mtime": 1793394939.197955,
+    "seen": 1793683808.0256183,
+    "ast_hash": "127e130a78cb1586b58be3b062e1460e",
+    "semantic_hash": "127e130a78cb1586b58be3b062e1460e"
   },
   "crm/supabase/migrations/0009_site_services.sql": {
-    "mtime": 1792879028.0990427,
-    "seen": 1792879212.6881988,
-    "ast_hash": "",
-    "semantic_hash": ""
+    "mtime": 1793394939.197955,
+    "seen": 1793683808.025621,
+    "ast_hash": "1b4cd0d2c436cc8eefb607cdb45c2f0d",
+    "semantic_hash": "1b4cd0d2c436cc8eefb607cdb45c2f0d"
   },
   "crm/supabase/migrations/0010_analytics.sql": {
-    "mtime": 1792879028.0991628,
-    "seen": 1792879212.6881988,
-    "ast_hash": "",
-    "semantic_hash": ""
+    "mtime": 1793394939.197955,
+    "seen": 1793683808.0256238,
+    "ast_hash": "dcba57477334e2ac60871509a4ad5f1b",
+    "semantic_hash": "dcba57477334e2ac60871509a4ad5f1b"
   },
   "crm/supabase/migrations/0011_tg_links.sql": {
-    "mtime": 1792879028.0992606,
-    "seen": 1792879212.6882,
-    "ast_hash": "",
-    "semantic_hash": ""
+    "mtime": 1793394939.197955,
+    "seen": 1793683808.025627,
+    "ast_hash": "b9049e8f864f447a41d4212806ae8243",
+    "semantic_hash": "b9049e8f864f447a41d4212806ae8243"
   },
   "crm/supabase/migrations/0012_site_consent.sql": {
-    "mtime": 1792879028.099403,
-    "seen": 1792879212.688201,
-    "ast_hash": "",
-    "semantic_hash": ""
+    "mtime": 1793394939.197955,
+    "seen": 1793683808.0256298,
+    "ast_hash": "9011703c05ee6b93880cd84befeee2a1",
+    "semantic_hash": "9011703c05ee6b93880cd84befeee2a1"
   },
   "crm/supabase/migrations/0013_filter_presets.sql": {
-    "mtime": 1792879028.0996222,
-    "seen": 1792879212.688201,
-    "ast_hash": "",
-    "semantic_hash": ""
+    "mtime": 1793394939.197955,
+    "seen": 1793683808.0256326,
+    "ast_hash": "f4f9f6f4b1e194f3650b61204f146183",
+    "semantic_hash": "f4f9f6f4b1e194f3650b61204f146183"
   },
   "crm/supabase/migrations/0014_lead_interests.sql": {
-    "mtime": 1792879028.0998998,
-    "seen": 1792879212.688202,
-    "ast_hash": "",
-    "semantic_hash": ""
+    "mtime": 1793394939.197955,
+    "seen": 1793683808.0256352,
+    "ast_hash": "a993b637eb7b44187bf3367d69aa97bf",
+    "semantic_hash": "a993b637eb7b44187bf3367d69aa97bf"
   },
   "shared/data/bookingGoals.ts": {
     "mtime": 1793394939.2683158,
@@ -1226,10 +1226,10 @@
     "semantic_hash": "76ddf5246b8191818bb55c08ce03ed35"
   },
   "crm/book/index.html": {
-    "mtime": 1792879119.2013953,
-    "seen": 1792879212.688268,
+    "mtime": 1793394939.1894183,
+    "seen": 1793425502.680736,
     "ast_hash": "6ac9e25e0751054d3b2ba670b6a4f359",
-    "semantic_hash": ""
+    "semantic_hash": "6ac9e25e0751054d3b2ba670b6a4f359"
   },
   "site/index.html": {
     "mtime": 1793394939.269184,
@@ -1638,5 +1638,17 @@
     "seen": 1793399253.499024,
     "ast_hash": "ab3048e7859e58b4f94f7fb1ae674be9",
     "semantic_hash": "ab3048e7859e58b4f94f7fb1ae674be9"
+  },
+  "docs/AUDIT-2026-10-31.md": {
+    "mtime": 1793396523.7891214,
+    "seen": 1793425502.6807396,
+    "ast_hash": "e3cfec6127df877330379e69b7760e95",
+    "semantic_hash": "e3cfec6127df877330379e69b7760e95"
+  },
+  "docs/TOOLING.md": {
+    "mtime": 1793396523.7891214,
+    "seen": 1793511185.8742883,
+    "ast_hash": "c0d58e3c8c9da8635e84d44fd02d2bc5",
+    "semantic_hash": "c0d58e3c8c9da8635e84d44fd02d2bc5"
   }
 }

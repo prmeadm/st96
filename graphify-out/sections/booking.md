@@ -2,7 +2,7 @@
 
 Расписание и слоты, заявки на встречу, подтверждение кнопками, уведомления и .ics, напоминания, страница /book, раздел «Запись» в админке.
 
-Граф раздела: `graphify-out/sections/booking/graph.json` (137 узлов, 372 внутренних связей).
+Граф раздела: `graphify-out/sections/booking/graph.json` (142 узлов, 376 внутренних связей).
 
 ## С чего начать сессию
 
@@ -21,8 +21,9 @@
 - `crm/server/booking/notify.ts` — 7 узл.
 - `crm/booking/MonthGrid.tsx` — 6 узл.
 - `crm/server/booking/types.ts` — 5 узл.
-- `crm/server/booking/ics.ts` — 4 узл.
+- `crm/book/index.html` — 5 узл.
 - `shared/data/serviceOptions.ts` — 4 узл.
+- `crm/server/booking/ics.ts` — 4 узл.
 - `api/booking.ts` — 3 узл.
 - `api/booking-admin.ts` — 3 узл.
 - `shared/data/bookingGoals.ts` — 2 узл.
@@ -32,14 +33,14 @@
 
 - `createBooking()` (crm/server/booking/service.ts:L98)
 - `ScheduleTab()` (crm/admin/pages/BookingPage.tsx:L146)
-- `dayInfo` (crm/server/booking/schedule.ts:L114)
-- `notifyClientDecision()` (crm/server/booking/notify.ts:L48)
+- `DayInfo` (crm/server/booking/schedule.ts:L27)
 - `normalizeSchedule()` (crm/server/booking/schedule.ts:L72)
+- `notifyClientDecision()` (crm/server/booking/notify.ts:L48)
 - `BookingRow` (crm/server/booking/types.ts:L4)
-- `bookingUrl()` (crm/server/booking/schedule.ts:L179)
 - `decideBooking()` (crm/server/booking/service.ts:L174)
 - `handler()` (api/booking.ts:L15)
 - `handler()` (api/booking-admin.ts:L10)
+- `bookingUrl()` (crm/server/booking/schedule.ts:L179)
 - `addDays()` (crm/server/booking/schedule.ts:L44)
 - `whenLabel()` (crm/server/booking/schedule.ts:L171)
 

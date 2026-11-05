@@ -105,7 +105,7 @@ SECTIONS = [
         'tasks': ['тексты и страницы', 'форма заявки', 'аналитика'],
     },
 ]
-SKIP = re.compile(r'^(print/|brand/|DESIGN-IS|graphify-out/|node_modules/|\.claude/|crm/admin-prototype/|screens-b-leasing/)')
+SKIP = re.compile(r'^(print/|brand/|design-is|graphify-out/|node_modules/|\.claude/|crm/prototypes/|screens-b-leasing/)')
 
 
 def section_of(path: str):

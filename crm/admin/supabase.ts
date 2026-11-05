@@ -1,7 +1,10 @@
 import { createClient } from '@supabase/supabase-js'
 
 // Публичные значения: доступ к данным ограничен правилами базы (RLS) и таблицей admins.
+const schema = (import.meta.env.VITE_SUPABASE_SCHEMA as string | undefined) || 'public'
+
 export const supabase = createClient(import.meta.env.VITE_SUPABASE_URL as string, import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string, {
+  db: { schema },
   auth: { persistSession: true, autoRefreshToken: true },
 })
 
