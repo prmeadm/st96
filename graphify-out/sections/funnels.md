@@ -25,14 +25,14 @@
 - `crm/admin/ui/VideoNoteField.tsx` — 8 узл.
 - `crm/server/funnels/retry.ts` — 6 узл.
 - `crm/admin/builder/Builder.tsx` — 6 узл.
-- `crm/server/funnels/triggers.ts` — 4 узл.
 - `crm/admin/pages/FunnelsPage.tsx` — 4 узл.
+- `crm/server/funnels/triggers.ts` — 4 узл.
 - `crm/admin/pages/FunnelPage.tsx` — 4 узл.
 - `crm/admin/builder/Preview.tsx` — 4 узл.
+- `crm/server/funnels/demo.ts` — 3 узл.
+- `crm/server/bot/videonote.test.ts` — 3 узл.
 - `crm/admin/builder/Edges.tsx` — 3 узл.
 - `crm/server/funnels/validate.ts` — 3 узл.
-- `crm/server/bot/videonote.test.ts` — 3 узл.
-- `crm/server/funnels/demo.ts` — 3 узл.
 - `crm/server/media.test.ts` — 2 узл.
 - `crm/server/bot/keyboard.test.ts` — 2 узл.
 
@@ -44,17 +44,17 @@
 - `Ic()` (crm/admin/builder/Nodes.tsx:L21)
 - `Inner()` (crm/admin/builder/Builder.tsx:L23)
 - `Shell()` (crm/admin/builder/Nodes.tsx:L25)
-- `startFunnel()` (crm/server/funnels/engine.ts:L99)
-- `handleClick()` (crm/server/funnels/engine.ts:L119)
 - `Funnel` (crm/server/funnels/types.ts:L12)
+- `handleClick()` (crm/server/funnels/engine.ts:L119)
+- `startFunnel()` (crm/server/funnels/engine.ts:L99)
 - `Graph` (crm/server/funnels/types.ts:L10)
 - `VideoNoteField()` (crm/admin/ui/VideoNoteField.tsx:L70)
-- `pickFunnel()` (crm/server/funnels/triggers.ts:L8)
+- `asArray()` (crm/server/funnels/types.ts:L35)
 
 ## От чего зависит (вызовы в другие разделы)
 
 - **Оболочка админки** (32): `BackLink()`, `BackLink.tsx`, `Icon()`, `Icon.tsx`, `RowActions()`, `RowActions.tsx`
-- **Данные и инфраструктура** (28): `ClientRow`, `MemoryRepo`, `Repo`, `SITE_SERVICES`, `memoryRepo.ts`, `repo.ts`
+- **Данные и инфраструктура** (30): `ClientRow`, `MemoryRepo`, `Repo`, `SITE_SERVICES`, `memoryRepo()`, `memoryRepo.ts`
 - **Запись на встречу** (10): `FORMAT_KEYS`, `FormatKey`, `ServiceKey`, `bookingUrl()`, `hasFreeSlots()`, `schedule.ts`
 - **Шаблоны и медиа** (6): `MediaField()`, `MediaField.tsx`, `TPL_KINDS`, `TemplateRow`, `templates.ts`
 - **Бот и диалоги** (5): `dialog.ts`, `notifyTopic()`, `sendContent()`

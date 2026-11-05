@@ -23,21 +23,21 @@
 ## Главные узлы (больше всего связей)
 
 - `createBot()` (crm/server/bot/bot.ts:L96)
-- `beginStart()` (crm/server/bot/bot.ts:L64)
 - `sendContent()` (crm/server/bot/dialog.ts:L167)
-- `handleTopicMessage()` (crm/server/bot/dialog.ts:L79)
+- `beginStart()` (crm/server/bot/bot.ts:L64)
 - `sendTemplate()` (crm/server/bot/dialog.ts:L233)
+- `handleTopicMessage()` (crm/server/bot/dialog.ts:L79)
 - `ensureClient()` (crm/server/bot/bot.ts:L30)
-- `relayToAdmins()` (crm/server/bot/dialog.ts:L51)
-- `verifySiteRef()` (crm/server/bot/siteRef.ts:L41)
 - `ensureTopic()` (crm/server/bot/dialog.ts:L37)
-- `handler()` (api/telegram.ts:L10)
-- `signSiteRef()` (crm/server/bot/siteRef.ts:L27)
+- `verifySiteRef()` (crm/server/bot/siteRef.ts:L41)
+- `relayToAdmins()` (crm/server/bot/dialog.ts:L51)
 - `issueSiteRef()` (crm/server/bot/siteRef.ts:L60)
+- `cardText()` (crm/server/bot/dialog.ts:L22)
+- `linkLeadClient()` (crm/server/bot/bot.ts:L21)
 
 ## От чего зависит (вызовы в другие разделы)
 
-- **Данные и инфраструктура** (50): `.bumpTemplateUsed()`, `.claimUpdate()`, `.findActiveRun()`, `.findClient()`, `.findClientById()`, `.getRun()`
+- **Данные и инфраструктура** (51): `.bumpTemplateUsed()`, `.claimUpdate()`, `.findActiveRun()`, `.findClient()`, `.findClientById()`, `.getRun()`
 - **Воронки** (37): `CAPTION_LIMIT`, `Env`, `NOT_A_FILE_ERROR`, `TRIGGER`, `canonicalVideoUrl()`, `demo.ts`
 - **Запись на встречу** (13): `bookingUrl()`, `createBooking()`, `decideBooking()`, `loadDirectAdmins()`, `notify.ts`, `notifyClientDecision()`
 - **Заявки и клиенты** (10): `clickablePhone()`, `ingestGroupMessage()`, `ingestLead()`, `leads/ingest.ts`, `parse.ts`, `parseLead()`

@@ -30,7 +30,7 @@
 - `TPL_KINDS` (crm/server/templates.ts:L20)
 - `CameraCapture()` (crm/admin/ui/CameraCapture.tsx:L12)
 - `handler()` (api/send-template.ts:L9)
-- `TPL_GOALS` (crm/server/templates.ts:L22)
+- `preview()` (crm/admin/pages/TemplatesPage.tsx:L13)
 - `toVoiceFile()` (crm/admin/ui/MediaField.tsx:L28)
 - `TPL_SERVICES` (crm/server/templates.ts:L25)
 

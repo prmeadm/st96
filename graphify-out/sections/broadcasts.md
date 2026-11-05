@@ -16,8 +16,8 @@
 - `crm/server/broadcasts.ts` — 15 узл.
 - `crm/admin/pages/BroadcastPage.tsx` — 6 узл.
 - `crm/server/broadcasts.test.ts` — 4 узл.
-- `api/broadcast.ts` — 3 узл.
 - `crm/admin/pages/BroadcastsPage.tsx` — 3 узл.
+- `api/broadcast.ts` — 3 узл.
 
 ## Главные узлы (больше всего связей)
 
@@ -31,13 +31,13 @@
 - `Segment` (crm/server/broadcasts.ts:L7)
 - `validateBroadcast()` (crm/server/broadcasts.ts:L44)
 - `AudienceClient` (crm/server/broadcasts.ts:L25)
-- `BROADCAST_STATUS` (crm/server/broadcasts.ts:L27)
 - `fromRow()` (crm/admin/pages/BroadcastPage.tsx:L16)
+- `BROADCAST_STATUS` (crm/server/broadcasts.ts:L27)
 
 ## От чего зависит (вызовы в другие разделы)
 
 - **Оболочка админки** (31): `BackLink()`, `BackLink.tsx`, `Icon()`, `Icon.tsx`, `PICK_KINDS`, `RowActions()`
-- **Данные и инфраструктура** (24): `.claimRecipients()`, `.finishRecipient()`, `.getBroadcast()`, `.insertMessage()`, `.insertRecipients()`, `.listActiveBroadcasts()`
+- **Данные и инфраструктура** (25): `.claimRecipients()`, `.finishRecipient()`, `.getBroadcast()`, `.insertMessage()`, `.insertRecipients()`, `.listActiveBroadcasts()`
 - **Шаблоны и медиа** (11): `MediaField()`, `MediaField.tsx`, `TPL_VARS`, `TemplateKind`, `TemplateRow`, `fillTemplate()`
 - **Агент, ИИ и аналитика** (3): `TranslateButton()`, `TranslateButton.tsx`
 - **Бот и диалоги** (3): `dialog.ts`, `sendContent()`
