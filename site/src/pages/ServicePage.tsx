@@ -4,6 +4,7 @@ import { localePath, useLang } from '../lib/i18n'
 import { useSeo } from '../hooks/useSeo'
 import ServiceHero from '../components/sections/ServiceHero'
 import AiServices from '../components/sections/AiServices'
+import ProducingGallery from '../components/sections/ProducingGallery'
 import Advantages from '../components/sections/Advantages'
 import ProcessTabs from '../components/sections/ProcessTabs'
 import Results from '../components/sections/Results'
@@ -26,6 +27,7 @@ export default function ServicePage() {
     <>
       <ServiceHero service={service} />
       {service.slug === 'ai' && <AiServices />}
+      {service.offers && service.offers.length > 0 && <ProducingGallery service={service} />}
       <Advantages service={service} />
       <ProcessTabs service={service} />
       <Results service={service} />

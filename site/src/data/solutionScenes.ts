@@ -156,4 +156,109 @@ export const solutionScenes: Record<string, SolutionScene> = {
       { word: 'Control', cap: 'Your data stays yours, costs stay predictable' },
     ],
   },
+
+  'producing-scripts': {
+    motif: 'bubble',
+    ru: [
+      { word: 'Сценарии', cap: 'Для рекламы, сервиса и продающих видео' },
+      { word: 'Контент-план', cap: 'Структура, которая ведёт к покупке' },
+      { word: 'Продажи', cap: 'Ролики, которые зритель досматривает' },
+    ],
+    en: [
+      { word: 'Scripts', cap: 'For ads, service and sales videos' },
+      { word: 'Content plan', cap: 'A structure that leads to the sale' },
+      { word: 'Sales', cap: 'Videos people watch to the end' },
+    ],
+  },
+  'producing-strategies': {
+    motif: 'bars',
+    ru: [
+      { word: 'Стратегия', cap: 'От цели до тактики' },
+      { word: 'Рост', cap: 'Маркетинг, проекты, менеджмент' },
+      { word: 'Бренд', cap: 'Личный бренд и масштабирование' },
+    ],
+    en: [
+      { word: 'Strategy', cap: 'From goal to tactics' },
+      { word: 'Growth', cap: 'Marketing, projects, management' },
+      { word: 'Brand', cap: 'Personal brand and scaling' },
+    ],
+  },
+  'producing-visual': {
+    motif: 'squares',
+    ru: [
+      { word: 'Бренд-бук', cap: 'Единый визуальный язык' },
+      { word: 'Соцсети', cap: 'Оформление, которое узнают' },
+      { word: 'Узнаваемость', cap: 'Вас замечают и запоминают' },
+    ],
+    en: [
+      { word: 'Brand book', cap: 'A single visual language' },
+      { word: 'Social', cap: 'Design people recognize' },
+      { word: 'Recall', cap: 'You get noticed and remembered' },
+    ],
+  },
+  'producing-business': {
+    motif: 'layers',
+    ru: [
+      { word: 'Под ключ', cap: 'Распаковка и deep research' },
+      { word: 'Упаковка', cap: 'Позиционирование и архетип' },
+      { word: 'Запуск', cap: 'Монетизация и масштабирование' },
+    ],
+    en: [
+      { word: 'Turnkey', cap: 'Unpacking and deep research' },
+      { word: 'Packaging', cap: 'Positioning and archetype' },
+      { word: 'Launch', cap: 'Monetization and scaling' },
+    ],
+  },
+  'producing-media': {
+    motif: 'frame',
+    ru: [
+      { word: 'Медиапроект', cap: 'Концепция и контент' },
+      { word: 'Команда', cap: 'Подбор людей под задачу' },
+      { word: 'Релиз', cap: 'Медиаплан, бюджет, монетизация' },
+    ],
+    en: [
+      { word: 'Media', cap: 'Concept and content' },
+      { word: 'Team', cap: 'People matched to the task' },
+      { word: 'Release', cap: 'Media plan, budget, monetization' },
+    ],
+  },
+  'producing-client-service': {
+    motif: 'phone',
+    ru: [
+      { word: 'Сервис', cap: 'Концепция и коммуникационные сценарии' },
+      { word: 'Инструменты', cap: 'Оснащение команды' },
+      { word: 'Продажи', cap: 'Продажи на базе AI' },
+    ],
+    en: [
+      { word: 'Service', cap: 'Concept and communication scripts' },
+      { word: 'Tools', cap: 'Equipping the team' },
+      { word: 'Sales', cap: 'AI-powered sales' },
+    ],
+  },
+  'producing-sales-automation': {
+    motif: 'steps',
+    ru: [
+      { word: 'Воронка', cap: 'Аудит процессов' },
+      { word: 'Автоматизация', cap: 'Инструменты продаж' },
+      { word: 'Масштаб', cap: 'Точки роста и результат' },
+    ],
+    en: [
+      { word: 'Funnel', cap: 'Process audit' },
+      { word: 'Automation', cap: 'Sales tools' },
+      { word: 'Scale', cap: 'Growth points and results' },
+    ],
+  },
+  'producing-game-mechanics': {
+    motif: 'cards',
+    ru: [
+      { word: 'Игра', cap: 'Механики для команды и клиентов' },
+      { word: 'Вовлечение', cap: 'Люди играют и достигают цели' },
+      { word: 'Результат', cap: 'Нужные KPI играючи' },
+    ],
+    en: [
+      { word: 'Play', cap: 'Mechanics for teams and customers' },
+      { word: 'Engagement', cap: 'People play and hit goals' },
+      { word: 'Results', cap: 'The KPIs you need — playfully' },
+    ],
+  },
 }

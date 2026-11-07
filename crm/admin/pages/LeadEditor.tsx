@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { SITE_SERVICES } from '../../server/catalog'
+import { SITE_OFFERS, SITE_SERVICES } from '../../server/catalog'
 import { callApi } from '../api'
 import { INTERESTS, SERVICES, STATUSES, WARNINGS, type Lead } from '../types'
 import { Icon } from '../ui/Icon'
@@ -65,6 +65,11 @@ export function LeadEditor({ lead, onClose, onSaved }: { lead: Lead | null; onCl
             <div className="fld"><label>Услуга</label>
               <select value={f.service_key} onChange={(e) => up({ service_key: e.target.value })}>
                 {SITE_SERVICES.map((s) => <option key={s.key} value={s.key}>{s.ru}</option>)}
+                {SITE_SERVICES.filter((s) => SITE_OFFERS.some((o) => o.parent === s.key)).map((s) => (
+                  <optgroup key={s.key} label={`${s.ru} — направления`}>
+                    {SITE_OFFERS.filter((o) => o.parent === s.key).map((o) => <option key={o.key} value={o.key}>{o.ru}</option>)}
+                  </optgroup>
+                ))}
                 <option value="other">Не указана</option>
               </select></div>
             <div className="fld"><label>Статус</label>

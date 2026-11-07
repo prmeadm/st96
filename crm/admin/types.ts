@@ -1,4 +1,4 @@
-import { SITE_SERVICES } from '../server/catalog'
+import { SITE_OFFERS, SITE_SERVICES } from '../server/catalog'
 import type { InterestKey } from '../server/leads/interests'
 
 export { INTERESTS } from '../server/leads/interests'
@@ -51,8 +51,11 @@ export type Note = {
 
 export type Msg = { id: number; direction: 'in' | 'out' | 'admin'; kind: string; text: string | null; created_at: string }
 
-/** Услуги только с сайта (src/data/services.ts): ключ → название */
-export const SERVICES: Record<string, string> = Object.fromEntries(SITE_SERVICES.map((s) => [s.key, s.ru]))
+/** Услуги и направления с сайта (src/data/services.ts): ключ → название */
+export const SERVICES: Record<string, string> = Object.fromEntries([
+  ...SITE_SERVICES.map((s) => [s.key, s.ru] as const),
+  ...SITE_OFFERS.map((o) => [o.key, `${o.parentRu}: ${o.ru}`] as const),
+])
 export const STATUSES: Record<Lead['status'], string> = { new: 'Новая', in_progress: 'В работе', won: 'Выиграна', lost: 'Проиграна', spam: 'Спам' }
 export const SOURCES: Record<string, string> = { site_form: 'Сайт', stand_form: 'Стенд', tg_group: 'Группа', bot: 'Бот', manual: 'Вручную' }
 export const WARNINGS: Record<string, string> = {

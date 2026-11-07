@@ -7,7 +7,11 @@ type ServiceText = Pick<
   | 'title'
   | 'tagline'
   | 'heroNote'
+  | 'heroVideo'
   | 'keywords'
+  | 'offersTitle'
+  | 'offersLead'
+  | 'offers'
   | 'advantagesLead'
   | 'advantages'
   | 'processLead'
@@ -26,7 +30,64 @@ export const servicesEn: Record<string, ServiceText> = {
     tagline:
       'We take on the entire path of a creative project — from meaning and concept to release and first revenue. Artists, media projects, collaborations, shows.',
     heroNote: 'From idea to release — turnkey',
+    heroVideo: { src: '/video/producing/offers-en.mp4', poster: '/video/producing/offers-en.jpg', portrait: true },
     keywords: ['Strategy', 'Casting', 'Budget', 'Team', 'Release', 'Monetization'],
+    offersTitle: 'Producing services',
+    offersLead:
+      'Eight directions — from script and strategy to launching a business and automating sales. Take one, or put the whole project together.',
+    offers: [
+      {
+        key: 'producing-scripts',
+        title: 'Creative script development',
+        text: 'Content plan, advertising, sales videos.',
+      },
+      {
+        key: 'producing-strategies',
+        title: 'Creative strategy development',
+        text: 'Marketing, project, growth, management and scaling strategies, plus personal brand development.',
+      },
+      {
+        key: 'producing-visual',
+        title: 'Visual concept development',
+        text: 'Brand book, visual guide, social media design.',
+      },
+      {
+        key: 'producing-business',
+        title: 'Business project producing',
+        text: 'Turnkey business development: owner unpacking, deep research, product packaging.',
+        points: [
+          'Archetyping',
+          'Positioning',
+          'Conceptual design',
+          'Communication strategy',
+          'Inside/outside interaction tools',
+          'Monetization',
+          'Scaling',
+        ],
+      },
+      {
+        key: 'producing-media',
+        title: 'Media project producing',
+        text: 'Creative concept, artistic content, team selection.',
+        points: ['Media planning', 'Budgeting', 'Monetization'],
+      },
+      {
+        key: 'producing-client-service',
+        title: 'Customer service producing',
+        text: 'Creative concept and communication scripts, equipping with tools.',
+        points: ['Team management', 'AI-based sales building'],
+      },
+      {
+        key: 'producing-sales-automation',
+        title: 'Sales funnel automation',
+        text: 'AI-powered sales automation: process audit, finding and implementing sales tools, growth points, scaling results.',
+      },
+      {
+        key: 'producing-game-mechanics',
+        title: 'Game mechanics development',
+        text: 'We design game mechanics for team management and customer engagement. Hit your targets while playing.',
+      },
+    ],
     advantagesLead:
       'Producing is not "help with an idea" — it is systematic, result-driven work at every stage.',
     advantages: [
