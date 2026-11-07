@@ -61,7 +61,8 @@
   --accent-ai-solid: #c084fc;
 }
 
-/* light theme: same tokens, inverted; acid becomes a deeper lime so it stays readable */
+/* light theme: same tokens, inverted; acid becomes a deeper lime so it stays readable.
+   Акценты услуг — цвета Claude — одинаковые в обеих темах. */
 :root[data-theme='light'] {
   color-scheme: light;
   --color-ink: #f5f4ef;
@@ -70,10 +71,6 @@
   --color-paper: #09090b;
   --color-paper-dim: #585860;
   --color-acid: #4f7600;
-  --accent-producing: #6246e0;
-  --accent-promotion: #557a00;
-  --accent-production: #0a8472;
-  --accent-ai: #8a35dc;
 }
 
 html {
