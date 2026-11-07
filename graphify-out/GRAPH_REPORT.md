@@ -1,20 +1,22 @@
-# Graph Report - st96-site  (2026-11-05)
+# Graph Report - st96-site  (2026-11-07)
 
 ## Corpus Check
-- cluster-only mode — file stats not available
+- 217 files · ~153,240 words
+- Verdict: corpus is large enough that graph structure adds value.
+- Unclassified: 19 file(s) not represented in the graph (top: .css 13, .woff2 4, (none) 1)
 
 ## Summary
-- 1667 nodes · 4249 edges · 112 communities (75 shown, 37 thin omitted)
+- 1676 nodes · 4284 edges · 117 communities (80 shown, 37 thin omitted)
 - Extraction: 96% EXTRACTED · 4% INFERRED · 0% AMBIGUOUS · INFERRED: 190 edges (avg confidence: 0.85)
-- Token cost: 23,103 input · 23,779 output
+- Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `2313209a`
+- Built from commit: `609a6ef8`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
 ## Community Hubs (Navigation)
-- agent/engine.ts
+- repo.ts
 - Editor.tsx
 - bot.ts
 - TemplatesPage.tsx
@@ -25,25 +27,25 @@
 - dialog.ts
 - engine.test.ts
 - Repo
-- booking.ts
-- Icon
+- service.ts
+- Footer.tsx
 - funnels/engine.ts
 - BroadcastPage.tsx
-- service.ts
+- booking-admin.ts
 - AnalyticsPage.tsx
 - MediaField.tsx
 - useUi
 - ST96 — визуальный гид (design system)
-- react
-- memoryRepo
-- App.tsx
+- bot.test.ts
+- realFunnel.test.ts
+- Footer.tsx
 - BookPage.tsx
 - tools.ts
 - LeadCapture.tsx
 - package.json
 - booking.test.ts
 - parse.ts
-- SolutionScene.tsx
+- AgentScene.tsx
 - manual.ts
 - 0015_crm_schema.sql
 - content.ts
@@ -51,14 +53,14 @@
 - leads/ingest.ts
 - bot.test.ts
 - База данных ST96
-- PhoneField.tsx
-- Сайт ST96 — визуальный гид
-- i18n.ts
+- normalizeSchedule
+- AiServices.tsx
+- useLang
 - Reveal
 - compilerOptions
-- Admin Redesign Plan
+- agent/engine.ts
 - Передача проекта ST96 в новую сессию
-- CRM Visual Style Guide
+- framer-motion
 - CLAUDE.md
 - dependencies
 - Аудит ST96 и связанных проектов — 2026-10-31
@@ -67,11 +69,10 @@
 - Site Services Catalog
 - Фильтр в «Заявках» и «Клиентах» (окно в духе Битрикс24, сохранённые наборы)
 - Design Audit Evidence
-- Platform Data & Messaging
-- Site Fonts and Assets
-- Project Structure Rules
+- Icon
+- jobs.ts
 - 0010_analytics.sql
-- Lead Attribution Payload
+- SolutionScene.tsx
 - Design Audit Verdict
 - ST96 Project Status
 - design-is-2026-10-14/00-scope.md
@@ -80,7 +81,7 @@
 - Media Upload and Video Notes
 - design-is-2026-10-20/02-scorecard.md
 - design-is-2026-10-20/03-verdict.md
-- toLocal
+- ClientRow
 - Planned Migrations
 - ST96 Platform Components
 - Funnel Execution & Meetings
@@ -89,6 +90,7 @@
 - Build and Dev Scripts
 - ST96 Website Overview
 - CRM Booking Page
+- llm.ts
 - Agent Task Database
 - Gemini Agent & Translations
 - Design Audit Methodology
@@ -96,14 +98,16 @@
 - Service Video Thumbnails
 - Video Player Page
 - Geo Handler Config
-- .claude/CLAUDE.md
+- repo.ts
 - 0013_filter_presets.sql
 - tsx / node --test — 117 серверных тестов
 - Риск: .env с живыми ключами в исходниках деплоя retouch-studio
 - tsconfig.json
 - vercel.json
+- agent-model.ts
 - App Settings Schema
 - Telegram Links Schema
+- groupImport.ts
 - Claude Code Hooks
 - Supabase CRM Schema
 - AI Agents Video Poster
@@ -116,35 +120,38 @@
 - SaaS Video Thumbnail
 - Telegram Mini App Service
 - Video Thumbnail Service
+- ST96 Platform
+- .claude/CLAUDE.md
 - Hero Video Compression
 - Hyperframes Video Scenes
 - Team Work Decomposition
+- ClientPage.tsx
 - AI Hero Video Poster
 - Production Hero Video Poster
 
 ## God Nodes (most connected - your core abstractions)
 1. `Repo` - 84 edges
-2. `react` - 58 edges
+2. `react` - 59 edges
 3. `Icon()` - 50 edges
 4. `createBot()` - 33 edges
 5. `supabaseRepo()` - 30 edges
-6. `ST96 — визуальный гид (design system)` - 29 edges
-7. `useLang()` - 27 edges
+6. `useLang()` - 29 edges
+7. `ST96 — визуальный гид (design system)` - 29 edges
 8. `grammy` - 27 edges
-9. `useUi()` - 26 edges
-10. `telegramOut()` - 26 edges
+9. `telegramOut()` - 26 edges
+10. `useUi()` - 26 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `4. Переменные окружения базы` --references--> `dbSchema()`  [INFERRED]
   docs/DATABASE.md → crm/server/env.ts
 - `Как это работает` --references--> `parseLead()`  [INFERRED]
   docs/PLATFORM.md → crm/server/leads/parse.ts
-- `Верхний уровень` --references--> `PhoneField()`  [INFERRED]
-  docs/STRUCTURE.md → shared/ui/PhoneField.tsx
-- `Структура кода` --references--> `Repo`  [INFERRED]
-  docs/PLATFORM.md → crm/server/repo.ts
 - `Статус` --references--> `TallText()`  [INFERRED]
   docs/PLATFORM.md → crm/admin/builder/Editor.tsx
+- `Статус` --references--> `LeadEditor()`  [INFERRED]
+  docs/PLATFORM.md → crm/admin/pages/LeadEditor.tsx
+- `Статус` --references--> `ContactLinks()`  [INFERRED]
+  docs/PLATFORM.md → crm/admin/ui/ContactLinks.tsx
 
 ## Import Cycles
 - None detected.
@@ -168,23 +175,23 @@
 - **Доставка шрифтов Unbounded/Inter (Google Fonts vs самохостинг)** — site_index, site_index_google_fonts, site_public_fonts, docs_visual_guide_typography, docs_visual_guide__ref__crm_book_fonts [INFERRED 0.85]
 - **Переключение тёмной/светлой темы без вспышки** — site_index, docs_visual_guide__ref__site_src_index, docs_visual_guide_light_theme, docs_visual_guide_solid_accent_buttons [INFERRED 0.85]
 
-## Communities (112 total, 37 thin omitted)
+## Communities (117 total, 37 thin omitted)
 
-### Community 0 - "agent/engine.ts"
-Cohesion: 0.05
-Nodes (83): config, handler(), config, handler(), config, handler(), config, handler() (+75 more)
+### Community 0 - "repo.ts"
+Cohesion: 0.14
+Nodes (26): config, handler(), config, handler(), config, handler(), config, handler() (+18 more)
 
 ### Community 1 - "Editor.tsx"
-Cohesion: 0.06
-Nodes (75): Builder(), Inner(), isMobile(), Props, Snap, ACT_TYPES, actText(), autoLayout() (+67 more)
+Cohesion: 0.05
+Nodes (79): Builder(), Inner(), isMobile(), Props, Snap, ACT_TYPES, actText(), autoLayout() (+71 more)
 
 ### Community 2 - "bot.ts"
-Cohesion: 0.10
+Cohesion: 0.12
 Nodes (17): config, handler(), json(), beginStart(), createBot(), ensureClient(), From, fullName() (+9 more)
 
 ### Community 3 - "TemplatesPage.tsx"
-Cohesion: 0.12
-Nodes (24): BroadcastPage(), SendTemplate(), blank(), Draft, Editor(), Filters, preview(), SAMPLE (+16 more)
+Cohesion: 0.11
+Nodes (30): BroadcastPage(), Draft, fromRow(), SAMPLE, toLocalInput(), STATUS_CHIP, blank(), Draft (+22 more)
 
 ### Community 4 - "0001_core.sql"
 Cohesion: 0.06
@@ -192,171 +199,171 @@ Nodes (49): clients_phone_key, clients_updated, clients_username_key, funnel_run
 
 ### Community 5 - "filter.ts"
 Cohesion: 0.10
-Nodes (36): FieldRow(), FilterBar(), FilterModal(), Preset, applyFilter(), Cond, condLabel(), CondValue (+28 more)
+Nodes (35): FieldRow(), FilterBar(), FilterModal(), Preset, applyFilter(), Cond, condLabel(), CondValue (+27 more)
 
 ### Community 6 - "ClientPage.tsx"
-Cohesion: 0.10
-Nodes (37): deleteClient(), esc(), Highlight(), Requests(), ClientsPage(), DEFAULTS, flatOf(), KNOWN (+29 more)
+Cohesion: 0.13
+Nodes (26): ClientsPage(), DEFAULTS, flatOf(), KNOWN, Row, uniq(), words(), blank (+18 more)
 
 ### Community 7 - "BookingPage.tsx"
-Cohesion: 0.08
-Nodes (43): active(), BookingPage(), CHIP, hhmm(), LinkTab(), ScheduleTab(), SVC_COLORS, svcColor() (+35 more)
+Cohesion: 0.09
+Nodes (38): active(), CHIP, hhmm(), ScheduleTab(), SVC_COLORS, svcColor(), Tab, TimeRange() (+30 more)
 
 ### Community 8 - "dialog.ts"
-Cohesion: 0.12
-Nodes (29): cardText(), Content, ensureTopic(), notifyTopic(), relayToAdmins(), sendContent(), threadGone(), TopicMessage (+21 more)
+Cohesion: 0.13
+Nodes (29): Content, ensureTopic(), notifyTopic(), relayToAdmins(), sendContent(), threadGone(), TopicMessage, topicTitle() (+21 more)
 
 ### Community 9 - "engine.test.ts"
-Cohesion: 0.12
-Nodes (17): Call, setup(), Incoming, norm(), pickFunnel(), ActionItem, asArray(), FEdge (+9 more)
+Cohesion: 0.11
+Nodes (19): blankGraph, demoGraph, Call, Incoming, norm(), pickFunnel(), ActionItem, asArray() (+11 more)
 
 ### Community 10 - "Repo"
-Cohesion: 0.05
-Nodes (27): AgentStats, AgentTask, BookingInsert, showTemplateMenu(), AudienceClient, BroadcastRow, BroadcastStatus, canReceive() (+19 more)
+Cohesion: 0.06
+Nodes (12): AgentTask, BroadcastRow, isRateLimit(), sleep(), tickBroadcasts(), Funnel, JobRow, RunRow (+4 more)
 
-### Community 11 - "booking.ts"
-Cohesion: 0.21
-Nodes (19): config, handler(), addDays(), dayInfo(), dayNum(), fromDayNum(), isDate(), minskNow() (+11 more)
-
-### Community 12 - "Icon"
+### Community 11 - "service.ts"
 Cohesion: 0.13
-Nodes (28): AdminApp(), readMin(), Shell(), useNewVersion(), useAuth(), AgentPage(), LIVE, RISK_CHIP (+20 more)
+Nodes (31): config, handler(), addDays(), FORMAT_KEYS, fromDayNum(), isDate(), minskNow(), slotAvailable() (+23 more)
+
+### Community 12 - "Footer.tsx"
+Cohesion: 0.20
+Nodes (14): CONTACTS, Footer(), Header(), Layout(), ThemeToggle(), setPageLanguage(), trackLanguageSwitch(), OPEN_EVENT (+6 more)
 
 ### Community 13 - "funnels/engine.ts"
-Cohesion: 0.08
-Nodes (39): bookingUrl(), SITE_SERVICES, blankGraph, demoGraph, advance(), Btn, CondCtx, DOW (+31 more)
+Cohesion: 0.12
+Nodes (30): bookingUrl(), serviceByLabel(), advance(), CondCtx, DOW, evalRule(), fill(), FORMAT_BY_LABEL (+22 more)
 
 ### Community 14 - "BroadcastPage.tsx"
-Cohesion: 0.10
-Nodes (26): callApi(), AuthCtx, AuthGate(), Ctx, Login(), State, Draft, fromRow() (+18 more)
+Cohesion: 0.13
+Nodes (19): callApi(), Check, ModelPicker(), Row(), SettingsPage(), Status, IconName, PATHS (+11 more)
 
-### Community 15 - "service.ts"
-Cohesion: 0.11
-Nodes (28): config, handler(), BOOK_ORIGIN, Schedule, SERVICE_KEYS, slotAvailable(), toInstant(), BookingInput (+20 more)
+### Community 15 - "booking-admin.ts"
+Cohesion: 0.27
+Nodes (6): decideBooking(), isHttps(), loadMeetDefault(), setMeetUrl(), BookingInsert, BookingRow
 
 ### Community 16 - "AnalyticsPage.tsx"
 Cohesion: 0.10
-Nodes (31): AnalyticsPage(), fromDay(), LlmRow, nf, num(), Period, PERIODS, toDay() (+23 more)
+Nodes (32): AnalyticsPage(), fromDay(), LlmRow, nf, num(), Period, PERIODS, toDay() (+24 more)
 
 ### Community 17 - "MediaField.tsx"
 Cohesion: 0.19
 Nodes (11): CameraCapture(), isSafari, Shot, touch(), ACCEPT, ext(), LIMIT, MediaField() (+3 more)
 
 ### Community 18 - "useUi"
-Cohesion: 0.20
-Nodes (21): Advantages(), AdvantagesData, LeadCapture(), ProcessData, ProcessTabs(), Results(), ResultsData, ServicesGrid() (+13 more)
+Cohesion: 0.23
+Nodes (13): clsx, Advantages(), AdvantagesData, Results(), ResultsData, AnimatedCounter(), Props, Props (+5 more)
 
 ### Community 19 - "ST96 — визуальный гид (design system)"
-Cohesion: 0.13
-Nodes (18): Бренд ST96 (brand/), crm/admin (эталонные внутренние экраны), ST96 — визуальный гид (design system), crm/admin/admin.css, crm/book/book.css, crm/book/fonts.css, HANDOFF.md (правила владельца), site/public/og-image.png (+10 more)
+Cohesion: 0.05
+Nodes (44): Бренд ST96 (brand/), crm/admin (эталонные внутренние экраны), 1. Источник правды, 2. Админка: палитра (светлая, единственная), 3. `/book`: палитра (тёмная, как сайт), 4. Типографика и размеры, 5. Форма и ритм админки, 6. Паттерны CRM (+36 more)
 
-### Community 20 - "react"
-Cohesion: 0.16
-Nodes (20): Анимации (framer-motion, prefers-reduced-motion), clsx, framer-motion, lucide-react, react, Accent, HomeHero(), ServiceHero() (+12 more)
+### Community 20 - "bot.test.ts"
+Cohesion: 0.15
+Nodes (14): SITE_START_LOCK_MS, priv, staff, START_ENT, user, b64url(), enc, mac() (+6 more)
 
-### Community 21 - "memoryRepo"
-Cohesion: 0.22
-Nodes (6): setup(), seed(), GroupMessage, LEAD, MemoryRepo, memoryRepo()
-
-### Community 22 - "App.tsx"
+### Community 21 - "realFunnel.test.ts"
 Cohesion: 0.18
-Nodes (15): App(), CookieBanner(), Toggle(), CustomCursor(), trackClicks(), trackLead(), clearAnalyticsCookies(), Consent (+7 more)
+Nodes (8): setup(), Env, setup(), fakeTelegram(), graph, Sent, setup(), memoryRepo()
+
+### Community 22 - "Footer.tsx"
+Cohesion: 0.18
+Nodes (15): App(), CookieBanner(), Toggle(), CustomCursor(), trackClicks(), trackLead(), Window, clearAnalyticsCookies() (+7 more)
 
 ### Community 23 - "BookPage.tsx"
-Cohesion: 0.15
-Nodes (9): BookPage(), Cfg, Lang, qs, Slot, T, BOOKING_GOALS, SERVICE_OPTIONS (+1 more)
+Cohesion: 0.07
+Nodes (23): BookPage(), Cfg, Lang, qs, Slot, T, api/booking.ts (public config/month/day/create/ics/tg_poll), api/geo.ts (x-vercel-ip-country) (+15 more)
 
 ### Community 24 - "tools.ts"
-Cohesion: 0.08
-Nodes (32): emptyStats(), ExportMsg, flattenText(), IMPORT_TAG, ImportPlan, importSlice(), ImportStats, MAX_EXPORT_BYTES (+24 more)
+Cohesion: 0.11
+Nodes (19): askJson(), history(), PLANNABLE, prompt(), SERVICE_KEYS, Tool, TOOL_BY_NAME, ToolCtx (+11 more)
 
 ### Community 25 - "LeadCapture.tsx"
-Cohesion: 0.13
-Nodes (20): api/lead.ts (Vercel function), site/src/components/layout/Footer.tsx (CONTACTS), AIDA Page Methodology, Website Lead-to-Telegram Flow, Telegram Bot API, POLICY_DATE_LABEL, POLICY_DATE_LABEL_EN, POLICY_PATH (+12 more)
+Cohesion: 0.15
+Nodes (17): api/lead.ts (Vercel function), site/src/components/layout/Footer.tsx (CONTACTS), AIDA Page Methodology, Website Lead-to-Telegram Flow, Telegram Bot API, POLICY_PATH, POLICY_VERSION, Props (+9 more)
 
 ### Community 26 - "package.json"
 Cohesion: 0.13
 Nodes (21): devDependencies, oxlint@^1.81.0, tailwindcss@^4.3.3, tsx@^4.23.15, @types/node@^24.13.3, @types/react@^19.2.18, @types/react-dom@^19.2.7, typescript@~6.0.2 (+13 more)
 
 ### Community 27 - "booking.test.ts"
-Cohesion: 0.15
-Nodes (21): input, NOW, S, S30, buildIcs(), esc(), utc(), adminText() (+13 more)
+Cohesion: 0.13
+Nodes (25): input, NOW, S, S30, buildIcs(), esc(), utc(), adminText() (+17 more)
 
 ### Community 28 - "parse.ts"
-Cohesion: 0.20
-Nodes (16): detectServiceKey(), serviceByLabel(), parseManualText(), clickablePhone(), clientKey(), detectService(), FieldKey, LABELS (+8 more)
+Cohesion: 0.16
+Nodes (15): config, handler(), json(), detectServiceKey(), offerByWords(), clientKey(), detectService(), FieldKey (+7 more)
 
-### Community 29 - "SolutionScene.tsx"
-Cohesion: 0.06
-Nodes (42): ST96 Admin HTML Entry, react-dom, accents, AiServices(), AgentScene(), AgentSceneCard(), COPY, Dst (+34 more)
+### Community 29 - "AgentScene.tsx"
+Cohesion: 0.12
+Nodes (18): AgentScene(), COPY, Dst, DST_ICON, DST_ORDER, flight(), Live, Node() (+10 more)
 
 ### Community 30 - "manual.ts"
-Cohesion: 0.24
-Nodes (11): upsertClientFromLead(), cleanInterests(), asParsed(), clean(), cleanFields(), createManualLead(), Key, LABELS (+3 more)
+Cohesion: 0.17
+Nodes (14): cleanInterests(), InterestKey, asParsed(), clean(), cleanFields(), createManualLead(), Key, LABELS (+6 more)
 
 ### Community 31 - "0015_crm_schema.sql"
 Cohesion: 0.14
 Nodes (6): crm.analytics_llm(), crm.analytics_templates(), crm.claim_broadcast_recipients(), crm.claim_jobs(), crm.clients_by_note_words(), crm.is_admin()
 
 ### Community 32 - "content.ts"
-Cohesion: 0.21
-Nodes (15): homeEn, servicesEn, ServiceText, Advantage, ProcessStep, Service, services, Stat (+7 more)
+Cohesion: 0.16
+Nodes (18): homeEn, servicesEn, ServiceText, accents, Advantage, Offer, ProcessStep, Service (+10 more)
 
 ### Community 33 - "compilerOptions"
 Cohesion: 0.10
 Nodes (19): compilerOptions, allowArbitraryExtensions, allowImportingTsExtensions, erasableSyntaxOnly, jsx, lib, module, moduleDetection (+11 more)
 
 ### Community 34 - "leads/ingest.ts"
-Cohesion: 0.19
-Nodes (12): config, handler(), json(), linkLeadClient(), GroupResult, IngestCtx, ingestGroupMessage(), ingestLead() (+4 more)
+Cohesion: 0.20
+Nodes (10): GroupMessage, GroupResult, IngestCtx, ingestGroupMessage(), ingestLead(), originSource(), stripAt(), LEAD (+2 more)
 
 ### Community 35 - "bot.test.ts"
-Cohesion: 0.15
-Nodes (15): SITE_START_LOCK_MS, priv, staff, START_ENT, user, b64url(), enc, issueSiteRef() (+7 more)
+Cohesion: 0.29
+Nodes (10): Attribution, clip(), config, handler(), json(), LeadPayload, sendAdEvents(), sha256() (+2 more)
 
 ### Community 36 - "База данных ST96"
 Cohesion: 0.15
 Nodes (12): 1. Как устроено сейчас и куда идём, 2. Карта таблиц (все — данные CRM, схема `crm`), 3. Правила (не нарушать), 4. Переменные окружения базы, 5. Миграции, 6. Как применять миграцию схемы (по шагам `0015`, уже выполнено 2026-11-05), База данных ST96, Воронки и очередь (+4 more)
 
-### Community 37 - "PhoneField.tsx"
-Cohesion: 0.19
-Nodes (10): api/booking.ts (public config/month/day/create/ics/tg_poll), api/geo.ts (x-vercel-ip-country), Admin SPA (/admin), Public booking page /book (crm/book/), detectCountry(), Examples, flag(), Lib (+2 more)
+### Community 37 - "normalizeSchedule"
+Cohesion: 0.32
+Nodes (8): clampInt(), cleanWin(), cleanWins(), defaultSchedule(), isTime(), normalizeSchedule(), tm(), loadSchedule()
 
-### Community 38 - "Сайт ST96 — визуальный гид"
-Cohesion: 0.18
-Nodes (9): 1. Источник правды, 2. Палитра (тёмная тема — основная), 3. Светлая тема, 4. Типографика, 5. Форма и ритм, 6. Компоненты и паттерны, 7. Тон и текст, 8. Чек-лист перед пушем (сайт) (+1 more)
+### Community 38 - "AiServices.tsx"
+Cohesion: 0.23
+Nodes (13): Анимации (framer-motion, prefers-reduced-motion), AiServices(), copy, ProducingGallery(), AgentSceneCard(), MagneticButton(), Props, tags (+5 more)
 
-### Community 39 - "i18n.ts"
-Cohesion: 0.19
-Nodes (18): Footer(), Header(), Layout(), ThemeToggle(), getServices(), ui, Ui, setPageLanguage() (+10 more)
+### Community 39 - "useLang"
+Cohesion: 0.26
+Nodes (18): HomeHero(), LeadCapture(), ProcessTabs(), ServicesGrid(), Marquee(), Props, getHomeContent(), getServiceBySlug() (+10 more)
 
 ### Community 40 - "Reveal"
-Cohesion: 0.34
-Nodes (11): OPERATOR, Reveal(), SeoOptions, setAlternate(), setMeta(), useSeo(), List(), PrivacyRu() (+3 more)
+Cohesion: 0.41
+Nodes (8): OPERATOR, POLICY_DATE_LABEL, POLICY_DATE_LABEL_EN, List(), PrivacyRu(), Section(), PrivacyEn(), PrivacyRoute()
 
 ### Community 41 - "compilerOptions"
 Cohesion: 0.11
 Nodes (17): compilerOptions, allowImportingTsExtensions, erasableSyntaxOnly, lib, module, moduleDetection, moduleResolution, noEmit (+9 more)
 
-### Community 42 - "Admin Redesign Plan"
-Cohesion: 0.20
-Nodes (9): Phase 0: Факты (уже собраны, не перепроверять без нужды), Phase 1: Токены (один слой), Phase 3: Честные тексты и состояния, Phase 4: Миграция страниц (по одной, с визуальной проверкой), Phase 5: Вес (ленивая загрузка конструктора), Phase 6: Проверка и закрытие, Primary goal, Не входит в этот план (+1 more)
+### Community 42 - "agent/engine.ts"
+Cohesion: 0.14
+Nodes (29): config, handler(), exportJson(), input, leadText(), mockLlm(), setup(), AgentDeps (+21 more)
 
 ### Community 43 - "Передача проекта ST96 в новую сессию"
 Cohesion: 0.16
 Nodes (11): Стек и адреса, Как запустить и проверить, Не в репозитории (специально), Передача проекта ST96 в новую сессию, Правила владельца, Секреты (только в Vercel, в код и чат не попадают), Что готово и выложено (всё проверено на проде), Что дальше (по приоритету, по согласованию с владельцем) (+3 more)
 
-### Community 44 - "CRM Visual Style Guide"
-Cohesion: 0.20
-Nodes (10): 1. Источник правды, 2. Админка: палитра (светлая, единственная), 3. `/book`: палитра (тёмная, как сайт), 4. Типографика и размеры, 5. Форма и ритм админки, 6. Паттерны CRM, 7. Тон и текст, 8. Доступ и индексация (+2 more)
+### Community 44 - "framer-motion"
+Cohesion: 0.25
+Nodes (11): framer-motion, lucide-react, Accent, ServiceHero(), Aurora(), HeroVideo(), Props, KeywordOrbit() (+3 more)
 
 ### Community 45 - "CLAUDE.md"
 Cohesion: 0.14
 Nodes (13): graphify, Platform handoff, Per-Section Short Sessions, Короткие сессии по разделам (экономия лимитов), Раскладка папок, graphify-out/graph.json, graphify-out/GRAPH_REPORT.md, graphify-out/sections/index.md (+5 more)
 
 ### Community 46 - "dependencies"
-Cohesion: 0.13
-Nodes (15): dependencies, @breezystack/lamejs@^1.2.7, clsx@^2.1.1, framer-motion@^13.4.0, grammy@^1.46.0, libphonenumber-js@^1.13.15, lucide-react@^1.47.0, react@^19.2.8 (+7 more)
+Cohesion: 0.15
+Nodes (13): dependencies, @breezystack/lamejs@^1.2.7, clsx@^2.1.1, framer-motion@^13.4.0, grammy@^1.46.0, libphonenumber-js@^1.13.15, lucide-react@^1.47.0, react@^19.2.8 (+5 more)
 
 ### Community 47 - "Аудит ST96 и связанных проектов — 2026-10-31"
 Cohesion: 0.21
@@ -364,15 +371,15 @@ Nodes (14): Аудит ST96 и связанных проектов — 2026-10-3
 
 ### Community 48 - "vite.config.ts"
 Cohesion: 0.14
-Nodes (8): @tailwindcss/vite@^4.3.3, vite@^8.3.0, site/src/index.css, Site Stack (Vite + React 19 + TypeScript + Tailwind v4 + Framer Motion + React Router), @tailwindcss/vite, vite, hasFiles(), pages
+Nodes (8): @tailwindcss/vite@^4.3.3, @vitejs/plugin-react@^6.1.1, site/src/index.css, Site Stack (Vite + React 19 + TypeScript + Tailwind v4 + Framer Motion + React Router), @tailwindcss/vite, @vitejs/plugin-react, hasFiles(), pages
 
 ### Community 49 - "build.mjs"
 Cohesion: 0.18
 Nodes (7): fit(), font, glyphs(), opentype, report, require, variants
 
 ### Community 50 - "Site Services Catalog"
-Cohesion: 0.20
-Nodes (10): detectServiceInText(), servicesBrief(), SiteService, STOP_WORDS, UNKNOWN_SERVICE, api/lead.ts (site form), crm/server/agent/groupImport.ts (import_group_export), crm/server/leads/manual.ts (parseManualText) (+2 more)
+Cohesion: 0.15
+Nodes (13): CATALOG, OFFER_STOP, SERVICE_SLUGS, servicesBrief(), SiteOffer, SiteService, STOP_WORDS, UNKNOWN_SERVICE (+5 more)
 
 ### Community 51 - "Фильтр в «Заявках» и «Клиентах» (окно в духе Битрикс24, сохранённые наборы)"
 Cohesion: 0.17
@@ -382,25 +389,21 @@ Nodes (13): broadcasts.test.ts — тесты сегмента interests в ра
 Cohesion: 0.25
 Nodes (7): Copy & honesty, Evidence, Known gaps, Print production («states»), Structural, Visual, Weight & resource
 
-### Community 53 - "Platform Data & Messaging"
-Cohesion: 0.21
-Nodes (5): Out, ChatPlace, crm/server/repo.ts (Repo interface, Supabase, tracedRepo), crm/supabase/migrations/0001..0011, ST96 Platform
+### Community 53 - "Icon"
+Cohesion: 0.14
+Nodes (31): AdminApp(), readMin(), Shell(), useNewVersion(), useAuth(), ST96 Admin HTML Entry, AgentPage(), LIVE (+23 more)
 
-### Community 54 - "Site Fonts and Assets"
-Cohesion: 0.29
-Nodes (7): Типографика: Unbounded + Inter, Google Fonts (Unbounded + Inter), Google Tag Manager (GTM-PMSDZV35), site/public/favicon.svg, ST96 favicon (96 logo), site/public/fonts (самохостинг woff2), Open Graph social preview image
-
-### Community 55 - "Project Structure Rules"
-Cohesion: 0.40
-Nodes (4): Верхний уровень, Карта проекта и правила размещения файлов, Правила, Сборка и адреса
+### Community 55 - "jobs.ts"
+Cohesion: 0.50
+Nodes (3): config, runTick(), resumeRun()
 
 ### Community 56 - "0010_analytics.sql"
 Cohesion: 0.27
 Nodes (10): public.templates, public.touch_templates(), templates_touch, llm_usage_at, public.analytics_llm(), public.analytics_templates(), public.llm_usage, public.template_events (+2 more)
 
-### Community 57 - "Lead Attribution Payload"
-Cohesion: 0.31
-Nodes (9): Attribution, clip(), config, handler(), json(), LeadPayload, sendAdEvents(), sha256() (+1 more)
+### Community 57 - "SolutionScene.tsx"
+Cohesion: 0.13
+Nodes (19): react-dom@^19.2.8, react-dom, ACCENT_POS, COPY, EASE_OUT, EASE_SNAP, enter(), exit() (+11 more)
 
 ### Community 59 - "ST96 Project Status"
 Cohesion: 0.22
@@ -438,6 +441,10 @@ Nodes (6): ST96 — сайт креативной студии, Запуск, З
 Cohesion: 0.40
 Nodes (5): CRM booking page (crm/book/index.html), /favicon.svg, /fonts/inter-cyrillic.woff2, /crm/book/main.tsx (entry module), /fonts/unbounded-cyrillic.woff2
 
+### Community 77 - "llm.ts"
+Cohesion: 0.22
+Nodes (11): config, DEFAULT_BASE_URL, DEFAULT_MODELS, Llm, LlmError, parseJson(), count(), MAX_TRANSLATE_CHARS (+3 more)
+
 ### Community 78 - "Agent Task Database"
 Cohesion: 0.83
 Nodes (3): agent_tasks_status, agent_tasks_touch, public.agent_tasks
@@ -462,6 +469,10 @@ Nodes (4): Video thumbnail: AI Websites service (English), Video thumbnail: AI W
 Cohesion: 0.83
 Nodes (4): ST96 — видео (YouTube player page), Inline player script (IIFE), telegram-web-app.js (Telegram Web App SDK), YouTube nocookie embed iframe
 
+### Community 85 - "repo.ts"
+Cohesion: 0.16
+Nodes (14): config, handler(), AudienceClient, BroadcastStatus, canReceive(), FOOTER, inAudience(), MEDIA_CAPTION_LIMIT (+6 more)
+
 ### Community 87 - "tsx / node --test — 117 серверных тестов"
 Cohesion: 0.67
 Nodes (3): crm/server/**/*.test.ts — серверные тесты (booking, agent, funnels, leads), Node 24 / npm / Vite / TypeScript — сборка сайта и админки, tsc -b, tsx / node --test — 117 серверных тестов
@@ -470,30 +481,46 @@ Nodes (3): crm/server/**/*.test.ts — серверные тесты (booking, a
 Cohesion: 0.67
 Nodes (3): Риск: .env с живыми ключами в исходниках деплоя retouch-studio, retouch-studio .env в исходниках деплоя (GEMINI_API_KEY, ADMIN_PASSWORD, AUTH_SECRET, ACCESS_CODE, BLOB_READ_WRITE_TOKEN), Vercel CLI 65.8.0 — деплой, проекты, переменные окружения
 
+### Community 91 - "agent-model.ts"
+Cohesion: 0.16
+Nodes (22): config, handler(), agentDeps(), fail(), MODEL_SETTING, resolveLlm(), openAiCompatible(), record() (+14 more)
+
+### Community 94 - "groupImport.ts"
+Cohesion: 0.15
+Nodes (15): emptyStats(), ExportMsg, flattenText(), IMPORT_TAG, ImportPlan, importSlice(), ImportStats, MAX_EXPORT_BYTES (+7 more)
+
+### Community 108 - "ST96 Platform"
+Cohesion: 0.50
+Nodes (4): ChatPlace, crm/server/repo.ts (Repo interface, Supabase, tracedRepo), crm/supabase/migrations/0001..0011, ST96 Platform
+
+### Community 116 - "ClientPage.tsx"
+Cohesion: 0.14
+Nodes (19): AuthCtx, AuthGate(), Ctx, Login(), State, deleteClient(), esc(), Highlight() (+11 more)
+
 ## Ambiguous Edges - Review These
 - `crm/server/agent/engine.ts (plan → approve → execute)` → `crm/server/bot/dialog.ts (topics, relay, templates menu)`  [AMBIGUOUS]
   docs/PLATFORM.md · relation: conceptually_related_to
 
 ## Knowledge Gaps
 - **111 isolated node(s):** `ffmpeg — видео для hero и сжатие роликов`, `Плагин hyperframes@hyperframes — кадры/видео-сцены (сейчас выключен)`, `team-orchestration — декомпозиция крупных работ на роли`, `Playwright MCP — живая проверка интерфейса в браузере`, `Node 24 / npm / Vite / TypeScript — сборка сайта и админки, tsc -b` (+106 more)
-  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 562 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
+  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 567 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
 - **37 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `react` connect `react` to `Editor.tsx`, `TemplatesPage.tsx`, `filter.ts`, `ClientPage.tsx`, `BookingPage.tsx`, `Icon`, `BroadcastPage.tsx`, `AnalyticsPage.tsx`, `MediaField.tsx`, `useUi`, `App.tsx`, `BookPage.tsx`, `LeadCapture.tsx`, `package.json`, `SolutionScene.tsx`, `PhoneField.tsx`, `i18n.ts`, `Reveal`, `dependencies`?**
-  _High betweenness centrality (0.134) - this node is a cross-community bridge._
+- **Why does `react` connect `Icon` to `Editor.tsx`, `TemplatesPage.tsx`, `filter.ts`, `ClientPage.tsx`, `BookingPage.tsx`, `Footer.tsx`, `BroadcastPage.tsx`, `AnalyticsPage.tsx`, `MediaField.tsx`, `useUi`, `Footer.tsx`, `BookPage.tsx`, `LeadCapture.tsx`, `package.json`, `AgentScene.tsx`, `content.ts`, `AiServices.tsx`, `useLang`, `Reveal`, `framer-motion`, `dependencies`, `SolutionScene.tsx`, `ClientPage.tsx`?**
+  _High betweenness centrality (0.159) - this node is a cross-community bridge._
 - **Are the 9 inferred relationships involving `createBot()` (e.g. with `.claimUpdate()` and `.findActiveRun()`) actually correct?**
   _`createBot()` has 9 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `ffmpeg — видео для hero и сжатие роликов`, `Плагин hyperframes@hyperframes — кадры/видео-сцены (сейчас выключен)`, `team-orchestration — декомпозиция крупных работ на роли` to the rest of the system?**
   _111 weakly-connected nodes found - possible documentation gaps or missing edges._
-- **Should `agent/engine.ts` be split into smaller, more focused modules?**
-  _Cohesion score 0.053077058719802506 - nodes in this community are weakly interconnected._
-- **Why does `Repo` connect `Repo` to `agent/engine.ts`, `bot.ts`, `leads/ingest.ts`, `dialog.ts`, `engine.test.ts`, `ST96 Project Status`, `booking.ts`, `funnels/engine.ts`, `service.ts`, `tools.ts`, `booking.test.ts`, `manual.ts`?**
-  _High betweenness centrality (0.053) - this node is a cross-community bridge._
+- **Should `repo.ts` be split into smaller, more focused modules?**
+  _Cohesion score 0.13655761024182078 - nodes in this community are weakly interconnected._
+- **Why does `ST96 — визуальный гид (design system)` connect `ST96 — визуальный гид (design system)` to `content.ts`, `AiServices.tsx`, `framer-motion`, `useUi`, `BookPage.tsx`?**
+  _High betweenness centrality (0.063) - this node is a cross-community bridge._
 - **Should `Editor.tsx` be split into smaller, more focused modules?**
-  _Cohesion score 0.05622489959839357 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.05041797283176593 - nodes in this community are weakly interconnected._
 
 ### Low-confidence Hints
 _AMBIGUOUS edges — the extractor was unsure. Verify before acting on these._
