@@ -18,19 +18,19 @@
 - `crm/server/leads/manual.ts` — 11 узл.
 - `crm/server/leads/ingest.ts` — 10 узл.
 - `crm/admin/pages/ClientsPage.tsx` — 8 узл.
-- `crm/admin/pages/LeadEditor.tsx` — 6 узл.
 - `crm/admin/pages/LeadsPage.tsx` — 6 узл.
+- `crm/admin/pages/LeadEditor.tsx` — 6 узл.
 - `crm/server/leads/filter.test.ts` — 5 узл.
 - `crm/server/leads/interests.ts` — 4 узл.
 - `crm/admin/pages/NotesPage.tsx` — 4 узл.
+- `crm/server/leads/ingest.test.ts` — 3 узл.
 - `crm/admin/pages/ClientPage.tsx` — 3 узл.
 - `crm/admin/ui/ContactLinks.tsx` — 3 узл.
-- `crm/server/leads/ingest.test.ts` — 3 узл.
-- `api/ingest.ts` — 2 узл.
-- `crm/server/leads/parse.test.ts` — 2 узл.
-- `api/lead.ts` — 2 узл.
 - `api/lead-admin.ts` — 2 узл.
+- `api/ingest.ts` — 2 узл.
 - `crm/admin/clientDelete.ts` — 2 узл.
+- `api/lead.ts` — 2 узл.
+- `crm/server/leads/parse.test.ts` — 2 узл.
 - `crm/server/leads/manual.test.ts` — 1 узл.
 
 ## Главные узлы (больше всего связей)
@@ -38,14 +38,14 @@
 - `parseLead()` (crm/server/leads/parse.ts:L86)
 - `ingestLead()` (crm/server/leads/ingest.ts:L55)
 - `ClientsPage()` (crm/admin/pages/ClientsPage.tsx:L56)
-- `ClientPage()` (crm/admin/pages/ClientPage.tsx:L78)
 - `LeadsPage()` (crm/admin/pages/LeadsPage.tsx:L54)
-- `ingestGroupMessage()` (crm/server/leads/ingest.ts:L87)
+- `ClientPage()` (crm/admin/pages/ClientPage.tsx:L78)
 - `updateManualLead()` (crm/server/leads/manual.ts:L151)
+- `ingestGroupMessage()` (crm/server/leads/ingest.ts:L87)
 - `normalizePhone()` (crm/server/leads/parse.ts:L51)
-- `inferFields()` (crm/server/leads/filter.ts:L42)
-- `createManualLead()` (crm/server/leads/manual.ts:L139)
 - `parseManualText()` (crm/server/leads/manual.ts:L39)
+- `createManualLead()` (crm/server/leads/manual.ts:L139)
+- `inferFields()` (crm/server/leads/filter.ts:L42)
 - `ContactLinks()` (crm/admin/ui/ContactLinks.tsx:L7)
 
 ## От чего зависит (вызовы в другие разделы)

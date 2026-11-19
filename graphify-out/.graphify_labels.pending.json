@@ -2,7 +2,7 @@
   "0": "supabaseRepo",
   "2": "bot.ts",
   "3": "BroadcastPage.tsx",
-  "9": "План: редизайн визуального слоя админки ST96 в брендовом стиле сайта",
+  "9": "engine.test.ts",
   "10": "Repo",
   "11": "ScheduleTab",
   "12": "i18n.ts",
@@ -10,7 +10,7 @@
   "17": "CameraCapture.tsx",
   "18": "useLang",
   "19": "ST96 — визуальный гид (design system)",
-  "20": "bot.test.ts",
+  "20": "siteRef.ts",
   "21": "engine.test.ts",
   "22": "Footer.tsx",
   "23": "BookPage.tsx",
@@ -21,7 +21,7 @@
   "34": "Сайт ST96 — визуальный гид",
   "35": "leads/ingest.ts",
   "37": "CRM ST96 — визуальный гид",
-  "38": "agent/types.ts",
+  "38": "broadcasts.ts",
   "39": "crm/api/lead.ts",
   "42": "agent/engine.ts",
   "44": "framer-motion",
@@ -38,5 +38,6 @@
   "94": "Admin SPA (/admin)",
   "108": "crm/server/agent/engine.ts (plan → approve → execute)",
   "110": "ThemeToggle.tsx",
-  "112": "brand/README.md"
+  "112": "brand/README.md",
+  "116": "ST96 Platform"
 }

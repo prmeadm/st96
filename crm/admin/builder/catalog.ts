@@ -32,6 +32,7 @@ export const P = {
   file: 'M6 3h8l4 4v14H6zM14 3v4h4',
   user: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21a8 8 0 0 1 16 0',
   flag: 'M5 21V4M5 4h12l-2 4 2 4H5',
+  clock: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 7v5l3.5 2',
 }
 
 export const TYPES: Record<string, { name: string; color: string; soft: string; icon: string; d?: string }> = {
@@ -41,10 +42,11 @@ export const TYPES: Record<string, { name: string; color: string; soft: string; 
   action: { name: 'Действие', color: 'var(--amber)', soft: 'var(--amber-soft)', icon: P.bolt, d: 'Задержка, теги, переменные, уведомление админу' },
   booking: { name: 'Запись на встречу', color: 'var(--teal)', soft: 'var(--teal-soft)', icon: P.cal2, d: 'Клиент получает личную ссылку на календарь и выбирает время; воронка ждёт решения администратора' },
   handoff: { name: 'Передать человеку', color: 'var(--red)', soft: 'var(--red-soft)', icon: P.hand, d: 'Остановить бота и уведомить администратора' },
+  offhours: { name: 'Вне рабочего времени', color: 'var(--violet)', soft: 'var(--violet-soft)', icon: P.clock, d: 'В рабочие часы пропускает дальше, вне часов отправляет сообщение и передаёт человеку' },
   ai: { name: 'ИИ-ответ', color: 'var(--violet)', soft: 'var(--violet-soft)', icon: P.ai },
   note: { name: 'Заметка', color: 'var(--violet)', soft: 'var(--violet-soft)', icon: P.note, d: 'Комментарий на схеме, клиент его не видит' },
 }
-export const MENU: (string | { sep: string })[] = [{ sep: 'Основные' }, 'message', 'condition', 'action', 'handoff', { sep: 'Дополнительно' }, 'booking', 'note']
+export const MENU: (string | { sep: string })[] = [{ sep: 'Основные' }, 'message', 'condition', 'action', 'handoff', 'offhours', { sep: 'Дополнительно' }, 'booking', 'note']
 
 // Только то, что движок умеет выполнять
 export const COND_TYPES = [
@@ -93,6 +95,7 @@ export function problems(type: string, d: D): string[] {
   }
   if (type === 'condition' && !(d.rules ?? []).length) p.push('Условие не задано')
   if (type === 'action' && !(d.items ?? []).length) p.push('Действие не задано')
+  if (type === 'offhours' && !String(d.message ?? '').trim() && !String(d.messageEn ?? '').trim()) p.push('Пустое сообщение вне рабочего времени')
   return p
 }
 
@@ -105,6 +108,7 @@ export function newData(type: string): D {
     action: { items: [] },
     booking: { services: [...SERVICES], formats: FORMATS, meet: true, message: '', messageEn: '' },
     handoff: { message: 'Передаю ваш вопрос администратору, он ответит в ближайшее время.', offhours: OFFHOURS_MESSAGE.ru, offhoursEn: OFFHOURS_MESSAGE.en, notify: true },
+    offhours: { message: OFFHOURS_MESSAGE.ru, messageEn: OFFHOURS_MESSAGE.en },
     note: { text: '' },
   } as Record<string, D>)[type] ?? {}
 }

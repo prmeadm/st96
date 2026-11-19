@@ -103,9 +103,9 @@
     "semantic_hash": ""
   },
   "docs/PLATFORM.md": {
-    "mtime": 1795106305.0209994,
-    "seen": 1795106336.061701,
-    "ast_hash": "da4671ae5a73f0cf98c1633a3b589b2b",
+    "mtime": 1795106623.3650327,
+    "seen": 1795106634.3324177,
+    "ast_hash": "d056c51eb036958dff746dad7afa4909",
     "semantic_hash": ""
   },
   "api/send-template.ts": {
@@ -217,9 +217,9 @@
     "semantic_hash": "99a5bc1afbbddbccecefe04ca7fc1e51"
   },
   "crm/admin/builder/Editor.tsx": {
-    "mtime": 1795103389.87841,
-    "seen": 1795103557.6455328,
-    "ast_hash": "b7631478a61d67b862ea3995f2bc1298",
+    "mtime": 1795106544.9644406,
+    "seen": 1795106634.3313649,
+    "ast_hash": "a6c5bf844ae89c325785c2e26387c3c4",
     "semantic_hash": ""
   },
   "crm/admin/builder/Nodes.tsx": {
@@ -229,15 +229,15 @@
     "semantic_hash": "1f582d289a416dfb7cd724df8ece688f"
   },
   "crm/admin/builder/Preview.tsx": {
-    "mtime": 1795101975.1436574,
-    "seen": 1795102800.185507,
-    "ast_hash": "45c44c0cab42cf01468937f0067917e7",
-    "semantic_hash": "45c44c0cab42cf01468937f0067917e7"
+    "mtime": 1795106544.9647932,
+    "seen": 1795106634.3313732,
+    "ast_hash": "240156b4b640148c11a1cf4e6fd66148",
+    "semantic_hash": ""
   },
   "crm/admin/builder/catalog.ts": {
-    "mtime": 1795103290.5744572,
-    "seen": 1795103557.6455462,
-    "ast_hash": "e507b3ee95436d6ef81293806dd97edf",
+    "mtime": 1795106506.0354295,
+    "seen": 1795106634.3313766,
+    "ast_hash": "e779c742fac1a6b30a2345e3e30bbcdb",
     "semantic_hash": ""
   },
   "crm/admin/clientDelete.ts": {
@@ -613,15 +613,15 @@
     "semantic_hash": "5673413ff8e3ad9ebf228e1fdb06a96d"
   },
   "crm/server/funnels/engine.test.ts": {
-    "mtime": 1795103344.5973866,
-    "seen": 1795103557.6459978,
-    "ast_hash": "f2d5ef3dc270ed0ab49e38d6534c0076",
+    "mtime": 1795106594.0968575,
+    "seen": 1795106634.331822,
+    "ast_hash": "d60325d80e6a5a78334c0c33ae3ac2cf",
     "semantic_hash": ""
   },
   "crm/server/funnels/engine.ts": {
-    "mtime": 1795106245.639374,
-    "seen": 1795106336.0613112,
-    "ast_hash": "1e22c9f223c9005fd07600792da6e384",
+    "mtime": 1795106554.4061825,
+    "seen": 1795106634.3318257,
+    "ast_hash": "ea85685ac9160014cf5e410c94942c47",
     "semantic_hash": ""
   },
   "crm/server/funnels/realFunnel.test.ts": {
@@ -643,10 +643,10 @@
     "semantic_hash": "86f7fef5d14f1561113480c2783c812f"
   },
   "crm/server/funnels/types.ts": {
-    "mtime": 1793394939.1945977,
-    "seen": 1793399253.4932532,
-    "ast_hash": "63874723609aa457a30617bc13fb437e",
-    "semantic_hash": "63874723609aa457a30617bc13fb437e"
+    "mtime": 1795106506.034692,
+    "seen": 1795106634.33184,
+    "ast_hash": "622b43883439882a1c3c61b9b3da14a1",
+    "semantic_hash": ""
   },
   "crm/server/funnels/validate.ts": {
     "mtime": 1793394939.1945977,
@@ -1909,9 +1909,9 @@
     "semantic_hash": ""
   },
   "crm/server/workingHours.ts": {
-    "mtime": 1795106031.124669,
-    "seen": 1795106336.0613804,
-    "ast_hash": "3d108503cbfee21f7a4106523cbddfc0",
+    "mtime": 1795106554.4066615,
+    "seen": 1795106634.3319314,
+    "ast_hash": "15ab64fbec2c5117e8f5f4896a04614a",
     "semantic_hash": ""
   },
   "package-lock.json": {

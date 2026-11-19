@@ -58,8 +58,11 @@ export function offhoursMessage(data: Record<string, unknown>, lang: 'ru' | 'en'
 export function offhoursTextFromFunnels(funnels: Funnel[], lang: 'ru' | 'en'): string {
   for (const f of funnels) {
     for (const n of f.graph.nodes) {
-      if (n.type !== 'handoff') continue
-      const own = str(lang === 'en' && str(n.data.offhoursEn).trim() ? n.data.offhoursEn : n.data.offhours).trim()
+      const own = n.type === 'handoff'
+        ? str(lang === 'en' && str(n.data.offhoursEn).trim() ? n.data.offhoursEn : n.data.offhours).trim()
+        : n.type === 'offhours'
+          ? str(lang === 'en' && str(n.data.messageEn).trim() ? n.data.messageEn : n.data.message).trim()
+          : ''
       if (own) return own
     }
   }

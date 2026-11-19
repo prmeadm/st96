@@ -25,14 +25,14 @@
 - `crm/server/funnels/engine.test.ts` — 8 узл.
 - `crm/admin/builder/Builder.tsx` — 6 узл.
 - `crm/server/funnels/retry.ts` — 6 узл.
+- `crm/admin/pages/FunnelPage.tsx` — 4 узл.
+- `crm/admin/pages/FunnelsPage.tsx` — 4 узл.
 - `crm/server/funnels/triggers.ts` — 4 узл.
 - `crm/admin/builder/Preview.tsx` — 4 узл.
-- `crm/admin/pages/FunnelsPage.tsx` — 4 узл.
-- `crm/admin/pages/FunnelPage.tsx` — 4 узл.
-- `crm/server/funnels/demo.ts` — 3 узл.
-- `crm/admin/builder/Edges.tsx` — 3 узл.
-- `crm/server/funnels/validate.ts` — 3 узл.
 - `crm/server/bot/videonote.test.ts` — 3 узл.
+- `crm/server/funnels/validate.ts` — 3 узл.
+- `crm/admin/builder/Edges.tsx` — 3 узл.
+- `crm/server/funnels/demo.ts` — 3 узл.
 - `crm/server/bot/keyboard.test.ts` — 2 узл.
 - `crm/server/media.test.ts` — 2 узл.
 
@@ -44,12 +44,12 @@
 - `Editor()` (crm/admin/builder/Editor.tsx:L119)
 - `Inner()` (crm/admin/builder/Builder.tsx:L23)
 - `Funnel` (crm/server/funnels/types.ts:L12)
-- `Shell()` (crm/admin/builder/Nodes.tsx:L25)
 - `str()` (crm/server/funnels/types.ts:L36)
-- `handleClick()` (crm/server/funnels/engine.ts:L113)
+- `Shell()` (crm/admin/builder/Nodes.tsx:L25)
 - `startFunnel()` (crm/server/funnels/engine.ts:L93)
-- `VideoNoteField()` (crm/admin/ui/VideoNoteField.tsx:L70)
+- `handleClick()` (crm/server/funnels/engine.ts:L113)
 - `Graph` (crm/server/funnels/types.ts:L10)
+- `VideoNoteField()` (crm/admin/ui/VideoNoteField.tsx:L70)
 
 ## От чего зависит (вызовы в другие разделы)
 

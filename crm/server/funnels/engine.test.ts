@@ -122,6 +122,35 @@ test('сообщение вне рабочего времени: своё из �
   assert.deepEqual(only(sat.calls, 'text').map((c) => c.text), ['Напишем завтра, Мария'])
 })
 
+test('блок «Вне рабочего времени»: в рабочие часы пропускает дальше, вне часов отправляет и передаёт человеку', async () => {
+  const graph = g(
+    [start(), { id: 'o', type: 'offhours' as const, data: { message: 'Мы спим, {имя}', messageEn: 'We are asleep, {имя}' } }, msg('m', 'Обычное сообщение')],
+    [E('start', 'out', 'o'), E('o', 'out', 'm')],
+  )
+  // вторник 13:00 — рабочие часы: блок ничего не отправляет и пропускает дальше
+  const day = setup(graph)
+  assert.equal(await startFunnel(day.env, day.funnel, await day.clientP), 'done')
+  assert.deepEqual(only(day.calls, 'text').map((c) => c.text), ['Обычное сообщение'])
+
+  // вторник 19:30 — вне часов: сообщение и мьют
+  const night = setup(graph)
+  const nightClient = await night.clientP
+  night.setNow(new Date('2026-10-20T16:30:00Z'))
+  assert.equal(await startFunnel(night.env, night.funnel, nightClient), 'handoff')
+  assert.deepEqual(only(night.calls, 'text').map((c) => c.text), ['Мы спим, Мария'])
+  assert.ok(night.repo.clients[0].human_until, 'диалог передан человеку')
+  assert.ok(night.repo.events.some((e) => e.event === 'offhours'))
+
+  // пустое поле и английский клиент: стандартный английский текст
+  const en = setup(g(
+    [start(), { id: 'o', type: 'offhours' as const, data: {} }],
+    [E('start', 'out', 'o')],
+  ), { language: 'en' })
+  en.setNow(new Date('2026-10-20T16:30:00Z'))
+  await startFunnel(en.env, en.funnel, await en.clientP)
+  assert.ok(only(en.calls, 'text').some((c) => /Thank you for reaching out!/.test(c.text!)))
+})
+
 test('английский клиент вне рабочего времени получает английский текст', async () => {
   const { repo, calls, env, funnel, clientP, setNow } = setup(demoGraph, { language: 'en' })
   const client = await clientP

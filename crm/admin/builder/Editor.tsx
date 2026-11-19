@@ -238,6 +238,14 @@ export function Editor({ node, patch, remove, duplicate, close }: { node: Node; 
     <div className="hint">Рабочие часы: {WORKING_HOURS_LABEL}. Вне их клиент получает сообщение выше вместо обычного; если поле пустое — стандартный текст. После этого блока бот молчит 12 часов или пока администратор не закроет диалог.</div>
   </>)
 
+  if (type === 'offhours') body = (<>
+    <div className="aibox">В рабочие часы блок ничего не отправляет и пропускает клиента дальше (как обычная стрелка). Вне рабочих часов — отправляет сообщение ниже и передаёт диалог человеку: бот молчит 12 часов.</div>
+    <Field label="Сообщение вне рабочего времени"><TallText value={d.message ?? ''} placeholder={OFFHOURS_MESSAGE.ru} onChange={(e) => set({ message: e.target.value })} /></Field>
+    <div className="lblrow"><span className="hint">English</span><TranslateButton source={d.message ?? ''} target={d.messageEn ?? ''} onDone={(t) => set({ messageEn: t })} /></div>
+    <textarea className="en" value={d.messageEn ?? ''} placeholder="English (необязательно)" onChange={(e) => set({ messageEn: e.target.value })} />
+    <div className="hint">Рабочие часы: {WORKING_HOURS_LABEL}. Пустое поле — стандартный текст.</div>
+  </>)
+
   if (type === 'ai') body = <div className="aibox">ИИ-ответ пока не подключён: шаг пропускается.</div>
   if (type === 'note') body = <Field label="Заметка"><TallText value={d.text ?? ''} onChange={(e) => set({ text: e.target.value })} /></Field>
 

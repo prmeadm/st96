@@ -4,7 +4,7 @@ import { serviceByLabel } from '../catalog'
 import { hasFreeSlots } from '../booking/service'
 import type { ClientRow, Repo } from '../repo'
 import { isBlockedError, retryDelay } from './retry'
-import { isWorkingTime, minskNow, offhoursMessage } from '../workingHours'
+import { OFFHOURS_MESSAGE, isWorkingTime, minskNow, offhoursMessage } from '../workingHours'
 import {
   asArray, nextOf, parseDelay, parsePair, str,
   type ActionItem, type Funnel, type Graph, type Link, type Part, type Quick, type Rule, type RunRow,
@@ -326,6 +326,23 @@ export async function advance(env: Env, funnel: Funnel, client: ClientRow, run: 
       if (d.notify !== false) await env.out.notifyAdmins(client, 'Клиент просит человека: воронка передала диалог.')
       await repo.updateClient(client.id, { human_until: new Date(nowOf(env).getTime() + HUMAN_MUTE_MS).toISOString() })
       await event(node.id, 'handoff', offHours ? { offhours: true } : undefined)
+      return finish('stopped')
+    }
+
+    if (node.type === 'offhours') {
+      // Условный блок: в рабочие часы просто пропускает дальше, вне часов отправляет сообщение и передаёт человеку
+      if (isWorkingTime(nowOf(env))) {
+        id = nextOf(g, node.id)
+        continue
+      }
+      const own = str(lang === 'en' && str(d.messageEn).trim() ? d.messageEn : d.message).trim()
+      const text = fill(own || (lang === 'en' ? OFFHOURS_MESSAGE.en : OFFHOURS_MESSAGE.ru), client, vars)
+      if (chat && text.trim() && mayPush) {
+        await env.out.sendText(chat, text)
+        await repo.insertMessage({ client_id: client.id, direction: 'out', kind: 'text', text, tg_chat_id: chat, tg_message_id: null })
+      }
+      await repo.updateClient(client.id, { human_until: new Date(nowOf(env).getTime() + HUMAN_MUTE_MS).toISOString() })
+      await event(node.id, 'offhours')
       return finish('stopped')
     }
 
