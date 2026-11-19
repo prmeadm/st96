@@ -90,6 +90,8 @@ export interface Repo {
   findLeadByContact(by: { phone?: string; username?: string }): Promise<{ id: string; client_id: string | null } | null>
   insertNote(n: NoteInsert): Promise<void>
   insertMessage(m: MessageInsert): Promise<void>
+  /** Время последнего исходящего сообщения ровно с этим текстом; null — такого не было */
+  lastOutboundAt(clientId: string, text: string): Promise<string | null>
   /** Последние заявки клиента для карточки в теме */
   listLeads(clientId: string): Promise<{ service_key: string | null; company: string | null; comment: string | null; source: string; created_at: string }[]>
   /** Записывает тему, если у клиента её ещё нет; возвращает действующий номер темы */
@@ -250,6 +252,10 @@ export function supabaseRepo(url: string, key: string): Repo {
     },
     async insertMessage(m) {
       ok(await db.from('messages').insert(m), 'insertMessage')
+    },
+    async lastOutboundAt(clientId, text) {
+      const r = ok(await db.from('messages').select('created_at').eq('client_id', clientId).eq('direction', 'out').eq('text', text).order('created_at', { ascending: false }).limit(1).maybeSingle(), 'lastOutboundAt')
+      return (r as { created_at: string } | null)?.created_at ?? null
     },
     async listLeads(clientId) {
       return ok(await db.from('leads').select('service_key, company, comment, source, created_at').eq('client_id', clientId).order('created_at', { ascending: false }).limit(5), 'listLeads') ?? []

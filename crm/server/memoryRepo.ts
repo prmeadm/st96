@@ -12,7 +12,7 @@ export type MemoryRepo = Repo & {
   runStartedAt: Map<string, string>
   leads: (LeadInsert & { id: string; interests?: string[] })[]
   notes: NoteInsert[]
-  messages: MessageInsert[]
+  messages: (MessageInsert & { created_at?: string })[]
   funnels: Funnel[]
   runs: RunRow[]
   events: { run_id: string; node_id: string; event: string; data?: Record<string, unknown> }[]
@@ -80,7 +80,11 @@ export function memoryRepo(): MemoryRepo {
       return x ? { id: x.id, client_id: x.client_id } : null
     },
     async insertNote(n) { r.notes.push(n) },
-    async insertMessage(m) { r.messages.push(m) },
+    async insertMessage(m) { r.messages.push({ ...m, created_at: r.clock().toISOString() }) },
+    async lastOutboundAt(cid, text) {
+      const list = r.messages.filter((m) => m.client_id === cid && m.direction === 'out' && m.text === text)
+      return list[list.length - 1]?.created_at ?? null
+    },
     async listLeads(clientId) {
       return r.leads.filter((l) => l.client_id === clientId).map((l) => ({ service_key: l.service_key, company: l.company, comment: l.comment, source: l.source, created_at: '' }))
     },

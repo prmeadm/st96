@@ -2,15 +2,18 @@ import { Bot, type Context } from 'grammy'
 import type { ClientRow, MessageInsert, Repo } from '../repo'
 import { ingestGroupMessage } from '../leads/ingest'
 import { handleTopicMessage, relayToAdmins, sendTemplate } from './dialog'
-import { handleClick, handleFreeText, startFunnel, type Env } from '../funnels/engine'
+import { fill, handleClick, handleFreeText, startFunnel, type Env } from '../funnels/engine'
 import { pickFunnel } from '../funnels/triggers'
 import { telegramOut } from './telegramOut'
+import { isWorkingTime, offhoursTextFromFunnels } from '../workingHours'
 import { notifyClientDecision } from '../booking/notify'
 import { decideBooking, loadDirectAdmins } from '../booking/service'
 import { T, type Lang } from './texts'
 import { verifySiteRef } from './siteRef'
 
 const ACK_EVERY_MS = 12 * 3600 * 1000
+/** В действующем диалоге напоминание о графике — не чаще раза в 12 часов */
+const OFFHOURS_REPEAT_MS = 12 * 3600 * 1000
 
 type From = NonNullable<Context['from']>
 
@@ -68,10 +71,11 @@ export async function beginStart(
   if (opts.leadRef) await linkLeadClient(repo, from, opts.leadRef)
   const { client } = await ensureClient(repo, from, opts.payload ? `bot:${opts.payload}` : 'bot')
   if (opts.logIn) await repo.insertMessage({ client_id: client.id, direction: 'in', kind: 'text', text: opts.logIn.text, tg_chat_id: opts.logIn.chatId, tg_message_id: opts.logIn.messageId })
-  const muted = !!client.human_until && Date.parse(client.human_until) > Date.now()
+  const nowMs = env.now ? env.now().getTime() : Date.now()
+  const muted = !!client.human_until && Date.parse(client.human_until) > nowMs
   if (opts.guard) {
     const last = await repo.lastRunStartedAt(client.id)
-    if (last && Date.now() - Date.parse(last) < SITE_START_LOCK_MS) return { client, hasFunnel: true, started: false, skipped: 'recent' }
+    if (last && nowMs - Date.parse(last) < SITE_START_LOCK_MS) return { client, hasFunnel: true, started: false, skipped: 'recent' }
   }
   const active = await repo.findActiveRun(client.id)
   // Явный /start начинает всё заново: диалог у человека и прежняя воронка закрываются
@@ -96,7 +100,8 @@ function messageKind(m: NonNullable<Context['message']>): MessageInsert['kind'] 
 export function createBot(token: string, repo: Repo, opts: { groupChatId: number | null; now?: () => Date }) {
   const bot = new Bot(token)
   const envFor = (api: Bot['api']): Env => ({ repo, out: telegramOut(api, repo, opts.groupChatId), now: opts.now })
-  const isMuted = (c: ClientRow) => !!c.human_until && Date.parse(c.human_until) > Date.now()
+  const clock = () => (opts.now ? opts.now() : new Date())
+  const isMuted = (c: ClientRow) => !!c.human_until && Date.parse(c.human_until) > clock().getTime()
 
   // Telegram может повторить доставку: один update обрабатываем один раз
   bot.use(async (ctx, next) => {
@@ -248,11 +253,27 @@ export function createBot(token: string, repo: Repo, opts: { groupChatId: number
             .catch(() => undefined)
         }
       }
-      // Воронки: идущая ждёт текст, иначе ищем воронку по ключевому слову или «любое сообщение».
-      // Пока диалог у человека, бот молчит.
-      let handled = false
       const muted = isMuted(client)
-      if (!muted && m.text) {
+      // Диалог уже у человека: бот молчит, но вне рабочих часов раз в 12 часов напоминает о графике —
+      // текстом из блока «Передать человеку» (его правят в конструкторе воронки)
+      if (muted) {
+        if ((m.text ?? m.caption ?? '').trim() && !isWorkingTime(clock())) {
+          try {
+            const reply = fill(offhoursTextFromFunnels(await repo.listPublishedFunnels(), client.language), client, {})
+            const last = await repo.lastOutboundAt(client.id, reply)
+            if (!last || clock().getTime() - Date.parse(last) > OFFHOURS_REPEAT_MS) {
+              await ctx.reply(reply, { link_preview_options: { is_disabled: true } })
+              await repo.insertMessage({ client_id: client.id, direction: 'out', kind: 'text', text: reply, tg_chat_id: ctx.chat.id, tg_message_id: null })
+            }
+          } catch (e) {
+            console.error('offhours reply failed', e instanceof Error ? e.message : e)
+          }
+        }
+        return
+      }
+      // Воронки: идущая ждёт текст, иначе ищем воронку по ключевому слову или «любое сообщение».
+      let handled = false
+      if (m.text) {
         const run = await repo.findActiveRun(client.id)
         if (run) handled = await handleFreeText(envFor(ctx.api), client, run)
         else {
@@ -261,7 +282,7 @@ export function createBot(token: string, repo: Repo, opts: { groupChatId: number
         }
       }
       // Подтверждаем получение не чаще раза в 12 часов
-      if (!handled && !muted && (!prevSeen || Date.now() - Date.parse(prevSeen) > ACK_EVERY_MS)) await ctx.reply(T[client.language].ack)
+      if (!handled && (!prevSeen || Date.now() - Date.parse(prevSeen) > ACK_EVERY_MS)) await ctx.reply(T[client.language].ack)
       return
     }
     if (ctx.chat.type === 'group' || ctx.chat.type === 'supergroup') {

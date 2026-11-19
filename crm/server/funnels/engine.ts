@@ -4,7 +4,7 @@ import { serviceByLabel } from '../catalog'
 import { hasFreeSlots } from '../booking/service'
 import type { ClientRow, Repo } from '../repo'
 import { isBlockedError, retryDelay } from './retry'
-import { OFFHOURS_MESSAGE, isWorkingTime, minskNow } from '../workingHours'
+import { isWorkingTime, minskNow, offhoursMessage } from '../workingHours'
 import {
   asArray, nextOf, parseDelay, parsePair, str,
   type ActionItem, type Funnel, type Graph, type Link, type Part, type Quick, type Rule, type RunRow,
@@ -82,7 +82,7 @@ function evalRule(r: Rule, c: CondCtx): boolean {
   }
 }
 
-const fill = (text: string, client: ClientRow, vars: Record<string, unknown>) =>
+export const fill = (text: string, client: ClientRow, vars: Record<string, unknown>) =>
   text
     .replace(/\{имя\}|\{name\}/gi, client.name || client.tg_username || '')
     .replace(/\{компания\}|\{company\}/gi, client.company ?? '')
@@ -318,9 +318,11 @@ export async function advance(env: Env, funnel: Funnel, client: ClientRow, run: 
       // Вне рабочих часов клиент получает отдельный текст (его правят в конструкторе, блок «Передать человеку»);
       // пустое поле — стандартный текст из workingHours.ts
       const offHours = !isWorkingTime(nowOf(env))
-      const own = offHours ? str(lang === 'en' && str(d.offhoursEn).trim() ? d.offhoursEn : d.offhours).trim() : ''
-      const text = fill(offHours ? own || (lang === 'en' ? OFFHOURS_MESSAGE.en : OFFHOURS_MESSAGE.ru) : str(d.message), client, vars)
-      if (chat && text.trim() && mayPush) await env.out.sendText(chat, text)
+      const text = fill(offHours ? offhoursMessage(d, lang) : str(d.message), client, vars)
+      if (chat && text.trim() && mayPush) {
+        await env.out.sendText(chat, text)
+        await repo.insertMessage({ client_id: client.id, direction: 'out', kind: 'text', text, tg_chat_id: chat, tg_message_id: null })
+      }
       if (d.notify !== false) await env.out.notifyAdmins(client, 'Клиент просит человека: воронка передала диалог.')
       await repo.updateClient(client.id, { human_until: new Date(nowOf(env).getTime() + HUMAN_MUTE_MS).toISOString() })
       await event(node.id, 'handoff', offHours ? { offhours: true } : undefined)

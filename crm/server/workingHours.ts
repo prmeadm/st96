@@ -1,3 +1,5 @@
+import { str, type Funnel } from './funnels/types'
+
 // Рабочие часы студии по Минску: Пн–Чт 10:00–18:00, Пт 10:00–16:00, Сб–Вс — выходные.
 // Нужны блоку «Передать человеку»: вне этих часов клиент получает отдельное сообщение,
 // которое редактируется в конструкторе воронки (поле «Вне рабочего времени»).
@@ -44,4 +46,22 @@ export function isWorkingTime(d: Date): boolean {
   if (dow < 0 || dow > 4) return false // суббота и воскресенье
   if (minutes < 10 * 60) return false
   return dow === 4 ? minutes < 16 * 60 : minutes < 18 * 60
+}
+
+/** Текст вне рабочего времени из блока «Передать человеку»; пусто — стандартный. */
+export function offhoursMessage(data: Record<string, unknown>, lang: 'ru' | 'en'): string {
+  const own = str(lang === 'en' && str(data.offhoursEn).trim() ? data.offhoursEn : data.offhours).trim()
+  return own || (lang === 'en' ? OFFHOURS_MESSAGE.en : OFFHOURS_MESSAGE.ru)
+}
+
+/** Текст вне рабочего времени из опубликованных воронок (что сохранили в админке); иначе стандартный. */
+export function offhoursTextFromFunnels(funnels: Funnel[], lang: 'ru' | 'en'): string {
+  for (const f of funnels) {
+    for (const n of f.graph.nodes) {
+      if (n.type !== 'handoff') continue
+      const own = str(lang === 'en' && str(n.data.offhoursEn).trim() ? n.data.offhoursEn : n.data.offhours).trim()
+      if (own) return own
+    }
+  }
+  return lang === 'en' ? OFFHOURS_MESSAGE.en : OFFHOURS_MESSAGE.ru
 }

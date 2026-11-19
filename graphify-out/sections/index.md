@@ -11,7 +11,7 @@
 | Рассылки | Массовые рассылки по сегментам | 30 | 5 | [`broadcasts.md`](broadcasts.md) |
 | Шаблоны и медиа | Библиотека шаблонов | 33 | 5 | [`templates.md`](templates.md) |
 | Агент, ИИ и аналитика | Задания агента | 160 | 23 | [`agent.md`](agent.md) |
-| Данные и инфраструктура | Доступ к базе | 191 | 22 | [`core.md`](core.md) |
+| Данные и инфраструктура | Доступ к базе | 192 | 22 | [`core.md`](core.md) |
 | Оболочка админки | Каркас /admin: вход | 61 | 15 | [`admin.md`](admin.md) |
 | Сайт st96.by | Публичный сайт | 245 | 80 | [`site.md`](site.md) |
 
@@ -41,12 +41,12 @@
 - `crm/api/lead.ts`
 - `site/VISUAL-GUIDE.md`
 - `CLAUDE.md`
+- `crm/server/workingHours.ts`
 - `.dsh/HANDOFF.auto.md`
 - `crm/docs/design-is-2026-10-20/01-evidence.md`
 - `vite.config.ts`
 - `crm/.dsh/HANDOFF.auto.md`
 - `.oxlintrc.json`
 - `scripts/funnel-live-run.ts`
-- `crm/server/workingHours.ts`
 - `docs/STRUCTURE.md`
-- `crm/api/ingest.ts`
+- `crm/api/jobs.ts`

@@ -16,7 +16,9 @@ const IN_HOURS = new Date('2026-10-20T10:00:00Z')
 
 function setup(now: Date = IN_HOURS) {
   const repo = memoryRepo()
-  const bot = createBot('123:TEST', repo, { groupChatId: GROUP, now: () => now })
+  let current = new Date(now)
+  repo.clock = () => current
+  const bot = createBot('123:TEST', repo, { groupChatId: GROUP, now: () => current })
   bot.botInfo = { id: 123, is_bot: true, first_name: 'ST96', username: 'st96_bot', can_join_groups: true, can_read_all_group_messages: true, supports_inline_queries: false, can_connect_to_business: false, has_main_web_app: false } as never
   const calls: { method: string; payload: Record<string, unknown> }[] = []
   const failures = new Set<string>()
@@ -32,7 +34,7 @@ function setup(now: Date = IN_HOURS) {
   })
   let id = 0
   const send = (u: Omit<Update, 'update_id'>) => bot.handleUpdate({ update_id: ++id, ...u } as Update)
-  return { repo, calls, failures, send, replay: (n: number, u: Omit<Update, 'update_id'>) => bot.handleUpdate({ update_id: n, ...u } as Update) }
+  return { repo, calls, failures, send, replay: (n: number, u: Omit<Update, 'update_id'>) => bot.handleUpdate({ update_id: n, ...u } as Update), setNow: (d: Date) => { current = d } }
 }
 
 const user = { id: 555, is_bot: false, first_name: 'Мария', username: 'maria_photo', language_code: 'ru' }
@@ -230,6 +232,53 @@ test('воронка вне рабочих часов: «Связаться с �
   assert.equal(repo.runs[0].status, 'stopped')
 })
 
+test('действующий диалог вне рабочих часов: одно напоминание о графике за 12 часов, дальше тишина', async () => {
+  const { repo, calls, send, setNow } = setup() // вторник 13:00, рабочие часы
+  publish(repo)
+  await send(msg('/start', START_ENT))
+  await send({ callback_query: { id: 'c1', from: user, chat_instance: 'x', data: `fb:${repo.runs[0].id}:q4`, message: { message_id: 9, date: 1, chat: priv } } })
+  const toClient = () => calls.filter((c) => c.method === 'sendMessage' && c.payload.chat_id === 555)
+  const before = toClient().length
+
+  setNow(new Date('2026-10-20T16:30:00Z')) // 19:30 по Минску, диалог уже у человека
+  await send(msg('Добрый вечер, есть новости?', { message_id: 21 }))
+  assert.equal(toClient().length, before + 1, 'клиент получил напоминание о графике')
+  assert.match(String(toClient().at(-1)!.payload.text), /Все заявки обрабатываются/)
+  assert.match(String(toClient().at(-1)!.payload.text), /Хорошего вечера!/)
+
+  await send(msg('Ау?', { message_id: 22 }))
+  assert.equal(toClient().length, before + 1, 'второй раз не напоминаем')
+
+  setNow(new Date('2026-10-20T20:00:00Z')) // 23:00, всё ещё в диалоге с человеком
+  await send(msg('Ещё вопрос', { message_id: 23 }))
+  assert.equal(toClient().length, before + 1, 'в пределах 12 часов молчим')
+})
+
+test('действующий диалог: напоминание берёт текст, отредактированный в воронке', async () => {
+  const { repo, calls, send, setNow } = setup()
+  const custom = JSON.parse(JSON.stringify(demoGraph))
+  custom.nodes.find((n: { id: string }) => n.id === 'h1').data.offhours = 'Своё напоминание, {имя}'
+  publish(repo, custom)
+  await send(msg('/start', START_ENT))
+  await send({ callback_query: { id: 'c1', from: user, chat_instance: 'x', data: `fb:${repo.runs[0].id}:q4`, message: { message_id: 9, date: 1, chat: priv } } })
+  setNow(new Date('2026-10-20T16:30:00Z'))
+  await send(msg('Есть новости?', { message_id: 21 }))
+  const last = calls.filter((c) => c.method === 'sendMessage' && c.payload.chat_id === 555).at(-1)!
+  assert.equal(String(last.payload.text), 'Своё напоминание, Мария')
+})
+
+test('передача человеку вне рабочих часов: следующее сообщение не дублирует напоминание', async () => {
+  const { repo, calls, send } = setup(new Date('2026-10-20T16:30:00Z')) // 19:30 по Минску
+  publish(repo)
+  await send(msg('/start', START_ENT))
+  await send({ callback_query: { id: 'c1', from: user, chat_instance: 'x', data: `fb:${repo.runs[0].id}:q4`, message: { message_id: 9, date: 1, chat: priv } } })
+  const toClient = () => calls.filter((c) => c.method === 'sendMessage' && c.payload.chat_id === 555)
+  const afterHandoff = toClient().length
+  assert.match(String(toClient().at(-1)!.payload.text), /Все заявки обрабатываются/)
+  await send(msg('Спасибо', { message_id: 21 }))
+  assert.equal(toClient().length, afterHandoff, 'то же напоминание второй раз не уходит')
+})
+
 test('воронка: чужая кнопка и старый запуск не срабатывают', async () => {
   const { repo, calls, send } = setup()
   publish(repo)
@@ -397,7 +446,7 @@ test('повторный /start site_<токен> в течение 10 мину�
   await send(msg(`/start site_${ref}`, START_ENT))
   assert.equal(repo.runs.length, 1, 'повтор не запускает вторую воронку')
   assert.notEqual(repo.runs[0]!.status, 'stopped')
-  repo.runStartedAt.set(repo.runs[0]!.id, new Date(Date.now() - SITE_START_LOCK_MS - 1000).toISOString())
+  repo.runStartedAt.set(repo.runs[0]!.id, new Date(repo.clock().getTime() - SITE_START_LOCK_MS - 1000).toISOString())
   await send(msg(`/start site_${ref}`, START_ENT))
   assert.equal(repo.runs.length, 2)
 })

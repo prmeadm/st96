@@ -2,7 +2,7 @@
 
 Доступ к базе (Repo, Supabase, тестовая память), каталог услуг сайта, задания по расписанию /api/jobs, миграции Supabase, вход в админку.
 
-Граф раздела: `graphify-out/sections/core/graph.json` (191 узлов, 241 внутренних связей).
+Граф раздела: `graphify-out/sections/core/graph.json` (192 узлов, 242 внутренних связей).
 
 ## С чего начать сессию
 
@@ -13,7 +13,7 @@
 
 ## Файлы
 
-- `crm/server/repo.ts` — 74 узл.
+- `crm/server/repo.ts` — 75 узл.
 - `crm/supabase/migrations/0001_core.sql` — 40 узл.
 - `crm/server/catalog.ts` — 16 узл.
 - `crm/supabase/migrations/0015_crm_schema.sql` — 8 узл.
@@ -23,23 +23,23 @@
 - `crm/supabase/migrations/0006_agent.sql` — 4 узл.
 - `crm/supabase/migrations/0004_templates.sql` — 4 узл.
 - `crm/supabase/migrations/0013_filter_presets.sql` — 3 узл.
-- `crm/server/adminAuth.ts` — 3 узл.
 - `crm/server/memoryRepo.ts` — 3 узл.
-- `crm/supabase/migrations/0002_dialogs.sql` — 2 узл.
+- `crm/server/adminAuth.ts` — 3 узл.
 - `api/geo.ts` — 2 узл.
-- `crm/supabase/migrations/0014_lead_interests.sql` — 2 узл.
-- `crm/supabase/migrations/0007_settings.sql` — 2 узл.
 - `crm/supabase/migrations/0011_tg_links.sql` — 2 узл.
-- `crm/supabase/planned/README.md` — 2 узл.
+- `crm/supabase/migrations/0007_settings.sql` — 2 узл.
+- `crm/supabase/migrations/0002_dialogs.sql` — 2 узл.
 - `api/jobs.ts` — 2 узл.
-- `crm/supabase/migrations/0012_site_consent.sql` — 1 узл.
+- `crm/supabase/migrations/0014_lead_interests.sql` — 2 узл.
+- `crm/supabase/planned/README.md` — 2 узл.
 - `crm/supabase/migrations/0009_site_services.sql` — 1 узл.
+- `crm/supabase/migrations/0012_site_consent.sql` — 1 узл.
 - `crm/supabase/migrations/0003_funnels_runtime.sql` — 1 узл.
 
 ## Главные узлы (больше всего связей)
 
 - `Repo` (crm/server/repo.ts:L73)
-- `supabaseRepo()` (crm/server/repo.ts:L162)
+- `supabaseRepo()` (crm/server/repo.ts:L164)
 - `json()` (crm/server/adminAuth.ts:L4)
 - `requireAdmin()` (crm/server/adminAuth.ts:L7)
 - `memoryRepo()` (crm/server/memoryRepo.ts:L34)
@@ -48,8 +48,8 @@
 - `public.clients` (crm/supabase/migrations/0001_core.sql:L29)
 - `MemoryRepo` (crm/server/memoryRepo.ts:L9)
 - `public.leads` (crm/supabase/migrations/0001_core.sql:L84)
-- `SITE_SERVICES` (crm/server/catalog.ts:L8)
 - `.findClient()` (crm/server/repo.ts:L76)
+- `SITE_SERVICES` (crm/server/catalog.ts:L8)
 
 ## От чего зависит (вызовы в другие разделы)
 
@@ -63,7 +63,7 @@
 ## Кто зависит от раздела (менять осторожно)
 
 - **Запись на встречу** (51): `.countRecentBookings()`, `.enqueueJob()`, `.findClient()`, `.findClientById()`, `.getBooking()`, `.getSetting()`
-- **Бот и диалоги** (46): `.bumpTemplateUsed()`, `.claimUpdate()`, `.findActiveRun()`, `.findClient()`, `.findClientById()`, `.getRun()`
+- **Бот и диалоги** (47): `.bumpTemplateUsed()`, `.claimUpdate()`, `.findActiveRun()`, `.findClient()`, `.findClientById()`, `.getRun()`
 - **Заявки и клиенты** (43): `.countLeads()`, `.findClient()`, `.findLeadByContact()`, `.findLeadByMessage()`, `.getLead()`, `.insertClient()`
 - **Воронки** (30): `ClientRow`, `MemoryRepo`, `Repo`, `SITE_SERVICES`, `memoryRepo()`, `memoryRepo.ts`
 - **Агент, ИИ и аналитика** (25): `.addTag()`, `.getAgentTask()`, `.getSetting()`, `.insertLlmUsage()`, `MemoryRepo`, `Repo`

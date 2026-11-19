@@ -14,31 +14,31 @@
 ## Файлы
 
 - `crm/server/bot/dialog.ts` — 13 узл.
-- `crm/server/bot/bot.ts` — 11 узл.
 - `crm/server/bot/siteRef.ts` — 11 узл.
+- `crm/server/bot/bot.ts` — 11 узл.
 - `crm/server/bot/bot.test.ts` — 10 узл.
 - `crm/server/bot/texts.ts` — 3 узл.
 - `api/telegram.ts` — 2 узл.
 
 ## Главные узлы (больше всего связей)
 
-- `createBot()` (crm/server/bot/bot.ts:L96)
-- `beginStart()` (crm/server/bot/bot.ts:L64)
+- `createBot()` (crm/server/bot/bot.ts:L100)
 - `sendContent()` (crm/server/bot/dialog.ts:L167)
+- `beginStart()` (crm/server/bot/bot.ts:L67)
 - `sendTemplate()` (crm/server/bot/dialog.ts:L233)
 - `handleTopicMessage()` (crm/server/bot/dialog.ts:L79)
-- `ensureClient()` (crm/server/bot/bot.ts:L30)
-- `verifySiteRef()` (crm/server/bot/siteRef.ts:L41)
+- `ensureClient()` (crm/server/bot/bot.ts:L33)
 - `relayToAdmins()` (crm/server/bot/dialog.ts:L51)
 - `ensureTopic()` (crm/server/bot/dialog.ts:L37)
-- `linkLeadClient()` (crm/server/bot/bot.ts:L21)
+- `verifySiteRef()` (crm/server/bot/siteRef.ts:L41)
 - `cardText()` (crm/server/bot/dialog.ts:L22)
 - `signSiteRef()` (crm/server/bot/siteRef.ts:L27)
+- `issueSiteRef()` (crm/server/bot/siteRef.ts:L60)
 
 ## От чего зависит (вызовы в другие разделы)
 
-- **Данные и инфраструктура** (46): `.bumpTemplateUsed()`, `.claimUpdate()`, `.findActiveRun()`, `.findClient()`, `.findClientById()`, `.getRun()`
-- **Воронки** (37): `CAPTION_LIMIT`, `Env`, `NOT_A_FILE_ERROR`, `TRIGGER`, `canonicalVideoUrl()`, `demo.ts`
+- **Данные и инфраструктура** (47): `.bumpTemplateUsed()`, `.claimUpdate()`, `.findActiveRun()`, `.findClient()`, `.findClientById()`, `.getRun()`
+- **Воронки** (39): `CAPTION_LIMIT`, `Env`, `NOT_A_FILE_ERROR`, `TRIGGER`, `canonicalVideoUrl()`, `demo.ts`
 - **Запись на встречу** (13): `bookingUrl()`, `createBooking()`, `decideBooking()`, `loadDirectAdmins()`, `notify.ts`, `notifyClientDecision()`
 - **Заявки и клиенты** (10): `clickablePhone()`, `ingestGroupMessage()`, `ingestLead()`, `leads/ingest.ts`, `parse.ts`, `parseLead()`
 - **Шаблоны и медиа** (6): `TPL_KINDS`, `TemplateKind`, `TemplateRow`, `fillTemplate()`, `templates.ts`
