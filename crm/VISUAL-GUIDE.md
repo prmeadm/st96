@@ -14,7 +14,7 @@ CRM — рабочий инструмент: здесь важнее плотн�
 | --- | --- |
 | Токены админки (светлая тема, единственная) | `crm/admin/admin.css` (`:root`) |
 | Токены `/book` (тёмная тема, как сайт) | `crm/book/book.css`, `crm/book/fonts.css` |
-| Общие UI-компоненты | `crm/admin/ui/`, `shared/ui/PhoneField.tsx` |
+| Общие UI-компоненты | `crm/admin/ui/`, `crm/shared/ui/PhoneField.tsx` |
 | Календарь записи | `crm/booking/MonthGrid.tsx`, `crm/booking/monthgrid.css` |
 | Прототип (для сверки UX, не в сборке) | `crm/prototypes/admin-v1.html` |
 | План редизайна админки | `crm/docs/design-is-2026-10-20/05-redesign-plan.md` |

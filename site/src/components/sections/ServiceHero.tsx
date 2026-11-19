@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion'
 import { ArrowDown, ArrowUpRight } from 'lucide-react'
-import type { Service } from '../../../../shared/data/services'
+import type { Service } from '../../../../crm/shared/data/services'
 import Aurora from '../ui/Aurora'
 import RevealText from '../ui/RevealText'
 import KeywordOrbit from '../ui/KeywordOrbit'

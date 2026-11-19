@@ -12,7 +12,7 @@
 | Шрифты (самохостинг) | `site/public/fonts/*.woff2` (`unbounded-cyrillic/latin`, `inter-cyrillic/latin`) |
 | Фавикон, og-картинка | `site/public/favicon.svg`, `site/public/og-image.png` |
 | Эталонные экраны | `site/src/components/` (hero, marquee, tabs, lead) |
-| Тексты RU/EN | `site/src/data/` (`content.ts`, `content.en.ts`), общие данные — `shared/data/` |
+| Тексты RU/EN | `site/src/data/` (`content.ts`, `content.en.ts`), общие данные — `crm/shared/data/` |
 
 Правило: новый цвет, шрифт или радиус **не вводим**. Нужного не хватает →
 сначала добавить токен в `site/src/index.css`, потом использовать.
@@ -93,12 +93,12 @@
 - **Заголовок секции**: `SectionHeading.tsx` — эйрбрау + крупный заголовок +
   короткий подзаголовок; повторять этот ритм, не изобретать новый.
 - **Формы**: поля на `ink-soft` с границей, фокус — acid-обводка, ошибка — pink,
-  подсказка — `paper-dim`; телефон — `shared/ui/PhoneField.tsx` с маской по стране.
+  подсказка — `paper-dim`; телефон — `crm/shared/ui/PhoneField.tsx` с маской по стране.
 - **Иконки**: `lucide-react`, размер 16–24, цвет — токен, не хардкод.
 - **Медиа**: видео — `HeroVideo.tsx`, без автозвука, с постером; изображения —
   `loading="lazy"` ниже первого экрана.
 - **Языки**: RU основной, EN — `/en`; тексты не хардкодим по месту, а держим в
-  `site/src/data` (`content.ts` / `content.en.ts`) и в `shared/data`.
+  `site/src/data` (`content.ts` / `content.en.ts`) и в `crm/shared/data`.
 
 ## 7. Тон и текст
 

@@ -2,6 +2,7 @@
 import { MarkerType, type Edge, type Node } from '@xyflow/react'
 import { TRIGGER, type Graph } from '../../server/funnels/types'
 import { SITE_SERVICES } from '../../server/catalog'
+import { OFFHOURS_MESSAGE } from '../../server/workingHours'
 
 export type D = any
 export const uid = (p = 'id') => p + Math.random().toString(36).slice(2, 8)
@@ -103,7 +104,7 @@ export function newData(type: string): D {
     condition: { mode: 'all', rules: [] },
     action: { items: [] },
     booking: { services: [...SERVICES], formats: FORMATS, meet: true, message: '', messageEn: '' },
-    handoff: { message: 'Передаю ваш вопрос администратору, он ответит в ближайшее время.', notify: true },
+    handoff: { message: 'Передаю ваш вопрос администратору, он ответит в ближайшее время.', offhours: OFFHOURS_MESSAGE.ru, offhoursEn: OFFHOURS_MESSAGE.en, notify: true },
     note: { text: '' },
   } as Record<string, D>)[type] ?? {}
 }

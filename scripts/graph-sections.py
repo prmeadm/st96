@@ -55,7 +55,7 @@ SECTIONS = [
         'about': 'Расписание и слоты, заявки на встречу, подтверждение кнопками, уведомления и .ics, напоминания, '
                  'страница /book, раздел «Запись» в админке.',
         'paths': [r'^crm/server/booking/', r'^api/booking', r'^crm/book/', r'^crm/booking/', r'^crm/admin/pages/Booking',
-                  r'^shared/data/(bookingGoals|serviceOptions)'],
+                  r'^crm/shared/data/(bookingGoals|serviceOptions)'],
         'tests': 'npx tsx --test crm/server/booking/*.test.ts',
         'tasks': ['расписание и исключения', 'страница /book', 'уведомления о встрече', 'Google Meet и календарь'],
     },
@@ -100,7 +100,7 @@ SECTIONS = [
     {
         'key': 'site', 'title': 'Сайт st96.by',
         'about': 'Публичный сайт (RU/EN): страницы услуг, форма заявки, аналитика и согласие на cookie.',
-        'paths': [r'^site/src/(components|pages|data|lib|hooks)/', r'^site/src/[^/]+\.(tsx?|css)$', r'^site/index\.html$', r'^site/public/', r'^shared/'],
+        'paths': [r'^site/src/(components|pages|data|lib|hooks)/', r'^site/src/[^/]+\.(tsx?|css)$', r'^site/index\.html$', r'^site/public/', r'^crm/shared/'],
         'tests': 'npx tsc -b && npm run build',
         'tasks': ['тексты и страницы', 'форма заявки', 'аналитика'],
     },

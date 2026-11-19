@@ -7,7 +7,7 @@ import { deleteClient } from '../clientDelete'
 import { BackLink } from '../ui/BackLink'
 import { ContactLinks } from '../ui/ContactLinks'
 import { Icon } from '../ui/Icon'
-import { PhoneField } from '../../../shared/ui/PhoneField'
+import { PhoneField } from '../../shared/ui/PhoneField'
 
 import { TPL_KINDS, fillTemplate, type TemplateRow } from '../../server/templates'
 import { SERVICES, SOURCES, STATUSES, WARNINGS, clientTitle, fmtDate, type Client, type Lead, type Msg, type Note } from '../types'

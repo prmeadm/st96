@@ -1,6 +1,6 @@
 import { useSeo } from '../hooks/useSeo'
 import Reveal from '../components/ui/Reveal'
-import { OPERATOR, POLICY_DATE_LABEL_EN } from '../../../shared/data/privacy'
+import { OPERATOR, POLICY_DATE_LABEL_EN } from '../../../crm/shared/data/privacy'
 import { List, Section } from './Privacy'
 
 export default function PrivacyEn() {

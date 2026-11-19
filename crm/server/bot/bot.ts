@@ -93,9 +93,9 @@ function messageKind(m: NonNullable<Context['message']>): MessageInsert['kind'] 
   return 'other'
 }
 
-export function createBot(token: string, repo: Repo, opts: { groupChatId: number | null }) {
+export function createBot(token: string, repo: Repo, opts: { groupChatId: number | null; now?: () => Date }) {
   const bot = new Bot(token)
-  const envFor = (api: Bot['api']): Env => ({ repo, out: telegramOut(api, repo, opts.groupChatId) })
+  const envFor = (api: Bot['api']): Env => ({ repo, out: telegramOut(api, repo, opts.groupChatId), now: opts.now })
   const isMuted = (c: ClientRow) => !!c.human_until && Date.parse(c.human_until) > Date.now()
 
   // Telegram может повторить доставку: один update обрабатываем один раз

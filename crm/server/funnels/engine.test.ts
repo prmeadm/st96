@@ -72,6 +72,66 @@ test('кнопка «Связаться с админом»: передача ч
   assert.equal(repo.runs[0].status, 'stopped')
 })
 
+test('«Связаться с админом» в рабочие часы — обычный текст, вне часов — сообщение вне рабочего времени', async () => {
+  // вторник 13:00 по Минску: рабочие часы
+  const inHours = setup()
+  await startFunnel(inHours.env, inHours.funnel, await inHours.clientP)
+  await handleClick(inHours.env, await inHours.clientP, inHours.repo.runs[0], 'q4')
+  assert.ok(only(inHours.calls, 'text').some((c) => /Передаю ваш вопрос администратору/.test(c.text!)))
+  assert.ok(!only(inHours.calls, 'text').some((c) => /Все заявки обрабатываются/.test(c.text!)))
+
+  // вторник 19:30 по Минску: уже нерабочее время
+  const late = setup()
+  const lateClient = await late.clientP
+  late.setNow(new Date('2026-10-20T16:30:00Z'))
+  await startFunnel(late.env, late.funnel, lateClient)
+  await handleClick(late.env, lateClient, late.repo.runs[0], 'q4')
+  const texts = only(late.calls, 'text').map((c) => c.text!)
+  assert.ok(texts.some((t) => /Все заявки обрабатываются нашими специалистами/.test(t)), 'клиент получил текст вне рабочего времени')
+  assert.ok(texts.some((t) => /Понедельник – Четверг: с 10:00 до 18:00/.test(t)))
+  assert.ok(texts.some((t) => /Пятница: с 10:00 до 16:00/.test(t)))
+  assert.ok(texts.some((t) => /Хорошего вечера!/.test(t)))
+  assert.ok(!texts.some((t) => /Передаю ваш вопрос администратору/.test(t)), 'обычный текст не отправляется')
+  assert.ok(late.repo.events.some((e) => e.event === 'handoff' && e.data?.offhours === true))
+})
+
+test('сообщение вне рабочего времени: своё из конструктора, по пятницам после 16:00 и в выходные', async () => {
+  const graph = g(
+    [start(), { id: 'h', type: 'handoff', data: { message: 'Обычное сообщение', offhours: 'Напишем завтра, {имя}', notify: false } }],
+    [E('start', 'out', 'h')],
+  )
+  // пятница 16:30 по Минску — уже закрыто
+  const fri = setup(graph)
+  const friClient = await fri.clientP
+  fri.setNow(new Date('2026-10-23T13:30:00Z'))
+  await startFunnel(fri.env, fri.funnel, friClient)
+  assert.deepEqual(only(fri.calls, 'text').map((c) => c.text), ['Напишем завтра, Мария'], 'своё сообщение из конструктора, с подстановкой имени')
+
+  // пятница 15:00 по Минску — ещё работаем (до 16:00)
+  const friDay = setup(graph)
+  const friDayClient = await friDay.clientP
+  friDay.setNow(new Date('2026-10-23T12:00:00Z'))
+  await startFunnel(friDay.env, friDay.funnel, friDayClient)
+  assert.deepEqual(only(friDay.calls, 'text').map((c) => c.text), ['Обычное сообщение'])
+
+  // суббота 12:00 по Минску — выходной
+  const sat = setup(graph)
+  const satClient = await sat.clientP
+  sat.setNow(new Date('2026-10-24T09:00:00Z'))
+  await startFunnel(sat.env, sat.funnel, satClient)
+  assert.deepEqual(only(sat.calls, 'text').map((c) => c.text), ['Напишем завтра, Мария'])
+})
+
+test('английский клиент вне рабочего времени получает английский текст', async () => {
+  const { repo, calls, env, funnel, clientP, setNow } = setup(demoGraph, { language: 'en' })
+  const client = await clientP
+  setNow(new Date('2026-10-20T16:30:00Z'))
+  await startFunnel(env, funnel, client)
+  await handleClick(env, client, repo.runs[0], 'q4')
+  assert.ok(only(calls, 'text').some((c) => /Thank you for reaching out!/.test(c.text!)))
+  assert.ok(!only(calls, 'text').some((c) => /Спасибо за ваше обращение/.test(c.text!)))
+})
+
 test('неизвестная кнопка игнорируется, текст без выхода «другое» тоже; кнопку старого сообщения можно нажать снова', async () => {
   const { repo, env, funnel, clientP } = setup()
   const client = await clientP

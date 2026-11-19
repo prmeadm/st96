@@ -1,7 +1,7 @@
 // Единственный источник услуг для всей платформы: данные сайта (src/data/services.ts и content.en.ts).
 // Названия и описания нигде больше не задаются вручную: правка на сайте сразу меняет запись, шаблоны, воронки, агента и бота.
-import { servicesEn } from '../../shared/data/content.en'
-import { services } from '../../shared/data/services'
+import { servicesEn } from '../shared/data/content.en'
+import { services } from '../shared/data/services'
 
 export type SiteService = { key: string; ru: string; en: string; infoRu: string; infoEn: string; url: string; urlEn: string; keywords: string[] }
 

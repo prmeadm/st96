@@ -1,4 +1,4 @@
-import type { Accent, Advantage, ProcessStep, Stat } from '../../../shared/data/services'
+import type { Accent, Advantage, ProcessStep, Stat } from '../../../crm/shared/data/services'
 
 export const studioAccent: Accent = {
   from: '#d8ff3f',

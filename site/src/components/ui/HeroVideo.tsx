@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Maximize2, X } from 'lucide-react'
 import { reachGoal } from '../../lib/analytics'
-import type { Accent } from '../../../../shared/data/services'
+import type { Accent } from '../../../../crm/shared/data/services'
 import { useUi } from '../../lib/i18n'
 
 type Props = {

@@ -1,9 +1,9 @@
-import { SERVICE_OPTIONS } from '../../shared/data/serviceOptions'
-import { BOOKING_GOALS } from '../../shared/data/bookingGoals'
-import { PhoneField } from '../../shared/ui/PhoneField'
+import { SERVICE_OPTIONS } from '../shared/data/serviceOptions'
+import { BOOKING_GOALS } from '../shared/data/bookingGoals'
+import { PhoneField } from '../shared/ui/PhoneField'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { MonthGrid, shiftMonth } from '../booking/MonthGrid'
-import { POLICY_PATH } from '../../shared/data/privacy'
+import { POLICY_PATH } from '../shared/data/privacy'
 
 type Lang = 'ru' | 'en'
 type Cfg = { services: { key: string; ru: string; en: string; infoRu: string; infoEn: string; url: string; urlEn: string; minutes: number }[]; formats: { key: string; ru: string; en: string }[]; offlineDays: number[]; today: string; horizon: number; month?: string; days?: Record<string, { free: number; why?: string }> }

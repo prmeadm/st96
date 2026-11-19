@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import type { Accent } from '../../../../shared/data/services'
+import type { Accent } from '../../../../crm/shared/data/services'
 
 export default function Aurora({ accent }: { accent: Accent }) {
   return (

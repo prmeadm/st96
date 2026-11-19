@@ -4,16 +4,16 @@
 
 | Раздел | Что внутри | Узлов | Файлов | Справка |
 |---|---|---|---|---|
-| Воронки | Движок воронок | 190 | 22 | [`funnels.md`](funnels.md) |
-| Бот и диалоги | Вебхук Telegram | 51 | 6 | [`bot.md`](bot.md) |
-| Заявки и клиенты | Приём заявок | 132 | 19 | [`leads.md`](leads.md) |
-| Запись на встречу | Расписание и слоты | 143 | 15 | [`booking.md`](booking.md) |
-| Рассылки | Массовые рассылки по сегментам | 31 | 5 | [`broadcasts.md`](broadcasts.md) |
-| Шаблоны и медиа | Библиотека шаблонов | 34 | 5 | [`templates.md`](templates.md) |
-| Агент, ИИ и аналитика | Задания агента | 165 | 23 | [`agent.md`](agent.md) |
-| Данные и инфраструктура | Доступ к базе | 189 | 22 | [`core.md`](core.md) |
+| Воронки | Движок воронок | 189 | 22 | [`funnels.md`](funnels.md) |
+| Бот и диалоги | Вебхук Telegram | 50 | 6 | [`bot.md`](bot.md) |
+| Заявки и клиенты | Приём заявок | 121 | 19 | [`leads.md`](leads.md) |
+| Запись на встречу | Расписание и слоты | 141 | 15 | [`booking.md`](booking.md) |
+| Рассылки | Массовые рассылки по сегментам | 30 | 5 | [`broadcasts.md`](broadcasts.md) |
+| Шаблоны и медиа | Библиотека шаблонов | 33 | 5 | [`templates.md`](templates.md) |
+| Агент, ИИ и аналитика | Задания агента | 160 | 23 | [`agent.md`](agent.md) |
+| Данные и инфраструктура | Доступ к базе | 191 | 22 | [`core.md`](core.md) |
 | Оболочка админки | Каркас /admin: вход | 61 | 15 | [`admin.md`](admin.md) |
-| Сайт st96.by | Публичный сайт | 241 | 79 | [`site.md`](site.md) |
+| Сайт st96.by | Публичный сайт | 245 | 80 | [`site.md`](site.md) |
 
 ## Как начать сессию по разделу
 
@@ -36,17 +36,17 @@
 - `README.md`
 - `docs/DATABASE.md`
 - `docs/AUDIT-2026-10-31.md`
-- `crm/docs/design-is-2026-10-20/05-redesign-plan.md`
 - `crm/VISUAL-GUIDE.md`
+- `crm/docs/design-is-2026-10-20/05-redesign-plan.md`
+- `crm/api/lead.ts`
 - `site/VISUAL-GUIDE.md`
 - `CLAUDE.md`
+- `.dsh/HANDOFF.auto.md`
 - `crm/docs/design-is-2026-10-20/01-evidence.md`
 - `vite.config.ts`
+- `crm/.dsh/HANDOFF.auto.md`
 - `.oxlintrc.json`
 - `scripts/funnel-live-run.ts`
+- `crm/server/workingHours.ts`
 - `docs/STRUCTURE.md`
-- `scripts/graph-sections.py`
-- `api/client-log.ts`
-- `crm/server/env.ts`
-- `tsconfig.json`
-- `vercel.json`
+- `crm/api/ingest.ts`

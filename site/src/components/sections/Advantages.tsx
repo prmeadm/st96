@@ -1,4 +1,4 @@
-import type { Accent, Advantage } from '../../../../shared/data/services'
+import type { Accent, Advantage } from '../../../../crm/shared/data/services'
 import { useUi } from '../../lib/i18n'
 import SectionHeading from '../ui/SectionHeading'
 import { StaggerGroup, StaggerItem } from '../ui/Reveal'

@@ -8,7 +8,7 @@
 | Сайт `st96.by` | главная, услуги, `/en`, лендинги-витрины | [`site/VISUAL-GUIDE.md`](../site/VISUAL-GUIDE.md) |
 | CRM | админка `/admin` и запись на встречу `/book` | [`crm/VISUAL-GUIDE.md`](../crm/VISUAL-GUIDE.md) |
 | Бренд и печать | логотип, аватары, визитки, флаер | [`brand/README.md`](../brand/README.md) |
-| Общее для сайта и CRM | `shared/ui` (`PhoneField`), тексты и данные | `shared/` |
+| Общее для сайта и CRM | `crm/shared/ui` (`PhoneField`), тексты и данные | `crm/shared/` |
 
 ## Общая основа (одна на все проекты)
 

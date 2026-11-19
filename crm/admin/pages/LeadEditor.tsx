@@ -3,7 +3,7 @@ import { SITE_OFFERS, SITE_SERVICES } from '../../server/catalog'
 import { callApi } from '../api'
 import { INTERESTS, SERVICES, STATUSES, WARNINGS, type Lead } from '../types'
 import { Icon } from '../ui/Icon'
-import { PhoneField } from '../../../shared/ui/PhoneField'
+import { PhoneField } from '../../shared/ui/PhoneField'
 
 
 type Form = { service_key: string; name: string; phone: string; telegram: string; email: string; company: string; comment: string; status: Lead['status']; interests: Lead['interests'] }

@@ -11,9 +11,12 @@ import { TRIGGER } from '../funnels/types'
 
 const GROUP = -1001
 
-function setup() {
+// Время по умолчанию для тестов: вторник 13:00 по Минску — рабочие часы, иначе результат зависит от часа запуска
+const IN_HOURS = new Date('2026-10-20T10:00:00Z')
+
+function setup(now: Date = IN_HOURS) {
   const repo = memoryRepo()
-  const bot = createBot('123:TEST', repo, { groupChatId: GROUP })
+  const bot = createBot('123:TEST', repo, { groupChatId: GROUP, now: () => now })
   bot.botInfo = { id: 123, is_bot: true, first_name: 'ST96', username: 'st96_bot', can_join_groups: true, can_read_all_group_messages: true, supports_inline_queries: false, can_connect_to_business: false, has_main_web_app: false } as never
   const calls: { method: string; payload: Record<string, unknown> }[] = []
   const failures = new Set<string>()
@@ -213,6 +216,18 @@ test('воронка: кнопка «Связаться с админом» пе
   await send(msg('Жду ответа', { message_id: 20 }))
   assert.equal(calls.filter((c) => c.method === 'sendMessage' && c.payload.chat_id === 555).length, before)
   assert.ok(calls.some((c) => c.method === 'copyMessage' && c.payload.chat_id === GROUP))
+})
+
+test('воронка вне рабочих часов: «Связаться с админом» отвечает сообщением вне рабочего времени', async () => {
+  const { repo, calls, send } = setup(new Date('2026-10-20T16:30:00Z')) // вторник 19:30 по Минску
+  publish(repo)
+  await send(msg('/start', START_ENT))
+  await send({ callback_query: { id: 'c1', from: user, chat_instance: 'x', data: `fb:${repo.runs[0].id}:q4`, message: { message_id: 9, date: 1, chat: priv } } })
+  const text = calls.filter((c) => c.method === 'sendMessage' && c.payload.chat_id === 555).map((c) => String(c.payload.text)).join('\n')
+  assert.match(text, /Все заявки обрабатываются нашими специалистами/)
+  assert.match(text, /Пятница: с 10:00 до 16:00/)
+  assert.doesNotMatch(text, /Передаю ваш вопрос администратору/)
+  assert.equal(repo.runs[0].status, 'stopped')
 })
 
 test('воронка: чужая кнопка и старый запуск не срабатывают', async () => {

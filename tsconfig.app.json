@@ -22,5 +22,5 @@
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["site", "shared", "crm/admin", "crm/book", "crm/booking"]
+  "include": ["site", "crm/shared", "crm/admin", "crm/book", "crm/booking"]
 }

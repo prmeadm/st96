@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Check } from 'lucide-react'
-import type { Accent, ProcessStep } from '../../../../shared/data/services'
+import type { Accent, ProcessStep } from '../../../../crm/shared/data/services'
 import { useUi } from '../../lib/i18n'
 import SectionHeading from '../ui/SectionHeading'
 

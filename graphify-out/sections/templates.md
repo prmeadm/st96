@@ -2,7 +2,7 @@
 
 Библиотека шаблонов, отправка шаблона клиенту, загрузка и съёмка медиа (фото, видео, голос, файл).
 
-Граф раздела: `graphify-out/sections/templates/graph.json` (34 узлов, 53 внутренних связей).
+Граф раздела: `graphify-out/sections/templates/graph.json` (33 узлов, 52 внутренних связей).
 
 ## С чего начать сессию
 
@@ -17,7 +17,7 @@
 - `crm/admin/pages/TemplatesPage.tsx` — 8 узл.
 - `crm/admin/ui/MediaField.tsx` — 7 узл.
 - `crm/admin/ui/CameraCapture.tsx` — 6 узл.
-- `api/send-template.ts` — 3 узл.
+- `api/send-template.ts` — 2 узл.
 
 ## Главные узлы (больше всего связей)
 
@@ -27,20 +27,19 @@
 - `TemplateKind` (crm/server/templates.ts:L4)
 - `fillTemplate()` (crm/server/templates.ts:L29)
 - `Editor()` (crm/admin/pages/TemplatesPage.tsx:L150)
-- `TPL_KINDS` (crm/server/templates.ts:L20)
 - `CameraCapture()` (crm/admin/ui/CameraCapture.tsx:L12)
-- `handler()` (api/send-template.ts:L9)
-- `preview()` (crm/admin/pages/TemplatesPage.tsx:L13)
-- `toVoiceFile()` (crm/admin/ui/MediaField.tsx:L28)
+- `TPL_KINDS` (crm/server/templates.ts:L20)
+- `TPL_VARS` (crm/server/templates.ts:L26)
 - `TPL_SERVICES` (crm/server/templates.ts:L25)
+- `TPL_TASKS` (crm/server/templates.ts:L21)
+- `preview()` (crm/admin/pages/TemplatesPage.tsx:L13)
 
 ## От чего зависит (вызовы в другие разделы)
 
 - **Оболочка админки** (26): `Icon()`, `Icon.tsx`, `IconName`, `KIND_OPTIONS`, `PICK_KINDS`, `Seg()`
-- **Данные и инфраструктура** (10): `SITE_SERVICES`, `adminAuth.ts`, `json()`, `repo.ts`, `requireAdmin()`, `server/catalog.ts`
 - **Агент, ИИ и аналитика** (9): `TemplateStat`, `TranslateButton()`, `TranslateButton.tsx`, `popularityScore()`, `ratings()`, `usage.ts`
-- **Бот и диалоги** (3): `dialog.ts`, `sendTemplate()`
 - **Запись на встречу** (3): `bookingUrl()`, `schedule.ts`
+- **Данные и инфраструктура** (2): `SITE_SERVICES`, `server/catalog.ts`
 
 ## Кто зависит от раздела (менять осторожно)
 

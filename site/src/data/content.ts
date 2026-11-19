@@ -1,5 +1,5 @@
 import type { Lang } from '../lib/i18n'
-import { services as servicesRu, type Service } from '../../../shared/data/services'
+import { services as servicesRu, type Service } from '../../../crm/shared/data/services'
 import {
   studioAccent,
   studioAdvantages,
@@ -9,7 +9,7 @@ import {
   studioQuote,
   studioStats,
 } from './home'
-import { homeEn, servicesEn } from '../../../shared/data/content.en'
+import { homeEn, servicesEn } from '../../../crm/shared/data/content.en'
 
 export function getServices(lang: Lang): Service[] {
   if (lang === 'ru') return servicesRu

@@ -1,6 +1,6 @@
 import { useRef } from 'react'
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion'
-import type { Accent } from '../../../../shared/data/services'
+import type { Accent } from '../../../../crm/shared/data/services'
 
 type Props = {
   keywords: string[]

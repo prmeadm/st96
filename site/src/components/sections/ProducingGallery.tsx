@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useReducedMotion } from 'framer-motion'
 import { ArrowLeft, ArrowRight, ArrowUpRight } from 'lucide-react'
-import type { Service } from '../../../../shared/data/services'
+import type { Service } from '../../../../crm/shared/data/services'
 import { SolutionSceneCard } from '../ui/SolutionScene'
 import { useLang } from '../../lib/i18n'
 import { reachGoal } from '../../lib/analytics'

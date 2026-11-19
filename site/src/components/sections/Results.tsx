@@ -1,5 +1,5 @@
 import { Quote } from 'lucide-react'
-import type { Accent, Stat } from '../../../../shared/data/services'
+import type { Accent, Stat } from '../../../../crm/shared/data/services'
 import AnimatedCounter from '../ui/AnimatedCounter'
 import Reveal, { StaggerGroup, StaggerItem } from '../ui/Reveal'
 

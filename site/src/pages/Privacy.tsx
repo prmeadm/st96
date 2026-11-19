@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { useSeo } from '../hooks/useSeo'
 import Reveal from '../components/ui/Reveal'
-import { OPERATOR, POLICY_DATE_LABEL } from '../../../shared/data/privacy'
+import { OPERATOR, POLICY_DATE_LABEL } from '../../../crm/shared/data/privacy'
 
 export function Section({ n, title, children, id }: { n: number; title: string; children: ReactNode; id?: string }) {
   return (

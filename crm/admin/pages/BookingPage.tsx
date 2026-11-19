@@ -5,7 +5,7 @@ import { callApi } from '../api'
 import { fmtDate } from '../types'
 import { Icon } from '../ui/Icon'
 import { ContactLinks } from '../ui/ContactLinks'
-import { PhoneField } from '../../../shared/ui/PhoneField'
+import { PhoneField } from '../../shared/ui/PhoneField'
 
 import { Seg } from '../ui/Seg'
 import { MonthGrid, type CellInfo } from '../../booking/MonthGrid'

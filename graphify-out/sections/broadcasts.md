@@ -2,7 +2,7 @@
 
 Массовые рассылки по сегментам (только с согласием), пачки, паузы на 429, прогресс в админке.
 
-Граф раздела: `graphify-out/sections/broadcasts/graph.json` (31 узлов, 57 внутренних связей).
+Граф раздела: `graphify-out/sections/broadcasts/graph.json` (30 узлов, 50 внутренних связей).
 
 ## С чего начать сессию
 
@@ -17,7 +17,7 @@
 - `crm/admin/pages/BroadcastPage.tsx` — 6 узл.
 - `crm/server/broadcasts.test.ts` — 4 узл.
 - `crm/admin/pages/BroadcastsPage.tsx` — 3 узл.
-- `api/broadcast.ts` — 3 узл.
+- `api/broadcast.ts` — 2 узл.
 
 ## Главные узлы (больше всего связей)
 
@@ -25,19 +25,19 @@
 - `BroadcastPage()` (crm/admin/pages/BroadcastPage.tsx:L19)
 - `startBroadcast()` (crm/server/broadcasts.ts:L102)
 - `BroadcastRow` (crm/server/broadcasts.ts:L9)
-- `handler()` (api/broadcast.ts:L12)
 - `BroadcastsPage()` (crm/admin/pages/BroadcastsPage.tsx:L11)
 - `inAudience()` (crm/server/broadcasts.ts:L34)
 - `Segment` (crm/server/broadcasts.ts:L7)
 - `validateBroadcast()` (crm/server/broadcasts.ts:L44)
 - `AudienceClient` (crm/server/broadcasts.ts:L25)
-- `fromRow()` (crm/admin/pages/BroadcastPage.tsx:L16)
 - `BROADCAST_STATUS` (crm/server/broadcasts.ts:L27)
+- `fromRow()` (crm/admin/pages/BroadcastPage.tsx:L16)
+- `sleep()` (crm/server/broadcasts.ts:L53)
 
 ## От чего зависит (вызовы в другие разделы)
 
 - **Оболочка админки** (31): `BackLink()`, `BackLink.tsx`, `Icon()`, `Icon.tsx`, `PICK_KINDS`, `RowActions()`
-- **Данные и инфраструктура** (25): `.claimRecipients()`, `.finishRecipient()`, `.getBroadcast()`, `.insertMessage()`, `.insertRecipients()`, `.listActiveBroadcasts()`
+- **Данные и инфраструктура** (17): `.claimRecipients()`, `.finishRecipient()`, `.getBroadcast()`, `.insertMessage()`, `.insertRecipients()`, `.listActiveBroadcasts()`
 - **Шаблоны и медиа** (11): `MediaField()`, `MediaField.tsx`, `TPL_VARS`, `TemplateKind`, `TemplateRow`, `fillTemplate()`
 - **Агент, ИИ и аналитика** (3): `TranslateButton()`, `TranslateButton.tsx`
 - **Бот и диалоги** (3): `dialog.ts`, `sendContent()`
@@ -45,7 +45,7 @@
 
 ## Кто зависит от раздела (менять осторожно)
 
-- **Данные и инфраструктура** (14): `AudienceClient`, `BroadcastRow`, `Segment`, `broadcasts.ts`, `tickBroadcasts()`
+- **Данные и инфраструктура** (11): `AudienceClient`, `BroadcastRow`, `Segment`, `broadcasts.ts`
 - **Оболочка админки** (6): `BroadcastPage()`, `BroadcastPage.tsx`, `BroadcastsPage()`, `BroadcastsPage.tsx`
 - **Агент, ИИ и аналитика** (3): `Segment`, `broadcasts.ts`, `startBroadcast()`
 

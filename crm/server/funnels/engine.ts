@@ -4,6 +4,7 @@ import { serviceByLabel } from '../catalog'
 import { hasFreeSlots } from '../booking/service'
 import type { ClientRow, Repo } from '../repo'
 import { isBlockedError, retryDelay } from './retry'
+import { OFFHOURS_MESSAGE, isWorkingTime, minskNow } from '../workingHours'
 import {
   asArray, nextOf, parseDelay, parsePair, str,
   type ActionItem, type Funnel, type Graph, type Link, type Part, type Quick, type Rule, type RunRow,
@@ -26,13 +27,6 @@ const MAX_STEPS = 60
 const HUMAN_MUTE_MS = 12 * 3600_000
 const nowOf = (env: Env) => (env.now ? env.now() : new Date())
 
-/** Время и день недели по Минску */
-function minskNow(d: Date) {
-  const parts = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Minsk', hour: '2-digit', minute: '2-digit', weekday: 'short', year: 'numeric', month: '2-digit', day: '2-digit', hour12: false }).formatToParts(d)
-  const get = (t: string) => parts.find((p) => p.type === t)?.value ?? ''
-  const dow = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].indexOf(get('weekday'))
-  return { minutes: (parseInt(get('hour'), 10) % 24) * 60 + parseInt(get('minute'), 10), dow, iso: `${get('year')}-${get('month')}-${get('day')}` }
-}
 const DOW = ['пн', 'вт', 'ср', 'чт', 'пт', 'сб', 'вс']
 const hm = (s: string) => {
   const m = s.match(/(\d{1,2}):(\d{2})/)
@@ -321,11 +315,15 @@ export async function advance(env: Env, funnel: Funnel, client: ClientRow, run: 
     }
 
     if (node.type === 'handoff') {
-      const text = fill(str(d.message), client, vars)
+      // Вне рабочих часов клиент получает отдельный текст (его правят в конструкторе, блок «Передать человеку»);
+      // пустое поле — стандартный текст из workingHours.ts
+      const offHours = !isWorkingTime(nowOf(env))
+      const own = offHours ? str(lang === 'en' && str(d.offhoursEn).trim() ? d.offhoursEn : d.offhours).trim() : ''
+      const text = fill(offHours ? own || (lang === 'en' ? OFFHOURS_MESSAGE.en : OFFHOURS_MESSAGE.ru) : str(d.message), client, vars)
       if (chat && text.trim() && mayPush) await env.out.sendText(chat, text)
       if (d.notify !== false) await env.out.notifyAdmins(client, 'Клиент просит человека: воронка передала диалог.')
       await repo.updateClient(client.id, { human_until: new Date(nowOf(env).getTime() + HUMAN_MUTE_MS).toISOString() })
-      await event(node.id, 'handoff')
+      await event(node.id, 'handoff', offHours ? { offhours: true } : undefined)
       return finish('stopped')
     }
 

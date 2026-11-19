@@ -8,6 +8,7 @@ import { TranslateButton } from '../ui/TranslateButton'
 import { MediaField } from '../ui/MediaField'
 import { VideoNoteField } from '../ui/VideoNoteField'
 import { supabase } from '../supabase'
+import { OFFHOURS_MESSAGE, WORKING_HOURS_LABEL } from '../../server/workingHours'
 import type { TemplateRow } from '../../server/templates'
 import { TPL_KINDS } from '../../server/templates'
 
@@ -229,8 +230,12 @@ export function Editor({ node, patch, remove, duplicate, close }: { node: Node; 
 
   if (type === 'handoff') body = (<>
     <Field label="Что увидит клиент"><TallText value={d.message ?? ''} onChange={(e) => set({ message: e.target.value })} /></Field>
+    <div className="h2">Вне рабочего времени</div>
+    <Field label="Сообщение вне рабочего времени"><TallText value={d.offhours ?? ''} placeholder={OFFHOURS_MESSAGE.ru} onChange={(e) => set({ offhours: e.target.value })} /></Field>
+    <div className="lblrow"><span className="hint">English</span><TranslateButton source={d.offhours ?? ''} target={d.offhoursEn ?? ''} onDone={(t) => set({ offhoursEn: t })} /></div>
+    <textarea className="en" value={d.offhoursEn ?? ''} placeholder="English (необязательно)" onChange={(e) => set({ offhoursEn: e.target.value })} />
     <Check checked={!!d.notify} onChange={(v) => set({ notify: v })}>Уведомить администратора в Telegram</Check>
-    <div className="hint">После этого блока бот молчит 12 часов или пока администратор не закроет диалог.</div>
+    <div className="hint">Рабочие часы: {WORKING_HOURS_LABEL}. Вне их клиент получает сообщение выше вместо обычного; если поле пустое — стандартный текст. После этого блока бот молчит 12 часов или пока администратор не закроет диалог.</div>
   </>)
 
   if (type === 'ai') body = <div className="aibox">ИИ-ответ пока не подключён: шаг пропускается.</div>

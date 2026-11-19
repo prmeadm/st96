@@ -17,15 +17,15 @@
 - `crm/admin/auth.tsx` — 7 узл.
 - `crm/admin/ui/Seg.tsx` — 6 узл.
 - `crm/admin/ui/QuickNav.tsx` — 6 узл.
-- `crm/admin/pages/FilterBar.tsx` — 5 узл.
 - `crm/admin/AdminApp.tsx` — 5 узл.
+- `crm/admin/pages/FilterBar.tsx` — 5 узл.
 - `crm/admin/ui/Icon.tsx` — 4 узл.
 - `crm/admin/ui/SaveButton.tsx` — 3 узл.
 - `crm/admin/highlight.tsx` — 3 узл.
 - `crm/admin/supabase.ts` — 3 узл.
-- `crm/admin/api.ts` — 2 узл.
 - `crm/admin/ui/RowActions.tsx` — 2 узл.
 - `crm/admin/ui/BackLink.tsx` — 2 узл.
+- `crm/admin/api.ts` — 2 узл.
 - `crm/admin/main.tsx` — 1 узл.
 - `crm/admin/index.html` — 1 узл.
 
@@ -33,11 +33,11 @@
 
 - `Icon()` (crm/admin/ui/Icon.tsx:L45)
 - `supabase` (crm/admin/supabase.ts:L6)
-- `fmtDate()` (crm/admin/types.ts:L65)
+- `fmtDate()` (crm/admin/types.ts:L68)
 - `Shell()` (crm/admin/AdminApp.tsx:L47)
 - `callApi()` (crm/admin/api.ts:L4)
 - `RowActions()` (crm/admin/ui/RowActions.tsx:L5)
-- `clientTitle()` (crm/admin/types.ts:L68)
+- `clientTitle()` (crm/admin/types.ts:L71)
 - `BackLink()` (crm/admin/ui/BackLink.tsx:L6)
 - `FilterBar()` (crm/admin/pages/FilterBar.tsx:L12)
 - `Seg()` (crm/admin/ui/Seg.tsx:L6)
@@ -52,7 +52,7 @@
 - **Рассылки** (6): `BroadcastPage()`, `BroadcastPage.tsx`, `BroadcastsPage()`, `BroadcastsPage.tsx`
 - **Запись на встречу** (3): `BookingPage()`, `BookingPage.tsx`
 - **Шаблоны и медиа** (3): `TemplatesPage()`, `TemplatesPage.tsx`
-- **Данные и инфраструктура** (2): `SITE_SERVICES`, `server/catalog.ts`
+- **Данные и инфраструктура** (3): `SITE_OFFERS`, `SITE_SERVICES`, `server/catalog.ts`
 - **Сайт st96.by** (2): `services`, `services.ts`
 
 ## Кто зависит от раздела (менять осторожно)

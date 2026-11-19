@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useReducedMotion } from 'framer-motion'
 import { ArrowLeft, ArrowRight, ArrowUpRight } from 'lucide-react'
-import { accents } from '../../../../shared/data/services'
+import { accents } from '../../../../crm/shared/data/services'
 import { aiServiceItems, aiServicesIntro } from '../../data/aiServices'
 import { useLang } from '../../lib/i18n'
 import { SolutionSceneCard } from '../ui/SolutionScene'

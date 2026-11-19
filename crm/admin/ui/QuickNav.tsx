@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { services } from '../../../shared/data/services'
+import { services } from '../../shared/data/services'
 import { Icon, type IconName } from './Icon'
 
 type L = { href: string; label: string; icon?: IconName }
