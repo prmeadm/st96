@@ -17,8 +17,8 @@
 - `crm/server/booking/service.ts` — 31 узл.
 - `crm/admin/pages/BookingPage.tsx` — 12 узл.
 - `crm/book/BookPage.tsx` — 8 узл.
-- `crm/server/booking/notify.ts` — 7 узл.
 - `crm/server/booking/booking.test.ts` — 7 узл.
+- `crm/server/booking/notify.ts` — 7 узл.
 - `crm/booking/MonthGrid.tsx` — 6 узл.
 - `crm/book/index.html` — 5 узл.
 - `crm/server/booking/types.ts` — 5 узл.
@@ -41,8 +41,8 @@
 - `bookingUrl()` (crm/server/booking/schedule.ts:L179)
 - `addDays()` (crm/server/booking/schedule.ts:L44)
 - `whenLabel()` (crm/server/booking/schedule.ts:L171)
-- `loadSchedule()` (crm/server/booking/service.ts:L10)
 - `BookingPage()` (crm/admin/pages/BookingPage.tsx:L30)
+- `isDate()` (crm/server/booking/schedule.ts:L48)
 
 ## От чего зависит (вызовы в другие разделы)
 

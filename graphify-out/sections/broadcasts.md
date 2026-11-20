@@ -21,18 +21,18 @@
 
 ## Главные узлы (больше всего связей)
 
-- `tickBroadcasts()` (crm/server/broadcasts.ts:L57)
 - `BroadcastPage()` (crm/admin/pages/BroadcastPage.tsx:L19)
+- `tickBroadcasts()` (crm/server/broadcasts.ts:L57)
 - `startBroadcast()` (crm/server/broadcasts.ts:L102)
 - `BroadcastRow` (crm/server/broadcasts.ts:L9)
-- `Segment` (crm/server/broadcasts.ts:L7)
 - `BroadcastsPage()` (crm/admin/pages/BroadcastsPage.tsx:L11)
+- `Segment` (crm/server/broadcasts.ts:L7)
 - `inAudience()` (crm/server/broadcasts.ts:L34)
 - `validateBroadcast()` (crm/server/broadcasts.ts:L44)
 - `AudienceClient` (crm/server/broadcasts.ts:L25)
 - `fromRow()` (crm/admin/pages/BroadcastPage.tsx:L16)
 - `BROADCAST_STATUS` (crm/server/broadcasts.ts:L27)
-- `MEDIA_CAPTION_LIMIT` (crm/server/broadcasts.ts:L29)
+- `seed()` (crm/server/broadcasts.test.ts:L25)
 
 ## От чего зависит (вызовы в другие разделы)
 

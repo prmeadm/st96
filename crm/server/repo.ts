@@ -8,6 +8,7 @@ import type { AudienceClient, BroadcastRow, Segment } from './broadcasts'
 import type { AgentStats, AgentTask } from './agent/types'
 import type { TemplateKind } from './templates'
 import type { BookingInsert, BookingRow } from './booking/types'
+import type { AgentAuditRow, AgentScenarioRow, AuditInsert, ClientProjectRow, InvoiceInsert, InvoiceRow, PackageInsert, PackageRow, PackagePeriodRow, PeriodInsert, ProjectInsert, ScenarioInsert, SupportJobInsert, SupportJobRow } from './support/types'
 
 export type ClientRow = {
   id: string
@@ -25,6 +26,11 @@ export type ClientRow = {
   admin_topic_id: number | null
   dialog_closed_at: string | null
   human_until: string | null
+  client_kind: 'individual' | 'legal' | null
+  legal_name: string | null
+  unp: string | null
+  legal_address: string | null
+  bank_details: string | null
 }
 
 export type LeadInsert = {
@@ -47,6 +53,7 @@ export type LeadInsert = {
   raw_text: string | null
   tg_chat_id: number | null
   tg_message_id: number | null
+  client_kind?: 'individual' | 'legal' | null
 }
 
 export type NoteInsert = {
@@ -157,6 +164,35 @@ export interface Repo {
   enqueueJob(kind: string, runAt: Date, payload: Record<string, unknown>): Promise<void>
   claimJobs(limit: number): Promise<JobRow[]>
   finishJob(id: number, error?: string): Promise<void>
+  // поддержка
+  listPackages(): Promise<PackageRow[]>
+  getPackage(id: string): Promise<PackageRow | null>
+  insertPackage(p: PackageInsert): Promise<PackageRow>
+  updatePackage(id: string, patch: Partial<PackageInsert>): Promise<void>
+  listProjects(): Promise<ClientProjectRow[]>
+  findProject(id: string): Promise<ClientProjectRow | null>
+  findProjectByClient(clientId: string): Promise<ClientProjectRow | null>
+  insertProject(p: ProjectInsert): Promise<ClientProjectRow>
+  updateProject(id: string, patch: Partial<ProjectInsert>): Promise<void>
+  getScenario(id: string): Promise<AgentScenarioRow | null>
+  findScenarioByProject(projectId: string): Promise<AgentScenarioRow | null>
+  upsertScenario(s: ScenarioInsert): Promise<AgentScenarioRow>
+  getPeriod(id: string): Promise<PackagePeriodRow | null>
+  currentPeriod(projectId: string): Promise<PackagePeriodRow | null>
+  listPeriods(projectId: string): Promise<PackagePeriodRow[]>
+  insertPeriod(p: PeriodInsert): Promise<PackagePeriodRow>
+  updatePeriod(id: string, patch: Partial<Omit<PeriodInsert, 'project_id' | 'period_start' | 'period_end'>>): Promise<void>
+  insertSupportJob(j: SupportJobInsert): Promise<SupportJobRow>
+  getSupportJob(id: string): Promise<SupportJobRow | null>
+  listSupportJobs(projectId: string): Promise<SupportJobRow[]>
+  claimSupportJob(id: string): Promise<SupportJobRow | null>
+  updateSupportJob(id: string, patch: Partial<Omit<SupportJobInsert, 'client_id' | 'request_text'>>): Promise<void>
+  insertInvoice(i: InvoiceInsert): Promise<InvoiceRow>
+  getInvoice(id: string): Promise<InvoiceRow | null>
+  listInvoices(clientId: string): Promise<InvoiceRow[]>
+  updateInvoice(id: string, patch: Partial<Omit<InvoiceInsert, 'client_id' | 'kind' | 'amount'>>): Promise<void>
+  insertAudit(a: AuditInsert): Promise<void>
+  listAudit(projectId: string): Promise<AgentAuditRow[]>
 }
 
 const cleanUser = (u: string) => u.replace(/^@/, '')
@@ -472,6 +508,92 @@ export function supabaseRepo(url: string, key: string): Repo {
       if (rows && rows.length) return topicId
       const cur = ok(await db.from('clients').select('admin_topic_id').eq('id', clientId).single(), 'setTopicIfEmpty read')
       return cur?.admin_topic_id ?? topicId
+    },
+    // ─── поддержка ───
+    async listPackages() {
+      return (ok(await db.from('packages').select('*').order('sort_order').order('title'), 'listPackages') ?? []) as PackageRow[]
+    },
+    async getPackage(id) {
+      return (ok(await db.from('packages').select('*').eq('id', id).maybeSingle(), 'getPackage') as PackageRow | null) ?? null
+    },
+    async insertPackage(p) {
+      return ok(await db.from('packages').insert(p).select('*').single(), 'insertPackage') as PackageRow
+    },
+    async updatePackage(id, patch) {
+      ok(await db.from('packages').update(patch).eq('id', id), 'updatePackage')
+    },
+    async listProjects() {
+      return (ok(await db.from('client_projects').select('*').order('created_at'), 'listProjects') ?? []) as ClientProjectRow[]
+    },
+    async findProject(id) {
+      return (ok(await db.from('client_projects').select('*').eq('id', id).maybeSingle(), 'findProject') as ClientProjectRow | null) ?? null
+    },
+    async findProjectByClient(clientId) {
+      return (ok(await db.from('client_projects').select('*').eq('client_id', clientId).order('created_at', { ascending: false }).limit(1).maybeSingle(), 'findProjectByClient') as ClientProjectRow | null) ?? null
+    },
+    async insertProject(p) {
+      return ok(await db.from('client_projects').insert(p).select('*').single(), 'insertProject') as ClientProjectRow
+    },
+    async updateProject(id, patch) {
+      ok(await db.from('client_projects').update(patch).eq('id', id), 'updateProject')
+    },
+    async getScenario(id) {
+      return (ok(await db.from('agent_scenarios').select('*').eq('id', id).maybeSingle(), 'getScenario') as AgentScenarioRow | null) ?? null
+    },
+    async findScenarioByProject(projectId) {
+      return (ok(await db.from('agent_scenarios').select('*').eq('project_id', projectId).order('version', { ascending: false }).limit(1).maybeSingle(), 'findScenarioByProject') as AgentScenarioRow | null) ?? null
+    },
+    async upsertScenario(s) {
+      return ok(await db.from('agent_scenarios').insert(s).select('*').single(), 'upsertScenario') as AgentScenarioRow
+    },
+    async getPeriod(id) {
+      return (ok(await db.from('package_periods').select('*').eq('id', id).maybeSingle(), 'getPeriod') as PackagePeriodRow | null) ?? null
+    },
+    async currentPeriod(projectId) {
+      return (ok(await db.from('package_periods').select('*').eq('project_id', projectId).in('status', ['pending_payment', 'active']).order('period_start', { ascending: false }).limit(1).maybeSingle(), 'currentPeriod') as PackagePeriodRow | null) ?? null
+    },
+    async listPeriods(projectId) {
+      return (ok(await db.from('package_periods').select('*').eq('project_id', projectId).order('period_start', { ascending: false }).limit(50), 'listPeriods') ?? []) as PackagePeriodRow[]
+    },
+    async insertPeriod(p) {
+      return ok(await db.from('package_periods').insert(p).select('*').single(), 'insertPeriod') as PackagePeriodRow
+    },
+    async updatePeriod(id, patch) {
+      ok(await db.from('package_periods').update(patch).eq('id', id), 'updatePeriod')
+    },
+    async insertSupportJob(j) {
+      return ok(await db.from('support_jobs').insert(j).select('*').single(), 'insertSupportJob') as SupportJobRow
+    },
+    async getSupportJob(id) {
+      return (ok(await db.from('support_jobs').select('*').eq('id', id).maybeSingle(), 'getSupportJob') as SupportJobRow | null) ?? null
+    },
+    async listSupportJobs(projectId) {
+      return (ok(await db.from('support_jobs').select('*').eq('project_id', projectId).order('created_at', { ascending: false }).limit(100), 'listSupportJobs') ?? []) as SupportJobRow[]
+    },
+    async claimSupportJob(id) {
+      const rows = ok(await db.from('support_jobs').update({ status: 'running', started_at: new Date().toISOString() }).eq('id', id).eq('status', 'queued').select('*'), 'claimSupportJob') as SupportJobRow[] | null
+      return rows?.[0] ?? null
+    },
+    async updateSupportJob(id, patch) {
+      ok(await db.from('support_jobs').update(patch).eq('id', id), 'updateSupportJob')
+    },
+    async insertInvoice(i) {
+      return ok(await db.from('invoices').insert(i).select('*').single(), 'insertInvoice') as InvoiceRow
+    },
+    async getInvoice(id) {
+      return (ok(await db.from('invoices').select('*').eq('id', id).maybeSingle(), 'getInvoice') as InvoiceRow | null) ?? null
+    },
+    async listInvoices(clientId) {
+      return (ok(await db.from('invoices').select('*').eq('client_id', clientId).order('created_at', { ascending: false }).limit(100), 'listInvoices') ?? []) as InvoiceRow[]
+    },
+    async updateInvoice(id, patch) {
+      ok(await db.from('invoices').update(patch).eq('id', id), 'updateInvoice')
+    },
+    async insertAudit(a) {
+      ok(await db.from('agent_audit_log').insert(a), 'insertAudit')
+    },
+    async listAudit(projectId) {
+      return (ok(await db.from('agent_audit_log').select('*').eq('project_id', projectId).order('created_at', { ascending: false }).limit(200), 'listAudit') ?? []) as AgentAuditRow[]
     },
   }
 }

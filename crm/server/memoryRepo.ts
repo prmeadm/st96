@@ -5,6 +5,7 @@ import type { TemplateRow } from './templates'
 import type { AudienceClient, BroadcastRow } from './broadcasts'
 import type { AgentStats, AgentTask } from './agent/types'
 import type { BookingInsert, BookingRow } from './booking/types'
+import type { AgentAuditRow, AgentScenarioRow, ClientProjectRow, InvoiceRow, PackagePeriodRow, PackageRow, SupportJobRow } from './support/types'
 
 export type MemoryRepo = Repo & {
   clients: ClientRow[]
@@ -25,6 +26,13 @@ export type MemoryRepo = Repo & {
   agentTasks: (AgentTask & { locked: boolean })[]
   settings: Map<string, string>
   bookings: BookingRow[]
+  packages: PackageRow[]
+  clientProjects: ClientProjectRow[]
+  scenarios: AgentScenarioRow[]
+  periods: PackagePeriodRow[]
+  supportJobs: SupportJobRow[]
+  invoices: InvoiceRow[]
+  audit: AgentAuditRow[]
   /** часы для тестов: время создания заявок */
   clock: () => Date
   recipients: { broadcast_id: string; client_id: string; status: 'pending' | 'sending' | 'sent' | 'failed'; error?: string }[]
@@ -36,7 +44,7 @@ export function memoryRepo(): MemoryRepo {
   const id = (p: string) => `${p}${++seq}`
   const seen = new Set<number>()
   const r: MemoryRepo = {
-    clients: [], leads: [], notes: [], messages: [], funnels: [], runs: [], events: [], tags: new Map(), templates: [], templateEvents: [], tgLinks: new Map(), llmUsage: [], broadcasts: [], agentTasks: [], settings: new Map(), bookings: [], clock: () => new Date(), recipients: [], jobs: [], runStartedAt: new Map(),
+    clients: [], leads: [], notes: [], messages: [], funnels: [], runs: [], events: [], tags: new Map(), templates: [], templateEvents: [], tgLinks: new Map(), llmUsage: [], broadcasts: [], agentTasks: [], settings: new Map(), bookings: [], packages: [], clientProjects: [], scenarios: [], periods: [], supportJobs: [], invoices: [], audit: [], clock: () => new Date(), recipients: [], jobs: [], runStartedAt: new Map(),
     async claimUpdate(u) { if (seen.has(u)) return false; seen.add(u); return true },
     async findClient({ tgUserId, phone, username, topicId }) {
       if (topicId) return r.clients.find((c) => c.admin_topic_id === topicId) ?? null
@@ -49,7 +57,7 @@ export function memoryRepo(): MemoryRepo {
     async insertClient(c) {
       const row: ClientRow = {
         id: id('c'), tg_user_id: null, tg_username: null, name: null, phone: null, email: null, company: null,
-        language: 'ru', source: null, consent_at: null, opted_out_at: null, last_seen_at: null, admin_topic_id: null, dialog_closed_at: null, human_until: null, ...c,
+        language: 'ru', source: null, consent_at: null, opted_out_at: null, last_seen_at: null, admin_topic_id: null, dialog_closed_at: null, human_until: null, client_kind: null, legal_name: null, unp: null, legal_address: null, bank_details: null, ...c,
       }
       r.clients.push(row)
       return row
@@ -215,6 +223,67 @@ export function memoryRepo(): MemoryRepo {
       if (c.admin_topic_id == null) c.admin_topic_id = topicId
       return c.admin_topic_id
     },
+    // ─── поддержка ───
+    async listPackages() { return [...r.packages].sort((a, b) => a.sort_order - b.sort_order) },
+    async getPackage(pid) { return r.packages.find((p) => p.id === pid) ?? null },
+    async insertPackage(p) {
+      const row: PackageRow = { id: id('pkg'), description: null, price: null, currency: 'BYN', period: 'month', corrections_limit: null, features_limit: null, requests_limit: null, features_allowed: null, sla_note: null, is_active: true, sort_order: 0, created_at: '', updated_at: '', ...p }
+      r.packages.push(row)
+      return row
+    },
+    async updatePackage(pid, patch) { Object.assign(r.packages.find((p) => p.id === pid)!, patch) },
+    async listProjects() { return [...r.clientProjects] },
+    async findProject(pid) { return r.clientProjects.find((p) => p.id === pid) ?? null },
+    async findProjectByClient(cid) { return [...r.clientProjects].reverse().find((p) => p.client_id === cid) ?? null },
+    async insertProject(p) {
+      const row: ClientProjectRow = { id: id('pr'), package_id: null, workspace_path: null, repo_url: null, deploy_target: null, default_branch: 'main', deploy_cmd: null, status: 'active', agent_scenario_id: null, created_at: '', updated_at: '', ...p }
+      r.clientProjects.push(row)
+      return row
+    },
+    async updateProject(pid, patch) { Object.assign(r.clientProjects.find((p) => p.id === pid)!, patch) },
+    async getScenario(sid) { return r.scenarios.find((s) => s.id === sid) ?? null },
+    async findScenarioByProject(pid) { return [...r.scenarios].reverse().find((s) => s.project_id === pid) ?? null },
+    async upsertScenario(s) {
+      const row: AgentScenarioRow = { id: id('sc'), project_id: null, system_prompt: '', scope_notes: null, stop_conditions: null, allowed_actions: null, version: 1, created_at: '', updated_at: '', ...s }
+      r.scenarios.push(row)
+      return row
+    },
+    async getPeriod(pid) { return r.periods.find((p) => p.id === pid) ?? null },
+    async currentPeriod(projectId) {
+      return r.periods.filter((p) => p.project_id === projectId && (p.status === 'pending_payment' || p.status === 'active')).sort((a, b) => Date.parse(b.period_start) - Date.parse(a.period_start))[0] ?? null
+    },
+    async listPeriods(projectId) { return r.periods.filter((p) => p.project_id === projectId).sort((a, b) => Date.parse(b.period_start) - Date.parse(a.period_start)) },
+    async insertPeriod(p) {
+      const row: PackagePeriodRow = { id: id('per'), status: 'pending_payment', payment_id: null, corrections_limit: null, features_limit: null, requests_limit: null, corrections_used: 0, features_used: 0, requests_used: 0, created_at: '', ...p }
+      r.periods.push(row)
+      return row
+    },
+    async updatePeriod(pid, patch) { Object.assign(r.periods.find((p) => p.id === pid)!, patch) },
+    async insertSupportJob(j) {
+      const row: SupportJobRow = { id: id('sj'), project_id: null, message_id: null, status: 'queued', edits_json: [], edits_count: 0, result_json: null, tokens_used: 0, started_at: null, finished_at: null, created_at: '', ...j }
+      r.supportJobs.push(row)
+      return row
+    },
+    async getSupportJob(jid) { return r.supportJobs.find((x) => x.id === jid) ?? null },
+    async listSupportJobs(projectId) { return r.supportJobs.filter((x) => x.project_id === projectId).reverse() },
+    async claimSupportJob(jid) {
+      const x = r.supportJobs.find((y) => y.id === jid)
+      if (!x || x.status !== 'queued') return null
+      x.status = 'running'
+      x.started_at = r.clock().toISOString()
+      return x
+    },
+    async updateSupportJob(jid, patch) { Object.assign(r.supportJobs.find((x) => x.id === jid)!, patch) },
+    async insertInvoice(i) {
+      const row: InvoiceRow = { id: id('inv'), project_id: null, period_id: null, currency: 'BYN', status: 'draft', link_or_file: null, confirmed_by: null, confirmed_at: null, created_at: '', updated_at: '', ...i }
+      r.invoices.push(row)
+      return row
+    },
+    async getInvoice(iid) { return r.invoices.find((x) => x.id === iid) ?? null },
+    async listInvoices(clientId) { return r.invoices.filter((x) => x.client_id === clientId).reverse() },
+    async updateInvoice(iid, patch) { Object.assign(r.invoices.find((x) => x.id === iid)!, patch) },
+    async insertAudit(a) { r.audit.push({ id: ++seq, client_id: null, project_id: null, job_id: null, payload: null, created_at: r.clock().toISOString(), ...a }) },
+    async listAudit(projectId) { return r.audit.filter((x) => x.project_id === projectId).reverse() },
   }
   return r
 }
