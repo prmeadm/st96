@@ -12,6 +12,7 @@ import BroadcastsPage from './pages/BroadcastsPage'
 import BroadcastPage from './pages/BroadcastPage'
 import AgentPage from './pages/AgentPage'
 import SettingsPage from './pages/SettingsPage'
+import SupportPage from './pages/support/SupportPage'
 import AnalyticsPage from './pages/AnalyticsPage'
 import BookingPage from './pages/BookingPage'
 import { Icon } from './ui/Icon'
@@ -80,6 +81,7 @@ function Shell() {
         {item('/broadcasts', 'send', 'Рассылки')}
         {item('/booking', 'calendar', 'Запись')}
         {item('/templates', 'templates', 'Шаблоны')}
+        {item('/support', 'support', 'Поддержка')}
         {item('/agent', 'agent', 'Агент')}
         {item('/analytics', 'chart', 'Аналитика')}
         {item('/notes', 'notes', 'Заметки')}
@@ -107,6 +109,7 @@ function Shell() {
             <Route path="/broadcasts/:id" element={<BroadcastPage />} />
             <Route path="/booking" element={<BookingPage />} />
             <Route path="/templates" element={<TemplatesPage />} />
+            <Route path="/support" element={<SupportPage />} />
             <Route path="/agent" element={<AgentPage />} />
             <Route path="/agent/:id" element={<AgentPage />} />
             <Route path="/analytics" element={<AnalyticsPage />} />

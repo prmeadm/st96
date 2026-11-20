@@ -1,0 +1,371 @@
+import { useEffect, useState } from 'react'
+import { supabase } from '../../supabase'
+import { Icon } from '../../ui/Icon'
+import { useAuth } from '../../auth'
+import type { Client } from '../../types'
+import type { ClientProjectRow, InvoiceRow, PackagePeriodRow, PackageRow, SupportJobRow } from '../../../server/support/types'
+import { INVOICE_KINDS, INVOICE_STATUSES, JOB_STATUSES, PERIOD_STATUSES, PROJECT_STATUSES, fmtDate, limitLabel, money, num, useTable } from './shared'
+
+type Tab = 'projects' | 'packages' | 'jobs' | 'invoices' | 'settings'
+const TABS: { id: Tab; label: string }[] = [
+  { id: 'projects', label: 'Клиенты и проекты' },
+  { id: 'packages', label: 'Пакеты' },
+  { id: 'jobs', label: 'Обращения' },
+  { id: 'invoices', label: 'Счета' },
+  { id: 'settings', label: 'Настройки' },
+]
+
+// ─── Клиенты и проекты ───
+type ProjectJoined = ClientProjectRow & { clients: { name: string | null; tg_username: string | null } | null; packages: { title: string } | null }
+
+function ProjectsTab() {
+  const [projects, setProjects] = useState<ProjectJoined[] | null>(null)
+  const [ptick, setPtick] = useState(0)
+  useEffect(() => {
+    supabase.from('client_projects').select('*, clients(name, tg_username), packages(title)').order('created_at')
+      .then(({ data, error }) => { if (!error) setProjects((data ?? []) as ProjectJoined[]) })
+  }, [ptick])
+  const reloadProjects = () => setPtick((x) => x + 1)
+  const { rows: clients } = useTable<Client>('clients', 'created_at')
+  const { rows: packages } = useTable<PackageRow>('packages', 'sort_order')
+  const { rows: periods } = useTable<PackagePeriodRow>('package_periods')
+  const [editing, setEditing] = useState<Partial<ClientProjectRow> & { client_id: string; system_prompt: string } | null>(null)
+  const [msg, setMsg] = useState('')
+
+  const clientName = (c: ProjectJoined) => c.clients?.name ?? (c.clients?.tg_username ? '@' + c.clients.tg_username : 'Без имени')
+  const openPeriod = (projectId: string) => (periods ?? []).filter((p) => p.project_id === projectId && (p.status === 'pending_payment' || p.status === 'active')).sort((a, b) => Date.parse(b.period_start) - Date.parse(a.period_start))[0]
+  const remaining = (p: PackagePeriodRow) => {
+    const c = p.corrections_limit == null ? null : p.corrections_limit - p.corrections_used
+    return c == null ? '∞' : String(c)
+  }
+
+  const openEdit = async (p: ProjectJoined) => {
+    let prompt = ''
+    if (p.agent_scenario_id) {
+      const { data } = await supabase.from('agent_scenarios').select('system_prompt').eq('id', p.agent_scenario_id).maybeSingle()
+      prompt = (data?.system_prompt as string | undefined) ?? ''
+    }
+    setEditing({ ...p, client_id: p.client_id, system_prompt: prompt })
+  }
+
+  const save = async () => {
+    if (!editing) return
+    if (!editing.client_id) return setMsg('Выберите клиента')
+    const base = {
+      client_id: editing.client_id,
+      package_id: editing.package_id ?? null,
+      workspace_path: editing.workspace_path?.trim() || null,
+      repo_url: editing.repo_url?.trim() || null,
+      deploy_target: editing.deploy_target?.trim() || null,
+      default_branch: editing.default_branch?.trim() || 'main',
+      deploy_cmd: editing.deploy_cmd?.trim() || null,
+      status: editing.status ?? 'active',
+    }
+    const prompt = editing.system_prompt?.trim()
+    if (editing.id) {
+      await supabase.from('client_projects').update(base).eq('id', editing.id)
+      if (prompt) {
+        if (editing.agent_scenario_id) {
+          await supabase.from('agent_scenarios').update({ system_prompt: prompt }).eq('id', editing.agent_scenario_id)
+        } else {
+          const { data: sc } = await supabase.from('agent_scenarios').insert({ client_id: editing.client_id, project_id: editing.id, system_prompt: prompt }).select('id').single()
+          if (sc) await supabase.from('client_projects').update({ agent_scenario_id: sc.id }).eq('id', editing.id)
+        }
+      }
+    } else {
+      const { data, error } = await supabase.from('client_projects').insert(base).select('id').single()
+      if (error) return setMsg('Не удалось создать проект')
+      if (prompt) {
+        const { data: sc } = await supabase.from('agent_scenarios').insert({ client_id: editing.client_id, project_id: data.id, system_prompt: prompt }).select('id').single()
+        if (sc) await supabase.from('client_projects').update({ agent_scenario_id: sc.id }).eq('id', data.id)
+      }
+    }
+    setEditing(null); setMsg('Сохранено'); reloadProjects()
+  }
+
+  return (
+    <div className="card">
+      <div className="row"><h3 style={{ margin: 0 }}>Клиенты и проекты</h3><span className="sp" /><button className="btn primary" onClick={() => setEditing({ client_id: '', system_prompt: '' })}><Icon name="plus" size={18} />Проект</button></div>
+      {msg && <div className="hint" role="status" style={{ marginTop: 6 }}>{msg}</div>}
+      {projects === null ? <div className="hint">Загрузка…</div> : projects.length === 0 ? <div className="hint" style={{ marginTop: 10 }}>Проектов нет. Привяжите клиента к workspace-папке.</div> : (
+        <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {projects.map((p) => {
+            const per = openPeriod(p.id)
+            return (
+              <div key={p.id} className="item" style={{ boxShadow: 'none' }}>
+                <div className="row"><b>{clientName(p)}</b>{p.packages && <span className="chip">{p.packages.title}</span>}<span className="chip">{PROJECT_STATUSES[p.status] ?? p.status}</span><span className="sp" /><span className="hint">{p.workspace_path ?? '—'}</span><button className="ibtn" title="Редактировать" onClick={() => openEdit(p)}><Icon name="edit" size={18} /></button></div>
+                <div className="hint" style={{ marginTop: 4 }}>{p.repo_url ?? 'без репозитория'} · деплой {p.deploy_cmd ?? '—'}</div>
+                {per && <div className="hint" style={{ marginTop: 4 }}>Период: {fmtDate(per.period_start)}–{fmtDate(per.period_end)} · {PERIOD_STATUSES[per.status]} · правки {per.corrections_used}/{limitLabel(per.corrections_limit)} (осталось {remaining(per)})</div>}
+              </div>
+            )
+          })}
+        </div>
+      )}
+      {editing && (
+        <div className="lx-ov" onClick={() => setEditing(null)}>
+          <div className="lx-modal" role="dialog" aria-modal="true" aria-label="Проект" onClick={(e) => e.stopPropagation()}>
+            <div className="lx-h"><b>{editing.id ? 'Проект' : 'Новый проект'}</b><span className="sp" /><button type="button" className="x" onClick={() => setEditing(null)} aria-label="Закрыть"><Icon name="close" size={18} /></button></div>
+            <div className="lx-b">
+              <div className="lx-grid">
+                <div className="fld"><label>Клиент</label>
+                  <select value={editing.client_id} onChange={(e) => setEditing({ ...editing, client_id: e.target.value })}>
+                    <option value="">—</option>
+                    {(clients ?? []).map((c) => <option key={c.id} value={c.id}>{c.name ?? (c.tg_username ? '@' + c.tg_username : c.phone ?? 'Без имени')}</option>)}
+                  </select></div>
+                <div className="fld"><label>Пакет</label>
+                  <select value={editing.package_id ?? ''} onChange={(e) => setEditing({ ...editing, package_id: e.target.value || null })}>
+                    <option value="">—</option>
+                    {(packages ?? []).map((p) => <option key={p.id} value={p.id}>{p.title}</option>)}
+                  </select></div>
+                <div className="fld"><label>Статус</label>
+                  <select value={editing.status ?? 'active'} onChange={(e) => setEditing({ ...editing, status: e.target.value as ClientProjectRow['status'] })}>
+                    {Object.entries(PROJECT_STATUSES).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                  </select></div>
+                <div className="fld"><label>Ветка по умолчанию</label><input value={editing.default_branch ?? 'main'} onChange={(e) => setEditing({ ...editing, default_branch: e.target.value })} /></div>
+                <div className="fld lx-wide"><label>Workspace (путь на сервере)</label><input value={editing.workspace_path ?? ''} onChange={(e) => setEditing({ ...editing, workspace_path: e.target.value })} placeholder="/home/dsh/work/slug" /></div>
+                <div className="fld lx-wide"><label>Репозиторий</label><input value={editing.repo_url ?? ''} onChange={(e) => setEditing({ ...editing, repo_url: e.target.value })} placeholder="https://github.com/…" /></div>
+                <div className="fld lx-wide"><label>Деплой-таргет / команда</label><input value={editing.deploy_cmd ?? ''} onChange={(e) => setEditing({ ...editing, deploy_cmd: e.target.value })} placeholder="vercel --prod / npm run deploy" /></div>
+                <div className="fld lx-wide"><label>Сценарий агента (рамки)</label><textarea rows={4} value={editing.system_prompt ?? ''} onChange={(e) => setEditing({ ...editing, system_prompt: e.target.value })} placeholder="Что агент может делать в этом проекте, на что не имеет права" /></div>
+              </div>
+            </div>
+            <div className="lx-f"><button className="btn" onClick={() => setEditing(null)}>Отмена</button><span className="sp" /><button className="btn primary" onClick={save}>Сохранить</button></div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── Пакеты ───
+type PkgForm = { code: string; title: string; description: string; price: string; corrections_limit: string; features_limit: string; requests_limit: string; features_allowed: string; sla_note: string; sort_order: string; is_active: boolean }
+const blankPkg: PkgForm = { code: '', title: '', description: '', price: '', corrections_limit: '', features_limit: '', requests_limit: '', features_allowed: '', sla_note: '', sort_order: '0', is_active: true }
+
+function PackagesTab() {
+  const { rows, reload } = useTable<PackageRow>('packages', 'sort_order')
+  const [editing, setEditing] = useState<PackageRow | null>(null)
+  const [creating, setCreating] = useState(false)
+  const [form, setForm] = useState<PkgForm>(blankPkg)
+  const [msg, setMsg] = useState('')
+
+  const openEdit = (p: PackageRow) => { setEditing(p); setCreating(false); setForm({ code: p.code, title: p.title, description: p.description ?? '', price: p.price == null ? '' : String(p.price), corrections_limit: p.corrections_limit == null ? '' : String(p.corrections_limit), features_limit: p.features_limit == null ? '' : String(p.features_limit), requests_limit: p.requests_limit == null ? '' : String(p.requests_limit), features_allowed: p.features_allowed ?? '', sla_note: p.sla_note ?? '', sort_order: String(p.sort_order), is_active: p.is_active }) }
+  const save = async () => {
+    if (!form.code.trim() || !form.title.trim()) return setMsg('Укажите код и название')
+    const row = { code: form.code.trim(), title: form.title.trim(), description: form.description.trim() || null, price: num(form.price), corrections_limit: num(form.corrections_limit), features_limit: num(form.features_limit), requests_limit: num(form.requests_limit), features_allowed: form.features_allowed.trim() || null, sla_note: form.sla_note.trim() || null, sort_order: Number(form.sort_order) || 0, is_active: form.is_active }
+    const { error } = editing ? await supabase.from('packages').update(row).eq('id', editing.id) : await supabase.from('packages').insert(row)
+    if (error) return setMsg(error.code === '23505' ? 'Такой код уже есть' : 'Не удалось сохранить')
+    setEditing(null); setCreating(false); setMsg('Сохранено'); reload()
+  }
+  const toggle = async (p: PackageRow) => { await supabase.from('packages').update({ is_active: !p.is_active }).eq('id', p.id); reload() }
+  const copy = async (p: PackageRow) => { await supabase.from('packages').insert({ code: p.code + '-copy', title: p.title + ' (копия)', description: p.description, price: p.price, corrections_limit: p.corrections_limit, features_limit: p.features_limit, requests_limit: p.requests_limit, features_allowed: p.features_allowed, sla_note: p.sla_note, sort_order: p.sort_order, is_active: false }); reload() }
+
+  return (
+    <div className="card">
+      <div className="row"><h3 style={{ margin: 0 }}>Пакеты</h3><span className="sp" /><button className="btn primary" onClick={() => { setCreating(true); setEditing(null); setForm(blankPkg) }}><Icon name="plus" size={18} />Новый пакет</button></div>
+      {msg && <div className="hint" role="status" style={{ marginTop: 6 }}>{msg}</div>}
+      {rows === null ? <div className="hint">Загрузка…</div> : (
+        <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {rows.map((p) => (
+            <div key={p.id} className="item" style={{ boxShadow: 'none' }}>
+              <div className="row"><b>{p.title}</b><span className="hint">· {p.code}</span>{!p.is_active && <span className="chip red">выключен</span>}<span className="sp" />
+                <span className="hint">{money(p.price)} · правки {limitLabel(p.corrections_limit)} · функции {limitLabel(p.features_limit)} · обращения {limitLabel(p.requests_limit)}</span>
+                <button className="ibtn" title={p.is_active ? 'Выключить' : 'Включить'} onClick={() => toggle(p)}><Icon name={p.is_active ? 'stop' : 'play'} size={18} /></button>
+                <button className="ibtn" title="Копировать" onClick={() => copy(p)}><Icon name="file" size={18} /></button>
+                <button className="ibtn" title="Редактировать" onClick={() => openEdit(p)}><Icon name="edit" size={18} /></button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+      {(editing || creating) && (
+        <div className="lx-ov" onClick={() => { setEditing(null); setCreating(false) }}>
+          <div className="lx-modal" role="dialog" aria-modal="true" aria-label="Пакет" onClick={(e) => e.stopPropagation()}>
+            <div className="lx-h"><b>{creating ? 'Новый пакет' : 'Пакет'}</b><span className="sp" /><button type="button" className="x" onClick={() => { setEditing(null); setCreating(false) }} aria-label="Закрыть"><Icon name="close" size={18} /></button></div>
+            <div className="lx-b">
+              <div className="lx-grid">
+                <div className="fld"><label>Код</label><input value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} placeholder="standard" /></div>
+                <div className="fld"><label>Название</label><input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Стандартный" /></div>
+                <div className="fld"><label>Цена, BYN</label><input value={form.price} inputMode="decimal" onChange={(e) => setForm({ ...form, price: e.target.value })} /></div>
+                <div className="fld"><label>Порядок</label><input value={form.sort_order} inputMode="numeric" onChange={(e) => setForm({ ...form, sort_order: e.target.value })} /></div>
+                <div className="fld"><label>Лимит правок</label><input value={form.corrections_limit} inputMode="numeric" onChange={(e) => setForm({ ...form, corrections_limit: e.target.value })} placeholder="пусто = ∞" /></div>
+                <div className="fld"><label>Лимит функций</label><input value={form.features_limit} inputMode="numeric" onChange={(e) => setForm({ ...form, features_limit: e.target.value })} placeholder="пусто = ∞" /></div>
+                <div className="fld"><label>Лимит обращений</label><input value={form.requests_limit} inputMode="numeric" onChange={(e) => setForm({ ...form, requests_limit: e.target.value })} placeholder="пусто = ∞" /></div>
+                <div className="fld"><label>Входит (функции)</label><input value={form.features_allowed} onChange={(e) => setForm({ ...form, features_allowed: e.target.value })} /></div>
+                <div className="fld lx-wide"><label>Описание</label><textarea rows={2} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
+                <div className="fld lx-wide"><label>SLA / примечание</label><input value={form.sla_note} onChange={(e) => setForm({ ...form, sla_note: e.target.value })} /></div>
+                <label className="fld lx-wide" style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}><input type="checkbox" checked={form.is_active} onChange={(e) => setForm({ ...form, is_active: e.target.checked })} /><span>Пакет активен</span></label>
+              </div>
+            </div>
+            <div className="lx-f"><button className="btn" onClick={() => { setEditing(null); setCreating(false) }}>Отмена</button><span className="sp" /><button className="btn primary" onClick={save}>Сохранить</button></div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── Обращения ───
+function JobsTab() {
+  const { rows } = useTable<SupportJobRow>('support_jobs')
+  const [filter, setFilter] = useState('')
+  const list = (rows ?? []).filter((j) => !filter || j.status === filter)
+  return (
+    <div className="card">
+      <div className="row"><h3 style={{ margin: 0 }}>Обращения</h3><span className="sp" />
+        <select value={filter} onChange={(e) => setFilter(e.target.value)} aria-label="Статус">
+          <option value="">Все статусы</option>
+          {Object.entries(JOB_STATUSES).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+        </select>
+      </div>
+      {rows === null ? <div className="hint">Загрузка…</div> : list.length === 0 ? <div className="hint" style={{ marginTop: 10 }}>Обращений нет.</div> : (
+        <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {list.map((j) => (
+            <div key={j.id} className="item" style={{ boxShadow: 'none' }}>
+              <div className="row"><span className="chip">{JOB_STATUSES[j.status] ?? j.status}</span><span className="hint">правок {j.edits_count} · токены {j.tokens_used}</span><span className="sp" /><span className="hint">{fmtDate(j.created_at)}</span></div>
+              <div className="note" style={{ marginTop: 6 }}>{j.request_text}</div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── Счета ───
+type InvJoined = InvoiceRow & { clients: { name: string | null; client_kind: string | null; legal_name: string | null; unp: string | null; legal_address: string | null; bank_details: string | null } | null }
+
+function InvoicesTab() {
+  const { rows, reload } = useTable<InvJoined>('invoices', 'created_at', 500, '*, clients(name, client_kind, legal_name, unp, legal_address, bank_details)')
+  const { rows: clients } = useTable<Client>('clients', 'created_at')
+  const [creating, setCreating] = useState(false)
+  const [form, setForm] = useState({ client_id: '', kind: 'period' as InvoiceRow['kind'], amount: '' })
+  const [studio, setStudio] = useState('')
+  const [msg, setMsg] = useState('')
+
+  const loadStudio = () => { supabase.from('app_settings').select('value').eq('key', 'support.studio_requisites').maybeSingle().then(({ data }) => { if (data?.value) setStudio(data.value) }) }
+  const selClient = (clients ?? []).find((c) => c.id === form.client_id)
+
+  const save = async () => {
+    if (!form.client_id || !num(form.amount)) return setMsg('Укажите клиента и сумму')
+    const { error } = await supabase.from('invoices').insert({ client_id: form.client_id, kind: form.kind, amount: num(form.amount) })
+    if (error) return setMsg('Не удалось создать счёт')
+    setCreating(false); setForm({ client_id: '', kind: 'period', amount: '' }); setMsg('Счёт создан'); reload()
+  }
+  const confirm = async (inv: InvoiceRow) => {
+    const { data: s } = await supabase.auth.getSession()
+    const { error } = await supabase.from('invoices').update({ status: 'paid_confirmed', confirmed_by: s.session?.user.id ?? null, confirmed_at: new Date().toISOString() }).eq('id', inv.id)
+    if (error) return setMsg('Не удалось подтвердить')
+    setMsg('Оплата подтверждена'); reload()
+  }
+
+  const invoiceText = (inv: InvJoined) => {
+    const c = inv.clients
+    if (!c || c.client_kind !== 'legal') return null
+    return ['Получатель: ' + (c.legal_name ?? '—'), 'УНП ' + (c.unp ?? '—'), c.legal_address ?? '', c.bank_details ?? '', 'Сумма: ' + money(inv.amount) + ' · ' + (INVOICE_KINDS[inv.kind] ?? inv.kind)].filter(Boolean).join('\n')
+  }
+
+  return (
+    <div className="card">
+      <div className="row"><h3 style={{ margin: 0 }}>Счета</h3><span className="sp" /><button className="btn primary" onClick={() => { setCreating(true); loadStudio() }}><Icon name="plus" size={18} />Счёт</button></div>
+      {msg && <div className="hint" role="status" style={{ marginTop: 6 }}>{msg}</div>}
+      {rows === null ? <div className="hint">Загрузка…</div> : rows.length === 0 ? <div className="hint" style={{ marginTop: 10 }}>Счетов нет.</div> : (
+        <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {rows.map((inv) => (
+            <div key={inv.id} className="item" style={{ boxShadow: 'none' }}>
+              <div className="row"><b>{inv.clients?.name ?? 'Без имени'}</b><span className="chip">{INVOICE_KINDS[inv.kind] ?? inv.kind}</span><span className="chip">{INVOICE_STATUSES[inv.status] ?? inv.status}</span><span className="sp" /><b>{money(inv.amount)}</b>
+                {inv.status === 'draft' && <button className="btn" onClick={() => confirm(inv)}>Подтвердить оплату</button>}
+              </div>
+              {invoiceText(inv) && <div className="note" style={{ marginTop: 6, whiteSpace: 'pre-line' }}>{invoiceText(inv)}</div>}
+            </div>
+          ))}
+        </div>
+      )}
+      {creating && (
+        <div className="lx-ov" onClick={() => setCreating(false)}>
+          <div className="lx-modal" role="dialog" aria-modal="true" aria-label="Новый счёт" onClick={(e) => e.stopPropagation()}>
+            <div className="lx-h"><b>Новый счёт</b><span className="sp" /><button type="button" className="x" onClick={() => setCreating(false)} aria-label="Закрыть"><Icon name="close" size={18} /></button></div>
+            <div className="lx-b">
+              <div className="lx-grid">
+                <div className="fld"><label>Клиент</label>
+                  <select value={form.client_id} onChange={(e) => setForm({ ...form, client_id: e.target.value })}>
+                    <option value="">—</option>
+                    {(clients ?? []).map((c) => <option key={c.id} value={c.id}>{c.name ?? (c.tg_username ? '@' + c.tg_username : c.phone ?? 'Без имени')}{c.client_kind === 'legal' ? ' · юрлицо' : ''}</option>)}
+                  </select></div>
+                <div className="fld"><label>Назначение</label>
+                  <select value={form.kind} onChange={(e) => setForm({ ...form, kind: e.target.value as InvoiceRow['kind'] })}>
+                    {Object.entries(INVOICE_KINDS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                  </select></div>
+                <div className="fld"><label>Сумма, BYN</label><input value={form.amount} inputMode="decimal" onChange={(e) => setForm({ ...form, amount: e.target.value })} /></div>
+              </div>
+              {selClient?.client_kind === 'legal' && (
+                <div className="note" style={{ marginTop: 10, whiteSpace: 'pre-line' }}>Счёт для юрлица:
+Получатель: {selClient.legal_name ?? '—'}
+УНП {selClient.unp ?? '—'}
+{selClient.legal_address ?? ''}
+{selClient.bank_details ?? ''}
+Студия: {studio || 'реквизиты не заданы'}
+Сумма: {num(form.amount) ?? 0} BYN</div>
+              )}
+            </div>
+            <div className="lx-f"><button className="btn" onClick={() => setCreating(false)}>Отмена</button><span className="sp" /><button className="btn primary" onClick={save}>Создать</button></div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── Настройки ───
+function SettingsTab() {
+  const [link, setLink] = useState('')
+  const [studio, setStudio] = useState('')
+  const [oneoff, setOneoff] = useState('')
+  const [msg, setMsg] = useState('')
+  const load = () => {
+    supabase.from('app_settings').select('key, value').in('key', ['support.payment_link', 'support.studio_requisites', 'support.oneoff_price'])
+      .then(({ data }) => {
+        const get = (k: string) => (data ?? []).find((r: { key: string; value: string }) => r.key === k)?.value ?? ''
+        setLink(get('support.payment_link')); setStudio(get('support.studio_requisites')); setOneoff(get('support.oneoff_price'))
+      })
+  }
+  useEffect(load, [])
+  const save = async () => {
+    const rows = [
+      { key: 'support.payment_link', value: link.trim() },
+      { key: 'support.studio_requisites', value: studio.trim() },
+      { key: 'support.oneoff_price', value: oneoff.trim() },
+    ]
+    const { error } = await supabase.from('app_settings').upsert(rows, { onConflict: 'key' })
+    if (error) return setMsg('Не удалось сохранить')
+    setMsg('Сохранено')
+  }
+  return (
+    <div className="card">
+      <h3>Настройки поддержки</h3>
+      {msg && <div className="hint" role="status">{msg}</div>}
+      <div className="fld"><label>Ссылка на оплату (физлицо)</label><input value={link} onChange={(e) => setLink(e.target.value)} placeholder="https://…" /></div>
+      <div className="fld"><label>Реквизиты студии (для счёта)</label><textarea rows={3} value={studio} onChange={(e) => setStudio(e.target.value)} placeholder="ООО «КИНГСГАРДЕН», УНП 193999293, адрес, р/с" /></div>
+      <div className="fld"><label>Разовая цена функции, BYN</label><input value={oneoff} inputMode="decimal" onChange={(e) => setOneoff(e.target.value)} /></div>
+      <div className="row" style={{ marginTop: 10 }}><button className="btn primary" onClick={save}>Сохранить</button></div>
+    </div>
+  )
+}
+
+export default function SupportPage() {
+  const { email } = useAuth()
+  const [tab, setTab] = useState<Tab>('projects')
+  return (
+    <div className="wrap">
+      <h1 className="h1">Поддержка <span className="hint" style={{ fontWeight: 400, fontSize: 14 }}>{email}</span></h1>
+      <div className="row" style={{ gap: 6, marginBottom: 14, flexWrap: 'wrap' }}>
+        {TABS.map((t) => (
+          <button key={t.id} type="button" className={tab === t.id ? 'btn primary' : 'btn'} onClick={() => setTab(t.id)}>{t.label}</button>
+        ))}
+      </div>
+      {tab === 'projects' && <ProjectsTab />}
+      {tab === 'packages' && <PackagesTab />}
+      {tab === 'jobs' && <JobsTab />}
+      {tab === 'invoices' && <InvoicesTab />}
+      {tab === 'settings' && <SettingsTab />}
+    </div>
+  )
+}
