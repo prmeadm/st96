@@ -1,16 +1,15 @@
 // Worker поддержки: опрашивает support_jobs, классифицирует обращение, при «ready» запускает
 // агента (dsh --profile acp) в workspace проекта и пишет результат + аудит. Без Telegram.
 // Запуск (по образцу systemd-сервиса ST96/bot):
-//   SUPABASE_URL=… SUPABASE_SERVICE_ROLE_KEY=… DEEPSEEK_API_KEY=… npx tsx crm/server/support/worker.ts
+//   SUPABASE_DB_URL=… DEEPSEEK_API_KEY=… npx tsx crm/server/support/worker.ts
 
 import { execFile } from 'node:child_process'
-import { supabaseRepo, type Repo } from '../repo'
+import { pgRepo, type SupportRepo } from './pgRepo'
 import { buildPrompt, decide, type AgentInput, type Classification, type Classify } from './agent'
 import { spendCorrections, spendFeatures } from './period'
 import type { SupportJobRow } from './types'
 
-const url = process.env.SUPABASE_URL ?? ''
-const key = process.env.SUPABASE_SERVICE_ROLE_KEY ?? ''
+const dbUrl = process.env.SUPABASE_DB_URL ?? ''
 
 /** Классификация обращения через DeepSeek (строгий JSON). */
 export const classifyWithDeepSeek: Classify = async (input) => {
@@ -35,13 +34,16 @@ export const classifyWithDeepSeek: Classify = async (input) => {
 /** Запуск агента в workspace проекта. Агент видит только эту папку (cwd), не чужие проекты и не ~/.dsh. */
 function runInWorkspace(workspacePath: string, prompt: string): Promise<{ ok: boolean; output: string }> {
   return new Promise((resolve) => {
-    execFile('dsh', ['--profile', 'acp', '-p', prompt], { cwd: workspacePath, timeout: 15 * 60_000, maxBuffer: 10 * 1024 * 1024 }, (err, stdout, stderr) => {
-      resolve({ ok: !err, output: (stdout || stderr || '').slice(-4000) })
+    // dsh headless "<задача>" — одноразовый прогон агента: печатает результат и выходит.
+    execFile('dsh', ['headless', prompt], { cwd: workspacePath, timeout: 15 * 60_000, maxBuffer: 10 * 1024 * 1024 }, (err, stdout, stderr) => {
+      const output = (stdout || stderr || '').slice(-4000)
+      const failed = !!err || /\berror\b/i.test(stderr || '')
+      resolve({ ok: !failed, output })
     })
   })
 }
 
-async function processJob(repo: Repo, job: SupportJobRow) {
+async function processJob(repo: SupportRepo, job: SupportJobRow) {
   const project = job.project_id ? await repo.findProject(job.project_id) : null
   if (!project) {
     await repo.updateSupportJob(job.id, { status: 'failed', result_json: { error: 'нет проекта' }, finished_at: new Date().toISOString() })
@@ -96,7 +98,8 @@ async function processJob(repo: Repo, job: SupportJobRow) {
 }
 
 async function poll() {
-  const repo = supabaseRepo(url, key)
+  if (!dbUrl) throw new Error('SUPABASE_DB_URL не задан')
+  const repo = pgRepo(dbUrl)
   const jobs = await repo.listQueuedSupportJobs()
   for (const j of jobs) {
     const claimed = await repo.claimSupportJob(j.id)
