@@ -4,7 +4,7 @@ import { buildPrompt, decide, remainingCorrections, type AgentInput, type Classi
 
 const scenario: Scenario = { system_prompt: 'Только правки текста в проекте', scope_notes: 'Сайт st96.by', stop_conditions: 'Не трогать оплату', allowed_actions: 'edit,deploy' }
 const limits = (over: Partial<Limits> = {}): Limits => ({ corrections_limit: 5, corrections_used: 2, features_limit: 0, features_used: 0, requests_limit: null, requests_used: 0, ...over })
-const input = (request: string, over: Partial<Limits> = {}): AgentInput => ({ request_text: request, scenario, limits: limits(over) })
+const input = (request: string, over: Partial<Limits> = {}, hasActivePeriod = true): AgentInput => ({ request_text: request, scenario, limits: limits(over), hasActivePeriod })
 const cls = (c: Classification): Classify => async () => c
 
 test('остаток правок: лимит минус использованное, null = без лимита', () => {
@@ -50,6 +50,12 @@ test('новая функция при безлимите функций → rea
   const d2 = await decide(input('добавьте страницу', { features_limit: null }), cls({ kind: 'edits', edits: ['страница'], is_feature: true }))
   assert.equal(d2.status, 'ready')
   assert.equal(d2.is_feature, true)
+})
+
+test('нет активного оплаченного периода → awaiting_payment (гейт Фазы 5)', async () => {
+  const d = await decide(input('поменяйте заголовок', {}, false), cls({ kind: 'edits', edits: ['заголовок'], is_feature: false }))
+  assert.equal(d.status, 'awaiting_payment')
+  assert.equal(d.audit[0].payload?.reason, 'no_active_period')
 })
 
 test('промпт включает рамки, лимиты и обращение', () => {

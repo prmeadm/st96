@@ -34,15 +34,15 @@
 - `createBooking()` (crm/server/booking/service.ts:L98)
 - `ScheduleTab()` (crm/admin/pages/BookingPage.tsx:L146)
 - `dayInfo()` (crm/server/booking/schedule.ts:L114)
+- `normalizeSchedule()` (crm/server/booking/schedule.ts:L72)
 - `notifyClientDecision()` (crm/server/booking/notify.ts:L48)
 - `BookingRow` (crm/server/booking/types.ts:L4)
-- `normalizeSchedule()` (crm/server/booking/schedule.ts:L72)
-- `addDays()` (crm/server/booking/schedule.ts:L44)
 - `bookingUrl()` (crm/server/booking/schedule.ts:L179)
+- `addDays()` (crm/server/booking/schedule.ts:L44)
 - `decideBooking()` (crm/server/booking/service.ts:L174)
 - `whenLabel()` (crm/server/booking/schedule.ts:L171)
-- `loadSchedule()` (crm/server/booking/service.ts:L10)
 - `BookingPage()` (crm/admin/pages/BookingPage.tsx:L30)
+- `buildIcs()` (crm/server/booking/ics.ts:L9)
 
 ## От чего зависит (вызовы в другие разделы)
 

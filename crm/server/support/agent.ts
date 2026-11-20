@@ -22,6 +22,8 @@ export type AgentInput = {
   request_text: string
   scenario: Scenario
   limits: Limits
+  /** true — у клиента есть активный оплаченный период; без него агент не работает. */
+  hasActivePeriod: boolean
 }
 
 export type Classification =
@@ -72,6 +74,12 @@ export function buildPrompt(input: AgentInput): string {
  * Счётчики не меняет — списание после успешного деплоя (Фаза 5).
  */
 export async function decide(input: AgentInput, classify: Classify): Promise<Decision> {
+  if (!input.hasActivePeriod) {
+    return {
+      status: 'awaiting_payment', reason: 'нет активного оплаченного периода', edits: [], edits_count: 0, is_feature: false,
+      audit: [{ actor: 'ai', action: 'awaiting_payment', payload: { reason: 'no_active_period' } }],
+    }
+  }
   const c = await classify(input)
   if (c.kind === 'clarify') {
     return { status: 'clarify', reason: c.reason, audit: [{ actor: 'ai', action: 'clarify', payload: { reason: c.reason } }] }

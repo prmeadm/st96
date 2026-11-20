@@ -25,15 +25,15 @@
 - `createBot()` (crm/server/bot/bot.ts:L100)
 - `sendContent()` (crm/server/bot/dialog.ts:L167)
 - `beginStart()` (crm/server/bot/bot.ts:L67)
-- `sendTemplate()` (crm/server/bot/dialog.ts:L233)
 - `handleTopicMessage()` (crm/server/bot/dialog.ts:L79)
+- `sendTemplate()` (crm/server/bot/dialog.ts:L233)
 - `ensureClient()` (crm/server/bot/bot.ts:L33)
 - `ensureTopic()` (crm/server/bot/dialog.ts:L37)
-- `relayToAdmins()` (crm/server/bot/dialog.ts:L51)
 - `verifySiteRef()` (crm/server/bot/siteRef.ts:L41)
+- `relayToAdmins()` (crm/server/bot/dialog.ts:L51)
 - `cardText()` (crm/server/bot/dialog.ts:L22)
 - `linkLeadClient()` (crm/server/bot/bot.ts:L24)
-- `signSiteRef()` (crm/server/bot/siteRef.ts:L27)
+- `issueSiteRef()` (crm/server/bot/siteRef.ts:L60)
 
 ## От чего зависит (вызовы в другие разделы)
 

@@ -6,6 +6,7 @@
 import { execFile } from 'node:child_process'
 import { supabaseRepo, type Repo } from '../repo'
 import { buildPrompt, decide, type AgentInput, type Classification, type Classify } from './agent'
+import { spendCorrections, spendFeatures } from './period'
 import type { SupportJobRow } from './types'
 
 const url = process.env.SUPABASE_URL ?? ''
@@ -65,12 +66,22 @@ async function processJob(repo: Repo, job: SupportJobRow) {
       requests_limit: period?.requests_limit ?? null,
       requests_used: period?.requests_used ?? 0,
     },
+    hasActivePeriod: period?.status === 'active',
   }
   const d = await decide(input, classifyWithDeepSeek)
   for (const a of d.audit) await repo.insertAudit({ ...a, client_id: job.client_id, project_id: job.project_id, job_id: job.id })
   if (d.status === 'ready') {
     const r = project.workspace_path ? await runInWorkspace(project.workspace_path, buildPrompt(input)) : { ok: false, output: 'не указан workspace_path' }
     const status = r.ok ? 'deployed' : 'failed'
+    if (r.ok) {
+      // Списание счётчиков после успешного деплоя (Фаза 5)
+      try {
+        if (d.is_feature) await spendFeatures(repo, project.id, d.edits_count)
+        else await spendCorrections(repo, project.id, d.edits_count)
+      } catch (e) {
+        console.error('spend counters failed', e)
+      }
+    }
     await repo.updateSupportJob(job.id, {
       status, edits_json: d.edits, edits_count: d.edits_count,
       result_json: { output: r.output }, finished_at: new Date().toISOString(),
