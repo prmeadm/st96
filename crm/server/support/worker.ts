@@ -1,7 +1,7 @@
 // Worker поддержки: опрашивает support_jobs, классифицирует обращение, при «ready» запускает
-// агента (dsh --profile acp) в workspace проекта и пишет результат + аудит. Без Telegram.
+// агента (dsh headless "<задача>") в workspace проекта, пишет результат + аудит и отвечает клиенту в Telegram.
 // Запуск (по образцу systemd-сервиса ST96/bot):
-//   SUPABASE_DB_URL=… DEEPSEEK_API_KEY=… npx tsx crm/server/support/worker.ts
+//   SUPABASE_DB_URL=… DEEPSEEK_API_KEY=… LEADS_BOT_TOKEN=… npx tsx crm/server/support/worker.ts
 
 import { execFile } from 'node:child_process'
 import { pgRepo, type SupportRepo } from './pgRepo'
