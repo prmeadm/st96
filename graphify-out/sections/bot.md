@@ -23,17 +23,17 @@
 ## Главные узлы (больше всего связей)
 
 - `createBot()` (crm/server/bot/bot.ts:L100)
-- `beginStart()` (crm/server/bot/bot.ts:L67)
 - `sendContent()` (crm/server/bot/dialog.ts:L167)
-- `handleTopicMessage()` (crm/server/bot/dialog.ts:L79)
+- `beginStart()` (crm/server/bot/bot.ts:L67)
 - `sendTemplate()` (crm/server/bot/dialog.ts:L233)
+- `handleTopicMessage()` (crm/server/bot/dialog.ts:L79)
 - `ensureClient()` (crm/server/bot/bot.ts:L33)
-- `verifySiteRef()` (crm/server/bot/siteRef.ts:L41)
-- `relayToAdmins()` (crm/server/bot/dialog.ts:L51)
 - `ensureTopic()` (crm/server/bot/dialog.ts:L37)
-- `linkLeadClient()` (crm/server/bot/bot.ts:L24)
+- `relayToAdmins()` (crm/server/bot/dialog.ts:L51)
+- `verifySiteRef()` (crm/server/bot/siteRef.ts:L41)
 - `cardText()` (crm/server/bot/dialog.ts:L22)
-- `issueSiteRef()` (crm/server/bot/siteRef.ts:L60)
+- `linkLeadClient()` (crm/server/bot/bot.ts:L24)
+- `signSiteRef()` (crm/server/bot/siteRef.ts:L27)
 
 ## От чего зависит (вызовы в другие разделы)
 

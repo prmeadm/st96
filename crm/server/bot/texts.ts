@@ -9,6 +9,7 @@ export const T = {
     ack: 'Спасибо! Передали администратору, он ответит здесь в ближайшее время.',
     staleButton: 'Эта кнопка больше не работает. Отправьте /start, чтобы начать заново.',
     humanOn: 'С вами уже общается администратор: напишите ему здесь, в чате.',
+    supportAck: 'Принял! ИИ-агент взял задачу в работу — результат придёт сюда в течение нескольких минут.',
   },
   en: {
     welcome: "Hello! This is the ST96 studio. Tell us what you're interested in: we'll pass it to the administrator, who will reply here.",
@@ -18,5 +19,6 @@ export const T = {
     ack: "Thank you! We've passed this to the administrator, who will reply here soon.",
     staleButton: 'This button no longer works. Send /start to begin again.',
     humanOn: 'An administrator is already talking to you: just write here in the chat.',
+    supportAck: 'Got it! The AI agent is on it — the result will arrive here in a few minutes.',
   },
 } as const

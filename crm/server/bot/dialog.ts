@@ -10,6 +10,7 @@ import { clickablePhone } from '../leads/parse'
 import { CAPTION_LIMIT, NOT_A_FILE_ERROR, canonicalVideoUrl, youtubeEmbeddable, errorText, isVideoPageUrl, splitText, youtubeId, youtubeThumb } from '../media'
 import type { ClientRow, Repo } from '../repo'
 import { TPL_KINDS, fillTemplate, type TemplateKind, type TemplateRow } from '../templates'
+import { pauseAiForHuman, resumeAi } from './support'
 
 
 const threadGone = (e: unknown) => /message thread not found|TOPIC_DELETED|TOPIC_ID_INVALID|TOPIC_NOT_MODIFIED/i.test(e instanceof Error ? e.message : String(e))
@@ -121,6 +122,11 @@ export async function handleTopicMessage(api: Api, repo: Repo, groupChatId: numb
     await showTemplateMenu(api, repo, groupChatId, m.threadId)
     return 'ignored'
   }
+  if (/^\/startai(@\w+)?$/i.test(text)) {
+    const summary = await resumeAi(repo, client)
+    await api.sendMessage(groupChatId, summary, { message_thread_id: m.threadId })
+    return 'ignored'
+  }
   if (text.startsWith('/')) return 'ignored'
   if (!client.tg_user_id) return 'ignored'
 
@@ -133,6 +139,9 @@ export async function handleTopicMessage(api: Api, repo: Repo, groupChatId: numb
   }
   await repo.insertMessage({ client_id: client.id, direction: 'admin', kind: 'text', text: text || null, tg_chat_id: client.tg_user_id, tg_message_id: null })
   await react('👍')
+  // Поддержка: человек взял диалог — ИИ на паузу до /startai
+  const proj = await repo.findProjectByClient(client.id)
+  if (proj && proj.status === 'active') await pauseAiForHuman(repo, client)
   return 'sent'
 }
 

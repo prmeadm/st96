@@ -450,3 +450,39 @@ test('повторный /start site_<токен> в течение 10 мину�
   await send(msg(`/start site_${ref}`, START_ENT))
   assert.equal(repo.runs.length, 2)
 })
+
+test('поддержка: клиент с активным проектом — сообщение идёт агенту, воронка не запускается', async () => {
+  const { repo, calls, send } = setup()
+  publish(repo)
+  const cl = await repo.insertClient({ tg_user_id: 555, name: 'Мария', language: 'ru' })
+  const pr = await repo.insertProject({ client_id: cl.id, workspace_path: '/home/dsh/work/foo', status: 'active' })
+  await send(msg('поменяйте заголовок на сайте'))
+  assert.equal(repo.supportJobs.length, 1)
+  assert.equal(repo.supportJobs[0].status, 'queued')
+  assert.equal(repo.supportJobs[0].project_id, pr.id)
+  assert.equal(repo.runs.length, 0, 'воронка не запущена')
+  assert.ok(calls.some((c) => c.method === 'sendMessage' && c.payload.chat_id === 555 && /ИИ-агент/.test(String(c.payload.text))))
+})
+
+test('поддержка: человек в теме ставит ИИ на паузу, /startai возвращает', async () => {
+  const { repo, calls, send } = setup()
+  const cl = await repo.insertClient({ tg_user_id: 555, name: 'Мария', language: 'ru' })
+  await repo.insertProject({ client_id: cl.id, workspace_path: '/home/dsh/work/foo', status: 'active' })
+  await send(msg('поменяйте заголовок'))
+  assert.equal(repo.supportJobs.length, 1)
+  const topic = repo.clients.find((c) => c.id === cl.id)!.admin_topic_id!
+  assert.ok(topic)
+  // сотрудник пишет в тему → ИИ на паузу
+  await send(topicMsg(topic, 'Сейчас сам разберусь', 10))
+  assert.ok(repo.clients.find((c) => c.id === cl.id)!.human_until, 'human_until выставлен')
+  // пока человек ведёт диалог, новые сообщения не создают обращений
+  await send(msg('ещё одна просьба'))
+  assert.equal(repo.supportJobs.length, 1, 'на паузе обращение не создаётся')
+  // /startai → ИИ возвращается
+  await send(topicMsg(topic, '/startai', 11))
+  assert.equal(repo.clients.find((c) => c.id === cl.id)!.human_until, null)
+  assert.ok(calls.some((c) => c.method === 'sendMessage' && c.payload.chat_id === GROUP && /ИИ-агент вернулся/.test(String(c.payload.text))))
+  await send(msg('новая задача'))
+  assert.equal(repo.supportJobs.length, 2, 'после /startai обращение снова создаётся')
+})
+
