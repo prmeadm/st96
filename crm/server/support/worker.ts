@@ -1,7 +1,7 @@
 // Worker поддержки: опрашивает support_jobs, классифицирует обращение, при «ready» запускает
 // агента (dsh headless "<задача>") в workspace проекта, пишет результат + аудит и отвечает клиенту в Telegram.
 // Запуск (по образцу systemd-сервиса ST96/bot):
-//   SUPABASE_DB_URL=… DEEPSEEK_API_KEY=… LEADS_BOT_TOKEN=… npx tsx crm/server/support/worker.ts
+//   SUPABASE_DB_URL=… DEEPSEEK_API_KEY=… LEADS_BOT_TOKEN=… ADMIN_GROUP_ID=… npx tsx crm/server/support/worker.ts
 
 import { execFile } from 'node:child_process'
 import { pgRepo, type SupportRepo } from './pgRepo'
@@ -11,6 +11,7 @@ import type { SupportJobRow } from './types'
 
 const dbUrl = process.env.SUPABASE_DB_URL ?? ''
 const leadsBotToken = process.env.LEADS_BOT_TOKEN ?? ''
+const adminGroupId = process.env.ADMIN_GROUP_ID ?? ''
 
 /** Классификация обращения через DeepSeek (строгий JSON). */
 export const classifyWithDeepSeek: Classify = async (input) => {
@@ -38,7 +39,7 @@ function runInWorkspace(workspacePath: string, prompt: string): Promise<{ ok: bo
     // dsh headless "<задача>" — одноразовый прогон агента: печатает результат и выходит.
     execFile('dsh', ['headless', prompt], { cwd: workspacePath, timeout: 15 * 60_000, maxBuffer: 10 * 1024 * 1024 }, (err, stdout, stderr) => {
       const output = (stdout || stderr || '').slice(-4000)
-      const failed = !!err || /\berror\b/i.test(stderr || '')
+      const failed = !!err
       resolve({ ok: !failed, output })
     })
   })
@@ -59,20 +60,31 @@ function notifyMessage(status: string, reason?: string): string {
   }
 }
 
-/** Отправка результата клиенту в Telegram (бот @st96_leads_bot). Ошибки не роняют worker. */
+/** Отправка результата клиенту в Telegram (бот @st96_leads_bot) + зеркало «Ассистент: …» в группу админов. Ошибки не роняют worker. */
 async function notifyClient(repo: SupportRepo, clientId: string, status: string, reason?: string) {
   const text = notifyMessage(status, reason)
   if (!text || !leadsBotToken) return
   try {
     const client = await repo.findClientById(clientId)
-    const chatId = client?.tg_user_id
-    if (chatId == null) return
-    const res = await fetch(`https://api.telegram.org/bot${leadsBotToken}/sendMessage`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chat_id: String(chatId), text }),
-    })
-    if (!res.ok) console.error('notifyClient failed', res.status, (await res.text().catch(() => '')).slice(0, 200))
+    if (!client) return
+    // клиенту (личный чат)
+    if (client.tg_user_id != null) {
+      const res = await fetch(`https://api.telegram.org/bot${leadsBotToken}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chat_id: String(client.tg_user_id), text }),
+      })
+      if (!res.ok) console.error('notifyClient (клиент) failed', res.status, (await res.text().catch(() => '')).slice(0, 200))
+    }
+    // в группу админов (тема клиента)
+    if (adminGroupId && client.admin_topic_id != null) {
+      const res = await fetch(`https://api.telegram.org/bot${leadsBotToken}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chat_id: adminGroupId, message_thread_id: Number(client.admin_topic_id), text: 'Ассистент: ' + text }),
+      })
+      if (!res.ok) console.error('notifyClient (группа) failed', res.status, (await res.text().catch(() => '')).slice(0, 200))
+    }
   } catch (e) {
     console.error('notifyClient error', e)
   }
@@ -83,6 +95,7 @@ async function processJob(repo: SupportRepo, job: SupportJobRow) {
   if (!project) {
     await repo.updateSupportJob(job.id, { status: 'failed', result_json: { error: 'нет проекта' }, finished_at: new Date().toISOString() })
     await repo.insertAudit({ actor: 'ai', action: 'failed', client_id: job.client_id, project_id: job.project_id, job_id: job.id, payload: { error: 'no_project' } })
+    await notifyClient(repo, job.client_id, 'failed')
     return
   }
   const scenario = project.agent_scenario_id ? await repo.getScenario(project.agent_scenario_id) : null
