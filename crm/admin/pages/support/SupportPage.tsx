@@ -30,6 +30,11 @@ const SCENARIO_TEMPLATE = `Роль: агент поддержки проект�
 
 Стоп-условия: если запрос неоднозначен — уточни; если вне рамок — вежливо откажи и сообщи, что оценивается отдельно.`
 
+// Базовая папка клиентских проектов на сервере + помощники для имени новой папки
+const WORKSPACE_BASE = '/home/dsh/work/KLIENTS/'
+const slugify = (s: string) => s.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-_]/g, '').replace(/-+/g, '-')
+const slugFromPath = (p: string) => p.replace(WORKSPACE_BASE, '').replace(/\/+$/, '')
+
 // ─── Клиенты и проекты ───
 type ProjectJoined = ClientProjectRow & { clients: { name: string | null; tg_username: string | null } | null; packages: { title: string } | null }
 
@@ -53,6 +58,9 @@ function ProjectsTab() {
     const c = p.corrections_limit == null ? null : p.corrections_limit - p.corrections_used
     return c == null ? '∞' : String(c)
   }
+  // Существующие папки проектов (для выбора) + режим «новая папка»
+  const existingWorkspaces = [...new Set((projects ?? []).map((p) => p.workspace_path).filter((w): w is string => !!w))]
+  const workspaceIsNew = !existingWorkspaces.includes(editing?.workspace_path ?? '')
 
   const openEdit = async (p: ProjectJoined) => {
     let prompt = ''
@@ -137,7 +145,13 @@ function ProjectsTab() {
                     {Object.entries(PROJECT_STATUSES).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                   </select></div>
                 <div className="fld"><label>Ветка по умолчанию</label><input value={editing.default_branch ?? 'main'} onChange={(e) => setEditing({ ...editing, default_branch: e.target.value })} /></div>
-                <div className="fld lx-wide"><label>Workspace (путь на сервере)</label><input value={editing.workspace_path ?? ''} onChange={(e) => setEditing({ ...editing, workspace_path: e.target.value })} placeholder="/home/dsh/work/slug" /></div>
+                <div className="fld lx-wide"><label>Workspace (папка проекта на сервере)</label>
+                    <select value={workspaceIsNew ? '__new__' : (editing.workspace_path ?? '')} onChange={(e) => setEditing({ ...editing, workspace_path: e.target.value === '__new__' ? WORKSPACE_BASE : e.target.value })}>
+                      <option value="__new__">+ Создать новую папку</option>
+                      {existingWorkspaces.map((w) => <option key={w} value={w}>{w}</option>)}
+                    </select>
+                    {workspaceIsNew && <input value={slugFromPath(editing.workspace_path ?? '')} onChange={(e) => setEditing({ ...editing, workspace_path: WORKSPACE_BASE + slugify(e.target.value) + '/' })} placeholder="имя папки (например gf-leasing)" />}
+                  </div>
                 <div className="fld lx-wide"><label>Репозиторий</label><input value={editing.repo_url ?? ''} onChange={(e) => setEditing({ ...editing, repo_url: e.target.value })} placeholder="https://github.com/…" /></div>
                 <div className="fld lx-wide"><label>Деплой-таргет / команда</label><input value={editing.deploy_cmd ?? ''} onChange={(e) => setEditing({ ...editing, deploy_cmd: e.target.value })} placeholder="vercel --prod / npm run deploy" /></div>
                 <div className="fld lx-wide"><label>Сценарий агента (рамки)</label><textarea rows={4} value={editing.system_prompt ?? ''} onChange={(e) => setEditing({ ...editing, system_prompt: e.target.value })} placeholder="Роль, что можно / что нельзя, стоп-условия. Лимиты пакета и вежливые ответы система подставляет сама." /></div>

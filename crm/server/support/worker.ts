@@ -4,6 +4,7 @@
 //   SUPABASE_DB_URL=… DEEPSEEK_API_KEY=… LEADS_BOT_TOKEN=… ADMIN_GROUP_ID=… npx tsx crm/server/support/worker.ts
 
 import { execFile } from 'node:child_process'
+import { mkdirSync } from 'node:fs'
 import { pgRepo, type SupportRepo } from './pgRepo'
 import { buildPrompt, decide, type AgentInput, type Classification, type Classify } from './agent'
 import { spendCorrections, spendFeatures } from './period'
@@ -36,6 +37,8 @@ export const classifyWithDeepSeek: Classify = async (input) => {
 /** Запуск агента в workspace проекта. Агент видит только эту папку (cwd), не чужие проекты и не ~/.dsh. */
 function runInWorkspace(workspacePath: string, prompt: string): Promise<{ ok: boolean; output: string }> {
   return new Promise((resolve) => {
+    // Папка проекта могла быть только что создана из админки — убедимся, что она есть.
+    try { mkdirSync(workspacePath, { recursive: true }) } catch { /* execFile вернёт понятную ошибку ниже */ }
     // dsh headless "<задача>" — одноразовый прогон агента: печатает результат и выходит.
     execFile('dsh', ['headless', prompt], { cwd: workspacePath, timeout: 15 * 60_000, maxBuffer: 10 * 1024 * 1024 }, (err, stdout, stderr) => {
       const output = (stdout || stderr || '').slice(-4000)
