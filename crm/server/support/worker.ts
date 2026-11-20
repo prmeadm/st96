@@ -10,6 +10,7 @@ import { spendCorrections, spendFeatures } from './period'
 import type { SupportJobRow } from './types'
 
 const dbUrl = process.env.SUPABASE_DB_URL ?? ''
+const leadsBotToken = process.env.LEADS_BOT_TOKEN ?? ''
 
 /** Классификация обращения через DeepSeek (строгий JSON). */
 export const classifyWithDeepSeek: Classify = async (input) => {
@@ -43,6 +44,40 @@ function runInWorkspace(workspacePath: string, prompt: string): Promise<{ ok: bo
   })
 }
 
+/** Текст ответа клиенту по финальному статусу задачи. */
+function notifyMessage(status: string, reason?: string): string {
+  switch (status) {
+    case 'deployed': return 'Готово — правки внесены и опубликованы на сайте.'
+    case 'failed': return 'Не удалось внести правки автоматически. Передаю специалисту — он свяжется с вами.'
+    case 'clarify': return 'Уточните, пожалуйста: ' + (reason ?? '')
+    case 'out_of_scope': return 'К сожалению, этот запрос вне рамок вашего пакета поддержки.' + (reason ? ' ' + reason : '')
+    case 'awaiting_payment':
+      if (reason === 'нет активного оплаченного периода') return 'Для внесения правок нужен активный пакет поддержки. Менеджер свяжется с вами по оплате.'
+      if (reason?.includes('исчерпан') || reason?.includes('нужно')) return 'Лимит правок по пакету исчерпан — для продолжения нужен новый пакет. Менеджер свяжется с вами.'
+      return 'Для продолжения нужен оплаченный пакет поддержки.'
+    default: return ''
+  }
+}
+
+/** Отправка результата клиенту в Telegram (бот @st96_leads_bot). Ошибки не роняют worker. */
+async function notifyClient(repo: SupportRepo, clientId: string, status: string, reason?: string) {
+  const text = notifyMessage(status, reason)
+  if (!text || !leadsBotToken) return
+  try {
+    const client = await repo.findClientById(clientId)
+    const chatId = client?.tg_user_id
+    if (chatId == null) return
+    const res = await fetch(`https://api.telegram.org/bot${leadsBotToken}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: String(chatId), text }),
+    })
+    if (!res.ok) console.error('notifyClient failed', res.status, (await res.text().catch(() => '')).slice(0, 200))
+  } catch (e) {
+    console.error('notifyClient error', e)
+  }
+}
+
 async function processJob(repo: SupportRepo, job: SupportJobRow) {
   const project = job.project_id ? await repo.findProject(job.project_id) : null
   if (!project) {
@@ -72,9 +107,11 @@ async function processJob(repo: SupportRepo, job: SupportJobRow) {
   }
   const d = await decide(input, classifyWithDeepSeek)
   for (const a of d.audit) await repo.insertAudit({ ...a, client_id: job.client_id, project_id: job.project_id, job_id: job.id })
+  let status: NonNullable<SupportJobRow['status']>
+  let reason: string | undefined
   if (d.status === 'ready') {
     const r = project.workspace_path ? await runInWorkspace(project.workspace_path, buildPrompt(input)) : { ok: false, output: 'не указан workspace_path' }
-    const status = r.ok ? 'deployed' : 'failed'
+    status = r.ok ? 'deployed' : 'failed'
     if (r.ok) {
       // Списание счётчиков после успешного деплоя (Фаза 5)
       try {
@@ -90,11 +127,14 @@ async function processJob(repo: SupportRepo, job: SupportJobRow) {
     })
     await repo.insertAudit({ actor: 'ai', action: status, client_id: job.client_id, project_id: job.project_id, job_id: job.id, payload: { edits_count: d.edits_count } })
   } else {
+    status = d.status
+    reason = d.reason
     await repo.updateSupportJob(job.id, {
       status: d.status, edits_json: 'edits' in d ? d.edits : [], edits_count: 'edits_count' in d ? d.edits_count : 0,
       result_json: { reason: d.reason }, finished_at: new Date().toISOString(),
     })
   }
+  await notifyClient(repo, job.client_id, status, reason)
 }
 
 async function poll() {

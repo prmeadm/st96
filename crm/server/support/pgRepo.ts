@@ -1,12 +1,12 @@
 // Прямое подключение к Postgres (через пулер, IPv4) — реализация поддержки без service_role.
 // Нужна только worker-у поддержки на сервере: опрос очереди, сценарий, период, аудит, списание.
 import pg from 'pg'
-import type { Repo } from '../repo'
+import type { ClientRow, Repo } from '../repo'
 import type { AgentScenarioRow, ClientProjectRow, InvoiceRow, PackagePeriodRow, SupportJobRow } from './types'
 
 // Методы, которые нужны worker-у и period.ts. memoryRepo/supabaseRepo их тоже удовлетворяют (Pick из Repo).
 export type SupportRepo = Pick<Repo,
-  | 'findProject' | 'getScenario' | 'currentPeriod' | 'getPeriod' | 'listPeriods' | 'insertPeriod' | 'updatePeriod'
+  | 'findProject' | 'getScenario' | 'findClientById' | 'currentPeriod' | 'getPeriod' | 'listPeriods' | 'insertPeriod' | 'updatePeriod'
   | 'getInvoice' | 'updateInvoice' | 'insertAudit' | 'updateSupportJob' | 'listQueuedSupportJobs' | 'claimSupportJob'
 >
 
@@ -37,6 +37,7 @@ export function pgRepo(connectionString: string): SupportRepo {
   return {
     async findProject(id) { return one<ClientProjectRow>('select * from crm.client_projects where id = $1', [id]) },
     async getScenario(id) { return one<AgentScenarioRow>('select * from crm.agent_scenarios where id = $1', [id]) },
+    async findClientById(id) { return one<ClientRow>('select * from crm.clients where id = $1', [id]) },
     async getPeriod(id) { return one<PackagePeriodRow>('select * from crm.package_periods where id = $1', [id]) },
     async currentPeriod(projectId) {
       const active = await one<PackagePeriodRow>("select * from crm.package_periods where project_id = $1 and status = 'active' order by period_start desc limit 1", [projectId])
