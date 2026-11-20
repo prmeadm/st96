@@ -185,6 +185,8 @@ export interface Repo {
   insertSupportJob(j: SupportJobInsert): Promise<SupportJobRow>
   getSupportJob(id: string): Promise<SupportJobRow | null>
   listSupportJobs(projectId: string): Promise<SupportJobRow[]>
+  /** Очередь обращений со статусом queued — для worker-а. */
+  listQueuedSupportJobs(limit?: number): Promise<SupportJobRow[]>
   claimSupportJob(id: string): Promise<SupportJobRow | null>
   updateSupportJob(id: string, patch: Partial<Omit<SupportJobInsert, 'client_id' | 'request_text'>>): Promise<void>
   insertInvoice(i: InvoiceInsert): Promise<InvoiceRow>
@@ -569,6 +571,9 @@ export function supabaseRepo(url: string, key: string): Repo {
     },
     async listSupportJobs(projectId) {
       return (ok(await db.from('support_jobs').select('*').eq('project_id', projectId).order('created_at', { ascending: false }).limit(100), 'listSupportJobs') ?? []) as SupportJobRow[]
+    },
+    async listQueuedSupportJobs(limit = 10) {
+      return (ok(await db.from('support_jobs').select('*').eq('status', 'queued').order('created_at').limit(limit), 'listQueuedSupportJobs') ?? []) as SupportJobRow[]
     },
     async claimSupportJob(id) {
       const rows = ok(await db.from('support_jobs').update({ status: 'running', started_at: new Date().toISOString() }).eq('id', id).eq('status', 'queued').select('*'), 'claimSupportJob') as SupportJobRow[] | null

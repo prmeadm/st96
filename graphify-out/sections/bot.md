@@ -14,8 +14,8 @@
 ## Файлы
 
 - `crm/server/bot/dialog.ts` — 13 узл.
-- `crm/server/bot/bot.ts` — 11 узл.
 - `crm/server/bot/siteRef.ts` — 11 узл.
+- `crm/server/bot/bot.ts` — 11 узл.
 - `crm/server/bot/bot.test.ts` — 10 узл.
 - `crm/server/bot/texts.ts` — 3 узл.
 - `api/telegram.ts` — 2 узл.
@@ -28,12 +28,12 @@
 - `handleTopicMessage()` (crm/server/bot/dialog.ts:L79)
 - `sendTemplate()` (crm/server/bot/dialog.ts:L233)
 - `ensureClient()` (crm/server/bot/bot.ts:L33)
-- `ensureTopic()` (crm/server/bot/dialog.ts:L37)
-- `relayToAdmins()` (crm/server/bot/dialog.ts:L51)
 - `verifySiteRef()` (crm/server/bot/siteRef.ts:L41)
-- `signSiteRef()` (crm/server/bot/siteRef.ts:L27)
-- `issueSiteRef()` (crm/server/bot/siteRef.ts:L60)
+- `relayToAdmins()` (crm/server/bot/dialog.ts:L51)
+- `ensureTopic()` (crm/server/bot/dialog.ts:L37)
 - `linkLeadClient()` (crm/server/bot/bot.ts:L24)
+- `cardText()` (crm/server/bot/dialog.ts:L22)
+- `issueSiteRef()` (crm/server/bot/siteRef.ts:L60)
 
 ## От чего зависит (вызовы в другие разделы)
 

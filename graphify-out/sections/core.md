@@ -20,20 +20,20 @@
 - `crm/supabase/migrations/0010_analytics.sql` — 8 узл.
 - `crm/supabase/migrations/0005_broadcasts.sql` — 6 узл.
 - `crm/supabase/migrations/0008_booking.sql` — 5 узл.
-- `crm/supabase/migrations/0004_templates.sql` — 4 узл.
 - `crm/supabase/migrations/0006_agent.sql` — 4 узл.
-- `crm/server/adminAuth.ts` — 3 узл.
+- `crm/supabase/migrations/0004_templates.sql` — 4 узл.
 - `crm/supabase/migrations/0013_filter_presets.sql` — 3 узл.
 - `crm/server/memoryRepo.ts` — 3 узл.
-- `crm/supabase/migrations/0011_tg_links.sql` — 2 узл.
-- `crm/supabase/migrations/0014_lead_interests.sql` — 2 узл.
-- `api/jobs.ts` — 2 узл.
-- `api/geo.ts` — 2 узл.
-- `crm/supabase/migrations/0002_dialogs.sql` — 2 узл.
-- `crm/supabase/planned/README.md` — 2 узл.
+- `crm/server/adminAuth.ts` — 3 узл.
 - `crm/supabase/migrations/0007_settings.sql` — 2 узл.
-- `crm/supabase/migrations/0009_site_services.sql` — 1 узл.
+- `crm/supabase/migrations/0011_tg_links.sql` — 2 узл.
+- `api/jobs.ts` — 2 узл.
+- `crm/supabase/planned/README.md` — 2 узл.
+- `api/geo.ts` — 2 узл.
+- `crm/supabase/migrations/0014_lead_interests.sql` — 2 узл.
+- `crm/supabase/migrations/0002_dialogs.sql` — 2 узл.
 - `crm/supabase/migrations/0012_site_consent.sql` — 1 узл.
+- `crm/supabase/migrations/0009_site_services.sql` — 1 узл.
 - `crm/supabase/migrations/0003_funnels_runtime.sql` — 1 узл.
 
 ## Главные узлы (больше всего связей)

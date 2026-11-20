@@ -266,6 +266,7 @@ export function memoryRepo(): MemoryRepo {
     },
     async getSupportJob(jid) { return r.supportJobs.find((x) => x.id === jid) ?? null },
     async listSupportJobs(projectId) { return r.supportJobs.filter((x) => x.project_id === projectId).reverse() },
+    async listQueuedSupportJobs(limit = 10) { return r.supportJobs.filter((x) => x.status === 'queued').slice(0, limit) },
     async claimSupportJob(jid) {
       const x = r.supportJobs.find((y) => y.id === jid)
       if (!x || x.status !== 'queued') return null
