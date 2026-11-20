@@ -27,13 +27,13 @@
 - `crm/server/agent/deps.ts` — 5 узл.
 - `crm/admin/pages/SettingsPage.tsx` — 4 узл.
 - `crm/admin/pages/ModelPicker.tsx` — 3 узл.
-- `api/agent-model.ts` — 2 узл.
-- `crm/server/usage.test.ts` — 2 узл.
-- `api/analytics-admin.ts` — 2 узл.
-- `api/status.ts` — 2 узл.
-- `api/agent.ts` — 2 узл.
 - `crm/server/translate.test.ts` — 2 узл.
+- `api/analytics-admin.ts` — 2 узл.
+- `api/agent-model.ts` — 2 узл.
 - `api/translate.ts` — 2 узл.
+- `api/status.ts` — 2 узл.
+- `crm/server/usage.test.ts` — 2 узл.
+- `api/agent.ts` — 2 узл.
 - `crm/admin/ui/TranslateButton.tsx` — 2 узл.
 - `crm/server/agent/llm.test.ts` — 1 узл.
 
@@ -45,12 +45,12 @@
 - `makePlan()` (crm/server/agent/engine.ts:L58)
 - `importSlice()` (crm/server/agent/groupImport.ts:L66)
 - `parseCustom()` (crm/server/agent/models.ts:L72)
-- `openAiCompatible()` (crm/server/agent/llm.ts:L27)
 - `resolveLlm()` (crm/server/agent/deps.ts:L12)
-- `reload()` (crm/server/agent/engine.ts:L15)
 - `agentDeps()` (crm/server/agent/deps.ts:L26)
-- `AgentPage()` (crm/admin/pages/AgentPage.tsx:L18)
-- `parseJson()` (crm/server/agent/llm.ts:L68)
+- `openAiCompatible()` (crm/server/agent/llm.ts:L27)
+- `reload()` (crm/server/agent/engine.ts:L15)
+- `tickAgentTasks()` (crm/server/agent/engine.ts:L135)
+- `translateToEnglish()` (crm/server/translate.ts:L27)
 
 ## От чего зависит (вызовы в другие разделы)
 

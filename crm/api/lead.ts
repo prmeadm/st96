@@ -20,6 +20,9 @@ type LeadPayload = {
   contact?: string
   interest?: string
   message?: string
+  clientKind?: string
+  company?: string
+  unp?: string
   consent?: boolean
   policyVersion?: string
   attribution?: Attribution
@@ -68,6 +71,9 @@ export default async function handler(req: Request) {
     `Имя: ${name}`,
     `Контакт: ${contact.includes('@') ? contact : clickablePhone(contact)}`,
     body.interest?.trim() && `Интересует: ${body.interest.trim()}`,
+    body.clientKind === 'legal' ? 'Обращаетесь как: Юридическое лицо' : 'Обращаетесь как: Частное лицо',
+    body.clientKind === 'legal' && body.company?.trim() && `Компания: ${body.company.trim()}`,
+    body.clientKind === 'legal' && body.unp?.trim() && `УНП: ${body.unp.trim()}`,
     body.message?.trim() && `Сообщение: ${body.message.trim()}`,
     `Язык сайта: ${body.lang === 'en' ? 'English (EN)' : 'Русский (RU)'}`,
     `Источник: ${body.internal === true ? 'внутренний тест (не в рекламные события)' : source}`,

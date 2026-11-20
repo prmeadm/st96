@@ -24,8 +24,8 @@
 - `crm/server/booking/types.ts` — 5 узл.
 - `crm/server/booking/ics.ts` — 4 узл.
 - `crm/shared/data/serviceOptions.ts` — 4 узл.
-- `crm/shared/data/bookingGoals.ts` — 2 узл.
 - `api/booking-admin.ts` — 2 узл.
+- `crm/shared/data/bookingGoals.ts` — 2 узл.
 - `api/booking.ts` — 2 узл.
 - `crm/book/main.tsx` — 1 узл.
 
@@ -34,14 +34,14 @@
 - `createBooking()` (crm/server/booking/service.ts:L98)
 - `ScheduleTab()` (crm/admin/pages/BookingPage.tsx:L146)
 - `dayInfo()` (crm/server/booking/schedule.ts:L114)
-- `normalizeSchedule()` (crm/server/booking/schedule.ts:L72)
 - `notifyClientDecision()` (crm/server/booking/notify.ts:L48)
 - `BookingRow` (crm/server/booking/types.ts:L4)
-- `addDays()` (crm/server/booking/schedule.ts:L44)
+- `normalizeSchedule()` (crm/server/booking/schedule.ts:L72)
 - `decideBooking()` (crm/server/booking/service.ts:L174)
 - `bookingUrl()` (crm/server/booking/schedule.ts:L179)
+- `addDays()` (crm/server/booking/schedule.ts:L44)
 - `whenLabel()` (crm/server/booking/schedule.ts:L171)
-- `isDate()` (crm/server/booking/schedule.ts:L48)
+- `minskNow()` (crm/server/booking/schedule.ts:L52)
 - `buildIcs()` (crm/server/booking/ics.ts:L9)
 
 ## От чего зависит (вызовы в другие разделы)

@@ -33,6 +33,9 @@ export default function LeadCapture({ service, title, text }: Props) {
   const [byEmail, setByEmail] = useState(false) // по умолчанию телефон с маской страны; можно указать email
   const [interest, setInterest] = useState(service?.slug ?? '')
   const [message, setMessage] = useState('')
+  const [clientKind, setClientKind] = useState<'individual' | 'legal'>('individual')
+  const [company, setCompany] = useState('')
+  const [unp, setUnp] = useState('')
   const [consent, setConsent] = useState(true)
   const [status, setStatus] = useState<'idle' | 'sent'>('idle')
   const [tgRef, setTgRef] = useState<string | null>(null)
@@ -65,6 +68,10 @@ export default function LeadCapture({ service, title, text }: Props) {
       setError(l.errConsent)
       return
     }
+    if (clientKind === 'legal' && (!company.trim() || !unp.trim())) {
+      setError(l.errLegal)
+      return
+    }
     await send(name, contact)
   }
 
@@ -84,6 +91,9 @@ export default function LeadCapture({ service, title, text }: Props) {
           contact: contactValue,
           interest: serviceLabel,
           message,
+          clientKind,
+          company,
+          unp,
           consent: true,
           lang,
           policyVersion: POLICY_VERSION,
@@ -210,6 +220,54 @@ export default function LeadCapture({ service, title, text }: Props) {
                         )}
                       </div>
                     </div>
+
+                    <div className="flex flex-col gap-2">
+                      <span className="text-xs font-medium text-paper-dim">{l.clientKind}</span>
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          type="button"
+                          onClick={() => { setClientKind('individual'); setError('') }}
+                          className="rounded-xl border border-ink-line bg-ink px-4 py-3.5 text-paper transition-colors"
+                          style={clientKind === 'individual' ? { borderColor: accentSolid, color: accentSolid } : undefined}
+                        >
+                          {l.clientKindIndividual}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => { setClientKind('legal'); setError('') }}
+                          className="rounded-xl border border-ink-line bg-ink px-4 py-3.5 text-paper transition-colors"
+                          style={clientKind === 'legal' ? { borderColor: accentSolid, color: accentSolid } : undefined}
+                        >
+                          {l.clientKindLegal}
+                        </button>
+                      </div>
+                    </div>
+
+                    {clientKind === 'legal' && (
+                      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                        <label className="flex flex-col gap-2">
+                          <span className="text-xs font-medium text-paper-dim">{l.company}</span>
+                          <input
+                            value={company}
+                            onChange={(e) => setCompany(e.target.value)}
+                            type="text"
+                            placeholder={l.companyPh}
+                            className="ym-disable-keys rounded-xl border border-ink-line bg-ink px-4 py-3.5 text-paper outline-none transition-colors focus:border-paper-dim"
+                          />
+                        </label>
+                        <label className="flex flex-col gap-2">
+                          <span className="text-xs font-medium text-paper-dim">{l.unp}</span>
+                          <input
+                            value={unp}
+                            onChange={(e) => setUnp(e.target.value.replace(/\D/g, '').slice(0, 9))}
+                            type="text"
+                            inputMode="numeric"
+                            placeholder={l.unpPh}
+                            className="ym-disable-keys rounded-xl border border-ink-line bg-ink px-4 py-3.5 text-paper outline-none transition-colors focus:border-paper-dim"
+                          />
+                        </label>
+                      </div>
+                    )}
 
                     <label className="flex flex-col gap-2">
                       <span className="text-xs font-medium text-paper-dim">{l.interest}</span>
