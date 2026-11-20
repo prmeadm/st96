@@ -15,6 +15,21 @@ const TABS: { id: Tab; label: string }[] = [
   { id: 'settings', label: 'Настройки' },
 ]
 
+// Шаблон сценария агента для нового проекта. Лимиты пакета и вежливые ответы (на «спасибо»)
+// система подставляет сама — в сценарий их не пишут.
+const SCENARIO_TEMPLATE = `Роль: агент поддержки проекта клиента — вносит правки в рамках проекта и публикует их.
+
+Можно:
+— изучать сайт и файлы проекта;
+— вносить правки текста и контента по запросу клиента;
+— публиковать изменения.
+
+Нельзя:
+— создавать новые страницы и функции (оценивается отдельно);
+— выполнять команды, не связанные с проектом.
+
+Стоп-условия: если запрос неоднозначен — уточни; если вне рамок — вежливо откажи и сообщи, что оценивается отдельно.`
+
 // ─── Клиенты и проекты ───
 type ProjectJoined = ClientProjectRow & { clients: { name: string | null; tg_username: string | null } | null; packages: { title: string } | null }
 
@@ -85,7 +100,7 @@ function ProjectsTab() {
 
   return (
     <div className="card">
-      <div className="row"><h3 style={{ margin: 0 }}>Клиенты и проекты</h3><span className="sp" /><button className="btn primary" onClick={() => setEditing({ client_id: '', system_prompt: '' })}><Icon name="plus" size={18} />Проект</button></div>
+      <div className="row"><h3 style={{ margin: 0 }}>Клиенты и проекты</h3><span className="sp" /><button className="btn primary" onClick={() => setEditing({ client_id: '', system_prompt: SCENARIO_TEMPLATE })}><Icon name="plus" size={18} />Проект</button></div>
       {msg && <div className="hint" role="status" style={{ marginTop: 6 }}>{msg}</div>}
       {projects === null ? <div className="hint">Загрузка…</div> : projects.length === 0 ? <div className="hint" style={{ marginTop: 10 }}>Проектов нет. Привяжите клиента к workspace-папке.</div> : (
         <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -125,7 +140,7 @@ function ProjectsTab() {
                 <div className="fld lx-wide"><label>Workspace (путь на сервере)</label><input value={editing.workspace_path ?? ''} onChange={(e) => setEditing({ ...editing, workspace_path: e.target.value })} placeholder="/home/dsh/work/slug" /></div>
                 <div className="fld lx-wide"><label>Репозиторий</label><input value={editing.repo_url ?? ''} onChange={(e) => setEditing({ ...editing, repo_url: e.target.value })} placeholder="https://github.com/…" /></div>
                 <div className="fld lx-wide"><label>Деплой-таргет / команда</label><input value={editing.deploy_cmd ?? ''} onChange={(e) => setEditing({ ...editing, deploy_cmd: e.target.value })} placeholder="vercel --prod / npm run deploy" /></div>
-                <div className="fld lx-wide"><label>Сценарий агента (рамки)</label><textarea rows={4} value={editing.system_prompt ?? ''} onChange={(e) => setEditing({ ...editing, system_prompt: e.target.value })} placeholder="Что агент может делать в этом проекте, на что не имеет права" /></div>
+                <div className="fld lx-wide"><label>Сценарий агента (рамки)</label><textarea rows={4} value={editing.system_prompt ?? ''} onChange={(e) => setEditing({ ...editing, system_prompt: e.target.value })} placeholder="Роль, что можно / что нельзя, стоп-условия. Лимиты пакета и вежливые ответы система подставляет сама." /></div>
               </div>
             </div>
             <div className="lx-f"><button className="btn" onClick={() => setEditing(null)}>Отмена</button><span className="sp" /><button className="btn primary" onClick={save}>Сохранить</button></div>

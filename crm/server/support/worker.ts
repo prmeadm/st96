@@ -21,7 +21,7 @@ export const classifyWithDeepSeek: Classify = async (input) => {
     body: JSON.stringify({
       model: process.env.DEEPSEEK_MODEL ?? 'deepseek-flash',
       messages: [
-        { role: 'system', content: 'Классифицируй обращение клиента поддержки. Ответ строго JSON, без пояснений: {"kind":"clarify","reason":"…"} — не хватает деталей; {"kind":"out_of_scope","reason":"…"} — вне рамок сценария; {"kind":"edits","edits":["…"],"is_feature":false} — список конкретных правок (is_feature=true для новой функции).' },
+        { role: 'system', content: 'Классифицируй обращение клиента поддержки. Ответ строго JSON, без пояснений: {"kind":"clarify","reason":"…"} — не хватает деталей; {"kind":"out_of_scope","reason":"…"} — вне рамок сценария; {"kind":"thanks","reason":"…"} — клиент благодарит (спасибо, благодарю и т.п.), новых правок нет; {"kind":"edits","edits":["…"],"is_feature":false} — список конкретных правок (is_feature=true для новой функции).' },
         { role: 'user', content: buildPrompt(input) },
       ],
       temperature: 0,
@@ -45,9 +45,15 @@ function runInWorkspace(workspacePath: string, prompt: string): Promise<{ ok: bo
   })
 }
 
+/** Прощание по времени суток: день до 17:00, вечер с 17:00. */
+function timeFarewell(now = new Date()): string {
+  return now.getHours() >= 17 ? 'Хорошего вам вечера!' : 'Хорошего вам дня!'
+}
+
 /** Текст ответа клиенту по финальному статусу задачи. */
 function notifyMessage(status: string, reason?: string): string {
   switch (status) {
+    case 'thanks': return 'Пожалуйста! Если появятся правки — пишите сюда.\n' + timeFarewell()
     case 'deployed': return 'Готово — правки внесены и опубликованы на сайте.'
     case 'failed': return 'Не удалось внести правки автоматически. Передаю специалисту — он свяжется с вами.'
     case 'clarify': return 'Уточните, пожалуйста: ' + (reason ?? '')

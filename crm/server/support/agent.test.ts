@@ -52,6 +52,12 @@ test('новая функция при безлимите функций → rea
   assert.equal(d2.is_feature, true)
 })
 
+test('благодарность → thanks, даже без активного периода', async () => {
+  const d = await decide(input('спасибо большое', {}, false), cls({ kind: 'thanks', reason: 'благодарность' }))
+  assert.equal(d.status, 'thanks')
+  assert.equal(d.audit[0].action, 'thanks')
+})
+
 test('нет активного оплаченного периода → awaiting_payment (гейт Фазы 5)', async () => {
   const d = await decide(input('поменяйте заголовок', {}, false), cls({ kind: 'edits', edits: ['заголовок'], is_feature: false }))
   assert.equal(d.status, 'awaiting_payment')

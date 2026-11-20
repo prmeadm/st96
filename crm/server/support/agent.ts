@@ -29,6 +29,7 @@ export type AgentInput = {
 export type Classification =
   | { kind: 'clarify'; reason: string }
   | { kind: 'out_of_scope'; reason: string }
+  | { kind: 'thanks'; reason: string }
   | { kind: 'edits'; edits: string[]; is_feature: boolean }
 
 export type Classify = (input: AgentInput) => Promise<Classification>
@@ -38,6 +39,7 @@ export type AuditEntry = { actor: 'ai' | 'human' | 'admin'; action: string; payl
 export type Decision =
   | { status: 'clarify'; reason: string; audit: AuditEntry[] }
   | { status: 'out_of_scope'; reason: string; audit: AuditEntry[] }
+  | { status: 'thanks'; reason: string; audit: AuditEntry[] }
   | { status: 'awaiting_payment'; reason: string; edits: string[]; edits_count: number; is_feature: boolean; audit: AuditEntry[] }
   | { status: 'ready'; edits: string[]; edits_count: number; is_feature: boolean; remaining_after: number | null; audit: AuditEntry[] }
 
@@ -74,13 +76,16 @@ export function buildPrompt(input: AgentInput): string {
  * Счётчики не меняет — списание после успешного деплоя (Фаза 5).
  */
 export async function decide(input: AgentInput, classify: Classify): Promise<Decision> {
+  const c = await classify(input)
+  if (c.kind === 'thanks') {
+    return { status: 'thanks', reason: c.reason, audit: [{ actor: 'ai', action: 'thanks', payload: { reason: c.reason } }] }
+  }
   if (!input.hasActivePeriod) {
     return {
       status: 'awaiting_payment', reason: 'нет активного оплаченного периода', edits: [], edits_count: 0, is_feature: false,
       audit: [{ actor: 'ai', action: 'awaiting_payment', payload: { reason: 'no_active_period' } }],
     }
   }
-  const c = await classify(input)
   if (c.kind === 'clarify') {
     return { status: 'clarify', reason: c.reason, audit: [{ actor: 'ai', action: 'clarify', payload: { reason: c.reason } }] }
   }
