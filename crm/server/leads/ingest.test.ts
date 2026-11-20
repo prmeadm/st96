@@ -102,6 +102,16 @@ test('заявка с сайта (consent) даёт клиенту соглас�
   assert.equal(repo3.clients[0].consent_at ?? null, null, 'без consent согласие не ставится')
 })
 
+test('юрлицо: client_kind и реквизиты сохраняются на клиенте и в заявке', async () => {
+  const repo = memoryRepo()
+  const text = ['🆕 Заявка: Продакшн', 'Имя: Директор', 'Телефон: +375296000000', 'Обращаетесь как: Юридическое лицо', 'Компания: ООО «Вектор»', 'УНП: 193123456'].join('\n')
+  await ingestLead(repo, parseLead(text))
+  assert.equal(repo.clients[0].client_kind, 'legal')
+  assert.equal(repo.clients[0].legal_name, 'ООО «Вектор»')
+  assert.equal(repo.clients[0].unp, '193123456')
+  assert.equal(repo.leads[0].client_kind, 'legal')
+})
+
 test('заявка с сайта без телефона: контакт @username из Telegram даёт клиента, tg:<id> сохраняется без клиента', async () => {
   const repo = memoryRepo()
   const mk = (c: string) => ['Новая заявка с сайта ST96', 'Имя: Анна', `Контакт: ${c}`].join('\n')

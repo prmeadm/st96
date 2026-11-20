@@ -4,7 +4,7 @@ import { UNKNOWN_SERVICE, detectServiceInText, serviceByLabel, serviceLabel } fr
 import type { Repo } from '../repo'
 import { ingestLead, upsertClientFromLead } from './ingest'
 import { cleanInterests, type InterestKey } from './interests'
-import { normalizePhone, normalizeTelegram, parseLead, type ParsedLead } from './parse'
+import { normalizeClientKind, normalizePhone, normalizeTelegram, parseLead, type ParsedLead } from './parse'
 
 export type LeadFields = {
   service_key: string
@@ -14,11 +14,13 @@ export type LeadFields = {
   email: string
   company: string
   comment: string
+  client_kind?: 'individual' | 'legal' | ''
+  unp?: string
   status?: 'new' | 'in_progress' | 'won' | 'lost' | 'spam'
   interests?: InterestKey[]
 }
 
-type Key = 'name' | 'phone' | 'telegram' | 'email' | 'company' | 'interest' | 'comment'
+type Key = 'name' | 'phone' | 'telegram' | 'email' | 'company' | 'interest' | 'comment' | 'clientKind' | 'unp'
 const LABELS: Record<string, Key> = {
   имя: 'name', name: 'name', фио: 'name', клиент: 'name', 'контактное лицо': 'name',
   телефон: 'phone', тел: 'phone', phone: 'phone', номер: 'phone', whatsapp: 'phone', viber: 'phone', контакт: 'phone', контакты: 'phone',
@@ -27,6 +29,8 @@ const LABELS: Record<string, Key> = {
   компания: 'company', company: 'company', организация: 'company', бизнес: 'company',
   услуга: 'interest', интересует: 'interest', service: 'interest', сервис: 'interest', тема: 'interest', заявка: 'interest',
   комментарий: 'comment', сообщение: 'comment', задача: 'comment', запрос: 'comment', описание: 'comment', примечание: 'comment', comment: 'comment', message: 'comment',
+  'обращаетесь как': 'clientKind', 'кто обращается': 'clientKind', 'тип клиента': 'clientKind',
+  унп: 'unp', unp: 'unp',
 }
 const LABEL_RE = /^\s*([^:\n]{2,30}?)\s*:\s*(.*)$/
 const EMAIL_RE = /[^\s@<>()]+@[^\s@<>()]+\.[A-Za-z]{2,}/
@@ -42,7 +46,7 @@ export function parseManualText(raw: string): { fields: LeadFields; warnings: st
   // Текст в формате заявок группы/сайта разбирается проверенным разборщиком
   const known = parseLead(text)
   if (known.isLead) {
-    return { fields: { service_key: known.service, name: known.name, phone: known.phone, telegram: known.telegram, email: known.email, company: known.company, comment: known.comment }, warnings: known.warnings }
+    return { fields: { service_key: known.service, name: known.name, phone: known.phone, telegram: known.telegram, email: known.email, company: known.company, comment: known.comment, client_kind: known.clientKind || undefined, unp: known.unp || undefined }, warnings: known.warnings }
   }
 
   const got: Partial<Record<Key, string>> = {}
@@ -103,7 +107,7 @@ const looksName = (s: string) => /^[\p{L}][\p{L}'.\- ]{1,39}$/u.test(s) && s.spl
   const service = got.interest ? (serviceByLabel(got.interest) ?? detectServiceInText(got.interest)) : detectServiceInText(text)
   if (!name) warnings.push('no_name')
   if (!phone && !telegram && !email) warnings.push('no_contact')
-  return { fields: { service_key: service, name, phone, telegram, email, company, comment }, warnings: [...new Set(warnings)] }
+  return { fields: { service_key: service, name, phone, telegram, email, company, comment, client_kind: normalizeClientKind(got.clientKind ?? '') || undefined, unp: (got.unp ?? '').replace(/\D/g, '') || undefined }, warnings: [...new Set(warnings)] }
 }
 
 const clean = (v: unknown, max: number) => (typeof v === 'string' ? v.trim().slice(0, max) : '')
@@ -122,15 +126,17 @@ export function cleanFields(f: Partial<LeadFields>): { fields: LeadFields; warni
   if (!name) warnings.push('no_name')
   if (!phone && !telegram && !email) warnings.push('no_contact')
   const status = f.status && ['new', 'in_progress', 'won', 'lost', 'spam'].includes(f.status) ? f.status : undefined
+  const client_kind = normalizeClientKind(typeof f.client_kind === 'string' ? f.client_kind : '')
+  const unp = clean(f.unp, 20).replace(/\D/g, '')
   return {
-    fields: { service_key: clean(f.service_key, 40) || UNKNOWN_SERVICE, name, phone, telegram, email, company: clean(f.company, 120), comment: clean(f.comment, 4000), status, interests: cleanInterests(f.interests) },
+    fields: { service_key: clean(f.service_key, 40) || UNKNOWN_SERVICE, name, phone, telegram, email, company: clean(f.company, 120), comment: clean(f.comment, 4000), client_kind, unp, status, interests: cleanInterests(f.interests) },
     warnings,
   }
 }
 
 const asParsed = (f: LeadFields, warnings: string[]): ParsedLead => ({
   isLead: true, origin: 'unknown', title: serviceLabel(f.service_key), topic: '', service: f.service_key, name: f.name, phone: f.phone, telegram: f.telegram,
-  email: f.email, company: f.company, comment: f.comment, interest: '', lang: '', landing: '', warnings,
+  email: f.email, company: f.company, comment: f.comment, interest: '', lang: '', landing: '', clientKind: f.client_kind ?? '', unp: f.unp ?? '', warnings,
 })
 
 type Result = { ok: true; leadId: string; clientId: string | null; clientCreated: boolean; leadsOfClient: number } | { ok: false; error: string }
@@ -162,7 +168,7 @@ export async function updateManualLead(repo: Repo, id: string, input: Partial<Le
   }
   await repo.updateLead(id, {
     client_id: clientId, service_key: fields.service_key, title: serviceLabel(fields.service_key), name: fields.name || null, phone: fields.phone || null,
-    telegram: fields.telegram || null, email: fields.email || null, company: fields.company || null, comment: fields.comment || null, warnings,
+    telegram: fields.telegram || null, email: fields.email || null, company: fields.company || null, comment: fields.comment || null, client_kind: fields.client_kind || null, warnings,
     ...(fields.status ? { status: fields.status } : {}),
     ...(fields.interests ? { interests: fields.interests } : {}),
   })

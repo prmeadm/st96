@@ -104,6 +104,15 @@ test('услуги определяются только по названиям
   assert.equal(parseLead(stand('Продакшн: email-рассылка', ['Имя: Олег', 'Телефон: +375291112233'])).service, 'production')
 })
 
+test('обращаетесь как: частное/юридическое лицо и УНП', () => {
+  const l = parseLead(stand('Продакшн', ['Имя: Алексей', 'Телефон: +375296797974', 'Обращаетесь как: Юридическое лицо', 'Компания: ООО «Ромашка»', 'УНП: 193000000']))
+  assert.equal(l.clientKind, 'legal')
+  assert.equal(l.unp, '193000000')
+  const i = parseLead(stand('Продакшн', ['Имя: Анна', 'Телефон: +375291112233', 'Обращаетесь как: Частное лицо']))
+  assert.equal(i.clientKind, 'individual')
+  assert.equal(i.unp, '')
+})
+
 test('clickablePhone: номер приводится к виду +код..., который Telegram делает нажимаемым', async () => {
   const { clickablePhone } = await import('./parse')
   assert.equal(clickablePhone('+375 (29) 123-45-67'), '+375291234567')

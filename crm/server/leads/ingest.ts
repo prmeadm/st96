@@ -30,6 +30,7 @@ async function upsertClientFromLeadEx(repo: Repo, p: ParsedLead, sourceTag: stri
     const created = await repo.insertClient({
       name: p.name || null, phone: p.phone || null, tg_username: p.telegram ? stripAt(p.telegram) : null,
       email: p.email || null, company: p.company || null, language: p.lang === 'en' ? 'en' : 'ru', source: sourceTag,
+      client_kind: p.clientKind || null, legal_name: p.clientKind === 'legal' ? p.company || null : null, unp: p.unp || null,
     })
     return { client: created, created: true }
   }
@@ -44,6 +45,11 @@ async function upsertClientFromLeadEx(repo: Repo, p: ParsedLead, sourceTag: stri
   if (!client.tg_username && p.telegram) {
     const other = await repo.findClient({ username: p.telegram })
     if (!other) patch.tg_username = stripAt(p.telegram)
+  }
+  if (!client.client_kind && p.clientKind) patch.client_kind = p.clientKind
+  if (p.clientKind === 'legal') {
+    if (!client.legal_name && p.company) patch.legal_name = p.company
+    if (!client.unp && p.unp) patch.unp = p.unp
   }
   if (Object.keys(patch).length) {
     await repo.updateClient(client.id, patch)
@@ -65,7 +71,7 @@ export async function ingestLead(repo: Repo, p: ParsedLead, ctx: IngestCtx = {})
     client_id: client?.id ?? null, source, service_key: p.service, title: p.title || null, topic: p.topic || null,
     name: p.name || null, phone: p.phone || null, telegram: p.telegram || null, email: p.email || null, company: p.company || null,
     comment: p.comment || null, interest: p.interest || null, lang: p.lang || null, landing: p.landing || null,
-    utm: ctx.utm ?? null, warnings: p.warnings, raw_text: ctx.rawText ?? null,
+    client_kind: p.clientKind || null, utm: ctx.utm ?? null, warnings: p.warnings, raw_text: ctx.rawText ?? null,
     tg_chat_id: ctx.tgChatId ?? null, tg_message_id: ctx.tgMessageId ?? null,
   })
   return { leadId: lead.id, clientId: lead.client_id, created: lead.created, clientCreated: clientCreated && lead.created }

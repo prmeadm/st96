@@ -24,10 +24,12 @@ export type ParsedLead = {
   interest: string
   lang: 'ru' | 'en' | ''
   landing: string
+  clientKind: 'individual' | 'legal' | ''
+  unp: string
   warnings: string[]
 }
 
-type FieldKey = 'name' | 'phone' | 'contact' | 'telegram' | 'company' | 'comment' | 'interest' | 'source' | 'lang' | 'landing' | 'skip'
+type FieldKey = 'name' | 'phone' | 'contact' | 'telegram' | 'company' | 'comment' | 'interest' | 'source' | 'lang' | 'landing' | 'clientKind' | 'unp' | 'skip'
 
 const LABELS: Record<string, FieldKey> = {
   имя: 'name',
@@ -44,6 +46,11 @@ const LABELS: Record<string, FieldKey> = {
   'страница входа': 'landing',
   'согласие на обработку пд': 'skip',
   'согласие на рекламу и передачу данных в рекламных целях': 'skip',
+  'обращаетесь как': 'clientKind',
+  'кто обращается': 'clientKind',
+  'вы обращаетесь как': 'clientKind',
+  'тип клиента': 'clientKind',
+  'унп': 'unp',
 }
 
 const LABEL_RE = /^\s*([^:\n]{2,60}?)\s*:\s*(.*)$/
@@ -66,6 +73,15 @@ export function clickablePhone(raw: string): string {
   return /^[+\d\s().-]{7,25}$/.test(t) ? (normalizePhone(t) ?? t) : raw
 }
 
+/** «Обращаетесь как»: частное лицо → individual, юрлицо → legal; пусто/не распознано → ''. */
+export function normalizeClientKind(raw: string): 'individual' | 'legal' | '' {
+  const v = raw.trim().toLowerCase()
+  if (!v) return ''
+  if (/частное|физ|individual/i.test(v)) return 'individual'
+  if (/юр|юридич|организац|компани|legal|entity/i.test(v)) return 'legal'
+  return ''
+}
+
 export function normalizeTelegram(raw: string): string | null {
   const v = raw.trim()
   const link = v.match(/(?:https?:\/\/)?(?:t\.me|telegram\.me)\/(\w+)/i)
@@ -86,7 +102,7 @@ const detectService = (title: string): ServiceKey => detectServiceKey(title)
 export function parseLead(raw: string): ParsedLead {
   const out: ParsedLead = {
     isLead: false, origin: 'unknown', title: '', topic: '', service: 'other', name: '', phone: '', telegram: '', email: '',
-    company: '', comment: '', interest: '', lang: '', landing: '', warnings: [],
+    company: '', comment: '', interest: '', lang: '', landing: '', clientKind: '', unp: '', warnings: [],
   }
   const lines = raw.replace(/\r/g, '').split('\n')
 
@@ -126,6 +142,8 @@ export function parseLead(raw: string): ParsedLead {
   out.interest = val('interest')
   if (site && out.interest) out.service = detectService(out.interest)
   out.comment = val('comment')
+  out.clientKind = normalizeClientKind(val('clientKind'))
+  out.unp = val('unp').replace(/\D/g, '').slice(0, 12)
 
   // Раскладываем значения по типу, а не по названию поля
   const slots = { phone: '', telegram: '', email: '', name: '', company: '' }
