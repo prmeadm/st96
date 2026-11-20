@@ -87,7 +87,7 @@ export default function ClientPage() {
   const [notes, setNotes] = useState<Note[]>([])
   const [msgs, setMsgs] = useState<Msg[]>([])
   const [error, setError] = useState('')
-  const [form, setForm] = useState({ name: '', phone: '', email: '', company: '' })
+  const [form, setForm] = useState({ name: '', phone: '', email: '', company: '', client_kind: '' as '' | 'individual' | 'legal', legal_name: '', unp: '', legal_address: '', bank_details: '' })
   const [saved, setSaved] = useState('')
   const [noteText, setNoteText] = useState('')
 
@@ -102,7 +102,7 @@ export default function ClientPage() {
     if (c.error || !c.data) return setError('Клиент не найден')
     const cl = c.data as Client
     setClient(cl)
-    setForm({ name: cl.name ?? '', phone: cl.phone ?? '', email: cl.email ?? '', company: cl.company ?? '' })
+    setForm({ name: cl.name ?? '', phone: cl.phone ?? '', email: cl.email ?? '', company: cl.company ?? '', client_kind: cl.client_kind ?? '', legal_name: cl.legal_name ?? '', unp: cl.unp ?? '', legal_address: cl.legal_address ?? '', bank_details: cl.bank_details ?? '' })
     setLeads((l.data ?? []) as Lead[])
     setNotes((n.data ?? []) as Note[])
     setMsgs((m.data ?? []) as Msg[])
@@ -114,7 +114,7 @@ export default function ClientPage() {
     e.preventDefault()
     if (!client) return
     setSaved('')
-    const patch = { name: form.name.trim() || null, phone: form.phone.trim() || null, email: form.email.trim() || null, company: form.company.trim() || null }
+    const patch = { name: form.name.trim() || null, phone: form.phone.trim() || null, email: form.email.trim() || null, company: form.company.trim() || null, client_kind: form.client_kind || null, legal_name: form.legal_name.trim() || null, unp: form.unp.trim() || null, legal_address: form.legal_address.trim() || null, bank_details: form.bank_details.trim() || null }
     const { error: err } = await supabase.from('clients').update(patch).eq('id', client.id)
     if (err) setSaved(err.code === '23505' ? 'Такой телефон уже есть у другого клиента' : 'Не удалось сохранить')
     else { setSaved('Сохранено'); setClient({ ...client, ...patch }) }
@@ -147,6 +147,8 @@ export default function ClientPage() {
         {client.consent_at && !client.opted_out_at && <span className="chip green">рассылки: да</span>}
         {client.opted_out_at && <span className="chip red">отписан</span>}
         {client.tg_user_id && <span className="chip">пишет боту</span>}
+        {client.client_kind === 'legal' && <span className="chip">Юридическое лицо</span>}
+        {client.client_kind === 'individual' && <span className="chip">Частное лицо</span>}
         <span className="sp" />
         <button type="button" className="ibtn danger" title="Удалить клиента" aria-label="Удалить клиента" onClick={async () => {
           const r = await deleteClient(client)
@@ -163,11 +165,25 @@ export default function ClientPage() {
       <form className="card" onSubmit={save}>
         <h3>Контакты</h3>
         <div className="grid2">
+          <div className="fld"><label>Тип клиента</label>
+            <select value={form.client_kind} onChange={(e) => setForm({ ...form, client_kind: e.target.value as '' | 'individual' | 'legal' })}>
+              <option value="">—</option>
+              <option value="individual">Частное лицо</option>
+              <option value="legal">Юридическое лицо</option>
+            </select></div>
           <div className="fld"><label>Имя</label><input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
           <div className="fld"><label>Компания</label><input value={form.company} onChange={(e) => setForm({ ...form, company: e.target.value })} /></div>
           <div className="fld"><label>Телефон</label><PhoneField value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} /></div>
           <div className="fld"><label>Почта</label><input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
         </div>
+        {form.client_kind === 'legal' && (
+          <div className="grid2" style={{ marginTop: 10 }}>
+            <div className="fld"><label>Юридическое название</label><input value={form.legal_name} onChange={(e) => setForm({ ...form, legal_name: e.target.value })} /></div>
+            <div className="fld"><label>УНП</label><input value={form.unp} onChange={(e) => setForm({ ...form, unp: e.target.value.replace(/\D/g, '').slice(0, 9) })} inputMode="numeric" placeholder="9 цифр" /></div>
+            <div className="fld"><label>Юридический адрес</label><input value={form.legal_address} onChange={(e) => setForm({ ...form, legal_address: e.target.value })} /></div>
+            <div className="fld"><label>Банковские реквизиты</label><textarea rows={2} value={form.bank_details} onChange={(e) => setForm({ ...form, bank_details: e.target.value })} /></div>
+          </div>
+        )}
         <div className="row" style={{ marginTop: 10 }}><button className="btn primary">Сохранить</button>{saved && <span className="hint" role="status">{saved}</span>}</div>
       </form>
 

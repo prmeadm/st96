@@ -22,16 +22,16 @@
 - `crm/supabase/migrations/0008_booking.sql` — 5 узл.
 - `crm/supabase/migrations/0006_agent.sql` — 4 узл.
 - `crm/supabase/migrations/0004_templates.sql` — 4 узл.
-- `crm/server/adminAuth.ts` — 3 узл.
 - `crm/supabase/migrations/0013_filter_presets.sql` — 3 узл.
+- `crm/server/adminAuth.ts` — 3 узл.
 - `crm/server/memoryRepo.ts` — 3 узл.
-- `api/geo.ts` — 2 узл.
-- `crm/supabase/migrations/0014_lead_interests.sql` — 2 узл.
-- `api/jobs.ts` — 2 узл.
 - `crm/supabase/migrations/0002_dialogs.sql` — 2 узл.
+- `api/jobs.ts` — 2 узл.
 - `crm/supabase/migrations/0007_settings.sql` — 2 узл.
-- `crm/supabase/planned/README.md` — 2 узл.
 - `crm/supabase/migrations/0011_tg_links.sql` — 2 узл.
+- `crm/supabase/planned/README.md` — 2 узл.
+- `crm/supabase/migrations/0014_lead_interests.sql` — 2 узл.
+- `api/geo.ts` — 2 узл.
 - `crm/supabase/migrations/0003_funnels_runtime.sql` — 1 узл.
 - `crm/supabase/migrations/0012_site_consent.sql` — 1 узл.
 - `crm/supabase/migrations/0009_site_services.sql` — 1 узл.
@@ -44,12 +44,12 @@
 - `requireAdmin()` (crm/server/adminAuth.ts:L7)
 - `memoryRepo()` (crm/server/memoryRepo.ts:L34)
 - `serviceLabel()` (crm/server/catalog.ts:L51)
-- `public.clients` (crm/supabase/migrations/0001_core.sql:L29)
 - `ClientRow` (crm/server/repo.ts:L12)
+- `public.clients` (crm/supabase/migrations/0001_core.sql:L29)
 - `public.leads` (crm/supabase/migrations/0001_core.sql:L84)
 - `MemoryRepo` (crm/server/memoryRepo.ts:L9)
-- `SITE_SERVICES` (crm/server/catalog.ts:L8)
 - `.findClient()` (crm/server/repo.ts:L76)
+- `SITE_SERVICES` (crm/server/catalog.ts:L8)
 
 ## От чего зависит (вызовы в другие разделы)
 

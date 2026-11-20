@@ -6,13 +6,13 @@ import { Icon } from '../ui/Icon'
 import { PhoneField } from '../../shared/ui/PhoneField'
 
 
-type Form = { service_key: string; name: string; phone: string; telegram: string; email: string; company: string; comment: string; status: Lead['status']; interests: Lead['interests'] }
+type Form = { service_key: string; name: string; phone: string; telegram: string; email: string; company: string; comment: string; client_kind: 'individual' | 'legal' | ''; unp: string; status: Lead['status']; interests: Lead['interests'] }
 type Saved = { clientId: string | null; clientCreated: boolean; leadsOfClient: number }
 
-const blank: Form = { service_key: 'other', name: '', phone: '', telegram: '', email: '', company: '', comment: '', status: 'new', interests: [] }
+const blank: Form = { service_key: 'other', name: '', phone: '', telegram: '', email: '', company: '', comment: '', client_kind: '', unp: '', status: 'new', interests: [] }
 const fromLead = (l: Lead): Form => ({
   service_key: l.service_key && SERVICES[l.service_key] ? l.service_key : 'other', name: l.name ?? '', phone: l.phone ?? '', telegram: l.telegram ?? '',
-  email: l.email ?? '', company: l.company ?? '', comment: l.comment ?? '', status: l.status, interests: l.interests ?? [],
+  email: l.email ?? '', company: l.company ?? '', comment: l.comment ?? '', client_kind: l.client_kind ?? '', unp: '', status: l.status, interests: l.interests ?? [],
 })
 
 /** Окно заявки: новая (вставить текст из Telegram, поля разложатся сами) или правка по карандашу. */
@@ -76,10 +76,17 @@ export function LeadEditor({ lead, onClose, onSaved }: { lead: Lead | null; onCl
               <select value={f.status} onChange={(e) => up({ status: e.target.value as Lead['status'] })}>{Object.entries(STATUSES).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></div>
             <div className="fld"><label>Имя</label><input value={f.name} onChange={(e) => up({ name: e.target.value })} /></div>
             <div className="fld"><label>Компания</label><input value={f.company} onChange={(e) => up({ company: e.target.value })} /></div>
+            <div className="fld"><label>Обращается как</label>
+              <select value={f.client_kind} onChange={(e) => up({ client_kind: e.target.value as Form['client_kind'] })}>
+                <option value="">—</option>
+                <option value="individual">Частное лицо</option>
+                <option value="legal">Юридическое лицо</option>
+              </select></div>
             <div className="fld"><label>Телефон</label><PhoneField value={f.phone} onChange={(v) => up({ phone: v })} /></div>
             <div className="fld"><label>Telegram</label><input value={f.telegram} onChange={(e) => up({ telegram: e.target.value })} placeholder="@ник" /></div>
             <div className="fld lx-wide"><label>Почта</label><input type="email" value={f.email} onChange={(e) => up({ email: e.target.value })} /></div>
           </div>
+          {f.client_kind === 'legal' && <div className="fld"><label>УНП</label><input value={f.unp} onChange={(e) => up({ unp: e.target.value.replace(/\D/g, '').slice(0, 9) })} inputMode="numeric" placeholder="9 цифр" /></div>}
           <div className="fld"><label>Интересы (для групп и рассылок)</label>
             <div className="chips">{(Object.entries(INTERESTS) as [Lead['interests'][number], string][]).map(([k, v]) => {
               const on = f.interests.includes(k)

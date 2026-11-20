@@ -18,6 +18,11 @@ export type Client = {
   admin_topic_id: number | null
   created_at: string
   last_seen_at: string | null
+  client_kind: 'individual' | 'legal' | null
+  legal_name: string | null
+  unp: string | null
+  legal_address: string | null
+  bank_details: string | null
 }
 
 export type Lead = {
@@ -35,6 +40,7 @@ export type Lead = {
   email: string | null
   company: string | null
   comment: string | null
+  client_kind: 'individual' | 'legal' | null
   warnings: string[]
   created_at: string
 }
@@ -58,6 +64,7 @@ export const SERVICES: Record<string, string> = Object.fromEntries([
 ])
 export const STATUSES: Record<Lead['status'], string> = { new: 'Новая', in_progress: 'В работе', won: 'Выиграна', lost: 'Проиграна', spam: 'Спам' }
 export const SOURCES: Record<string, string> = { site_form: 'Сайт', stand_form: 'Стенд', tg_group: 'Группа', bot: 'Бот', manual: 'Вручную' }
+export const CLIENT_KINDS: Record<string, string> = { individual: 'Частное лицо', legal: 'Юридическое лицо' }
 export const WARNINGS: Record<string, string> = {
   phone_in_name: 'телефон был в поле «Имя»', phone_in_company: 'телефон был в поле «Компания»', phone_in_telegram: 'телефон был в поле Telegram',
   telegram_in_name: 'ник был в поле «Имя»', telegram_in_phone: 'ник был в поле «Телефон»', telegram_in_company: 'ник был в поле «Компания»',
