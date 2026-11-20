@@ -50,13 +50,13 @@ function runInWorkspace(workspacePath: string, prompt: string): Promise<{ ok: bo
 
 /** Прощание по времени суток: день до 17:00, вечер с 17:00. */
 function timeFarewell(now = new Date()): string {
-  return now.getHours() >= 17 ? 'Хорошего вам вечера!' : 'Хорошего вам дня!'
+  return now.getHours() >= 17 ? 'Хорошего вам вечера' : 'Хорошего вам дня'
 }
 
 /** Текст ответа клиенту по финальному статусу задачи. */
 function notifyMessage(status: string, reason?: string): string {
   switch (status) {
-    case 'thanks': return 'Пожалуйста! Если появятся правки — пишите сюда.\n' + timeFarewell()
+    case 'thanks': return 'И вам спасибо за то, что с нами 🤗 ' + timeFarewell() + '!!!\n\nНе забывайте следить за нашими новыми услугами, продуктами и обновлениями на сайте: https://st96.by'
     case 'deployed': return 'Готово — правки внесены и опубликованы на сайте.'
     case 'failed': return 'Не удалось внести правки автоматически. Передаю специалисту — он свяжется с вами.'
     case 'clarify': return 'Уточните, пожалуйста: ' + (reason ?? '')
