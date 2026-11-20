@@ -71,6 +71,26 @@ test('spendFeatures: списывает функции', async () => {
   assert.equal((await repo.getPeriod(period.id))!.features_used, 1)
 })
 
+test('monthRange: день клампится в целевом месяце (31.01 → 28.02)', () => {
+  assert.equal(monthRange('2026-01-31T00:00:00Z').end, '2026-02-28T00:00:00.000Z')
+  assert.equal(monthRange('2026-03-31T00:00:00Z').end, '2026-04-30T00:00:00.000Z')
+  assert.equal(monthRange('2026-11-20T10:00:00Z').end, '2026-12-20T10:00:00.000Z')
+})
+
+test('currentPeriod предпочитает активный период при смене пакета (рядом pending)', async () => {
+  const repo = memoryRepo()
+  const cl = await repo.insertClient({ name: 'Мария' })
+  const pr = await repo.insertProject({ client_id: cl.id })
+  const pkg = await repo.insertPackage({ code: 'standard', title: 'Стандарт', corrections_limit: 5 })
+  const oldP = await startPeriod(repo, pr.id, pkg, '2026-11-01T00:00:00Z')
+  await activatePeriod(repo, oldP.id)
+  await startPeriod(repo, pr.id, pkg, '2026-11-20T00:00:00Z') // новый pending рядом
+  const cur = await repo.currentPeriod(pr.id)
+  assert.equal(cur!.id, oldP.id, 'вернул активный, а не pending')
+  await spendCorrections(repo, pr.id, 1)
+  assert.equal((await repo.getPeriod(oldP.id))!.corrections_used, 1, 'списание идёт по активному периоду')
+})
+
 test('calcUpgrade: остаток дней зачитывается, при исчерпании лимитов — нет', () => {
   const base = { period_start: '2026-11-01T00:00:00Z', period_end: '2026-12-01T00:00:00Z' }
   const mid = calcUpgrade({ ...base, corrections_limit: 5, corrections_used: 2 }, 100, 200, '2026-11-15T00:00:00Z')

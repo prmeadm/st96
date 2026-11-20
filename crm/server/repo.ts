@@ -552,7 +552,10 @@ export function supabaseRepo(url: string, key: string): Repo {
       return (ok(await db.from('package_periods').select('*').eq('id', id).maybeSingle(), 'getPeriod') as PackagePeriodRow | null) ?? null
     },
     async currentPeriod(projectId) {
-      return (ok(await db.from('package_periods').select('*').eq('project_id', projectId).in('status', ['pending_payment', 'active']).order('period_start', { ascending: false }).limit(1).maybeSingle(), 'currentPeriod') as PackagePeriodRow | null) ?? null
+      // Активный период предпочтительнее pending_payment (переходное окно при смене пакета)
+      const active = (ok(await db.from('package_periods').select('*').eq('project_id', projectId).eq('status', 'active').order('period_start', { ascending: false }).limit(1).maybeSingle(), 'currentPeriod') as PackagePeriodRow | null) ?? null
+      if (active) return active
+      return (ok(await db.from('package_periods').select('*').eq('project_id', projectId).eq('status', 'pending_payment').order('period_start', { ascending: false }).limit(1).maybeSingle(), 'currentPeriod') as PackagePeriodRow | null) ?? null
     },
     async listPeriods(projectId) {
       return (ok(await db.from('package_periods').select('*').eq('project_id', projectId).order('period_start', { ascending: false }).limit(50), 'listPeriods') ?? []) as PackagePeriodRow[]

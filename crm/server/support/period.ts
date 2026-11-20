@@ -3,11 +3,13 @@
 import type { Repo } from '../repo'
 import type { PackageRow } from './types'
 
-/** Границы месяца от даты подтверждения оплаты (вариант B из ТЗ). */
+/** Границы месяца от даты подтверждения оплаты (вариант B из ТЗ). День клампится в целевом месяце (31.01 → 28.02). */
 export function monthRange(startIso: string): { start: string; end: string } {
   const start = new Date(startIso)
   const end = new Date(start)
+  const day = end.getDate()
   end.setMonth(end.getMonth() + 1)
+  if (end.getDate() !== day) end.setDate(0) // переполнение дня → последний день целевого месяца
   return { start: start.toISOString(), end: end.toISOString() }
 }
 

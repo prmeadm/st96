@@ -31,9 +31,9 @@
 - `ensureTopic()` (crm/server/bot/dialog.ts:L37)
 - `verifySiteRef()` (crm/server/bot/siteRef.ts:L41)
 - `relayToAdmins()` (crm/server/bot/dialog.ts:L51)
+- `signSiteRef()` (crm/server/bot/siteRef.ts:L27)
 - `cardText()` (crm/server/bot/dialog.ts:L22)
 - `linkLeadClient()` (crm/server/bot/bot.ts:L24)
-- `issueSiteRef()` (crm/server/bot/siteRef.ts:L60)
 
 ## От чего зависит (вызовы в другие разделы)
 

@@ -250,7 +250,9 @@ export function memoryRepo(): MemoryRepo {
     },
     async getPeriod(pid) { return r.periods.find((p) => p.id === pid) ?? null },
     async currentPeriod(projectId) {
-      return r.periods.filter((p) => p.project_id === projectId && (p.status === 'pending_payment' || p.status === 'active')).sort((a, b) => Date.parse(b.period_start) - Date.parse(a.period_start))[0] ?? null
+      const byStart = (a: PackagePeriodRow, b: PackagePeriodRow) => Date.parse(b.period_start) - Date.parse(a.period_start)
+      const open = r.periods.filter((p) => p.project_id === projectId && (p.status === 'active' || p.status === 'pending_payment'))
+      return open.find((p) => p.status === 'active') ?? open.filter((p) => p.status === 'pending_payment').sort(byStart)[0] ?? null
     },
     async listPeriods(projectId) { return r.periods.filter((p) => p.project_id === projectId).sort((a, b) => Date.parse(b.period_start) - Date.parse(a.period_start)) },
     async insertPeriod(p) {

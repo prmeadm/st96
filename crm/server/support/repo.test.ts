@@ -50,7 +50,7 @@ test('сценарий: привязка к проекту', async () => {
   assert.equal(found?.system_prompt, 'Только правки в рамках пакета')
 })
 
-test('период: pending_payment → active, currentPeriod берёт последний открытый', async () => {
+test('период: pending_payment → active, currentPeriod берёт активный (pending рядом не мешает)', async () => {
   const r = c()
   const cl = await r.insertClient({})
   const pr = await r.insertProject({ client_id: cl.id })
@@ -61,8 +61,8 @@ test('период: pending_payment → active, currentPeriod берёт пос�
   assert.equal(cur?.id, p1.id)
   await r.updatePeriod(p1.id, { status: 'active', corrections_limit: 5, features_limit: 2 })
   assert.equal((await r.getPeriod(p1.id))?.status, 'active')
-  const p2 = await r.insertPeriod({ project_id: pr.id, period_start: '2026-12-01T00:00:00Z', period_end: '2027-01-01T00:00:00Z' })
-  assert.equal((await r.currentPeriod(pr.id))?.id, p2.id)
+  await r.insertPeriod({ project_id: pr.id, period_start: '2026-12-01T00:00:00Z', period_end: '2027-01-01T00:00:00Z' })
+  assert.equal((await r.currentPeriod(pr.id))?.id, p1.id, 'активный предпочтительнее pending')
   assert.equal((await r.listPeriods(pr.id)).length, 2)
 })
 
