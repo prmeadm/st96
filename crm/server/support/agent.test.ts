@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { buildPrompt, decide, remainingCorrections, type AgentInput, type Classification, type Classify, type Limits, type Scenario } from './agent'
+import { buildPrompt, decide, isGratitude, remainingCorrections, type AgentInput, type Classification, type Classify, type Limits, type Scenario } from './agent'
 
 const scenario: Scenario = { system_prompt: 'Только правки текста в проекте', scope_notes: 'Сайт st96.by', stop_conditions: 'Не трогать оплату', allowed_actions: 'edit,deploy' }
 const limits = (over: Partial<Limits> = {}): Limits => ({ corrections_limit: 5, corrections_used: 2, features_limit: 0, features_used: 0, requests_limit: null, requests_used: 0, ...over })
@@ -50,6 +50,18 @@ test('новая функция при безлимите функций → rea
   const d2 = await decide(input('добавьте страницу', { features_limit: null }), cls({ kind: 'edits', edits: ['страница'], is_feature: true }))
   assert.equal(d2.status, 'ready')
   assert.equal(d2.is_feature, true)
+})
+
+test('isGratitude: чистая благодарность vs с просьбой', () => {
+  assert.equal(isGratitude('Спасибо!'), true)
+  assert.equal(isGratitude('благодарю вас'), true)
+  assert.equal(isGratitude('Спасибо, но поменяйте заголовок'), false)
+  assert.equal(isGratitude('нужно поменять текст'), false)
+})
+
+test('благодарность распознаётся детерминированно (без LLM) → thanks', async () => {
+  const d = await decide(input('Спасибо большое!', {}, false), cls({ kind: 'clarify', reason: 'x' }))
+  assert.equal(d.status, 'thanks')
 })
 
 test('благодарность → thanks, даже без активного периода', async () => {

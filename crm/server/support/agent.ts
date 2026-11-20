@@ -50,6 +50,18 @@ export const remainingCorrections = (l: Limits): number | null =>
 export const remainingFeatures = (l: Limits): number | null =>
   l.features_limit == null ? null : Math.max(0, l.features_limit - l.features_used)
 
+/**
+ * Чистая благодарность: есть слово благодарности и нет признаков запроса на правку/функцию.
+ * Распознаётся детерминированно, без LLM — чтобы «спасибо» всегда давало вежливый ответ.
+ */
+export function isGratitude(text: string): boolean {
+  const t = (text ?? '').toLowerCase().trim()
+  if (!t) return false
+  if (!/(спасибо|благодарю|благодарность|спасиб|спс|thanks|thx|thank you)/i.test(t)) return false
+  if (/(сделай|сделать|поменя|замени|исправь|поправь|добавь|удали|убери|нужно|надо|хочу|создай|переделай|правк|доработ|обнови|адаптиру|настро|перенес|измени)/i.test(t)) return false
+  return true
+}
+
 /** Промпт агента: рамки + лимиты + обращение. */
 export function buildPrompt(input: AgentInput): string {
   const s = input.scenario
@@ -76,6 +88,9 @@ export function buildPrompt(input: AgentInput): string {
  * Счётчики не меняет — списание после успешного деплоя (Фаза 5).
  */
 export async function decide(input: AgentInput, classify: Classify): Promise<Decision> {
+  if (isGratitude(input.request_text)) {
+    return { status: 'thanks', reason: 'благодарность', audit: [{ actor: 'ai', action: 'thanks', payload: { reason: 'gratitude' } }] }
+  }
   const c = await classify(input)
   if (c.kind === 'thanks') {
     return { status: 'thanks', reason: c.reason, audit: [{ actor: 'ai', action: 'thanks', payload: { reason: c.reason } }] }
