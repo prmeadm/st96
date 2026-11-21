@@ -11,6 +11,7 @@ import { spendCorrections, spendFeatures } from './period'
 import type { SupportJobRow } from './types'
 import { downloadTelegramVoice, sendTelegramVoice, synthesizeVoice, transcribeAudio } from './voice'
 import { consultAnswer } from './consult'
+import { replySupport } from './reply'
 import type { Llm } from '../agent/llm'
 
 const dbUrl = process.env.SUPABASE_DB_URL ?? ''
@@ -297,17 +298,32 @@ async function processJob(repo: SupportRepo, job: SupportJobRow) {
       result_json: { reason: d.reason, ...(wasVoice ? { transcript: requestText } : {}) }, finished_at: new Date().toISOString(),
     })
   }
-  // На вопросы отвечает консультант: вместо шаблонного «нужен пакет» / «вне рамок» человек получает
-  // ответ по сайту, рабочим часам и записи на встречу. Сбой модели — прежний шаблон ниже.
+  // Ответ клиенту по ветке:
+  // - активный пакет → ответчик поддержки (соблюдает сценарий проекта, без встречи и допродажи,
+  //   кроме out_of_scope — «оценивается отдельно» + предложение встречи);
+  // - нет активного пакета → консультант-«продавец» (сайт, часы, запись; по правкам — про пакет + встреча).
+  // Сбой модели — детерминированный шаблон notifyMessage ниже.
   let answer: string | undefined
   if (d.status !== 'thanks' && requestText.trim()) {
     try {
       const client = await repo.findClientById(job.client_id)
-      answer = await consultAnswer(askDeepSeek, {
-        question: requestText, lang: client?.language ?? 'ru', name: client?.name ?? null, clientId: job.client_id,
-      })
+      if (period?.status === 'active') {
+        answer = await replySupport(askDeepSeek, {
+          scenario: input.scenario,
+          status: d.status,
+          reason: d.reason,
+          request_text: requestText,
+          lang: client?.language ?? 'ru',
+          name: client?.name ?? null,
+          clientId: job.client_id,
+        })
+      } else {
+        answer = await consultAnswer(askDeepSeek, {
+          question: requestText, lang: client?.language ?? 'ru', name: client?.name ?? null, clientId: job.client_id,
+        })
+      }
     } catch (e) {
-      console.error('consult answer failed', e instanceof Error ? e.message : e)
+      console.error('support reply failed', e instanceof Error ? e.message : e)
     }
   }
   await notifyClient(repo, job.client_id, status, reason, { voice: wasVoice, answer })
