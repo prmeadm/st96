@@ -290,8 +290,7 @@ async function processJob(repo: SupportRepo, job: SupportJobRow) {
   // На вопросы отвечает консультант: вместо шаблонного «нужен пакет» / «вне рамок» человек получает
   // ответ по сайту, рабочим часам и записи на встречу. Сбой модели — прежний шаблон ниже.
   let answer: string | undefined
-  const isEditRequest = d.status === 'awaiting_payment' && d.request_kind === 'edits'
-  if (d.status !== 'thanks' && !isEditRequest && requestText.trim()) {
+  if (d.status !== 'thanks' && requestText.trim()) {
     try {
       const client = await repo.findClientById(job.client_id)
       answer = await consultAnswer(askDeepSeek, {
