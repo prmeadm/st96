@@ -7,7 +7,7 @@ import type { AgentScenarioRow, ClientProjectRow, InvoiceRow, PackagePeriodRow, 
 // Методы, которые нужны worker-у и period.ts. memoryRepo/supabaseRepo их тоже удовлетворяют (Pick из Repo).
 export type SupportRepo = Pick<Repo,
   | 'findProject' | 'getScenario' | 'findClientById' | 'currentPeriod' | 'getPeriod' | 'listPeriods' | 'insertPeriod' | 'updatePeriod'
-  | 'getInvoice' | 'updateInvoice' | 'insertAudit' | 'updateSupportJob' | 'listQueuedSupportJobs' | 'claimSupportJob'
+  | 'getInvoice' | 'updateInvoice' | 'insertAudit' | 'updateSupportJob' | 'listQueuedSupportJobs' | 'claimSupportJob' | 'findAwaitingConfirmationJob'
 >
 
 // timestamptz/timestamp/date → строки (совпадает с типами строк support/types.ts)
@@ -63,6 +63,9 @@ export function pgRepo(connectionString: string): SupportRepo {
     },
     async listQueuedSupportJobs(limit = 10) {
       return many<SupportJobRow>("select * from crm.support_jobs where status = 'queued' order by created_at limit $1", [limit])
+    },
+    async findAwaitingConfirmationJob(clientId) {
+      return one<SupportJobRow>("select * from crm.support_jobs where client_id = $1 and status = 'awaiting_confirmation' order by created_at desc limit 1", [clientId])
     },
     async claimSupportJob(id) {
       return one<SupportJobRow>("update crm.support_jobs set status = 'running', started_at = now() where id = $1 and status = 'queued' returning *", [id])

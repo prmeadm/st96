@@ -34,3 +34,6 @@ dist-ssr
 .playwright-mcp/
 brand/print/
 brand/screens-b-leasing/
+
+# Локальные артефакты handoff/доставки
+.dsh/

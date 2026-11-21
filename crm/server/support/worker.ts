@@ -130,7 +130,89 @@ async function notifyClient(repo: SupportRepo, clientId: string, status: string,
   }
 }
 
+/** Клиент подтверждает план правок: «да», «ок», «подтверждаю» и т.п. */
+function isConfirmation(text: string): boolean {
+  const t = (text ?? '').toLowerCase().trim()
+  if (!t || t.length > 80) return false
+  return /^(да|ок|окей|ага|конечно|подтвержда|согласен|согласна|верно|давай|поехали|вперёд|старт|yes|ok|go)\b/i.test(t)
+}
+
+/** Клиент отменил план: «нет», «отмена», «стоп». */
+function isRejection(text: string): boolean {
+  const t = (text ?? '').toLowerCase().trim()
+  return /^(нет|не надо|отмена|отмени|стоп|cancel|no)\b/i.test(t)
+}
+
+/** Выполнить ранее подтверждённый клиентом план правок. */
+async function executePlan(repo: SupportRepo, plan: SupportJobRow, confirmJob: SupportJobRow) {
+  const project = plan.project_id ? await repo.findProject(plan.project_id) : null
+  if (!project) {
+    const finished = new Date().toISOString()
+    await repo.updateSupportJob(plan.id, { status: 'failed', result_json: { error: 'нет проекта' }, finished_at: finished })
+    await repo.updateSupportJob(confirmJob.id, { status: 'failed', result_json: { error: 'нет проекта' }, finished_at: finished })
+    return
+  }
+  const scenario = project.agent_scenario_id ? await repo.getScenario(project.agent_scenario_id) : null
+  const period = await repo.currentPeriod(project.id)
+  const data = (plan.result_json ?? {}) as { plan?: { edits?: string[]; edits_count?: number; is_feature?: boolean }; request_text?: string }
+  const input: AgentInput = {
+    request_text: data.request_text ?? plan.request_text,
+    scenario: {
+      system_prompt: scenario?.system_prompt ?? 'Работать в рамках проекта, не выходить за пределы задачи.',
+      scope_notes: scenario?.scope_notes ?? null,
+      stop_conditions: scenario?.stop_conditions ?? null,
+      allowed_actions: scenario?.allowed_actions ?? null,
+    },
+    limits: {
+      corrections_limit: period?.corrections_limit ?? null,
+      corrections_used: period?.corrections_used ?? 0,
+      features_limit: period?.features_limit ?? null,
+      features_used: period?.features_used ?? 0,
+      requests_limit: period?.requests_limit ?? null,
+      requests_used: period?.requests_used ?? 0,
+    },
+    hasActivePeriod: period?.status === 'active',
+  }
+  const r = project.workspace_path ? await runInWorkspace(project.workspace_path, buildPrompt(input)) : { ok: false, output: 'не указан workspace_path' }
+  const status: 'deployed' | 'failed' = r.ok ? 'deployed' : 'failed'
+  let spent = 0
+  if (r.ok) {
+    try {
+      if (data.plan?.is_feature) await spendFeatures(repo, project.id, plan.edits_count)
+      else await spendCorrections(repo, project.id, plan.edits_count)
+      spent = plan.edits_count
+    } catch (e) {
+      console.error('spend counters failed', e)
+    }
+  }
+  const finished = new Date().toISOString()
+  await repo.updateSupportJob(plan.id, { status, result_json: { ...(plan.result_json ?? {}), output: r.output, confirmed_at: finished }, finished_at: finished })
+  await repo.updateSupportJob(confirmJob.id, { status, result_json: { confirmed_job: plan.id }, finished_at: finished })
+  await repo.insertAudit({ actor: 'ai', action: status, client_id: plan.client_id, project_id: plan.project_id, job_id: plan.id, payload: { edits_count: plan.edits_count } })
+  const after = await repo.currentPeriod(project.id)
+  const left = after?.corrections_limit == null ? 'без лимита' : `${after.corrections_limit - after.corrections_used} из ${after.corrections_limit}`
+  const text = r.ok
+    ? `Готово — правки внесены и опубликованы.\n\nСписано: ${spent} ${data.plan?.is_feature ? 'функц.' : 'правк.'}. Остаток правок: ${left}.`
+    : 'Не удалось внести правки автоматически. Передаю специалисту — он свяжется с вами.'
+  await notifyClient(repo, plan.client_id, status, undefined, { answer: text })
+}
+
 async function processJob(repo: SupportRepo, job: SupportJobRow) {
+  // Клиент подтвердил ранее показанный план — выполняем его; отказал — отменяем.
+  if (isConfirmation(job.request_text) || isRejection(job.request_text)) {
+    const pending = await repo.findAwaitingConfirmationJob(job.client_id)
+    if (pending) {
+      if (isRejection(job.request_text)) {
+        const finished = new Date().toISOString()
+        await repo.updateSupportJob(pending.id, { status: 'clarify', result_json: { reason: 'клиент отменил план' }, finished_at: finished })
+        await repo.updateSupportJob(job.id, { status: 'clarify', result_json: { cancelled_job: pending.id }, finished_at: finished })
+        await notifyClient(repo, job.client_id, 'clarify', undefined, { answer: 'Хорошо, отменил. Если что — пишите, на связи.' })
+        return
+      }
+      await executePlan(repo, pending, job)
+      return
+    }
+  }
   // Голосовое обращение: скачать и распознать в текст.
   let requestText = job.request_text
   let wasVoice = false
@@ -182,22 +264,21 @@ async function processJob(repo: SupportRepo, job: SupportJobRow) {
   let status: NonNullable<SupportJobRow['status']>
   let reason: string | undefined
   if (d.status === 'ready') {
-    const r = project.workspace_path ? await runInWorkspace(project.workspace_path, buildPrompt(input)) : { ok: false, output: 'не указан workspace_path' }
-    status = r.ok ? 'deployed' : 'failed'
-    if (r.ok) {
-      // Списание счётчиков после успешного деплоя (Фаза 5)
-      try {
-        if (d.is_feature) await spendFeatures(repo, project.id, d.edits_count)
-        else await spendCorrections(repo, project.id, d.edits_count)
-      } catch (e) {
-        console.error('spend counters failed', e)
-      }
-    }
+    // Не выполняем сразу: показываем план и сколько спишется, ждём финальное «да» клиента.
+    const kind = d.is_feature ? 'функц.' : 'правк.'
     await repo.updateSupportJob(job.id, {
-      status, edits_json: d.edits, edits_count: d.edits_count,
-      result_json: { output: r.output }, finished_at: new Date().toISOString(),
+      status: 'awaiting_confirmation', edits_json: d.edits, edits_count: d.edits_count,
+      result_json: { plan: { edits: d.edits, edits_count: d.edits_count, is_feature: d.is_feature, remaining_after: d.remaining_after }, request_text: requestText },
     })
-    await repo.insertAudit({ actor: 'ai', action: status, client_id: job.client_id, project_id: job.project_id, job_id: job.id, payload: { edits_count: d.edits_count } })
+    await repo.insertAudit({ actor: 'ai', action: 'awaiting_confirmation', client_id: job.client_id, project_id: job.project_id, job_id: job.id, payload: { edits_count: d.edits_count } })
+    const planText = [
+      'Проверил пакет — активен.',
+      d.edits.length ? 'Планирую:\n' + d.edits.map((e, i) => `${i + 1}. ${e}`).join('\n') : '',
+      `Спишется: ${d.edits_count} ${kind}. Останется: ${d.remaining_after == null ? 'без лимита' : String(d.remaining_after)}.`,
+      'Подтверждаете? Напишите «да» — и я приступлю.',
+    ].filter(Boolean).join('\n\n')
+    await notifyClient(repo, job.client_id, 'awaiting_confirmation', undefined, { answer: planText, voice: wasVoice })
+    return
   } else {
     status = d.status
     reason = d.reason
@@ -209,7 +290,8 @@ async function processJob(repo: SupportRepo, job: SupportJobRow) {
   // На вопросы отвечает консультант: вместо шаблонного «нужен пакет» / «вне рамок» человек получает
   // ответ по сайту, рабочим часам и записи на встречу. Сбой модели — прежний шаблон ниже.
   let answer: string | undefined
-  if (d.status !== 'ready' && d.status !== 'thanks' && requestText.trim()) {
+  const isEditRequest = d.status === 'awaiting_payment' && d.request_kind === 'edits'
+  if (d.status !== 'thanks' && !isEditRequest && requestText.trim()) {
     try {
       const client = await repo.findClientById(job.client_id)
       answer = await consultAnswer(askDeepSeek, {

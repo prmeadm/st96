@@ -40,7 +40,7 @@ export type Decision =
   | { status: 'clarify'; reason: string; audit: AuditEntry[] }
   | { status: 'out_of_scope'; reason: string; audit: AuditEntry[] }
   | { status: 'thanks'; reason: string; audit: AuditEntry[] }
-  | { status: 'awaiting_payment'; reason: string; edits: string[]; edits_count: number; is_feature: boolean; audit: AuditEntry[] }
+  | { status: 'awaiting_payment'; reason: string; edits: string[]; edits_count: number; is_feature: boolean; request_kind: Classification['kind']; audit: AuditEntry[] }
   | { status: 'ready'; edits: string[]; edits_count: number; is_feature: boolean; remaining_after: number | null; audit: AuditEntry[] }
 
 /** Остаток правок: null = без лимита. */
@@ -97,7 +97,9 @@ export async function decide(input: AgentInput, classify: Classify): Promise<Dec
   }
   if (!input.hasActivePeriod) {
     return {
-      status: 'awaiting_payment', reason: 'нет активного оплаченного периода', edits: [], edits_count: 0, is_feature: false,
+      status: 'awaiting_payment', reason: 'нет активного оплаченного периода',
+      edits: c.kind === 'edits' ? c.edits : [], edits_count: c.kind === 'edits' ? c.edits.length : 0, is_feature: c.kind === 'edits' ? c.is_feature : false,
+      request_kind: c.kind,
       audit: [{ actor: 'ai', action: 'awaiting_payment', payload: { reason: 'no_active_period' } }],
     }
   }
@@ -112,7 +114,7 @@ export async function decide(input: AgentInput, classify: Classify): Promise<Dec
     const remF = remainingFeatures(input.limits)
     if (remF != null && remF <= 0) {
       return {
-        status: 'awaiting_payment', reason: 'лимит функций исчерпан', edits: c.edits, edits_count, is_feature: true,
+        status: 'awaiting_payment', reason: 'лимит функций исчерпан', edits: c.edits, edits_count, is_feature: true, request_kind: 'edits',
         audit: [{ actor: 'ai', action: 'awaiting_payment', payload: { reason: 'features_exhausted', edits_count } }],
       }
     }
@@ -129,7 +131,7 @@ export async function decide(input: AgentInput, classify: Classify): Promise<Dec
     }
   }
   return {
-    status: 'awaiting_payment', reason: 'нужно ' + edits_count + ' правок, осталось ' + rem, edits: c.edits, edits_count, is_feature: false,
+    status: 'awaiting_payment', reason: 'нужно ' + edits_count + ' правок, осталось ' + rem, edits: c.edits, edits_count, is_feature: false, request_kind: 'edits',
     audit: [{ actor: 'ai', action: 'awaiting_payment', payload: { reason: 'corrections_exhausted', edits_count, remaining: rem } }],
   }
 }

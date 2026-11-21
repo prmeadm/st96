@@ -79,7 +79,7 @@ export type SupportJobRow = {
   message_id: number | null
   voice_file_id: string | null
   request_text: string
-  status: 'queued' | 'running' | 'clarify' | 'ready' | 'deployed' | 'split' | 'out_of_scope' | 'awaiting_payment' | 'failed' | 'thanks'
+  status: 'queued' | 'running' | 'clarify' | 'ready' | 'deployed' | 'split' | 'out_of_scope' | 'awaiting_payment' | 'failed' | 'thanks' | 'awaiting_confirmation'
   edits_json: unknown[]
   edits_count: number
   result_json: Record<string, unknown> | null
