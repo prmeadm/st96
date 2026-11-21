@@ -11,6 +11,8 @@ const WHISPER_PY = process.env.WHISPER_PY ?? '/home/dsh/.venv-whisper/bin/python
 const WHISPER_MODEL = process.env.WHISPER_MODEL ?? 'small'
 const PIPER_BIN = process.env.PIPER_BIN ?? '/home/dsh/tools/piper/piper/piper'
 const PIPER_VOICE = process.env.PIPER_VOICE ?? '/home/dsh/tools/piper/voices/ru_RU-irina-medium.onnx'
+const YANDEX_API_KEY = process.env.YANDEX_API_KEY ?? ''
+const YANDEX_VOICE = process.env.YANDEX_VOICE ?? 'filipp'
 const STT_SCRIPT = join(HERE, 'stt.py')
 
 function run(cmd: string, args: string[], opts: { input?: Buffer | string; timeout?: number } = {}): Promise<string> {
@@ -56,8 +58,21 @@ export function toSpeechText(text: string): string {
     .trim()
 }
 
-/** Синтез речи (piper) → OGG/Opus для голосового сообщения Telegram. */
-export async function synthesizeVoice(text: string): Promise<Buffer> {
+/** Синтез речи Yandex SpeechKit → OGG/Opus (готово для Telegram voice). */
+export async function synthesizeVoiceYandex(text: string): Promise<Buffer> {
+  if (!YANDEX_API_KEY) throw new Error('YANDEX_API_KEY не задан')
+  const body = new URLSearchParams({ text: toSpeechText(text), lang: 'ru-RU', voice: YANDEX_VOICE, format: 'oggopus', speed: '1.0' })
+  const r = await fetch('https://tts.api.cloud.yandex.net/speech/v1/tts:synthesize', {
+    method: 'POST',
+    headers: { Authorization: 'Api-Key ' + YANDEX_API_KEY, 'Content-Type': 'application/x-www-form-urlencoded' },
+    body,
+  })
+  if (!r.ok) throw new Error('Yandex TTS ' + r.status + ': ' + (await r.text().catch(() => '')).slice(0, 200))
+  return Buffer.from(await r.arrayBuffer())
+}
+
+/** Синтез речи (piper) → OGG/Opus: локальный резерв, если Yandex недоступен. */
+async function synthesizeVoicePiper(text: string): Promise<Buffer> {
   const dir = await mkdtemp(join(tmpdir(), 'tts-'))
   try {
     const wav = join(dir, 'out.wav')
@@ -67,6 +82,16 @@ export async function synthesizeVoice(text: string): Promise<Buffer> {
     return await readFile(ogg)
   } finally {
     await rm(dir, { recursive: true, force: true })
+  }
+}
+
+/** Синтез речи: Yandex (filipp), при сбое — локальный piper. */
+export async function synthesizeVoice(text: string): Promise<Buffer> {
+  try {
+    return await synthesizeVoiceYandex(text)
+  } catch (e) {
+    console.error('Yandex TTS failed, fallback piper:', e instanceof Error ? e.message : e)
+    return synthesizeVoicePiper(text)
   }
 }
 
