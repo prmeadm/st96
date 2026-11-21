@@ -10,6 +10,8 @@ import { buildPrompt, decide, type AgentInput, type Classification, type Classif
 import { spendCorrections, spendFeatures } from './period'
 import type { SupportJobRow } from './types'
 import { downloadTelegramVoice, sendTelegramVoice, synthesizeVoice, transcribeAudio } from './voice'
+import { consultAnswer } from './consult'
+import type { Llm } from '../agent/llm'
 
 const dbUrl = process.env.SUPABASE_DB_URL ?? ''
 const leadsBotToken = process.env.LEADS_BOT_TOKEN ?? ''
@@ -33,6 +35,23 @@ export const classifyWithDeepSeek: Classify = async (input) => {
   if (!res.ok) throw new Error('DeepSeek ' + res.status + ': ' + (await res.text().catch(() => '')).slice(0, 200))
   const j = (await res.json()) as { choices: { message: { content: string } }[] }
   return JSON.parse(j.choices[0]!.message.content) as Classification
+}
+
+/** Модель для консультанта: тот же DeepSeek, строгий JSON {"answer": "…"}. */
+const askDeepSeek: Llm = async ({ system, user }) => {
+  const res = await fetch('https://api.deepseek.com/chat/completions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + process.env.DEEPSEEK_API_KEY },
+    body: JSON.stringify({
+      model: process.env.DEEPSEEK_MODEL ?? 'deepseek-flash',
+      messages: [{ role: 'system', content: system }, { role: 'user', content: user }],
+      temperature: 0.5,
+      response_format: { type: 'json_object' },
+    }),
+  })
+  if (!res.ok) throw new Error('DeepSeek ' + res.status + ': ' + (await res.text().catch(() => '')).slice(0, 200))
+  const j = (await res.json()) as { choices: { message: { content: string } }[] }
+  return j.choices[0]!.message.content
 }
 
 /** Запуск агента в workspace проекта. Агент видит только эту папку (cwd), не чужие проекты и не ~/.dsh. */
@@ -73,8 +92,8 @@ function notifyMessage(status: string, reason?: string): string {
 }
 
 /** Отправка результата клиенту в Telegram (бот @st96_leads_bot) + зеркало «Ассистент: …» в группу админов. Ошибки не роняют worker. */
-async function notifyClient(repo: SupportRepo, clientId: string, status: string, reason?: string, opts: { voice?: boolean } = {}) {
-  const text = notifyMessage(status, reason)
+async function notifyClient(repo: SupportRepo, clientId: string, status: string, reason?: string, opts: { voice?: boolean; answer?: string } = {}) {
+  const text = (opts.answer ?? '').trim() || notifyMessage(status, reason)
   if (!text || !leadsBotToken) return
   try {
     const client = await repo.findClientById(clientId)
@@ -187,7 +206,20 @@ async function processJob(repo: SupportRepo, job: SupportJobRow) {
       result_json: { reason: d.reason }, finished_at: new Date().toISOString(),
     })
   }
-  await notifyClient(repo, job.client_id, status, reason, { voice: wasVoice })
+  // На вопросы отвечает консультант: вместо шаблонного «нужен пакет» / «вне рамок» человек получает
+  // ответ по сайту, рабочим часам и записи на встречу. Сбой модели — прежний шаблон ниже.
+  let answer: string | undefined
+  if (d.status !== 'ready' && d.status !== 'thanks' && requestText.trim()) {
+    try {
+      const client = await repo.findClientById(job.client_id)
+      answer = await consultAnswer(askDeepSeek, {
+        question: requestText, lang: client?.language ?? 'ru', name: client?.name ?? null, clientId: job.client_id,
+      })
+    } catch (e) {
+      console.error('consult answer failed', e instanceof Error ? e.message : e)
+    }
+  }
+  await notifyClient(repo, job.client_id, status, reason, { voice: wasVoice, answer })
 }
 
 async function poll() {
