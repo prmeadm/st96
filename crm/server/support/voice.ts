@@ -35,8 +35,21 @@ export async function downloadTelegramVoice(token: string, fileId: string): Prom
   return Buffer.from(await f.arrayBuffer())
 }
 
-/** Распознать речь (faster-whisper, русский). */
-export async function transcribeAudio(input: Buffer, filename = 'voice.ogg'): Promise<string> {
+/** Распознать речь через Yandex SpeechKit (v1, oggopus). */
+export async function transcribeAudioYandex(audio: Buffer): Promise<string> {
+  if (!YANDEX_API_KEY) throw new Error('YANDEX_API_KEY не задан')
+  const r = await fetch('https://stt.api.cloud.yandex.net/speech/v1/stt:recognize?lang=ru-RU&format=oggopus', {
+    method: 'POST',
+    headers: { Authorization: 'Api-Key ' + YANDEX_API_KEY, 'Content-Type': 'audio/ogg' },
+    body: new Uint8Array(audio),
+  })
+  if (!r.ok) throw new Error('Yandex STT ' + r.status + ': ' + (await r.text().catch(() => '')).slice(0, 200))
+  const j = (await r.json()) as { result?: string }
+  return (j.result ?? '').trim()
+}
+
+/** Распознать речь (faster-whisper): локальный резерв, если Yandex недоступен. */
+async function transcribeAudioWhisper(input: Buffer, filename = 'voice.ogg'): Promise<string> {
   const dir = await mkdtemp(join(tmpdir(), 'stt-'))
   try {
     const src = join(dir, filename)
@@ -46,6 +59,16 @@ export async function transcribeAudio(input: Buffer, filename = 'voice.ogg'): Pr
     return (j.text ?? '').trim()
   } finally {
     await rm(dir, { recursive: true, force: true })
+  }
+}
+
+/** Распознать речь: Yandex первым, при сбое — локальный whisper. */
+export async function transcribeAudio(input: Buffer, filename = 'voice.ogg'): Promise<string> {
+  try {
+    return await transcribeAudioYandex(input)
+  } catch (e) {
+    console.error('Yandex STT failed, fallback whisper:', e instanceof Error ? e.message : e)
+    return transcribeAudioWhisper(input, filename)
   }
 }
 
