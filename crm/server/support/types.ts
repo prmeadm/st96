@@ -77,6 +77,7 @@ export type SupportJobRow = {
   client_id: string
   project_id: string | null
   message_id: number | null
+  voice_file_id: string | null
   request_text: string
   status: 'queued' | 'running' | 'clarify' | 'ready' | 'deployed' | 'split' | 'out_of_scope' | 'awaiting_payment' | 'failed' | 'thanks'
   edits_json: unknown[]

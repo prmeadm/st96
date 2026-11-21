@@ -9,6 +9,7 @@ import { pgRepo, type SupportRepo } from './pgRepo'
 import { buildPrompt, decide, type AgentInput, type Classification, type Classify } from './agent'
 import { spendCorrections, spendFeatures } from './period'
 import type { SupportJobRow } from './types'
+import { downloadTelegramVoice, sendTelegramVoice, synthesizeVoice, transcribeAudio } from './voice'
 
 const dbUrl = process.env.SUPABASE_DB_URL ?? ''
 const leadsBotToken = process.env.LEADS_BOT_TOKEN ?? ''
@@ -70,7 +71,7 @@ function notifyMessage(status: string, reason?: string): string {
 }
 
 /** Отправка результата клиенту в Telegram (бот @st96_leads_bot) + зеркало «Ассистент: …» в группу админов. Ошибки не роняют worker. */
-async function notifyClient(repo: SupportRepo, clientId: string, status: string, reason?: string) {
+async function notifyClient(repo: SupportRepo, clientId: string, status: string, reason?: string, opts: { voice?: boolean } = {}) {
   const text = notifyMessage(status, reason)
   if (!text || !leadsBotToken) return
   try {
@@ -84,6 +85,15 @@ async function notifyClient(repo: SupportRepo, clientId: string, status: string,
         body: JSON.stringify({ chat_id: String(client.tg_user_id), text }),
       })
       if (!res.ok) console.error('notifyClient (клиент) failed', res.status, (await res.text().catch(() => '')).slice(0, 200))
+    }
+    // голосом — если обращение было голосовым
+    if (opts.voice && client.tg_user_id != null) {
+      try {
+        const ogg = await synthesizeVoice(text)
+        await sendTelegramVoice(leadsBotToken, String(client.tg_user_id), ogg)
+      } catch (e) {
+        console.error('notifyClient (голос) failed', e instanceof Error ? e.message : e)
+      }
     }
     // в группу админов (тема клиента)
     if (adminGroupId && client.admin_topic_id != null) {
@@ -100,17 +110,30 @@ async function notifyClient(repo: SupportRepo, clientId: string, status: string,
 }
 
 async function processJob(repo: SupportRepo, job: SupportJobRow) {
+  // Голосовое обращение: скачать и распознать в текст.
+  let requestText = job.request_text
+  let wasVoice = false
+  if (job.voice_file_id) {
+    wasVoice = true
+    try {
+      const audio = await downloadTelegramVoice(leadsBotToken, job.voice_file_id)
+      const transcript = await transcribeAudio(audio)
+      if (transcript) requestText = transcript
+    } catch (e) {
+      console.error('voice transcribe failed', e instanceof Error ? e.message : e)
+    }
+  }
   const project = job.project_id ? await repo.findProject(job.project_id) : null
   if (!project) {
     await repo.updateSupportJob(job.id, { status: 'failed', result_json: { error: 'нет проекта' }, finished_at: new Date().toISOString() })
     await repo.insertAudit({ actor: 'ai', action: 'failed', client_id: job.client_id, project_id: job.project_id, job_id: job.id, payload: { error: 'no_project' } })
-    await notifyClient(repo, job.client_id, 'failed')
+    await notifyClient(repo, job.client_id, 'failed', undefined, { voice: wasVoice })
     return
   }
   const scenario = project.agent_scenario_id ? await repo.getScenario(project.agent_scenario_id) : null
   const period = await repo.currentPeriod(project.id)
   const input: AgentInput = {
-    request_text: job.request_text,
+    request_text: requestText,
     scenario: {
       system_prompt: scenario?.system_prompt ?? 'Работать в рамках проекта, не выходить за пределы задачи.',
       scope_notes: scenario?.scope_notes ?? null,
@@ -156,7 +179,7 @@ async function processJob(repo: SupportRepo, job: SupportJobRow) {
       result_json: { reason: d.reason }, finished_at: new Date().toISOString(),
     })
   }
-  await notifyClient(repo, job.client_id, status, reason)
+  await notifyClient(repo, job.client_id, status, reason, { voice: wasVoice })
 }
 
 async function poll() {

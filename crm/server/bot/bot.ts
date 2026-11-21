@@ -275,7 +275,8 @@ export function createBot(token: string, repo: Repo, opts: { groupChatId: number
       const project = await repo.findProjectByClient(client.id)
       if (project && project.status === 'active') {
         const reqText = m.text ?? m.caption ?? ''
-        if (reqText.trim()) await repo.insertSupportJob({ client_id: client.id, project_id: project.id, message_id: m.message_id, request_text: reqText })
+        const voiceFileId = m.voice?.file_id ?? null
+        if (reqText.trim() || voiceFileId) await repo.insertSupportJob({ client_id: client.id, project_id: project.id, message_id: m.message_id, request_text: reqText, voice_file_id: voiceFileId })
         await ctx.reply(T[client.language].supportAck, { link_preview_options: { is_disabled: true } })
         await repo.insertMessage({ client_id: client.id, direction: 'out', kind: 'text', text: T[client.language].supportAck, tg_chat_id: ctx.chat.id, tg_message_id: null })
         return

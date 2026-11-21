@@ -262,7 +262,7 @@ export function memoryRepo(): MemoryRepo {
     },
     async updatePeriod(pid, patch) { Object.assign(r.periods.find((p) => p.id === pid)!, patch) },
     async insertSupportJob(j) {
-      const row: SupportJobRow = { id: id('sj'), project_id: null, message_id: null, status: 'queued', edits_json: [], edits_count: 0, result_json: null, tokens_used: 0, started_at: null, finished_at: null, created_at: '', ...j }
+      const row: SupportJobRow = { id: id('sj'), project_id: null, message_id: null, status: 'queued', edits_json: [], edits_count: 0, result_json: null, tokens_used: 0, started_at: null, finished_at: null, created_at: '', ...j, voice_file_id: j.voice_file_id ?? null }
       r.supportJobs.push(row)
       return row
     },
