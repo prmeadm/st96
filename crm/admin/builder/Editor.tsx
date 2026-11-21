@@ -9,9 +9,6 @@ import { MediaField } from '../ui/MediaField'
 import { VideoNoteField } from '../ui/VideoNoteField'
 import { supabase } from '../supabase'
 import { OFFHOURS_MESSAGE, WORKING_HOURS_LABEL } from '../../server/workingHours'
-import { BOOK_ORIGIN } from '../../server/booking/schedule'
-
-const BOOKING_URL = `${BOOK_ORIGIN}/book`
 import type { TemplateRow } from '../../server/templates'
 import { TPL_KINDS } from '../../server/templates'
 
@@ -249,13 +246,7 @@ export function Editor({ node, patch, remove, duplicate, close }: { node: Node; 
     <div className="hint">Рабочие часы: {WORKING_HOURS_LABEL}. Пустое поле — стандартный текст.</div>
   </>)
 
-  if (type === 'ai') body = (<>
-    <div className="aibox">Консультант отвечает на вопрос клиента по текстам этой воронки (графу), каталогу услуг сайта и по рабочим часам сотрудников. Часы работы и ссылку на запись {BOOKING_URL} подставляет система; цены и сроки модель не выдумывает — если данных нет, отвечает, что уточнит менеджер.</div>
-    <Field label="Цель диалога (необязательно)"><input type="text" value={d.goal ?? ''} placeholder="Например: узнать задачу и записать на встречу" onChange={(e) => set({ goal: e.target.value })} /></Field>
-    <Check checked={d.offerBooking !== false} onChange={(v) => set({ offerBooking: v })}>Предлагать запись на встречу ({BOOKING_URL})</Check>
-    <Field label="Сообщение, если ИИ не ответил (необязательно)"><TallText value={d.fallback ?? ''} placeholder="Оставьте пустым — шаг просто пропустится" onChange={(e) => set({ fallback: e.target.value })} /></Field>
-    <div className="hint">Ставится после блока «Сообщение», который ждёт вопрос клиента. Рабочие часы: {WORKING_HOURS_LABEL}. Модель и ключ — в разделе «Настройки».</div>
-  </>)
+  if (type === 'ai') body = <div className="aibox">ИИ-ответ пока не подключён: шаг пропускается.</div>
   if (type === 'note') body = <Field label="Заметка"><TallText value={d.text ?? ''} onChange={(e) => set({ text: e.target.value })} /></Field>
 
   return (

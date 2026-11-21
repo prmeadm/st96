@@ -10,8 +10,6 @@ import { notifyClientDecision } from '../booking/notify'
 import { decideBooking, loadDirectAdmins } from '../booking/service'
 import { T, type Lang } from './texts'
 import { verifySiteRef } from './siteRef'
-import { resolveLlm } from '../agent/deps'
-import { consult, graphKnowledge } from '../funnels/consultant'
 
 const ACK_EVERY_MS = 12 * 3600 * 1000
 /** В действующем диалоге напоминание о графике — не чаще раза в 12 часов */
@@ -54,25 +52,6 @@ export async function ensureClient(repo: Repo, from: From, source?: string): Pro
   if (!client.name && fullName(from)) patch.name = fullName(from)
   await repo.updateClient(client.id, patch)
   return { client: { ...client, ...patch }, isNew, prevSeen }
-}
-
-
-/**
- * Ответ ИИ-консультанта вне воронки: база знаний — тексты опубликованных воронок и каталог услуг сайта,
- * рабочие часы и ссылка на запись подставляет consultant.ts. Пустая строка — ответа нет (модель молчит).
- */
-export async function consultantAnswer(repo: Repo, env: Env, client: ClientRow, question: string): Promise<string> {
-  if (!env.ask || !question.trim()) return ''
-  try {
-    const funnels = await repo.listPublishedFunnels()
-    const knowledge = [...new Set(funnels.map((f) => graphKnowledge(f.graph, client.language)).filter(Boolean))].join('\n').slice(0, 6000)
-    return await consult(env.ask, {
-      lang: client.language, question, knowledge, now: env.now ? env.now() : new Date(), clientName: client.name, clientId: client.id,
-    })
-  } catch (e) {
-    console.error('consultant answer failed', e instanceof Error ? e.message : e)
-    return ''
-  }
 }
 
 /** Окно, в котором повторный старт с сайта (/start site_ повторно) воронку не перезапускает. */
@@ -120,11 +99,7 @@ function messageKind(m: NonNullable<Context['message']>): MessageInsert['kind'] 
 
 export function createBot(token: string, repo: Repo, opts: { groupChatId: number | null; now?: () => Date }) {
   const bot = new Bot(token)
-  // Модель для ИИ-консультанта: берём ту, что выбрана в «Настройках». Ключа нет или модель не отвечает —
-  // консультант молчит, и бот работает как раньше (заготовка/подтверждение).
-  const ask = async (req: { system: string; user: string; feature?: string }): Promise<string> =>
-    (await resolveLlm(repo, process.env as Record<string, string | undefined>, { deadlineMs: 8_000 }))(req)
-  const envFor = (api: Bot['api']): Env => ({ repo, out: telegramOut(api, repo, opts.groupChatId), now: opts.now, ask })
+  const envFor = (api: Bot['api']): Env => ({ repo, out: telegramOut(api, repo, opts.groupChatId), now: opts.now })
   const clock = () => (opts.now ? opts.now() : new Date())
   const isMuted = (c: ClientRow) => !!c.human_until && Date.parse(c.human_until) > clock().getTime()
 
@@ -310,20 +285,10 @@ export function createBot(token: string, repo: Repo, opts: { groupChatId: number
       let handled = false
       if (m.text) {
         const run = await repo.findActiveRun(client.id)
-        if (run) handled = await handleFreeText(envFor(ctx.api), client, run, m.text)
+        if (run) handled = await handleFreeText(envFor(ctx.api), client, run)
         else {
           const funnel = pickFunnel(await repo.listPublishedFunnels(), { kind: 'text', text: m.text })
           if (funnel) handled = (await startFunnel(envFor(ctx.api), funnel, client)) !== null
-        }
-      }
-      // Ни воронка, ни её шаги не ответили — на вопрос покупателя отвечает ИИ-консультант
-      // (по текстам опубликованных воронок и каталогу услуг сайта). Не вышло — прежнее подтверждение ниже.
-      if (!handled && (m.text ?? '').trim()) {
-        const answer = await consultantAnswer(repo, envFor(ctx.api), client, m.text!.trim())
-        if (answer) {
-          await ctx.reply(answer, { link_preview_options: { is_disabled: true } })
-          await repo.insertMessage({ client_id: client.id, direction: 'out', kind: 'text', text: answer, tg_chat_id: ctx.chat.id, tg_message_id: null })
-          return
         }
       }
       // Подтверждаем получение не чаще раза в 12 часов

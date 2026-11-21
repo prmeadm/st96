@@ -42,10 +42,7 @@ export function Preview({ nodes, edges, onClose }: { nodes: Node[]; edges: Edge[
       }
       if (n.type === 'offhours') { items.push({ k: 'sys', t: 'Проверка: рабочее время? В рабочие часы — дальше, вне часов клиент получит сообщение вне рабочего времени (демо: считаем, что рабочие часы)' }); id = next(id, 'out'); continue }
       if (n.type === 'handoff') { items.push({ k: 'bot', parts: [{ id: 'h', kind: 'text', text: d.message }], links: [] }); items.push({ k: 'sys', t: 'Диалог передан администратору' }); handed = true; break }
-      if (n.type === 'ai') {
-        items.push({ k: 'bot', parts: [{ id: 'ai', kind: 'text', text: 'ИИ-консультант: отвечает по текстам воронки и сайту, называет рабочие часы и предлагает запись' }], links: d.offerBooking === false ? [] : [{ id: 'aib', label: 'Записаться на встречу', url: 'https://st96.by/book' }] })
-        id = next(id, 'out'); continue
-      }
+      if (n.type === 'ai') { items.push({ k: 'sys', t: 'ИИ пока не подключён: шаг пропущен' }); id = next(id, 'out'); continue }
       break
     }
     if (!choices.length && !handed) items.push({ k: 'sys', t: 'Конец воронки' })

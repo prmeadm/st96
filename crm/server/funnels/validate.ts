@@ -45,7 +45,7 @@ export function validateGraph(g: unknown): { errors: Issue[]; warnings: Issue[] 
       }
     }
     if (n.type === 'booking' && !graph.edges.some((e) => e.source === n.id)) warnings.push({ node: n.id, text: 'У блока записи не подключены выходы: после решения воронка закончится' })
-    if (n.type === 'ai' && !str(n.data.goal).trim()) warnings.push({ node: n.id, text: 'У блока «ИИ-ответ» не задана цель диалога: отвечать будет по общим правилам' })
+    if (n.type === 'ai') warnings.push({ node: n.id, text: 'ИИ-ответ пока пропускается' })
   }
   return { errors, warnings }
 }

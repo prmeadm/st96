@@ -34,7 +34,6 @@ export const FEATURE_LABELS: Record<string, string> = {
   'agent:draft_broadcast': 'Агент: черновик рассылки',
   'agent:import_group_export': 'Агент: импорт клиентов из группы',
   'agent:notify_admins': 'Агент: уведомление администраторам',
-  'funnel:consult': 'Консультант воронки',
   translate: 'Перевод на английский',
 }
 export const featureLabel = (f: string) => FEATURE_LABELS[f] ?? (f.startsWith('agent:') ? `Агент: ${f.slice(6)}` : f)
