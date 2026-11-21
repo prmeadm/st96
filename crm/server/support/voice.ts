@@ -13,6 +13,7 @@ const PIPER_BIN = process.env.PIPER_BIN ?? '/home/dsh/tools/piper/piper/piper'
 const PIPER_VOICE = process.env.PIPER_VOICE ?? '/home/dsh/tools/piper/voices/ru_RU-irina-medium.onnx'
 const YANDEX_API_KEY = process.env.YANDEX_API_KEY ?? ''
 const YANDEX_VOICE = process.env.YANDEX_VOICE ?? 'filipp'
+const YANDEX_SPEED = process.env.YANDEX_SPEED ?? '1.0'
 const STT_SCRIPT = join(HERE, 'stt.py')
 
 function run(cmd: string, args: string[], opts: { input?: Buffer | string; timeout?: number } = {}): Promise<string> {
@@ -84,7 +85,7 @@ export function toSpeechText(text: string): string {
 /** Синтез речи Yandex SpeechKit → OGG/Opus (готово для Telegram voice). */
 export async function synthesizeVoiceYandex(text: string): Promise<Buffer> {
   if (!YANDEX_API_KEY) throw new Error('YANDEX_API_KEY не задан')
-  const body = new URLSearchParams({ text: toSpeechText(text), lang: 'ru-RU', voice: YANDEX_VOICE, format: 'oggopus', speed: '1.0' })
+  const body = new URLSearchParams({ text: toSpeechText(text), lang: 'ru-RU', voice: YANDEX_VOICE, format: 'oggopus', speed: YANDEX_SPEED })
   const r = await fetch('https://tts.api.cloud.yandex.net/speech/v1/tts:synthesize', {
     method: 'POST',
     headers: { Authorization: 'Api-Key ' + YANDEX_API_KEY, 'Content-Type': 'application/x-www-form-urlencoded' },
