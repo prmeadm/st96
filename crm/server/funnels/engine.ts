@@ -5,6 +5,8 @@ import { hasFreeSlots } from '../booking/service'
 import type { ClientRow, Repo } from '../repo'
 import { isBlockedError, retryDelay } from './retry'
 import { OFFHOURS_MESSAGE, isWorkingTime, minskNow, offhoursMessage } from '../workingHours'
+import type { Llm } from '../agent/llm'
+import { consult, graphKnowledge } from './consultant'
 import {
   asArray, nextOf, parseDelay, parsePair, str,
   type ActionItem, type Funnel, type Graph, type Link, type Part, type Quick, type Rule, type RunRow,
@@ -19,7 +21,7 @@ export interface Out {
   notifyAdmins(client: ClientRow, text: string): Promise<void>
 }
 
-export type Env = { repo: Repo; out: Out; now?: () => Date }
+export type Env = { repo: Repo; out: Out; now?: () => Date; /** Модель для блока «ИИ-ответ»; без неё блок пропускается. */ ask?: Llm }
 
 export type Outcome = 'waiting_input' | 'waiting_timer' | 'done' | 'handoff'
 
@@ -129,14 +131,38 @@ export async function handleClick(env: Env, client: ClientRow, run: RunRow, quic
   return 'ok'
 }
 
-/** Клиент написал текст, пока воронка ждёт кнопку: идём по выходу «Если клиент написал другое». */
-export async function handleFreeText(env: Env, client: ClientRow, run: RunRow): Promise<boolean> {
+/**
+ * Клиент написал текст, пока воронка ждёт кнопку: идём по выходу «Если клиент написал другое».
+ * Если дальше стоит не блок «ИИ-ответ», а обычный шаблонный шаг, сначала отвечает ИИ-консультант:
+ * иначе на вопрос покупателя воронка повторяла бы одну и ту же заготовку. Остальные правила прежние.
+ */
+export async function handleFreeText(env: Env, client: ClientRow, run: RunRow, question?: string): Promise<boolean> {
   const funnel = await env.repo.getFunnel(run.funnel_id)
   if (!funnel || run.status !== 'waiting' || run.vars.__wait !== 'input' || !run.current_node) return false
   const target = nextOf(funnel.graph, run.current_node, 'out')
   if (!target) return false
-  await env.repo.updateRun(run.id, { status: 'running', vars: { ...run.vars, __wait: null } })
-  await advance(env, funnel, client, { ...run, status: 'running' }, target, {})
+  const q = (question ?? '').trim().slice(0, 2000)
+  const vars: Record<string, unknown> = { ...run.vars, __wait: null, __question: q || null }
+  await env.repo.updateRun(run.id, { status: 'running', vars })
+  const targetNode = funnel.graph.nodes.find((n) => n.id === target)
+  const chat = client.tg_user_id
+  if (q && env.ask && targetNode?.type !== 'ai') {
+    try {
+      const answer = await consult(env.ask, {
+        lang: client.language, question: q, knowledge: graphKnowledge(funnel.graph, client.language),
+        now: nowOf(env), clientName: client.name, clientId: client.id,
+      })
+      if (answer && chat) {
+        await env.out.sendText(chat, answer)
+        await env.repo.insertMessage({ client_id: client.id, direction: 'out', kind: 'text', text: answer, tg_chat_id: chat, tg_message_id: null })
+        await env.repo.insertEvent({ run_id: run.id, funnel_id: funnel.id, client_id: client.id, node_id: run.current_node, event: 'ai_answer' })
+        vars.__aiAnswered = true
+      }
+    } catch (e) {
+      console.error('ai consult failed', run.id, e instanceof Error ? e.message : e)
+    }
+  }
+  await advance(env, funnel, client, { ...run, status: 'running', vars }, target, {})
   return true
 }
 
@@ -364,7 +390,28 @@ export async function advance(env: Env, funnel: Funnel, client: ClientRow, run: 
     }
 
     if (node.type === 'ai') {
-      await event(node.id, 'ai_skipped')
+      // ИИ-консультант: отвечает на вопрос клиента (из блока «Сообщение» перед ним) по графу воронки и сайту.
+      // Без модели или без вопроса шаг пропускается, как раньше; ошибка модели не ломает воронку.
+      const question = str(vars.__question).trim()
+      const fallback = fill(str(lang === 'en' && str(d.fallbackEn).trim() ? d.fallbackEn : d.fallback), client, vars)
+      let answer = ''
+      if (env.ask && question) {
+        try {
+          answer = await consult(env.ask, {
+            lang, question, knowledge: graphKnowledge(g, lang), goal: str(d.goal) || undefined,
+            offerBooking: d.offerBooking !== false, now: nowOf(env), clientName: client.name, clientId: client.id,
+          })
+        } catch (e) {
+          console.error('ai answer failed', run.id, node.id, e instanceof Error ? e.message : e)
+        }
+      }
+      const text = answer || fallback
+      if (text.trim() && chat && mayPush) {
+        await env.out.sendText(chat, text)
+        await repo.insertMessage({ client_id: client.id, direction: 'out', kind: 'text', text, tg_chat_id: chat, tg_message_id: null })
+      }
+      await event(node.id, answer ? 'ai_answer' : question ? 'ai_fallback' : 'ai_skipped')
+      vars.__question = null
       id = nextOf(g, node.id)
       continue
     }

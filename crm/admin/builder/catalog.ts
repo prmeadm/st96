@@ -109,6 +109,7 @@ export function newData(type: string): D {
     booking: { services: [...SERVICES], formats: FORMATS, meet: true, message: '', messageEn: '' },
     handoff: { message: 'Передаю ваш вопрос администратору, он ответит в ближайшее время.', offhours: OFFHOURS_MESSAGE.ru, offhoursEn: OFFHOURS_MESSAGE.en, notify: true },
     offhours: { message: OFFHOURS_MESSAGE.ru, messageEn: OFFHOURS_MESSAGE.en },
+    ai: { goal: '', offerBooking: true, fallback: '' },
     note: { text: '' },
   } as Record<string, D>)[type] ?? {}
 }

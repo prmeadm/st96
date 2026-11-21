@@ -31,7 +31,7 @@ function Shell({ id, type, selected, data, children }: { id: string; type: strin
   useEffect(() => { upd(id) }, [sig, id, upd])
   const count = counts[id]
   return (
-    <div className={`node ${selected ? 'sel' : ''} ${errs.length ? 'bad' : ''} ${type === 'ai' ? 'ghost' : ''}`}>
+    <div className={`node ${selected ? 'sel' : ''} ${errs.length ? 'bad' : ''}`}>
       {type !== 'start' && <Handle id="in" type="target" position={Position.Left} style={{ top: 22 }} />}
       <div className="hd">
         <span className="ic" style={{ background: t.soft, color: t.color }}><Ic d={t.icon} size={14} /></span>
@@ -41,7 +41,6 @@ function Shell({ id, type, selected, data, children }: { id: string; type: strin
         <NodeActions id={id} removable={type !== 'start'} />
       </div>
       <div className="bd">
-        {type === 'ai' && <div className="warn">ИИ пока не подключён, шаг пропускается</div>}
         {children}
         {type !== 'condition' && errs.map((e, i) => <div className="errline" key={i}>● {e}</div>)}
       </div>
@@ -126,7 +125,8 @@ function HandoffNode({ id, data, selected }: any) {
 function AiNode({ id, data, selected }: any) {
   return (
     <Shell id={id} type="ai" selected={selected} data={data}>
-      <div className="bubble">{data.goal ? `Цель: ${data.goal}` : 'ИИ-ответ'}</div>
+      <div className="bubble">{data.goal ? `Цель: ${data.goal}` : 'Консультант отвечает по текстам воронки и сайту'}</div>
+      <div className="media">{data.offerBooking === false ? 'Без предложения записи' : 'Предлагает запись на встречу'}</div>
       <OutHandle id="out" label="Дальше" />
     </Shell>
   )
