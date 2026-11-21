@@ -60,7 +60,9 @@ function notifyMessage(status: string, reason?: string): string {
     case 'thanks': return 'И вам спасибо за то, что с нами 🤗 ' + timeFarewell() + '!!!\n\nНе забывайте следить за нашими новыми услугами, продуктами и обновлениями на сайте: https://st96.by'
     case 'deployed': return 'Готово — правки внесены и опубликованы на сайте.'
     case 'failed': return 'Не удалось внести правки автоматически. Передаю специалисту — он свяжется с вами.'
-    case 'clarify': return 'Уточните, пожалуйста: ' + (reason ?? '')
+    case 'clarify':
+      if (reason === 'voice_not_recognized') return 'Не удалось распознать голосовое сообщение — напишите, пожалуйста, текстом.'
+      return 'Уточните, пожалуйста: ' + (reason ?? '')
     case 'out_of_scope': return 'К сожалению, этот запрос вне рамок вашего пакета поддержки.' + (reason ? ' ' + reason : '')
     case 'awaiting_payment':
       if (reason === 'нет активного оплаченного периода') return 'Для внесения правок нужен активный пакет поддержки. Менеджер свяжется с вами по оплате.'
@@ -121,6 +123,12 @@ async function processJob(repo: SupportRepo, job: SupportJobRow) {
       if (transcript) requestText = transcript
     } catch (e) {
       console.error('voice transcribe failed', e instanceof Error ? e.message : e)
+    }
+    if (!requestText.trim()) {
+      await repo.updateSupportJob(job.id, { status: 'clarify', result_json: { reason: 'voice_not_recognized' }, finished_at: new Date().toISOString() })
+      await repo.insertAudit({ actor: 'ai', action: 'clarify', client_id: job.client_id, project_id: job.project_id, job_id: job.id, payload: { reason: 'voice_not_recognized' } })
+      await notifyClient(repo, job.client_id, 'clarify', 'voice_not_recognized', { voice: false })
+      return
     }
   }
   const project = job.project_id ? await repo.findProject(job.project_id) : null
