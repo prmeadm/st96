@@ -55,15 +55,25 @@ const askDeepSeek: Llm = async ({ system, user }) => {
 }
 
 /** Запуск агента в workspace проекта. Агент видит только эту папку (cwd), не чужие проекты и не ~/.dsh. */
-function runInWorkspace(workspacePath: string, prompt: string): Promise<{ ok: boolean; output: string }> {
+function runInWorkspace(workspacePath: string, prompt: string): Promise<{ ok: boolean; output: string; tokens: number }> {
   return new Promise((resolve) => {
     // Папка проекта могла быть только что создана из админки — убедимся, что она есть.
     try { mkdirSync(workspacePath, { recursive: true }) } catch { /* execFile вернёт понятную ошибку ниже */ }
-    // dsh headless "<задача>" — одноразовый прогон агента: печатает результат и выходит.
-    execFile('dsh', ['headless', prompt], { cwd: workspacePath, timeout: 15 * 60_000, maxBuffer: 10 * 1024 * 1024 }, (err, stdout, stderr) => {
-      const output = (stdout || stderr || '').slice(-4000)
-      const failed = !!err
-      resolve({ ok: !failed, output })
+    // dsh headless --json — одноразовый прогон агента: события NDJSON (включая usage) + финальный текст.
+    execFile('dsh', ['headless', '--json', prompt], { cwd: workspacePath, timeout: 15 * 60_000, maxBuffer: 10 * 1024 * 1024 }, (err, stdout, stderr) => {
+      let tokens = 0
+      let finalText = ''
+      for (const line of (stdout || '').split('\n')) {
+        const s = line.trim()
+        if (!s) continue
+        try {
+          const ev = JSON.parse(s) as { type?: string; phase?: string; usage?: { totalTokens?: number }; text?: string }
+          if (ev.type === 'status' && ev.phase === 'step_end' && ev.usage?.totalTokens) tokens += ev.usage.totalTokens
+          if (ev.type === 'final' && typeof ev.text === 'string') finalText = ev.text
+        } catch { /* не JSON — пропускаем */ }
+      }
+      const output = (finalText || stdout || stderr || '').slice(-4000)
+      resolve({ ok: !err, output, tokens })
     })
   })
 }
@@ -173,7 +183,7 @@ async function executePlan(repo: SupportRepo, plan: SupportJobRow, confirmJob: S
     },
     hasActivePeriod: period?.status === 'active',
   }
-  const r = project.workspace_path ? await runInWorkspace(project.workspace_path, buildPrompt(input)) : { ok: false, output: 'не указан workspace_path' }
+  const r = project.workspace_path ? await runInWorkspace(project.workspace_path, buildPrompt(input)) : { ok: false, output: 'не указан workspace_path', tokens: 0 }
   const status: 'deployed' | 'failed' = r.ok ? 'deployed' : 'failed'
   let spent = 0
   if (r.ok) {
@@ -186,7 +196,7 @@ async function executePlan(repo: SupportRepo, plan: SupportJobRow, confirmJob: S
     }
   }
   const finished = new Date().toISOString()
-  await repo.updateSupportJob(plan.id, { status, result_json: { ...(plan.result_json ?? {}), output: r.output, confirmed_at: finished }, finished_at: finished })
+  await repo.updateSupportJob(plan.id, { status, tokens_used: r.tokens, result_json: { ...(plan.result_json ?? {}), output: r.output, confirmed_at: finished }, finished_at: finished })
   await repo.updateSupportJob(confirmJob.id, { status, result_json: { confirmed_job: plan.id }, finished_at: finished })
   await repo.insertAudit({ actor: 'ai', action: status, client_id: plan.client_id, project_id: plan.project_id, job_id: plan.id, payload: { edits_count: plan.edits_count } })
   const after = await repo.currentPeriod(project.id)
@@ -284,7 +294,7 @@ async function processJob(repo: SupportRepo, job: SupportJobRow) {
     reason = d.reason
     await repo.updateSupportJob(job.id, {
       status: d.status, edits_json: 'edits' in d ? d.edits : [], edits_count: 'edits_count' in d ? d.edits_count : 0,
-      result_json: { reason: d.reason }, finished_at: new Date().toISOString(),
+      result_json: { reason: d.reason, ...(wasVoice ? { transcript: requestText } : {}) }, finished_at: new Date().toISOString(),
     })
   }
   // На вопросы отвечает консультант: вместо шаблонного «нужен пакет» / «вне рамок» человек получает

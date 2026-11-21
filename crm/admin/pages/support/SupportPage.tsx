@@ -6,9 +6,10 @@ import type { Client } from '../../types'
 import type { ClientProjectRow, InvoiceRow, PackagePeriodRow, PackageRow, SupportJobRow } from '../../../server/support/types'
 import { INVOICE_KINDS, INVOICE_STATUSES, JOB_STATUSES, PERIOD_STATUSES, PROJECT_STATUSES, fmtDate, limitLabel, money, num, useTable } from './shared'
 
-type Tab = 'projects' | 'packages' | 'jobs' | 'invoices' | 'settings'
+type Tab = 'projects' | 'periods' | 'packages' | 'jobs' | 'invoices' | 'settings'
 const TABS: { id: Tab; label: string }[] = [
   { id: 'projects', label: 'Клиенты и проекты' },
+  { id: 'periods', label: 'Периоды' },
   { id: 'packages', label: 'Пакеты' },
   { id: 'jobs', label: 'Обращения' },
   { id: 'invoices', label: 'Счета' },
@@ -232,14 +233,145 @@ function PackagesTab() {
   )
 }
 
-// ─── Обращения ───
-function JobsTab() {
-  const { rows } = useTable<SupportJobRow>('support_jobs')
-  const [filter, setFilter] = useState('')
-  const list = (rows ?? []).filter((j) => !filter || j.status === filter)
+// ─── Периоды ───
+type PeriodJoined = PackagePeriodRow & { client_projects: { clients: { name: string | null; tg_username: string | null } | null; packages: { title: string } | null } | null }
+type PeriodForm = {
+  id?: string
+  project_id: string
+  status: PackagePeriodRow['status']
+  period_start: string
+  period_end: string
+  corrections_limit: string
+  corrections_used: string
+  features_limit: string
+  features_used: string
+  requests_limit: string
+  requests_used: string
+}
+const blankPeriod = (): PeriodForm => ({
+  project_id: '', status: 'active',
+  period_start: new Date().toISOString().slice(0, 10),
+  period_end: new Date(Date.now() + 30 * 864e5).toISOString().slice(0, 10),
+  corrections_limit: '', corrections_used: '0', features_limit: '', features_used: '0', requests_limit: '', requests_used: '0',
+})
+
+function PeriodsTab() {
+  const { rows, reload } = useTable<PeriodJoined>('package_periods', 'period_start', 500, '*, client_projects(clients(name, tg_username), packages(title))')
+  const { rows: projects } = useTable<ProjectJoined>('client_projects', 'created_at', 500, '*, clients(name, tg_username), packages(title)')
+  const { rows: packages } = useTable<PackageRow>('packages', 'sort_order')
+  const [form, setForm] = useState<PeriodForm | null>(null)
+  const [msg, setMsg] = useState('')
+
+  const projName = (p: ProjectJoined) => p.clients?.name ?? (p.clients?.tg_username ? '@' + p.clients.tg_username : 'Без имени')
+  const rowName = (p: PeriodJoined) => p.client_projects?.clients?.name ?? (p.client_projects?.clients?.tg_username ? '@' + p.client_projects.clients.tg_username : '—')
+  const left = (limit: number | null, used: number) => (limit == null ? '∞' : String(Math.max(0, limit - used)))
+
+  const openCreate = () => { setMsg(''); setForm(blankPeriod()) }
+  const openEdit = (p: PeriodJoined) => { setMsg(''); setForm({
+    id: p.id, project_id: p.project_id, status: p.status,
+    period_start: p.period_start.slice(0, 10), period_end: p.period_end.slice(0, 10),
+    corrections_limit: p.corrections_limit == null ? '' : String(p.corrections_limit), corrections_used: String(p.corrections_used),
+    features_limit: p.features_limit == null ? '' : String(p.features_limit), features_used: String(p.features_used),
+    requests_limit: p.requests_limit == null ? '' : String(p.requests_limit), requests_used: String(p.requests_used),
+  }) }
+  const pickProject = (projectId: string) => {
+    const pr = (projects ?? []).find((p) => p.id === projectId)
+    const pkg = (packages ?? []).find((k) => k.id === pr?.package_id)
+    setForm((f) => f ? {
+      ...f, project_id: projectId,
+      corrections_limit: pkg?.corrections_limit == null ? '' : String(pkg.corrections_limit),
+      features_limit: pkg?.features_limit == null ? '' : String(pkg.features_limit),
+      requests_limit: pkg?.requests_limit == null ? '' : String(pkg.requests_limit),
+    } : f)
+  }
+  const save = async () => {
+    if (!form) return
+    if (!form.project_id) return setMsg('Выберите проект')
+    const row = {
+      project_id: form.project_id, status: form.status, period_start: form.period_start, period_end: form.period_end,
+      corrections_limit: num(form.corrections_limit), corrections_used: Number(form.corrections_used) || 0,
+      features_limit: num(form.features_limit), features_used: Number(form.features_used) || 0,
+      requests_limit: num(form.requests_limit), requests_used: Number(form.requests_used) || 0,
+    }
+    const { error } = form.id
+      ? await supabase.from('package_periods').update(row).eq('id', form.id)
+      : await supabase.from('package_periods').insert(row)
+    if (error) return setMsg('Не удалось сохранить: ' + error.message)
+    setForm(null); setMsg('Сохранено'); reload()
+  }
+  const activate = async (p: PeriodJoined) => {
+    await supabase.from('package_periods').update({ status: 'expired' }).eq('project_id', p.project_id).eq('status', 'active')
+    await supabase.from('package_periods').update({ status: 'active' }).eq('id', p.id)
+    reload()
+  }
+
   return (
     <div className="card">
-      <div className="row"><h3 style={{ margin: 0 }}>Обращения</h3><span className="sp" />
+      <div className="row"><h3 style={{ margin: 0 }}>Периоды</h3><span className="hint">остатки по пакетам</span><span className="sp" /><button className="btn primary" onClick={openCreate}><Icon name="plus" size={18} />Новый период</button></div>
+      {msg && <div className="hint" role="status" style={{ marginTop: 6 }}>{msg}</div>}
+      {rows === null ? <div className="hint">Загрузка…</div> : rows.length === 0 ? <div className="hint" style={{ marginTop: 10 }}>Периодов нет.</div> : (
+        <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {rows.map((p) => (
+            <div key={p.id} className="item" style={{ boxShadow: 'none' }}>
+              <div className="row">
+                <span className="chip">{PERIOD_STATUSES[p.status] ?? p.status}</span>
+                <b>{rowName(p)}</b>
+                <span className="hint">· {p.client_projects?.packages?.title ?? 'пакет не задан'} · {fmtDate(p.period_start)} — {fmtDate(p.period_end)}</span>
+                <span className="sp" />
+                <span className="hint">правки {left(p.corrections_limit, p.corrections_used)} из {limitLabel(p.corrections_limit)} · функции {left(p.features_limit, p.features_used)} · обращения {left(p.requests_limit, p.requests_used)}</span>
+                {p.status !== 'active' && <button className="ibtn" title="Активировать" onClick={() => activate(p)}><Icon name="play" size={18} /></button>}
+                <button className="ibtn" title="Редактировать" onClick={() => openEdit(p)}><Icon name="edit" size={18} /></button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+      {form && (
+        <div className="lx-ov" onClick={() => setForm(null)}>
+          <div className="lx-modal" role="dialog" aria-modal="true" aria-label="Период" onClick={(e) => e.stopPropagation()}>
+            <div className="lx-h"><b>{form.id ? 'Период' : 'Новый период'}</b><span className="sp" /><button type="button" className="x" onClick={() => setForm(null)} aria-label="Закрыть"><Icon name="close" size={18} /></button></div>
+            <div className="lx-b">
+              <div className="lx-grid">
+                <div className="fld lx-wide"><label>Проект</label>
+                  <select value={form.project_id} onChange={(e) => pickProject(e.target.value)}>
+                    <option value="">— выберите —</option>
+                    {(projects ?? []).map((p) => <option key={p.id} value={p.id}>{projName(p)} · {p.packages?.title ?? 'без пакета'}</option>)}
+                  </select>
+                </div>
+                <div className="fld"><label>Статус</label>
+                  <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value as PackagePeriodRow['status'] })}>
+                    {Object.entries(PERIOD_STATUSES).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                  </select>
+                </div>
+                <div className="fld"><label>Начало</label><input type="date" value={form.period_start} onChange={(e) => setForm({ ...form, period_start: e.target.value })} /></div>
+                <div className="fld"><label>Конец</label><input type="date" value={form.period_end} onChange={(e) => setForm({ ...form, period_end: e.target.value })} /></div>
+                <div className="fld"><label>Лимит правок</label><input value={form.corrections_limit} inputMode="numeric" onChange={(e) => setForm({ ...form, corrections_limit: e.target.value })} placeholder="пусто = ∞" /></div>
+                <div className="fld"><label>Использовано правок</label><input value={form.corrections_used} inputMode="numeric" onChange={(e) => setForm({ ...form, corrections_used: e.target.value })} /></div>
+                <div className="fld"><label>Лимит функций</label><input value={form.features_limit} inputMode="numeric" onChange={(e) => setForm({ ...form, features_limit: e.target.value })} placeholder="пусто = ∞" /></div>
+                <div className="fld"><label>Использовано функций</label><input value={form.features_used} inputMode="numeric" onChange={(e) => setForm({ ...form, features_used: e.target.value })} /></div>
+                <div className="fld"><label>Лимит обращений</label><input value={form.requests_limit} inputMode="numeric" onChange={(e) => setForm({ ...form, requests_limit: e.target.value })} placeholder="пусто = ∞" /></div>
+                <div className="fld"><label>Использовано обращений</label><input value={form.requests_used} inputMode="numeric" onChange={(e) => setForm({ ...form, requests_used: e.target.value })} /></div>
+              </div>
+            </div>
+            <div className="lx-f"><button className="btn" onClick={() => setForm(null)}>Отмена</button><span className="sp" /><button className="btn primary" onClick={save}>Сохранить</button></div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── Обращения ───
+type JobJoined = SupportJobRow & { clients: { name: string | null; tg_username: string | null } | null }
+
+function JobsTab() {
+  const { rows } = useTable<JobJoined>('support_jobs', 'created_at', 500, '*, clients(name, tg_username)')
+  const [filter, setFilter] = useState('')
+  const list = (rows ?? []).filter((j) => !filter || j.status === filter).slice().reverse()
+  const who = (j: JobJoined) => j.clients?.name ?? (j.clients?.tg_username ? '@' + j.clients.tg_username : '—')
+  return (
+    <div className="card">
+      <div className="row"><h3 style={{ margin: 0 }}>Обращения</h3><span className="hint">задачи, статусы, токены</span><span className="sp" />
         <select value={filter} onChange={(e) => setFilter(e.target.value)} aria-label="Статус">
           <option value="">Все статусы</option>
           {Object.entries(JOB_STATUSES).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
@@ -249,8 +381,8 @@ function JobsTab() {
         <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>
           {list.map((j) => (
             <div key={j.id} className="item" style={{ boxShadow: 'none' }}>
-              <div className="row"><span className="chip">{JOB_STATUSES[j.status] ?? j.status}</span><span className="hint">правок {j.edits_count} · токены {j.tokens_used}</span><span className="sp" /><span className="hint">{fmtDate(j.created_at)}</span></div>
-              <div className="note" style={{ marginTop: 6 }}>{j.request_text}</div>
+              <div className="row"><span className="chip">{JOB_STATUSES[j.status] ?? j.status}</span><b>{who(j)}</b><span className="hint">· правок {j.edits_count} · токены {j.tokens_used} · создано {fmtDate(j.created_at)}{j.finished_at ? ' · выполнено ' + fmtDate(j.finished_at) : ''}</span><span className="sp" /><span className="hint">{j.voice_file_id ? 'голосовое' : 'текст'}</span></div>
+              <div className="note" style={{ marginTop: 6 }}>{j.request_text || (j.result_json as { transcript?: string } | null)?.transcript || '—'}</div>
             </div>
           ))}
         </div>
@@ -391,6 +523,7 @@ export default function SupportPage() {
         ))}
       </div>
       {tab === 'projects' && <ProjectsTab />}
+      {tab === 'periods' && <PeriodsTab />}
       {tab === 'packages' && <PackagesTab />}
       {tab === 'jobs' && <JobsTab />}
       {tab === 'invoices' && <InvoicesTab />}

@@ -3,6 +3,7 @@ import { supabase } from '../../supabase'
 
 export const JOB_STATUSES: Record<string, string> = {
   queued: 'В очереди', running: 'Выполняется', clarify: 'Уточнение', ready: 'Готово к деплою',
+  awaiting_confirmation: 'Ожидает подтверждения',
   deployed: 'Развёрнуто', split: 'Частично', out_of_scope: 'Вне пакета', awaiting_payment: 'Ждёт оплаты', failed: 'Ошибка',
 }
 export const PERIOD_STATUSES: Record<string, string> = {
