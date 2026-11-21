@@ -271,12 +271,14 @@ export function createBot(token: string, repo: Repo, opts: { groupChatId: number
         }
         return
       }
-      // Поддержка: у клиента есть активный проект — сообщение идёт агенту (worker), а не в воронку
-      const project = await repo.findProjectByClient(client.id)
-      if (project && project.status === 'active') {
+      // Поддержка: у клиента есть активный проект — сообщение идёт агенту (worker), а не в воронку.
+      // Если активных проектов больше одного — project_id не проставляем, worker сам уточнит, в какой вносить правку.
+      const activeProjects = (await repo.listProjectsByClient(client.id)).filter((p) => p.status === 'active')
+      if (activeProjects.length) {
         const reqText = m.text ?? m.caption ?? ''
         const voiceFileId = m.voice?.file_id ?? null
-        if (reqText.trim() || voiceFileId) await repo.insertSupportJob({ client_id: client.id, project_id: project.id, message_id: m.message_id, request_text: reqText, voice_file_id: voiceFileId })
+        const projectId = activeProjects.length === 1 ? activeProjects[0].id : null
+        if (reqText.trim() || voiceFileId) await repo.insertSupportJob({ client_id: client.id, project_id: projectId, message_id: m.message_id, request_text: reqText, voice_file_id: voiceFileId })
         await ctx.reply(T[client.language].supportAck, { link_preview_options: { is_disabled: true } })
         await repo.insertMessage({ client_id: client.id, direction: 'out', kind: 'text', text: T[client.language].supportAck, tg_chat_id: ctx.chat.id, tg_message_id: null })
         return

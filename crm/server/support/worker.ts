@@ -12,6 +12,7 @@ import type { SupportJobRow } from './types'
 import { downloadTelegramVoice, sendTelegramVoice, synthesizeVoice, transcribeAudio } from './voice'
 import { consultAnswer } from './consult'
 import { replySupport } from './reply'
+import { isProjectsQuestion, pickProject, projectLabel, projectsListText } from './projects'
 import type { Llm } from '../agent/llm'
 
 const dbUrl = process.env.SUPABASE_DB_URL ?? ''
@@ -156,7 +157,9 @@ function isRejection(text: string): boolean {
 
 /** Выполнить ранее подтверждённый клиентом план правок. */
 async function executePlan(repo: SupportRepo, plan: SupportJobRow, confirmJob: SupportJobRow) {
-  const project = plan.project_id ? await repo.findProject(plan.project_id) : null
+  const data = (plan.result_json ?? {}) as { plan?: { edits?: string[]; edits_count?: number; is_feature?: boolean; project_id?: string }; request_text?: string }
+  const projectId = data.plan?.project_id ?? plan.project_id
+  const project = projectId ? await repo.findProject(projectId) : null
   if (!project) {
     const finished = new Date().toISOString()
     await repo.updateSupportJob(plan.id, { status: 'failed', result_json: { error: 'нет проекта' }, finished_at: finished })
@@ -165,7 +168,6 @@ async function executePlan(repo: SupportRepo, plan: SupportJobRow, confirmJob: S
   }
   const scenario = project.agent_scenario_id ? await repo.getScenario(project.agent_scenario_id) : null
   const period = await repo.currentPeriod(project.id)
-  const data = (plan.result_json ?? {}) as { plan?: { edits?: string[]; edits_count?: number; is_feature?: boolean }; request_text?: string }
   const input: AgentInput = {
     request_text: data.request_text ?? plan.request_text,
     scenario: {
@@ -243,7 +245,34 @@ async function processJob(repo: SupportRepo, job: SupportJobRow) {
       return
     }
   }
-  const project = job.project_id ? await repo.findProject(job.project_id) : null
+  // Активные проекты клиента: один — работаем с ним; несколько — уточняем, в какой вносить правку.
+  const activeProjects = (await repo.listProjectsByClient(job.client_id)).filter((p) => p.status === 'active')
+
+  // Вопрос «какие у меня проекты» — отвечаем списком детерминированно (без LLM).
+  if (requestText.trim() && isProjectsQuestion(requestText)) {
+    const text = activeProjects.length === 0
+      ? 'У тебя пока нет активных проектов на поддержке.'
+      : activeProjects.length === 1
+        ? 'Вижу один твой проект: ' + projectLabel(activeProjects[0]) + '. В него и внесу правки — что поправить?'
+        : projectsListText(activeProjects)
+    await repo.updateSupportJob(job.id, { status: 'clarify', result_json: { reason: 'projects_list', projects: activeProjects.map(projectLabel) }, finished_at: new Date().toISOString() })
+    await repo.insertAudit({ actor: 'ai', action: 'projects_list', client_id: job.client_id, project_id: job.project_id, job_id: job.id, payload: { count: activeProjects.length } })
+    await notifyClient(repo, job.client_id, 'clarify', undefined, { answer: text, voice: wasVoice })
+    return
+  }
+
+  let project = job.project_id ? await repo.findProject(job.project_id) : null
+  if (activeProjects.length === 1) {
+    project = activeProjects[0]
+  } else if (activeProjects.length > 1) {
+    project = pickProject(requestText, activeProjects) ?? activeProjects.find((p) => p.id === job.project_id) ?? null
+    if (!project) {
+      await repo.updateSupportJob(job.id, { status: 'clarify', result_json: { reason: 'several_projects', projects: activeProjects.map(projectLabel) }, finished_at: new Date().toISOString() })
+      await repo.insertAudit({ actor: 'ai', action: 'clarify', client_id: job.client_id, project_id: null, job_id: job.id, payload: { reason: 'several_projects' } })
+      await notifyClient(repo, job.client_id, 'clarify', undefined, { answer: projectsListText(activeProjects), voice: wasVoice })
+      return
+    }
+  }
   if (!project) {
     await repo.updateSupportJob(job.id, { status: 'failed', result_json: { error: 'нет проекта' }, finished_at: new Date().toISOString() })
     await repo.insertAudit({ actor: 'ai', action: 'failed', client_id: job.client_id, project_id: job.project_id, job_id: job.id, payload: { error: 'no_project' } })
@@ -271,7 +300,7 @@ async function processJob(repo: SupportRepo, job: SupportJobRow) {
     hasActivePeriod: period?.status === 'active',
   }
   const d = await decide(input, classifyWithDeepSeek)
-  for (const a of d.audit) await repo.insertAudit({ ...a, client_id: job.client_id, project_id: job.project_id, job_id: job.id })
+  for (const a of d.audit) await repo.insertAudit({ ...a, client_id: job.client_id, project_id: project.id, job_id: job.id })
   let status: NonNullable<SupportJobRow['status']>
   let reason: string | undefined
   if (d.status === 'ready') {
@@ -279,9 +308,9 @@ async function processJob(repo: SupportRepo, job: SupportJobRow) {
     const kind = d.is_feature ? 'функц.' : 'правк.'
     await repo.updateSupportJob(job.id, {
       status: 'awaiting_confirmation', edits_json: d.edits, edits_count: d.edits_count,
-      result_json: { plan: { edits: d.edits, edits_count: d.edits_count, is_feature: d.is_feature, remaining_after: d.remaining_after }, request_text: requestText },
+      result_json: { plan: { edits: d.edits, edits_count: d.edits_count, is_feature: d.is_feature, remaining_after: d.remaining_after, project_id: project.id }, request_text: requestText },
     })
-    await repo.insertAudit({ actor: 'ai', action: 'awaiting_confirmation', client_id: job.client_id, project_id: job.project_id, job_id: job.id, payload: { edits_count: d.edits_count } })
+    await repo.insertAudit({ actor: 'ai', action: 'awaiting_confirmation', client_id: job.client_id, project_id: project.id, job_id: job.id, payload: { edits_count: d.edits_count } })
     const planText = [
       'Проверил пакет — активен.',
       d.edits.length ? 'Планирую:\n' + d.edits.map((e, i) => `${i + 1}. ${e}`).join('\n') : '',

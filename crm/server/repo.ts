@@ -172,6 +172,7 @@ export interface Repo {
   listProjects(): Promise<ClientProjectRow[]>
   findProject(id: string): Promise<ClientProjectRow | null>
   findProjectByClient(clientId: string): Promise<ClientProjectRow | null>
+  listProjectsByClient(clientId: string): Promise<ClientProjectRow[]>
   insertProject(p: ProjectInsert): Promise<ClientProjectRow>
   updateProject(id: string, patch: Partial<ProjectInsert>): Promise<void>
   getScenario(id: string): Promise<AgentScenarioRow | null>
@@ -533,6 +534,9 @@ export function supabaseRepo(url: string, key: string): Repo {
     },
     async findProjectByClient(clientId) {
       return (ok(await db.from('client_projects').select('*').eq('client_id', clientId).order('created_at', { ascending: false }).limit(1).maybeSingle(), 'findProjectByClient') as ClientProjectRow | null) ?? null
+    },
+    async listProjectsByClient(clientId) {
+      return (ok(await db.from('client_projects').select('*').eq('client_id', clientId).order('created_at'), 'listProjectsByClient') ?? []) as ClientProjectRow[]
     },
     async insertProject(p) {
       return ok(await db.from('client_projects').insert(p).select('*').single(), 'insertProject') as ClientProjectRow

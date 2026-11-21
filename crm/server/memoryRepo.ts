@@ -235,6 +235,7 @@ export function memoryRepo(): MemoryRepo {
     async listProjects() { return [...r.clientProjects] },
     async findProject(pid) { return r.clientProjects.find((p) => p.id === pid) ?? null },
     async findProjectByClient(cid) { return [...r.clientProjects].reverse().find((p) => p.client_id === cid) ?? null },
+    async listProjectsByClient(cid) { return r.clientProjects.filter((p) => p.client_id === cid) },
     async insertProject(p) {
       const row: ClientProjectRow = { id: id('pr'), package_id: null, workspace_path: null, repo_url: null, deploy_target: null, default_branch: 'main', deploy_cmd: null, status: 'active', agent_scenario_id: null, created_at: '', updated_at: '', ...p }
       r.clientProjects.push(row)
