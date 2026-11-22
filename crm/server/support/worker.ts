@@ -16,7 +16,7 @@ import { consultAnswer } from './consult'
 import { replySupport } from './reply'
 import { isProjectsQuestion, pickProject, projectLabel, projectsListText } from './projects'
 import { isConfirmation, isRejection } from './confirm'
-import { attachmentFileName, materialAskText, needsMaterial } from './material'
+import { attachmentFileName, effectiveRequestText, materialAskText, needsMaterial } from './material'
 import type { Llm } from '../agent/llm'
 
 const dbUrl = process.env.SUPABASE_DB_URL ?? ''
@@ -300,7 +300,7 @@ async function processJob(repo: SupportRepo, job: SupportJobRow) {
   // Клиент прислал материал (вложение) — объединяем с последним обращением, ожидавшим материал.
   if (attachments.length > 0) {
     const waitMat = await repo.findWaitingMaterialJob(job.client_id)
-    if (waitMat && waitMat.id !== job.id) requestText = [waitMat.request_text, requestText].filter((t) => t.trim()).join('\n')
+    if (waitMat && waitMat.id !== job.id) requestText = [effectiveRequestText(waitMat), requestText].filter((t) => t.trim()).join('\n')
   }
 
   // Нужен материал, но его нет — просим прислать и НЕ двигаемся дальше.

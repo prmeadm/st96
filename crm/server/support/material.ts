@@ -31,6 +31,13 @@ export function attachmentFileName(a: SupportAttachment, index: number): string 
   return 'material-' + (index + 1) + ext
 }
 
+/** Текст обращения, даже если оно было голосовым (расшифровка лежит в result_json). */
+export function effectiveRequestText(job: { request_text: string; result_json: Record<string, unknown> | null }): string {
+  const rj = job.result_json
+  const fromJson = typeof rj?.request_text === 'string' ? rj.request_text : (typeof rj?.transcript === 'string' ? rj.transcript : '')
+  return (fromJson || job.request_text || '').trim()
+}
+
 /** Краткое описание вложений (для промпта/аудита). */
 export function attachmentsSummary(attachments: SupportAttachment[]): string {
   return attachments.map((a, i) => (i + 1) + '. ' + (a.kind === 'photo' ? 'фото' : 'документ') + (a.file_name ? ' («' + a.file_name + '»)' : '') + (a.caption ? ' — подпись: ' + a.caption : '')).join('\n')

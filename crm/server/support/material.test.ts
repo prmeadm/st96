@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { needsMaterial, materialAskText, attachmentsSummary } from './material'
+import { needsMaterial, materialAskText, attachmentsSummary, effectiveRequestText } from './material'
 import type { SupportAttachment } from './types'
 
 const photo: SupportAttachment = { kind: 'photo', file_id: 'f1', file_name: 'kotik.jpg', caption: 'вот котик' }
@@ -26,6 +26,12 @@ test('materialAskText: просит файл и что/куда, не ищет �
   assert.match(s, /фото/)
   assert.match(s, /искать в интернете/)
   assert.match(s, /что именно и куда/)
+})
+
+test('effectiveRequestText: берёт текст из result_json, если голосовое', () => {
+  assert.equal(effectiveRequestText({ request_text: '', result_json: { request_text: 'разместить фото котика' } }), 'разместить фото котика')
+  assert.equal(effectiveRequestText({ request_text: '', result_json: { transcript: 'транскрипт' } }), 'транскрипт')
+  assert.equal(effectiveRequestText({ request_text: 'обычный текст', result_json: null }), 'обычный текст')
 })
 
 test('attachmentsSummary: перечисляет фото и документ', () => {
