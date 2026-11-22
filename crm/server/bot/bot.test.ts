@@ -461,7 +461,8 @@ test('поддержка: клиент с активным проектом — 
   assert.equal(repo.supportJobs[0].status, 'queued')
   assert.equal(repo.supportJobs[0].project_id, pr.id)
   assert.equal(repo.runs.length, 0, 'воронка не запущена')
-  assert.ok(calls.some((c) => c.method === 'sendMessage' && c.payload.chat_id === 555 && /ИИ-агент/.test(String(c.payload.text))))
+  // Шаблонного «Принял! ИИ-агент…» больше нет — отвечает сам агент (worker), как живой сотрудник.
+  assert.ok(!calls.some((c) => c.method === 'sendMessage' && c.payload.chat_id === 555), 'бот не шлёт аск на каждое сообщение')
 })
 
 test('поддержка: человек в теме ставит ИИ на паузу, /startai возвращает', async () => {

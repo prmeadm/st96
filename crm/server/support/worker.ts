@@ -17,6 +17,7 @@ import { replySupport } from './reply'
 import { isProjectsQuestion, pickProject, projectLabel, projectsListText } from './projects'
 import { isConfirmation, isRejection } from './confirm'
 import { attachmentFileName, effectiveRequestText, materialAskText, needsMaterial } from './material'
+import { resultLink } from './link'
 import type { Llm } from '../agent/llm'
 
 const dbUrl = process.env.SUPABASE_DB_URL ?? ''
@@ -200,7 +201,10 @@ async function executePlan(repo: SupportRepo, plan: SupportJobRow, confirmJob: S
     hasActivePeriod: period?.status === 'active',
   }
   const materials = await stageMaterials(project.workspace_path ?? '', plan, plan.attachments_json ?? [])
-  const r = project.workspace_path ? await runInWorkspace(project.workspace_path, buildPrompt(input) + materials) : { ok: false, output: 'не указан workspace_path', tokens: 0 }
+  const execPrompt = buildPrompt(input) + materials + '\n\nВ конце обязательно укажи публичную ссылку (URL), по которой можно посмотреть результат. Если публичного URL нет — честно напиши это и укажи, как/где посмотреть результат.'
+  // Живой ответ: агент берёт задачу и в конце пришлёт результат + ссылку.
+  await notifyClient(repo, plan.client_id, 'deployed', undefined, { answer: 'Принял, приступаю к правкам. Как будет готово — сразу пришлю результат и ссылку.' })
+  const r = project.workspace_path ? await runInWorkspace(project.workspace_path, execPrompt) : { ok: false, output: 'не указан workspace_path', tokens: 0 }
   const status: 'deployed' | 'failed' = r.ok ? 'deployed' : 'failed'
   let spent = 0
   if (r.ok) {
@@ -218,8 +222,12 @@ async function executePlan(repo: SupportRepo, plan: SupportJobRow, confirmJob: S
   await repo.insertAudit({ actor: 'ai', action: status, client_id: plan.client_id, project_id: plan.project_id, job_id: plan.id, payload: { edits_count: plan.edits_count } })
   const after = await repo.currentPeriod(project.id)
   const left = after?.corrections_limit == null ? 'без лимита' : `${after.corrections_limit - after.corrections_used} из ${after.corrections_limit}`
+  const link = resultLink(project, r.output)
+  const linkLine = link
+    ? `\n\nСсылка на результат: ${link}`
+    : '\n\nПубличной ссылки на результат нет — правки внесены, но проект не публикуется по URL.'
   const text = r.ok
-    ? `Готово — правки внесены и опубликованы.\n\nСписано: ${spent} ${data.plan?.is_feature ? 'функц.' : 'правк.'}. Остаток правок: ${left}.`
+    ? `Готово — правки внесены и опубликованы.\n\nСписано: ${spent} ${data.plan?.is_feature ? 'функц.' : 'правк.'}. Остаток правок: ${left}.${linkLine}`
     : 'Не удалось внести правки автоматически. Передаю специалисту — он свяжется с вами.'
   await notifyClient(repo, plan.client_id, status, undefined, { answer: text })
 }
