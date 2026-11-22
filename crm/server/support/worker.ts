@@ -16,6 +16,7 @@ import { consultAnswer } from './consult'
 import { replySupport } from './reply'
 import { isProjectsQuestion, pickProject, projectLabel, projectsListText } from './projects'
 import { isConfirmation, isRejection } from './confirm'
+import { CREATOR_ANSWER, isCreatorQuestion } from './creator'
 import { attachmentFileName, effectiveRequestText, materialAskText, needsMaterial } from './material'
 import { resultLink } from './link'
 import type { Llm } from '../agent/llm'
@@ -266,6 +267,14 @@ async function processJob(repo: SupportRepo, job: SupportJobRow) {
       await notifyClient(repo, job.client_id, 'clarify', 'voice_not_recognized', { voice: false })
       return
     }
+  }
+  // Вопрос «кто тебя создал/разработал/хозяин/на кого работаешь» — фиксированный ответ, независимо от пакета.
+  if (requestText.trim() && isCreatorQuestion(requestText)) {
+    const finished = new Date().toISOString()
+    await repo.updateSupportJob(job.id, { status: 'clarify', result_json: { reason: 'creator_question', answer: CREATOR_ANSWER }, finished_at: finished })
+    await repo.insertAudit({ actor: 'ai', action: 'creator_question', client_id: job.client_id, project_id: job.project_id, job_id: job.id })
+    await notifyClient(repo, job.client_id, 'clarify', undefined, { answer: CREATOR_ANSWER, voice: wasVoice })
+    return
   }
   // Активные проекты клиента: один — работаем с ним; несколько — уточняем, в какой вносить правку.
   const activeProjects = (await repo.listProjectsByClient(job.client_id)).filter((p) => p.status === 'active')
