@@ -17,7 +17,7 @@ import { replySupport } from './reply'
 import { isProjectsQuestion, pickProject, projectLabel, projectsListText } from './projects'
 import { isConfirmation, isRejection } from './confirm'
 import { CREATOR_ANSWER, isCreatorQuestion } from './creator'
-import { hasAudioAttachment, MUSIC_REPLY } from './music'
+import { hasAudioAttachment, musicReplyText } from './music'
 import { attachmentFileName, effectiveRequestText, materialAskText, needsMaterial } from './material'
 import { resultLink } from './link'
 import type { Llm } from '../agent/llm'
@@ -277,12 +277,13 @@ async function processJob(repo: SupportRepo, job: SupportJobRow) {
     await notifyClient(repo, job.client_id, 'clarify', undefined, { answer: CREATOR_ANSWER, voice: wasVoice })
     return
   }
-  // Клиент прислал музыку — отвечаем эмодзи.
+  // Клиент прислал музыку — отвечаем эмодзи + репликой-«танцем».
   if (hasAudioAttachment(job.attachments_json)) {
+    const reply = musicReplyText()
     const finished = new Date().toISOString()
-    await repo.updateSupportJob(job.id, { status: 'clarify', result_json: { reason: 'music_sent', answer: MUSIC_REPLY }, finished_at: finished })
+    await repo.updateSupportJob(job.id, { status: 'clarify', result_json: { reason: 'music_sent', answer: reply }, finished_at: finished })
     await repo.insertAudit({ actor: 'ai', action: 'music_sent', client_id: job.client_id, project_id: job.project_id, job_id: job.id })
-    await notifyClient(repo, job.client_id, 'clarify', undefined, { answer: MUSIC_REPLY, voice: false })
+    await notifyClient(repo, job.client_id, 'clarify', undefined, { answer: reply, voice: false })
     return
   }
   // Активные проекты клиента: один — работаем с ним; несколько — уточняем, в какой вносить правку.

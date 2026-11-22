@@ -68,10 +68,13 @@ async function transcribeAudioWhisper(input: Buffer, filename = 'voice.ogg'): Pr
   }
 }
 
-/** Распознать речь: Yandex первым, при сбое — локальный whisper. */
+/** Распознать речь: Yandex первым; при ошибке ИЛИ пустом результате — локальный whisper. */
 export async function transcribeAudio(input: Buffer, filename = 'voice.ogg'): Promise<string> {
   try {
-    return await transcribeAudioYandex(input)
+    const text = await transcribeAudioYandex(input)
+    if (text) return text
+    console.error('Yandex STT вернул пусто — fallback whisper')
+    return await transcribeAudioWhisper(input, filename)
   } catch (e) {
     console.error('Yandex STT failed, fallback whisper:', e instanceof Error ? e.message : e)
     return transcribeAudioWhisper(input, filename)
