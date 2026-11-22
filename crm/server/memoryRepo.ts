@@ -263,7 +263,7 @@ export function memoryRepo(): MemoryRepo {
     },
     async updatePeriod(pid, patch) { Object.assign(r.periods.find((p) => p.id === pid)!, patch) },
     async insertSupportJob(j) {
-      const row: SupportJobRow = { id: id('sj'), project_id: null, message_id: null, status: 'queued', edits_json: [], edits_count: 0, result_json: null, tokens_used: 0, started_at: null, finished_at: null, created_at: '', ...j, voice_file_id: j.voice_file_id ?? null }
+      const row: SupportJobRow = { id: id('sj'), project_id: null, message_id: null, status: 'queued', edits_json: [], edits_count: 0, result_json: null, tokens_used: 0, started_at: null, finished_at: null, created_at: '', ...j, voice_file_id: j.voice_file_id ?? null, attachments_json: j.attachments_json ?? null }
       r.supportJobs.push(row)
       return row
     },
@@ -271,6 +271,7 @@ export function memoryRepo(): MemoryRepo {
     async listSupportJobs(projectId) { return r.supportJobs.filter((x) => x.project_id === projectId).reverse() },
     async listQueuedSupportJobs(limit = 10) { return r.supportJobs.filter((x) => x.status === 'queued').slice(0, limit) },
     async findAwaitingConfirmationJob(clientId) { return r.supportJobs.filter((x) => x.client_id === clientId && x.status === 'awaiting_confirmation').slice(-1)[0] ?? null },
+    async findWaitingMaterialJob(clientId) { return r.supportJobs.filter((x) => x.client_id === clientId && x.status === 'clarify' && (x.result_json as Record<string, unknown> | null)?.reason === 'need_material').slice(-1)[0] ?? null },
     async claimSupportJob(jid) {
       const x = r.supportJobs.find((y) => y.id === jid)
       if (!x || x.status !== 'queued') return null

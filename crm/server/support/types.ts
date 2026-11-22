@@ -72,12 +72,22 @@ export type PackagePeriodRow = {
 
 export type PeriodInsert = Pick<PackagePeriodRow, 'project_id' | 'period_start' | 'period_end'> & Partial<Omit<PackagePeriodRow, 'id' | 'project_id' | 'period_start' | 'period_end' | 'created_at'>>
 
+/** Вложение клиента к обращению (фото/документ) — материал для правок. */
+export type SupportAttachment = {
+  kind: 'photo' | 'document'
+  file_id: string
+  file_name?: string | null
+  mime_type?: string | null
+  caption?: string | null
+}
+
 export type SupportJobRow = {
   id: string
   client_id: string
   project_id: string | null
   message_id: number | null
   voice_file_id: string | null
+  attachments_json: SupportAttachment[] | null
   request_text: string
   status: 'queued' | 'running' | 'clarify' | 'ready' | 'deployed' | 'split' | 'out_of_scope' | 'awaiting_payment' | 'failed' | 'thanks' | 'awaiting_confirmation'
   edits_json: unknown[]

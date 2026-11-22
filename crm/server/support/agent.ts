@@ -72,6 +72,7 @@ export function buildPrompt(input: AgentInput): string {
   ].join('; ')
   return [
     'Ты — ИИ-агент поддержки клиента. Работай строго в рамках заданного сценария.',
+    'Материалы: если правка требует файлов (фото/текст/документ) — используй ТОЛЬКО файлы, присланные клиентом. Не ищи и не скачивай материалы из интернета.',
     s.system_prompt && 'Сценарий: ' + s.system_prompt,
     s.scope_notes && 'Область: ' + s.scope_notes,
     s.allowed_actions && 'Разрешено: ' + s.allowed_actions,

@@ -29,7 +29,7 @@ test('система ответчика: содержит сценарий, то
 
 test('clarify: просит детали и НЕ предлагает встречу', () => {
   const s = buildSupportSystem({ ...base, status: 'clarify' })
-  assert.match(s, /уточняющий вопрос/)
+  assert.match(s, /Уточни подробно/)
   assert.match(s, /НЕ предлагай записаться на встречу/)
   assert.doesNotMatch(s, /https:\/\/st96\.by\/book/)
 })

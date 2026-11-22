@@ -7,7 +7,7 @@ import type { AgentScenarioRow, ClientProjectRow, InvoiceRow, PackagePeriodRow, 
 // Методы, которые нужны worker-у и period.ts. memoryRepo/supabaseRepo их тоже удовлетворяют (Pick из Repo).
 export type SupportRepo = Pick<Repo,
   | 'findProject' | 'listProjectsByClient' | 'getScenario' | 'findClientById' | 'currentPeriod' | 'getPeriod' | 'listPeriods' | 'insertPeriod' | 'updatePeriod'
-  | 'getInvoice' | 'updateInvoice' | 'insertAudit' | 'updateSupportJob' | 'listQueuedSupportJobs' | 'claimSupportJob' | 'findAwaitingConfirmationJob'
+  | 'getInvoice' | 'updateInvoice' | 'insertAudit' | 'updateSupportJob' | 'listQueuedSupportJobs' | 'claimSupportJob' | 'findAwaitingConfirmationJob' | 'findWaitingMaterialJob'
 >
 
 // timestamptz/timestamp/date → строки (совпадает с типами строк support/types.ts)
@@ -67,6 +67,10 @@ export function pgRepo(connectionString: string): SupportRepo {
     },
     async findAwaitingConfirmationJob(clientId) {
       return one<SupportJobRow>("select * from crm.support_jobs where client_id = $1 and status = 'awaiting_confirmation' order by created_at desc limit 1", [clientId])
+    },
+    async findWaitingMaterialJob(clientId) {
+      const rows = await many<SupportJobRow>("select * from crm.support_jobs where client_id = $1 and status = 'clarify' order by created_at desc limit 10", [clientId])
+      return rows.find((j) => j.result_json && (j.result_json as Record<string, unknown>).reason === 'need_material') ?? null
     },
     async claimSupportJob(id) {
       return one<SupportJobRow>("update crm.support_jobs set status = 'running', started_at = now() where id = $1 and status = 'queued' returning *", [id])

@@ -190,6 +190,8 @@ export interface Repo {
   listQueuedSupportJobs(limit?: number): Promise<SupportJobRow[]>
   claimSupportJob(id: string): Promise<SupportJobRow | null>
   findAwaitingConfirmationJob(clientId: string): Promise<SupportJobRow | null>
+  /** Последнее обращение, ожидающее материал от клиента (clarify + reason=need_material). */
+  findWaitingMaterialJob(clientId: string): Promise<SupportJobRow | null>
   updateSupportJob(id: string, patch: Partial<Omit<SupportJobInsert, 'client_id' | 'request_text'>>): Promise<void>
   insertInvoice(i: InvoiceInsert): Promise<InvoiceRow>
   getInvoice(id: string): Promise<InvoiceRow | null>
@@ -590,6 +592,10 @@ export function supabaseRepo(url: string, key: string): Repo {
     async findAwaitingConfirmationJob(clientId) {
       const rows = ok(await db.from('support_jobs').select('*').eq('client_id', clientId).eq('status', 'awaiting_confirmation').order('created_at', { ascending: false }).limit(1), 'findAwaitingConfirmationJob') as SupportJobRow[] | null
       return rows?.[0] ?? null
+    },
+    async findWaitingMaterialJob(clientId) {
+      const rows = ok(await db.from('support_jobs').select('*').eq('client_id', clientId).eq('status', 'clarify').order('created_at', { ascending: false }).limit(5), 'findWaitingMaterialJob') as SupportJobRow[] | null
+      return (rows ?? []).find((j) => (j.result_json as Record<string, unknown> | null)?.reason === 'need_material') ?? null
     },
     async updateSupportJob(id, patch) {
       ok(await db.from('support_jobs').update(patch).eq('id', id), 'updateSupportJob')

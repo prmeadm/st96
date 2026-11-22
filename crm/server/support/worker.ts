@@ -5,14 +5,18 @@
 
 import { execFile } from 'node:child_process'
 import { mkdirSync } from 'node:fs'
+import { mkdir, writeFile } from 'node:fs/promises'
+import { join } from 'node:path'
 import { pgRepo, type SupportRepo } from './pgRepo'
 import { buildPrompt, decide, type AgentInput, type Classification, type Classify } from './agent'
 import { spendCorrections, spendFeatures } from './period'
-import type { SupportJobRow } from './types'
-import { downloadTelegramVoice, sendTelegramVoice, synthesizeVoice, transcribeAudio } from './voice'
+import type { SupportAttachment, SupportJobRow } from './types'
+import { downloadTelegramFile, downloadTelegramVoice, sendTelegramVoice, synthesizeVoice, transcribeAudio } from './voice'
 import { consultAnswer } from './consult'
 import { replySupport } from './reply'
 import { isProjectsQuestion, pickProject, projectLabel, projectsListText } from './projects'
+import { isConfirmation, isRejection } from './confirm'
+import { attachmentFileName, materialAskText, needsMaterial } from './material'
 import type { Llm } from '../agent/llm'
 
 const dbUrl = process.env.SUPABASE_DB_URL ?? ''
@@ -142,17 +146,26 @@ async function notifyClient(repo: SupportRepo, clientId: string, status: string,
   }
 }
 
-/** Клиент подтверждает план правок: «да», «ок», «подтверждаю» и т.п. */
-function isConfirmation(text: string): boolean {
-  const t = (text ?? '').toLowerCase().trim()
-  if (!t || t.length > 80) return false
-  return /^(да|ок|окей|ага|конечно|подтвержда|согласен|согласна|верно|давай|поехали|вперёд|старт|yes|ok|go)\b/i.test(t)
-}
 
-/** Клиент отменил план: «нет», «отмена», «стоп». */
-function isRejection(text: string): boolean {
-  const t = (text ?? '').toLowerCase().trim()
-  return /^(нет|не надо|отмена|отмени|стоп|cancel|no)\b/i.test(t)
+/** Скачивает вложения клиента в workspace проекта и возвращает секцию промпта с путями. */
+async function stageMaterials(workspacePath: string, plan: SupportJobRow, attachments: SupportAttachment[]): Promise<string> {
+  if (!workspacePath || !attachments.length) return ''
+  const dir = join(workspacePath, '.client-materials', plan.id)
+  const lines: string[] = []
+  for (let i = 0; i < attachments.length; i++) {
+    const a = attachments[i]
+    const name = attachmentFileName(a, i)
+    const target = join(dir, name)
+    try {
+      await mkdir(dir, { recursive: true })
+      const buf = await downloadTelegramFile(leadsBotToken, a.file_id)
+      await writeFile(target, buf)
+      lines.push(`${i + 1}. ${target}`)
+    } catch (e) {
+      console.error('material download failed', e instanceof Error ? e.message : e)
+    }
+  }
+  return lines.length ? '\n\nМатериалы клиента (используй ТОЛЬКО эти файлы, не ищи материалы в интернете):\n' + lines.join('\n') : ''
 }
 
 /** Выполнить ранее подтверждённый клиентом план правок. */
@@ -186,7 +199,8 @@ async function executePlan(repo: SupportRepo, plan: SupportJobRow, confirmJob: S
     },
     hasActivePeriod: period?.status === 'active',
   }
-  const r = project.workspace_path ? await runInWorkspace(project.workspace_path, buildPrompt(input)) : { ok: false, output: 'не указан workspace_path', tokens: 0 }
+  const materials = await stageMaterials(project.workspace_path ?? '', plan, plan.attachments_json ?? [])
+  const r = project.workspace_path ? await runInWorkspace(project.workspace_path, buildPrompt(input) + materials) : { ok: false, output: 'не указан workspace_path', tokens: 0 }
   const status: 'deployed' | 'failed' = r.ok ? 'deployed' : 'failed'
   let spent = 0
   if (r.ok) {
@@ -279,6 +293,24 @@ async function processJob(repo: SupportRepo, job: SupportJobRow) {
     await notifyClient(repo, job.client_id, 'failed', undefined, { voice: wasVoice })
     return
   }
+
+  // Материалы для правок: агент не двигается дальше, пока клиент не пришлёт нужный файл.
+  const attachments = (job.attachments_json ?? []).filter((a) => a && a.file_id)
+
+  // Клиент прислал материал (вложение) — объединяем с последним обращением, ожидавшим материал.
+  if (attachments.length > 0) {
+    const waitMat = await repo.findWaitingMaterialJob(job.client_id)
+    if (waitMat && waitMat.id !== job.id) requestText = [waitMat.request_text, requestText].filter((t) => t.trim()).join('\n')
+  }
+
+  // Нужен материал, но его нет — просим прислать и НЕ двигаемся дальше.
+  if (needsMaterial(requestText, attachments)) {
+    await repo.updateSupportJob(job.id, { status: 'clarify', result_json: { reason: 'need_material', waiting_material: true, request_text: requestText }, finished_at: new Date().toISOString() })
+    await repo.insertAudit({ actor: 'ai', action: 'need_material', client_id: job.client_id, project_id: project.id, job_id: job.id, payload: { request_text: requestText } })
+    await notifyClient(repo, job.client_id, 'clarify', undefined, { answer: materialAskText(), voice: wasVoice })
+    return
+  }
+
   const scenario = project.agent_scenario_id ? await repo.getScenario(project.agent_scenario_id) : null
   const period = await repo.currentPeriod(project.id)
   const input: AgentInput = {

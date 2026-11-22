@@ -36,6 +36,11 @@ export async function downloadTelegramVoice(token: string, fileId: string): Prom
   return Buffer.from(await f.arrayBuffer())
 }
 
+/** Скачать любой файл из Telegram по file_id (фото/документ/видео). */
+export async function downloadTelegramFile(token: string, fileId: string): Promise<Buffer> {
+  return downloadTelegramVoice(token, fileId)
+}
+
 /** Распознать речь через Yandex SpeechKit (v1, oggopus). */
 export async function transcribeAudioYandex(audio: Buffer): Promise<string> {
   if (!YANDEX_API_KEY) throw new Error('YANDEX_API_KEY не задан')
