@@ -74,7 +74,7 @@ export type PeriodInsert = Pick<PackagePeriodRow, 'project_id' | 'period_start' 
 
 /** Вложение клиента к обращению (фото/документ) — материал для правок. */
 export type SupportAttachment = {
-  kind: 'photo' | 'document'
+  kind: 'photo' | 'document' | 'audio'
   file_id: string
   file_name?: string | null
   mime_type?: string | null

@@ -278,10 +278,11 @@ export function createBot(token: string, repo: Repo, opts: { groupChatId: number
         const reqText = m.text ?? m.caption ?? ''
         const voiceFileId = m.voice?.file_id ?? null
         const projectId = activeProjects.length === 1 ? activeProjects[0].id : null
-        // Вложения клиента (фото/документ) — материал для правок.
-        const attachments: { kind: 'photo' | 'document'; file_id: string; file_name?: string | null; mime_type?: string | null; caption?: string | null }[] = []
+        // Вложения клиента (фото/документ/музыка) — материал для правок.
+        const attachments: { kind: 'photo' | 'document' | 'audio'; file_id: string; file_name?: string | null; mime_type?: string | null; caption?: string | null }[] = []
         if (m.photo && m.photo.length) attachments.push({ kind: 'photo', file_id: m.photo[m.photo.length - 1].file_id, caption: m.caption ?? null })
-        if (m.document) attachments.push({ kind: 'document', file_id: m.document.file_id, file_name: m.document.file_name ?? null, mime_type: m.document.mime_type ?? null, caption: m.caption ?? null })
+        if (m.audio) attachments.push({ kind: 'audio', file_id: m.audio.file_id, file_name: m.audio.file_name ?? null, mime_type: m.audio.mime_type ?? null, caption: m.caption ?? null })
+        if (m.document) attachments.push(m.document.mime_type?.startsWith('audio/') ? { kind: 'audio', file_id: m.document.file_id, file_name: m.document.file_name ?? null, mime_type: m.document.mime_type ?? null, caption: m.caption ?? null } : { kind: 'document', file_id: m.document.file_id, file_name: m.document.file_name ?? null, mime_type: m.document.mime_type ?? null, caption: m.caption ?? null })
         // Без шаблонного «Принял!»: отвечает сам агент (worker), как живой сотрудник.
         if (reqText.trim() || voiceFileId || attachments.length) await repo.insertSupportJob({ client_id: client.id, project_id: projectId, message_id: m.message_id, request_text: reqText, voice_file_id: voiceFileId, attachments_json: attachments.length ? attachments : null })
         return
