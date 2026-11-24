@@ -1,5 +1,5 @@
-import { TRIGGER, type Graph } from './types'
-import { SITE_SERVICES } from '../catalog'
+import { TRIGGER, type Graph } from './types.js'
+import { SITE_SERVICES } from '../catalog.js'
 
 /** Демо-воронка из прототипа «Запись на консультацию». Загружается в админке как черновик. */
 export const demoGraph: Graph = {

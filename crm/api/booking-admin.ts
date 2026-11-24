@@ -1,8 +1,10 @@
+/// <reference types="node" />
 import { Api } from 'grammy'
-import { requireAdmin, json } from '../server/adminAuth'
-import { notifyClientDecision } from '../server/booking/notify'
-import { createBooking, decideBooking, saveDirectAdmins, saveMeetDefault, saveSchedule, setMeetUrl } from '../server/booking/service'
-import { supabaseRepo } from '../server/repo'
+import { requireAdmin, json } from '../server/adminAuth.js'
+import { notifyClientDecision } from '../server/booking/notify.js'
+import { createBooking, decideBooking, saveDirectAdmins, saveMeetDefault, saveSchedule, setMeetUrl } from '../server/booking/service.js'
+import { supabaseRepo } from '../server/repo.js'
+import { isErr } from '../server/result.js'
 
 export const config = { runtime: 'edge' }
 
@@ -29,29 +31,31 @@ export default async function handler(req: Request) {
     const r = await createBooking(repo, {
       service: x.service, format: x.format, date: x.date, time: x.time, name: x.name, phone: x.phone, telegram: x.telegram, comment: x.comment, source: 'admin',
     })
-    if (!r.ok) return json({ error: r.error }, r.status)
+    if (isErr(r)) return json({ error: r.error }, r.status)
     const d = await decideBooking(repo, r.booking.id, 'confirm', typeof x.meetUrl === 'string' ? x.meetUrl : undefined)
-    if (!d.ok) return json({ error: d.error }, d.status)
+    if (isErr(d)) return json({ error: d.error }, d.status)
     const notified = token ? await notifyClientDecision(new Api(token), repo, d.booking).catch(() => false) : false
     return json({ ok: true, id: d.booking.id, notified })
   }
   if (b.action === 'decide' && b.id && b.decision) {
     const r = await decideBooking(repo, b.id, b.decision, b.meetUrl)
-    if (!r.ok) return json({ error: r.error }, r.status)
+    if (isErr(r)) return json({ error: r.error }, r.status)
     const notified = token ? await notifyClientDecision(new Api(token), repo, r.booking).catch(() => false) : false
     return json({ ok: true, status: r.booking.status, notified })
   }
   if (b.action === 'save_direct_admins') {
     const r = await saveDirectAdmins(repo, typeof b.url === 'string' ? b.url : '')
-    return r.ok ? json({ ok: true, nicks: r.nicks }) : json({ error: 'Не удалось сохранить' }, 500)
+    if (isErr(r)) return json({ error: 'Не удалось сохранить' }, 500)
+    return json({ ok: true, nicks: r.nicks })
   }
   if (b.action === 'save_meet_default') {
     const r = await saveMeetDefault(repo, b.url ?? '')
-    return r.ok ? json({ ok: true, url: r.url }) : json({ error: r.error }, r.status)
+    if (isErr(r)) return json({ error: r.error }, r.status)
+    return json({ ok: true, url: r.url })
   }
   if (b.action === 'set_meet' && b.id) {
     const r = await setMeetUrl(repo, b.id, b.meetUrl ?? '')
-    if (!r.ok) return json({ error: r.error }, r.status)
+    if (isErr(r)) return json({ error: r.error }, r.status)
     return json({ ok: true })
   }
   return json({ error: 'Unknown action' }, 400)

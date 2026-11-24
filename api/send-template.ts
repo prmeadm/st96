@@ -1,2 +1,2 @@
 export const config = { runtime: 'edge' }
-export { default } from '../crm/api/send-template'
+export { default } from '../crm/api/send-template.js'

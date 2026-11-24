@@ -1,5 +1,5 @@
 // Ссылка на результат правки: deploy_target проекта, иначе URL из ответа агента.
-import type { ClientProjectRow } from './types'
+import type { ClientProjectRow } from './types.js'
 
 /** Достаёт первый URL из текста ответа агента (деплой-ссылка). */
 export function extractUrl(text: string): string | null {

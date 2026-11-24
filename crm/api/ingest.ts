@@ -1,6 +1,7 @@
-import { ingestLead } from '../server/leads/ingest'
-import { parseLead } from '../server/leads/parse'
-import { supabaseRepo } from '../server/repo'
+/// <reference types="node" />
+import { ingestLead } from '../server/leads/ingest.js'
+import { parseLead } from '../server/leads/parse.js'
+import { supabaseRepo } from '../server/repo.js'
 
 export const config = { runtime: 'edge' }
 

@@ -1,7 +1,7 @@
 // Перевод сообщений с русского на английский. Работает на той же бесплатной модели, что и агент (LLM_API_KEY).
 // Точность обеспечивают жёсткие правила в запросе и проверка кодом: переменные, ссылки и команды должны дойти без изменений.
-import { LlmError, parseJson, type Llm } from './agent/llm'
-import { SITE_SERVICES } from './catalog'
+import { LlmError, parseJson, type Llm } from './agent/llm.js'
+import { SITE_SERVICES } from './catalog.js'
 
 export const MAX_TRANSLATE_CHARS = 3500
 

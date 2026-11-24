@@ -1,15 +1,16 @@
 import { Bot, type Context } from 'grammy'
-import type { ClientRow, MessageInsert, Repo } from '../repo'
-import { ingestGroupMessage } from '../leads/ingest'
-import { handleTopicMessage, relayToAdmins, sendTemplate } from './dialog'
-import { fill, handleClick, handleFreeText, startFunnel, type Env } from '../funnels/engine'
-import { pickFunnel } from '../funnels/triggers'
-import { telegramOut } from './telegramOut'
-import { isWorkingTime, offhoursTextFromFunnels } from '../workingHours'
-import { notifyClientDecision } from '../booking/notify'
-import { decideBooking, loadDirectAdmins } from '../booking/service'
-import { T, type Lang } from './texts'
-import { verifySiteRef } from './siteRef'
+import type { ClientRow, MessageInsert, Repo } from '../repo.js'
+import { ingestGroupMessage } from '../leads/ingest.js'
+import { handleTopicMessage, relayToAdmins, sendTemplate } from './dialog.js'
+import { fill, handleClick, startFunnel, type Env } from '../funnels/engine.js'
+import { pickFunnel } from '../funnels/triggers.js'
+import { telegramOut } from './telegramOut.js'
+import { isWorkingTime, offhoursTextFromFunnels } from '../workingHours.js'
+import { notifyClientDecision } from '../booking/notify.js'
+import { decideBooking, loadDirectAdmins } from '../booking/service.js'
+import { T, type Lang } from './texts.js'
+import { verifySiteRef } from './siteRef.js'
+import { isErr } from '../result.js'
 
 const ACK_EVERY_MS = 12 * 3600 * 1000
 /** В действующем диалоге напоминание о графике — не чаще раза в 12 часов */
@@ -202,7 +203,7 @@ export function createBot(token: string, repo: Repo, opts: { groupChatId: number
     if (!msg || (!inGroup && !direct)) return void (await ctx.answerCallbackQuery())
     const ok = ctx.match[1] === 'ok'
     const r = await decideBooking(repo, ctx.match[2]!, ok ? 'confirm' : 'reject')
-    if (!r.ok) return void (await ctx.answerCallbackQuery({ text: r.error, show_alert: true }))
+    if (isErr(r)) return void (await ctx.answerCallbackQuery({ text: r.error, show_alert: true }))
     const who = [ctx.from.first_name, ctx.from.last_name].filter(Boolean).join(' ')
     const sent = await notifyClientDecision(ctx.api, repo, r.booking).catch(() => false)
     await ctx.answerCallbackQuery({ text: ok ? 'Подтверждено' : 'Отклонено' })
@@ -271,34 +272,25 @@ export function createBot(token: string, repo: Repo, opts: { groupChatId: number
         }
         return
       }
-      // Поддержка: у клиента есть активный проект — сообщение идёт агенту (worker), а не в воронку.
+      // Консультант отвечает на весь свободный текст; клиента с активным проектом (и оплаченным пакетом)
+      // подхватывает агент поддержки — worker решает по project_id и активному периоду, кого звать.
       // Если активных проектов больше одного — project_id не проставляем, worker сам уточнит, в какой вносить правку.
       const activeProjects = (await repo.listProjectsByClient(client.id)).filter((p) => p.status === 'active')
-      if (activeProjects.length) {
-        const reqText = m.text ?? m.caption ?? ''
-        const voiceFileId = m.voice?.file_id ?? null
-        const projectId = activeProjects.length === 1 ? activeProjects[0].id : null
-        // Вложения клиента (фото/документ/музыка) — материал для правок.
-        const attachments: { kind: 'photo' | 'document' | 'audio'; file_id: string; file_name?: string | null; mime_type?: string | null; caption?: string | null }[] = []
-        if (m.photo && m.photo.length) attachments.push({ kind: 'photo', file_id: m.photo[m.photo.length - 1].file_id, caption: m.caption ?? null })
-        if (m.audio) attachments.push({ kind: 'audio', file_id: m.audio.file_id, file_name: m.audio.file_name ?? null, mime_type: m.audio.mime_type ?? null, caption: m.caption ?? null })
-        if (m.document) attachments.push(m.document.mime_type?.startsWith('audio/') ? { kind: 'audio', file_id: m.document.file_id, file_name: m.document.file_name ?? null, mime_type: m.document.mime_type ?? null, caption: m.caption ?? null } : { kind: 'document', file_id: m.document.file_id, file_name: m.document.file_name ?? null, mime_type: m.document.mime_type ?? null, caption: m.caption ?? null })
-        // Без шаблонного «Принял!»: отвечает сам агент (worker), как живой сотрудник.
-        if (reqText.trim() || voiceFileId || attachments.length) await repo.insertSupportJob({ client_id: client.id, project_id: projectId, message_id: m.message_id, request_text: reqText, voice_file_id: voiceFileId, attachments_json: attachments.length ? attachments : null })
-        return
+      const reqText = m.text ?? m.caption ?? ''
+      const voiceFileId = m.voice?.file_id ?? null
+      const projectId = activeProjects.length === 1 ? activeProjects[0].id : null
+      // Вложения клиента (фото/документ/музыка) — материал для правок.
+      const attachments: { kind: 'photo' | 'document' | 'audio'; file_id: string; file_name?: string | null; mime_type?: string | null; caption?: string | null }[] = []
+      if (m.photo && m.photo.length) attachments.push({ kind: 'photo', file_id: m.photo[m.photo.length - 1].file_id, caption: m.caption ?? null })
+      if (m.audio) attachments.push({ kind: 'audio', file_id: m.audio.file_id, file_name: m.audio.file_name ?? null, mime_type: m.audio.mime_type ?? null, caption: m.caption ?? null })
+      if (m.document) attachments.push(m.document.mime_type?.startsWith('audio/') ? { kind: 'audio', file_id: m.document.file_id, file_name: m.document.file_name ?? null, mime_type: m.document.mime_type ?? null, caption: m.caption ?? null } : { kind: 'document', file_id: m.document.file_id, file_name: m.document.file_name ?? null, mime_type: m.document.mime_type ?? null, caption: m.caption ?? null })
+      // Без шаблонного «Принял!»: отвечает консультант или агент (worker), как живой сотрудник.
+      if (reqText.trim() || voiceFileId || attachments.length) {
+        await repo.insertSupportJob({ client_id: client.id, project_id: projectId, message_id: m.message_id, request_text: reqText, voice_file_id: voiceFileId, attachments_json: attachments.length ? attachments : null })
+      } else if (!prevSeen || Date.now() - Date.parse(prevSeen) > ACK_EVERY_MS) {
+        // Вложение без текста (стикер, видео и т.п.) — короткий аск, не чаще раза в 12 часов
+        await ctx.reply(T[client.language].ack)
       }
-      // Воронки: идущая ждёт текст, иначе ищем воронку по ключевому слову или «любое сообщение».
-      let handled = false
-      if (m.text) {
-        const run = await repo.findActiveRun(client.id)
-        if (run) handled = await handleFreeText(envFor(ctx.api), client, run)
-        else {
-          const funnel = pickFunnel(await repo.listPublishedFunnels(), { kind: 'text', text: m.text })
-          if (funnel) handled = (await startFunnel(envFor(ctx.api), funnel, client)) !== null
-        }
-      }
-      // Подтверждаем получение не чаще раза в 12 часов
-      if (!handled && (!prevSeen || Date.now() - Date.parse(prevSeen) > ACK_EVERY_MS)) await ctx.reply(T[client.language].ack)
       return
     }
     if (ctx.chat.type === 'group' || ctx.chat.type === 'supergroup') {

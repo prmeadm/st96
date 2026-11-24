@@ -1,6 +1,8 @@
-import { requireAdmin, json } from '../server/adminAuth'
-import { createManualLead, parseManualText, updateManualLead, type LeadFields } from '../server/leads/manual'
-import { supabaseRepo } from '../server/repo'
+/// <reference types="node" />
+import { requireAdmin, json } from '../server/adminAuth.js'
+import { createManualLead, parseManualText, updateManualLead, type LeadFields } from '../server/leads/manual.js'
+import { supabaseRepo } from '../server/repo.js'
+import { isErr } from '../server/result.js'
 
 export const config = { runtime: 'edge' }
 
@@ -30,11 +32,13 @@ export default async function handler(req: Request) {
   const repo = supabaseRepo(url, key)
   if (b.action === 'create' && b.fields) {
     const r = await createManualLead(repo, b.fields, typeof b.text === 'string' ? b.text.slice(0, 8000) : '')
-    return r.ok ? json(r) : json({ error: r.error }, 422)
+    if (isErr(r)) return json({ error: r.error }, 422)
+    return json(r)
   }
   if (b.action === 'update' && b.id && b.fields) {
     const r = await updateManualLead(repo, b.id, b.fields)
-    return r.ok ? json(r) : json({ error: r.error }, 404)
+    if (isErr(r)) return json({ error: r.error }, 404)
+    return json(r)
   }
   return json({ error: 'Unknown action' }, 400)
 }

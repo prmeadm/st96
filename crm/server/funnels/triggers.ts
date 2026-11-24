@@ -1,4 +1,4 @@
-import { TRIGGER, asArray, str, type Funnel } from './types'
+import { TRIGGER, asArray, str, type Funnel } from './types.js'
 
 export type Incoming = { kind: 'start'; payload?: string } | { kind: 'text'; text: string }
 

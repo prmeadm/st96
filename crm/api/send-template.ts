@@ -1,7 +1,8 @@
+/// <reference types="node" />
 import { Api } from 'grammy'
-import { requireAdmin, json } from '../server/adminAuth'
-import { sendTemplate } from '../server/bot/dialog'
-import { supabaseRepo } from '../server/repo'
+import { requireAdmin, json } from '../server/adminAuth.js'
+import { sendTemplate } from '../server/bot/dialog.js'
+import { supabaseRepo } from '../server/repo.js'
 
 export const config = { runtime: 'edge' }
 

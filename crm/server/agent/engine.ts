@@ -1,9 +1,9 @@
 // Жизненный цикл задания: план -> согласование -> выполнение -> отчёт. Опасные шаги ждут отдельного подтверждения.
 import type { Api } from 'grammy'
-import type { Repo } from '../repo'
-import { LlmError, parseJson, type Llm } from './llm'
-import { PLANNABLE, TOOL_BY_NAME, TOOLS } from './tools'
-import type { AgentTask, LogLine, Step } from './types'
+import type { Repo } from '../repo.js'
+import { LlmError, parseJson, type Llm } from './llm.js'
+import { PLANNABLE, TOOL_BY_NAME, TOOLS } from './tools.js'
+import type { AgentTask, LogLine, Step } from './types.js'
 
 export type AgentDeps = { repo: Repo; llm: Llm; api: Api | null; groupChatId: number | null }
 export type EngineResult = { ok: true; task: AgentTask } | { ok: false; error: string; status: number }

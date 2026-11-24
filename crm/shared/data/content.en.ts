@@ -1,4 +1,4 @@
-import type { Advantage, ProcessStep, Service, Stat } from './services'
+import type { Advantage, ProcessStep, Service, Stat } from './services.js'
 
 type ServiceText = Pick<
   Service,

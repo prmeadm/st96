@@ -1,8 +1,8 @@
 // Прямое подключение к Postgres (через пулер, IPv4) — реализация поддержки без service_role.
 // Нужна только worker-у поддержки на сервере: опрос очереди, сценарий, период, аудит, списание.
 import pg from 'pg'
-import type { ClientRow, Repo } from '../repo'
-import type { AgentScenarioRow, ClientProjectRow, InvoiceRow, PackagePeriodRow, SupportJobRow } from './types'
+import type { ClientRow, Repo } from '../repo.js'
+import type { AgentScenarioRow, ClientProjectRow, InvoiceRow, PackagePeriodRow, SupportJobRow } from './types.js'
 
 // Методы, которые нужны worker-у и period.ts. memoryRepo/supabaseRepo их тоже удовлетворяют (Pick из Repo).
 export type SupportRepo = Pick<Repo,

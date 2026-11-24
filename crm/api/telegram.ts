@@ -1,6 +1,7 @@
+/// <reference types="node" />
 import { webhookCallback } from 'grammy'
-import { createBot } from '../server/bot/bot'
-import { supabaseRepo, tracedRepo } from '../server/repo'
+import { createBot } from '../server/bot/bot.js'
+import { supabaseRepo, tracedRepo } from '../server/repo.js'
 
 export const config = { runtime: 'edge' }
 

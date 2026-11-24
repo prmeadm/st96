@@ -1,14 +1,14 @@
 // Исполнитель воронок: проводит клиента по схеме. Логика повторяет предпросмотр в конструкторе.
-import { bookingUrl, FORMAT_KEYS, type FormatKey, type ServiceKey } from '../booking/schedule'
-import { serviceByLabel } from '../catalog'
-import { hasFreeSlots } from '../booking/service'
-import type { ClientRow, Repo } from '../repo'
-import { isBlockedError, retryDelay } from './retry'
-import { OFFHOURS_MESSAGE, isWorkingTime, minskNow, offhoursMessage } from '../workingHours'
+import { bookingUrl, FORMAT_KEYS, type FormatKey, type ServiceKey } from '../booking/schedule.js'
+import { serviceByLabel } from '../catalog.js'
+import { hasFreeSlots } from '../booking/service.js'
+import type { ClientRow, Repo } from '../repo.js'
+import { isBlockedError, retryDelay } from './retry.js'
+import { OFFHOURS_MESSAGE, isWorkingTime, minskNow, offhoursMessage } from '../workingHours.js'
 import {
   asArray, nextOf, parseDelay, parsePair, str,
   type ActionItem, type Funnel, type Graph, type Link, type Part, type Quick, type Rule, type RunRow,
-} from './types'
+} from './types.js'
 
 export type Btn = { text: string; callback_data?: string; url?: string }
 

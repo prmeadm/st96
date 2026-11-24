@@ -1,10 +1,10 @@
 // ИИ-консультант поддержки: отвечает человеку по доступной информации сайта st96.by.
 // База знаний — каталог услуг сайта; рабочие часы — из workingHours.ts; запись — https://st96.by/book.
 // Тон: на «ты», свой, с юмором, без официоза и цензуры. Мягко допродаёт услуги студии, но ничего не выдумывает.
-import { parseJson, type Llm } from '../agent/llm'
-import { bookingUrl } from '../booking/schedule'
-import { servicesBrief } from '../catalog'
-import { WORKING_HOURS_LABEL } from '../workingHours'
+import { parseJson, type Llm } from '../agent/llm.js'
+import { bookingUrl } from '../booking/schedule.js'
+import { servicesBrief } from '../catalog.js'
+import { WORKING_HOURS_LABEL } from '../workingHours.js'
 
 export type Lang = 'ru' | 'en'
 

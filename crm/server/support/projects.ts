@@ -1,6 +1,6 @@
 // Несколько проектов клиента: имя проекта, распознавание вопроса «какие у меня проекты»,
 // выбор проекта по названию в тексте и текст списка. Чистая логика — покрывается тестами.
-import type { ClientProjectRow } from './types'
+import type { ClientProjectRow } from './types.js'
 
 /** Дружелюбное имя проекта для клиента: деплой-таргет, иначе слаг workspace, иначе repo, иначе короткий id. */
 export function projectLabel(p: ClientProjectRow): string {

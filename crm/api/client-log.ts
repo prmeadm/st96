@@ -1,4 +1,5 @@
-import { requireAdmin, json } from '../server/adminAuth'
+/// <reference types="node" />
+import { requireAdmin, json } from '../server/adminAuth.js'
 
 export const config = { runtime: 'edge' }
 

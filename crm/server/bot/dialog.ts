@@ -4,13 +4,13 @@
 //   «//текст» в теме         -> внутренняя заметка, клиенту не уходит;
 //   «/close» в теме          -> диалог закрыт, тема закрывается.
 import { InlineKeyboard, type Api } from 'grammy'
-import { UNKNOWN_SERVICE, serviceLabel } from '../catalog'
-import { bookingUrl } from '../booking/schedule'
-import { clickablePhone } from '../leads/parse'
-import { CAPTION_LIMIT, NOT_A_FILE_ERROR, canonicalVideoUrl, youtubeEmbeddable, errorText, isVideoPageUrl, splitText, youtubeId, youtubeThumb } from '../media'
-import type { ClientRow, Repo } from '../repo'
-import { TPL_KINDS, fillTemplate, type TemplateKind, type TemplateRow } from '../templates'
-import { pauseAiForHuman, resumeAi } from './support'
+import { UNKNOWN_SERVICE, serviceLabel } from '../catalog.js'
+import { bookingUrl } from '../booking/schedule.js'
+import { clickablePhone } from '../leads/parse.js'
+import { CAPTION_LIMIT, NOT_A_FILE_ERROR, canonicalVideoUrl, youtubeEmbeddable, errorText, isVideoPageUrl, splitText, youtubeId, youtubeThumb } from '../media.js'
+import type { ClientRow, Repo } from '../repo.js'
+import { TPL_KINDS, fillTemplate, type TemplateKind, type TemplateRow } from '../templates.js'
+import { pauseAiForHuman, resumeAi } from './support.js'
 
 
 const threadGone = (e: unknown) => /message thread not found|TOPIC_DELETED|TOPIC_ID_INVALID|TOPIC_NOT_MODIFIED/i.test(e instanceof Error ? e.message : String(e))

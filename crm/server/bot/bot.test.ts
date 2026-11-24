@@ -83,20 +83,22 @@ test('согласие и /stop меняют статус рассылок', asy
   assert.equal(repo.clients[0].opted_out_at, null)
 })
 
-test('сообщение клиента логируется, подтверждение не чаще раза в 12 часов', async () => {
+test('свободный текст клиента без проекта идёт консультанту (обращение), аск не шлётся', async () => {
   const { repo, calls, send } = setup()
   await send(msg('Сколько стоит ретушь?'))
   await send(msg('И сроки?'))
   assert.equal(repo.messages.length, 2)
-  assert.equal(calls.filter((c) => c.method === 'sendMessage' && c.payload.chat_id === 555).length, 1)
+  assert.equal(repo.supportJobs.length, 2, 'каждое сообщение создаёт обращение консультанту')
+  assert.equal(repo.supportJobs[0].project_id, null)
+  assert.ok(!calls.some((c) => c.method === 'sendMessage' && c.payload.chat_id === 555), 'бот не шлёт аск — отвечает консультант')
 })
 
 test('английский язык по language_code', async () => {
-  const { repo, calls, send } = setup()
+  const { repo, send } = setup()
   const en = { ...user, id: 777, username: undefined, language_code: 'en' }
   await send({ message: { message_id: 1, date: 1, chat: { id: 777, type: 'private', first_name: 'Tom' }, from: en, text: 'Hello' } })
   assert.equal(repo.clients[0].language, 'en')
-  assert.match(String(calls.find((c) => c.method === 'sendMessage' && c.payload.chat_id === 777)!.payload.text), /administrator/)
+  assert.equal(repo.supportJobs.length, 1)
 })
 
 test('повторная доставка того же update не обрабатывается дважды', async () => {
@@ -289,15 +291,16 @@ test('воронка: чужая кнопка и старый запуск не 
   assert.ok(calls.some((c) => c.method === 'answerCallbackQuery' && /больше не работает/.test(String(c.payload.text))))
 })
 
-test('воронка по ключевому слову запускается на сообщение', async () => {
+test('свободный текст по ключевому слову больше не запускает воронку — идёт консультанту', async () => {
   const { repo, calls, send } = setup()
   const kw = JSON.parse(JSON.stringify(demoGraph))
   kw.nodes[0].data = { triggers: [TRIGGER.keyword], keyword: 'цена, прайс' }
   publish(repo, kw)
   await send(msg('Какая цена у ретуши?'))
-  assert.equal(repo.runs.length, 1)
-  assert.ok(calls.some((c) => c.method === 'sendMessage' && /Здравствуйте, Мария/.test(String(c.payload.text))))
-  assert.ok(!calls.some((c) => /Передали администратору/.test(String(c.payload.text ?? ''))))
+  assert.equal(repo.runs.length, 0, 'воронка по ключевому слову не запускается — свободный текст уходит консультанту')
+  assert.equal(repo.supportJobs.length, 1)
+  assert.equal(repo.supportJobs[0].request_text, 'Какая цена у ретуши?')
+  assert.ok(!calls.some((c) => c.method === 'sendMessage' && c.payload.chat_id === 555), 'бот не шлёт приветствие/аск')
 })
 
 test('/shablon в теме показывает шаблоны, кнопка отправляет клиенту с подстановкой имени', async () => {

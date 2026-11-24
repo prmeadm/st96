@@ -1,7 +1,7 @@
 // Периоды и оплата (Фаза 5): старт/активация периода, подтверждение оплаты, списание счётчиков.
 // Логика через Repo (в тестах — memory), чистая и проверяемая.
-import type { SupportRepo } from './pgRepo'
-import type { PackageRow } from './types'
+import type { SupportRepo } from './pgRepo.js'
+import type { PackageRow } from './types.js'
 
 /** Границы месяца от даты подтверждения оплаты (вариант B из ТЗ). День клампится в целевом месяце (31.01 → 28.02). */
 export function monthRange(startIso: string): { start: string; end: string } {

@@ -1,2 +1,2 @@
 export const config = { runtime: 'edge' }
-export { default } from '../crm/api/broadcast'
+export { default } from '../crm/api/broadcast.js'

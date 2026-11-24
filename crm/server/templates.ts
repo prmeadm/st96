@@ -1,5 +1,5 @@
-import { bookingUrl } from './booking/schedule'
-import { SITE_SERVICES } from './catalog'
+import { bookingUrl } from './booking/schedule.js'
+import { SITE_SERVICES } from './catalog.js'
 // Шаблоны сообщений: общие типы и константы для админки и бота.
 export type TemplateKind = 'text' | 'photo' | 'video' | 'voice' | 'audio' | 'file'
 export type TemplateRow = {

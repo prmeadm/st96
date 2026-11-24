@@ -1,4 +1,4 @@
-import { TRIGGER, asArray, parseDelay, str, type Graph, type Part } from './types'
+import { TRIGGER, asArray, parseDelay, str, type Graph, type Part } from './types.js'
 
 export type Issue = { node?: string; text: string }
 

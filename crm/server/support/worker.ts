@@ -7,20 +7,20 @@ import { execFile } from 'node:child_process'
 import { mkdirSync } from 'node:fs'
 import { mkdir, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { pgRepo, type SupportRepo } from './pgRepo'
-import { buildPrompt, decide, type AgentInput, type Classification, type Classify } from './agent'
-import { spendCorrections, spendFeatures } from './period'
-import type { SupportAttachment, SupportJobRow } from './types'
-import { downloadTelegramFile, downloadTelegramVoice, sendTelegramVoice, synthesizeVoice, transcribeAudio } from './voice'
-import { consultAnswer } from './consult'
-import { replySupport } from './reply'
-import { isProjectsQuestion, pickProject, projectLabel, projectsListText } from './projects'
-import { isConfirmation, isRejection } from './confirm'
-import { CREATOR_ANSWER, isCreatorQuestion } from './creator'
-import { hasAudioAttachment, musicReplyText } from './music'
-import { attachmentFileName, effectiveRequestText, materialAskText, needsMaterial } from './material'
-import { resultLink } from './link'
-import type { Llm } from '../agent/llm'
+import { pgRepo, type SupportRepo } from './pgRepo.js'
+import { buildPrompt, decide, type AgentInput, type Classification, type Classify } from './agent.js'
+import { spendCorrections, spendFeatures } from './period.js'
+import type { SupportAttachment, SupportJobRow } from './types.js'
+import { downloadTelegramFile, downloadTelegramVoice, sendTelegramVoice, synthesizeVoice, transcribeAudio } from './voice.js'
+import { consultAnswer } from './consult.js'
+import { replySupport } from './reply.js'
+import { isProjectsQuestion, pickProject, projectLabel, projectsListText } from './projects.js'
+import { isConfirmation, isRejection } from './confirm.js'
+import { CREATOR_ANSWER, isCreatorQuestion } from './creator.js'
+import { hasAudioAttachment, musicReplyText } from './music.js'
+import { attachmentFileName, effectiveRequestText, materialAskText, needsMaterial } from './material.js'
+import { resultLink } from './link.js'
+import type { Llm } from '../agent/llm.js'
 
 const dbUrl = process.env.SUPABASE_DB_URL ?? ''
 const leadsBotToken = process.env.LEADS_BOT_TOKEN ?? ''
@@ -315,9 +315,20 @@ async function processJob(repo: SupportRepo, job: SupportJobRow) {
     }
   }
   if (!project) {
-    await repo.updateSupportJob(job.id, { status: 'failed', result_json: { error: 'нет проекта' }, finished_at: new Date().toISOString() })
-    await repo.insertAudit({ actor: 'ai', action: 'failed', client_id: job.client_id, project_id: job.project_id, job_id: job.id, payload: { error: 'no_project' } })
-    await notifyClient(repo, job.client_id, 'failed', undefined, { voice: wasVoice })
+    // Нет активного проекта: консультант продаёт услуги студии (без классификации правок и сценария проекта).
+    const finished = new Date().toISOString()
+    let answer = ''
+    if (requestText.trim()) {
+      try {
+        const client = await repo.findClientById(job.client_id)
+        answer = (await consultAnswer(askDeepSeek, { question: requestText, lang: client?.language ?? 'ru', name: client?.name ?? null, clientId: job.client_id })).trim()
+      } catch (e) {
+        console.error('consult (no project) failed', e instanceof Error ? e.message : e)
+      }
+    }
+    await repo.updateSupportJob(job.id, { status: 'clarify', result_json: { reason: 'consult', answer }, finished_at: finished })
+    await repo.insertAudit({ actor: 'ai', action: 'consult', client_id: job.client_id, project_id: null, job_id: job.id })
+    if (answer) await notifyClient(repo, job.client_id, 'clarify', undefined, { answer, voice: wasVoice })
     return
   }
 

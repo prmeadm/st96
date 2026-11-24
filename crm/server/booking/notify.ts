@@ -1,12 +1,12 @@
 // Уведомления о записи: администраторам (с кнопками решения) и клиенту (подтверждение с файлом календаря, напоминание).
-import { clickablePhone } from '../leads/parse'
+import { clickablePhone } from '../leads/parse.js'
 import { InlineKeyboard, InputFile, type Api } from 'grammy'
-import { serviceLabel } from '../catalog'
-import type { ClientRow, Repo } from '../repo'
-import { buildIcs } from './ics'
-import { FORMAT_LABEL, bookingUrl, whenLabel, whenParts } from './schedule'
-import { loadDirectAdmins } from './service'
-import type { BookingRow } from './types'
+import { serviceLabel } from '../catalog.js'
+import type { ClientRow, Repo } from '../repo.js'
+import { buildIcs } from './ics.js'
+import { FORMAT_LABEL, bookingUrl, whenLabel, whenParts } from './schedule.js'
+import { loadDirectAdmins } from './service.js'
+import type { BookingRow } from './types.js'
 
 export { whenLabel }
 const minutes = (b: BookingRow) => Math.round((Date.parse(b.ends_at) - Date.parse(b.starts_at)) / 60_000)

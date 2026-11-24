@@ -1,8 +1,8 @@
 // Рассылки: кому можно писать, сборка текста и отправка пачками (по расписанию из api/jobs).
 import type { Api } from 'grammy'
-import { sendContent } from './bot/dialog'
-import type { ClientRow, Repo } from './repo'
-import type { TemplateKind } from './templates'
+import { sendContent } from './bot/dialog.js'
+import type { ClientRow, Repo } from './repo.js'
+import type { TemplateKind } from './templates.js'
 
 export type Segment = { services?: string[]; interests?: string[]; tags?: string[]; language?: '' | 'ru' | 'en' }
 export type BroadcastStatus = 'draft' | 'scheduled' | 'sending' | 'done' | 'canceled'

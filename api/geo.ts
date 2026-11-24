@@ -1,2 +1,2 @@
 export const config = { runtime: 'edge' }
-export { default } from '../crm/api/geo'
+export { default } from '../crm/api/geo.js'

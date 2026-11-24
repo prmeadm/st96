@@ -1,14 +1,14 @@
 // Доступ к данным. Логика (server/leads, server/bot) работает через интерфейс Repo:
 // в проде это Supabase, в тестах — память.
 import { createClient } from '@supabase/supabase-js'
-import { dbSchema } from './env'
-import type { Funnel, JobRow, RunRow } from './funnels/types'
-import type { TemplateRow } from './templates'
-import type { AudienceClient, BroadcastRow, Segment } from './broadcasts'
-import type { AgentStats, AgentTask } from './agent/types'
-import type { TemplateKind } from './templates'
-import type { BookingInsert, BookingRow } from './booking/types'
-import type { AgentAuditRow, AgentScenarioRow, AuditInsert, ClientProjectRow, InvoiceInsert, InvoiceRow, PackageInsert, PackageRow, PackagePeriodRow, PeriodInsert, ProjectInsert, ScenarioInsert, SupportJobInsert, SupportJobRow } from './support/types'
+import { dbSchema } from './env.js'
+import type { Funnel, JobRow, RunRow } from './funnels/types.js'
+import type { TemplateRow } from './templates.js'
+import type { AudienceClient, BroadcastRow, Segment } from './broadcasts.js'
+import type { AgentStats, AgentTask } from './agent/types.js'
+import type { TemplateKind } from './templates.js'
+import type { BookingInsert, BookingRow } from './booking/types.js'
+import type { AgentAuditRow, AgentScenarioRow, AuditInsert, ClientProjectRow, InvoiceInsert, InvoiceRow, PackageInsert, PackageRow, PackagePeriodRow, PeriodInsert, ProjectInsert, ScenarioInsert, SupportJobInsert, SupportJobRow } from './support/types.js'
 
 export type ClientRow = {
   id: string

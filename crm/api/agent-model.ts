@@ -1,8 +1,10 @@
-import { requireAdmin, json } from '../server/adminAuth'
-import { MODEL_SETTING } from '../server/agent/deps'
-import { testModel } from '../server/agent/llm'
-import { AUTO_MODEL, CUSTOM_PREFIX, CUSTOM_SETTING, MAX_CUSTOM_MODELS, isKnownModel, parseCustom, validateCustom } from '../server/agent/models'
-import { supabaseRepo } from '../server/repo'
+/// <reference types="node" />
+import { requireAdmin, json } from '../server/adminAuth.js'
+import { MODEL_SETTING } from '../server/agent/deps.js'
+import { testModel } from '../server/agent/llm.js'
+import { AUTO_MODEL, CUSTOM_PREFIX, CUSTOM_SETTING, MAX_CUSTOM_MODELS, isKnownModel, parseCustom, validateCustom } from '../server/agent/models.js'
+import { supabaseRepo } from '../server/repo.js'
+import { isErr } from '../server/result.js'
 
 export const config = { runtime: 'edge' }
 
@@ -34,7 +36,7 @@ export default async function handler(req: Request) {
   if (b.action === 'add') {
     if (custom.length >= MAX_CUSTOM_MODELS) return json({ error: `Можно добавить не больше ${MAX_CUSTOM_MODELS} моделей` }, 422)
     const v = validateCustom({ name: b.name, baseUrl: b.baseUrl, model: b.model, keyEnv: b.keyEnv })
-    if (!v.ok) return json({ error: v.error }, 422)
+    if (isErr(v)) return json({ error: v.error }, 422)
     const id = `${CUSTOM_PREFIX}${Math.random().toString(36).slice(2, 9)}`
     await repo.setSetting(CUSTOM_SETTING, JSON.stringify([...custom, { id, ...v.value }]))
     return json({ ok: true, id })

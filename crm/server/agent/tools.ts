@@ -1,12 +1,13 @@
 // Единственное, что умеет агент. Уровень риска задаёт код, а не модель: модель только выбирает инструмент из списка.
 import type { Api } from 'grammy'
-import { startBroadcast, type Segment } from '../broadcasts'
-import type { Repo } from '../repo'
-import { SITE_SERVICES, UNKNOWN_SERVICE, servicesBrief } from '../catalog'
-import { TPL_GENERAL, TPL_GOALS, TPL_SERVICES, TPL_TASKS } from '../templates'
-import { emptyStats, importSlice, MAX_EXPORT_BYTES, parseExport, planImport, summarize, totalOf, type ImportStats } from './groupImport'
-import { parseJson, type Llm } from './llm'
-import type { AgentStats, AgentTask, Risk, Step } from './types'
+import { startBroadcast, type Segment } from '../broadcasts.js'
+import { isErr } from '../result.js'
+import type { Repo } from '../repo.js'
+import { SITE_SERVICES, UNKNOWN_SERVICE, servicesBrief } from '../catalog.js'
+import { TPL_GENERAL, TPL_GOALS, TPL_SERVICES, TPL_TASKS } from '../templates.js'
+import { emptyStats, importSlice, MAX_EXPORT_BYTES, parseExport, planImport, summarize, totalOf, type ImportStats } from './groupImport.js'
+import { parseJson, type Llm } from './llm.js'
+import type { AgentStats, AgentTask, Risk, Step } from './types.js'
 
 export type ToolCtx = {
   repo: Repo
@@ -153,7 +154,7 @@ export const TOOLS: Tool[] = [
       if (!ref) throw new Error('Нет черновика рассылки: перед запуском нужен шаг draft_broadcast')
       if (!ctx.api) throw new Error('Telegram не настроен')
       const r = await startBroadcast(ctx.repo, ctx.api, ref)
-      if (!r.ok) throw new Error(r.error)
+      if (isErr(r)) throw new Error(r.error)
       return { text: `Рассылка запущена, получателей: ${r.total}` }
     },
   },

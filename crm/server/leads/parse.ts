@@ -3,7 +3,7 @@
 // в «Имя» попадает телефон, имени нет, ник в Telegram без @. Парсер сначала читает поля
 // как есть, потом определяет тип каждого значения и раскладывает его правильно.
 
-import { detectServiceKey } from '../catalog'
+import { detectServiceKey } from '../catalog.js'
 
 export type LeadOrigin = 'site' | 'stand' | 'unknown'
 // Ключ услуги: slug услуги сайта (src/data/services.ts) или 'other', если услуга не определена

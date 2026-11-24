@@ -20,7 +20,7 @@ async function refKey(botToken: string) {
 const b64url = (b: Uint8Array) => btoa(String.fromCharCode(...b)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
 const unb64url = (s: string) => Uint8Array.from(atob(s.replace(/-/g, '+').replace(/_/g, '/')), (c) => c.charCodeAt(0))
 
-async function mac(body: Uint8Array, botToken: string) {
+async function mac(body: Uint8Array<ArrayBuffer>, botToken: string) {
   return new Uint8Array(await crypto.subtle.sign('HMAC', await refKey(botToken), body)).slice(0, 12)
 }
 

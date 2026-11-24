@@ -1,6 +1,6 @@
 // Сохранение заявок и заметок сотрудников в базу.
-import type { ClientRow, LeadInsert, Repo } from '../repo'
-import { normalizePhone, parseLead, type ParsedLead } from './parse'
+import type { ClientRow, LeadInsert, Repo } from '../repo.js'
+import { normalizePhone, parseLead, type ParsedLead } from './parse.js'
 
 export type IngestCtx = {
   source?: LeadInsert['source']

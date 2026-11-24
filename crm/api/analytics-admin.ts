@@ -1,6 +1,7 @@
-import { requireAdmin, json } from '../server/adminAuth'
-import { PRICE_SETTING, parsePrices } from '../server/usage'
-import { supabaseRepo } from '../server/repo'
+/// <reference types="node" />
+import { requireAdmin, json } from '../server/adminAuth.js'
+import { PRICE_SETTING, parsePrices } from '../server/usage.js'
+import { supabaseRepo } from '../server/repo.js'
 
 export const config = { runtime: 'edge' }
 

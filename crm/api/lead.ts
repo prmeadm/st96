@@ -1,7 +1,8 @@
-import { ingestLead } from '../server/leads/ingest'
-import { clickablePhone, parseLead } from '../server/leads/parse'
-import { supabaseRepo } from '../server/repo'
-import { issueSiteRef } from '../server/bot/siteRef'
+/// <reference types="node" />
+import { ingestLead } from '../server/leads/ingest.js'
+import { clickablePhone, parseLead } from '../server/leads/parse.js'
+import { supabaseRepo } from '../server/repo.js'
+import { issueSiteRef } from '../server/bot/siteRef.js'
 
 export const config = { runtime: 'edge' }
 

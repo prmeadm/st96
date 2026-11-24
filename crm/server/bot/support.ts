@@ -1,7 +1,7 @@
 // Поддержка в боте: маршрутизация «есть проект → поддержка» и гейт человека (ИИ ↔ сотрудник).
 // Логика чистая и покрывается тестами через memoryRepo и handleTopicMessage.
 import type { Api } from 'grammy'
-import type { ClientRow, Repo } from '../repo'
+import type { ClientRow, Repo } from '../repo.js'
 
 /** Длительная пауза ИИ (по сути до явного /startai): диалог ведёт человек. */
 export const HUMAN_PAUSE_MS = 30 * 86400_000

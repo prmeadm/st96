@@ -1,9 +1,10 @@
+/// <reference types="node" />
 import { Api } from 'grammy'
-import { requireAdmin, json } from '../server/adminAuth'
-import { agentDeps } from '../server/agent/deps'
-import { LlmError } from '../server/agent/llm'
-import { supabaseRepo } from '../server/repo'
-import { translateToEnglish } from '../server/translate'
+import { requireAdmin, json } from '../server/adminAuth.js'
+import { agentDeps } from '../server/agent/deps.js'
+import { LlmError } from '../server/agent/llm.js'
+import { supabaseRepo } from '../server/repo.js'
+import { translateToEnglish } from '../server/translate.js'
 
 export const config = { runtime: 'edge' }
 

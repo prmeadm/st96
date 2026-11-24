@@ -1,7 +1,9 @@
+/// <reference types="node" />
 import { Api } from 'grammy'
-import { requireAdmin, json } from '../server/adminAuth'
-import { inAudience, startBroadcast, type Segment } from '../server/broadcasts'
-import { supabaseRepo } from '../server/repo'
+import { requireAdmin, json } from '../server/adminAuth.js'
+import { inAudience, startBroadcast, type Segment } from '../server/broadcasts.js'
+import { supabaseRepo } from '../server/repo.js'
+import { isErr } from '../server/result.js'
 
 export const config = { runtime: 'edge' }
 
@@ -42,7 +44,8 @@ export default async function handler(req: Request) {
 
   if (body.action === 'start') {
     const r = await startBroadcast(repo, new Api(token), b.id)
-    return r.ok ? json({ ok: true, total: r.total }) : json({ error: r.error }, r.status)
+    if (isErr(r)) return json({ error: r.error }, r.status)
+    return json({ ok: true, total: r.total })
   }
   return json({ error: 'Unknown action' }, 400)
 }

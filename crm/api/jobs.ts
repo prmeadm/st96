@@ -1,11 +1,12 @@
+/// <reference types="node" />
 import { Api } from 'grammy'
-import { resumeBooking, resumeRun } from '../server/funnels/engine'
-import { telegramOut } from '../server/bot/telegramOut'
-import { supabaseRepo } from '../server/repo'
-import { tickBroadcasts } from '../server/broadcasts'
-import { tickBookingReminders } from '../server/booking/notify'
-import { agentDeps } from '../server/agent/deps'
-import { tickAgentTasks } from '../server/agent/engine'
+import { resumeBooking, resumeRun } from '../server/funnels/engine.js'
+import { telegramOut } from '../server/bot/telegramOut.js'
+import { supabaseRepo } from '../server/repo.js'
+import { tickBroadcasts } from '../server/broadcasts.js'
+import { tickBookingReminders } from '../server/booking/notify.js'
+import { agentDeps } from '../server/agent/deps.js'
+import { tickAgentTasks } from '../server/agent/engine.js'
 
 export const config = { runtime: 'edge' }
 

@@ -1,2 +1,2 @@
 export const config = { runtime: 'edge' }
-export { default } from '../crm/api/booking-admin'
+export { default } from '../crm/api/booking-admin.js'

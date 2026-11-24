@@ -1,11 +1,11 @@
 // Репозиторий в памяти: для тестов логики без базы.
-import type { ClientRow, LeadInsert, MessageInsert, NoteInsert, Repo } from './repo'
-import type { Funnel, JobRow, RunRow } from './funnels/types'
-import type { TemplateRow } from './templates'
-import type { AudienceClient, BroadcastRow } from './broadcasts'
-import type { AgentStats, AgentTask } from './agent/types'
-import type { BookingInsert, BookingRow } from './booking/types'
-import type { AgentAuditRow, AgentScenarioRow, ClientProjectRow, InvoiceRow, PackagePeriodRow, PackageRow, SupportJobRow } from './support/types'
+import type { ClientRow, LeadInsert, MessageInsert, NoteInsert, Repo } from './repo.js'
+import type { Funnel, JobRow, RunRow } from './funnels/types.js'
+import type { TemplateRow } from './templates.js'
+import type { AudienceClient, BroadcastRow } from './broadcasts.js'
+import type { AgentStats, AgentTask } from './agent/types.js'
+import type { BookingInsert, BookingRow } from './booking/types.js'
+import type { AgentAuditRow, AgentScenarioRow, ClientProjectRow, InvoiceRow, PackagePeriodRow, PackageRow, SupportJobRow } from './support/types.js'
 
 export type MemoryRepo = Repo & {
   clients: ClientRow[]

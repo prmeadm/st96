@@ -2,9 +2,9 @@
 // сценарию проекта и ветке статуса. В отличие от consult.ts (консультант-«продавец» для
 // покупателей) — не допродаёт и не предлагает встречу, кроме явных веток. Чистая логика,
 // покрывается тестами; LLM и ссылка на запись инжектируются.
-import { parseJson, type Llm } from '../agent/llm'
-import { bookingUrl } from '../booking/schedule'
-import type { Scenario } from './agent'
+import { parseJson, type Llm } from '../agent/llm.js'
+import { bookingUrl } from '../booking/schedule.js'
+import type { Scenario } from './agent.js'
 
 export type Lang = 'ru' | 'en'
 

@@ -1,6 +1,6 @@
 // Расчёт свободных слотов: правила -> закрытые дни -> блоки -> существующие заявки -> лимиты.
 // Часовой пояс Минск (UTC+3, без перехода на летнее время): даты и время считаем строками «ГГГГ-ММ-ДД» и минутами от полуночи.
-import { SERVICE_SLUGS, SITE_SERVICES } from '../catalog'
+import { SERVICE_SLUGS, SITE_SERVICES } from '../catalog.js'
 
 export const TZ_OFFSET_MIN = 180
 // Услуги берутся только с сайта (server/catalog.ts ← src/data/services.ts)

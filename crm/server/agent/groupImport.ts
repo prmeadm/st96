@@ -1,9 +1,9 @@
 // Сбор клиентов и заявок из истории группы по файлу экспорта Telegram Desktop (result.json).
 // Бот Telegram не может читать старые сообщения группы, поэтому историю берём из экспорта. Разбор строгий (код, а не модель):
 // быстро, точно, без выдумок; повторный запуск не создаёт дублей (заявки находятся по номеру сообщения Telegram).
-import type { Repo } from '../repo'
-import { ingestGroupMessage, ingestLead } from '../leads/ingest'
-import { clientKey, parseLead, type ParsedLead } from '../leads/parse'
+import type { Repo } from '../repo.js'
+import { ingestGroupMessage, ingestLead } from '../leads/ingest.js'
+import { clientKey, parseLead, type ParsedLead } from '../leads/parse.js'
 
 export type ExportMsg = { id: number; text: string; from: string; replyTo: number | null }
 export type ImportStats = { leads: number; created: number; existing: number; excluded: number; noContact: number; notes: number; skippedOther: number }

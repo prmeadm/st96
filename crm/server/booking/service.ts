@@ -1,9 +1,9 @@
 // Запись на встречу: создание заявки, решение администратора, публичная доступность слотов.
-import { cleanTopics } from '../../shared/data/serviceOptions'
-import { normalizePhone, normalizeTelegram } from '../leads/parse'
-import type { ClientRow, Repo } from '../repo'
-import { BOOK_ORIGIN, bookingUrl, FORMAT_KEYS, SERVICE_KEYS, addDays, dayInfo, defaultSchedule, isDate, isTime, minskNow, normalizeSchedule, slotAvailable, tm, toInstant, toLocal, type DayBooking, type DayInfo, type FormatKey, type Schedule, type ServiceKey } from './schedule'
-import type { BookingRow } from './types'
+import { cleanTopics } from '../../shared/data/serviceOptions.js'
+import { normalizePhone, normalizeTelegram } from '../leads/parse.js'
+import type { ClientRow, Repo } from '../repo.js'
+import { BOOK_ORIGIN, bookingUrl, FORMAT_KEYS, SERVICE_KEYS, addDays, dayInfo, defaultSchedule, isDate, isTime, minskNow, normalizeSchedule, slotAvailable, tm, toInstant, toLocal, type DayBooking, type DayInfo, type FormatKey, type Schedule, type ServiceKey } from './schedule.js'
+import type { BookingRow } from './types.js'
 
 export const SCHEDULE_SETTING = 'booking_schedule'
 

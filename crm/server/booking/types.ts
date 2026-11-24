@@ -1,4 +1,4 @@
-import type { FormatKey, ServiceKey } from './schedule'
+import type { FormatKey, ServiceKey } from './schedule.js'
 
 export type BookingStatus = 'pending' | 'confirmed' | 'rejected' | 'canceled'
 export type BookingRow = {

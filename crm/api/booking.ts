@@ -1,11 +1,13 @@
+/// <reference types="node" />
 import { Api } from 'grammy'
-import { json } from '../server/adminAuth'
-import { buildIcs } from '../server/booking/ics'
-import { notifyAdminsNewBooking } from '../server/booking/notify'
-import { FORMAT_KEYS, FORMAT_LABEL, isDate, minskNow, type FormatKey } from '../server/booking/schedule'
-import { SITE_SERVICES } from '../server/catalog'
-import { clientContacts, createBooking, loadDay, loadMonth } from '../server/booking/service'
-import { supabaseRepo } from '../server/repo'
+import { json } from '../server/adminAuth.js'
+import { buildIcs } from '../server/booking/ics.js'
+import { notifyAdminsNewBooking } from '../server/booking/notify.js'
+import { FORMAT_KEYS, FORMAT_LABEL, isDate, minskNow, type FormatKey } from '../server/booking/schedule.js'
+import { SITE_SERVICES } from '../server/catalog.js'
+import { clientContacts, createBooking, loadDay, loadMonth } from '../server/booking/service.js'
+import { supabaseRepo } from '../server/repo.js'
+import { isErr } from '../server/result.js'
 
 export const config = { runtime: 'edge' }
 
@@ -73,7 +75,7 @@ export default async function handler(req: Request) {
       goal: b.goal, comment: b.comment, topics: b.topics, clientId: b.clientId, runId: typeof b.runId === 'string' ? b.runId : null, runNode: typeof b.runNode === 'string' ? b.runNode : null,
       source: typeof b.runId === 'string' ? 'funnel' : typeof b.clientId === 'string' ? 'link' : 'site',
     }, now)
-    if (!r.ok) return json({ error: r.error }, r.status)
+    if (isErr(r)) return json({ error: r.error }, r.status)
     const token = process.env.TELEGRAM_BOT_TOKEN
     if (token) await notifyAdminsNewBooking(new Api(token), process.env.TELEGRAM_CHAT_ID ? Number(process.env.TELEGRAM_CHAT_ID) : null, r.booking, repo).then((n) => { if (n.failed.length) console.error('booking: not delivered to', n.failed.join(', '), '(they must start the bot)') }).catch((e) => console.error('booking notify failed', e instanceof Error ? e.message : e))
     return json({ ok: true, id: r.booking.id, starts_at: r.booking.starts_at, ref: r.client.id })

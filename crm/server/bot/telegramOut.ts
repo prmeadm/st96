@@ -1,9 +1,9 @@
 import { InlineKeyboard, InputFile, type Api } from 'grammy'
-import type { Btn, Out } from '../funnels/engine'
-import { RetryLaterError } from '../funnels/retry'
-import type { Repo } from '../repo'
-import { CAPTION_LIMIT, NOT_A_FILE_ERROR, canonicalVideoUrl, mp4Info, youtubeEmbeddable, errorText, firstVideoUrl, isVideoPageUrl, splitText, youtubeId, youtubeThumb } from '../media'
-import { notifyTopic } from './dialog'
+import type { Btn, Out } from '../funnels/engine.js'
+import { RetryLaterError } from '../funnels/retry.js'
+import type { Repo } from '../repo.js'
+import { CAPTION_LIMIT, NOT_A_FILE_ERROR, canonicalVideoUrl, mp4Info, youtubeEmbeddable, errorText, firstVideoUrl, isVideoPageUrl, splitText, youtubeId, youtubeThumb } from '../media.js'
+import { notifyTopic } from './dialog.js'
 
 type Markup = InlineKeyboard | undefined
 

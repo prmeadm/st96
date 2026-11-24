@@ -1,10 +1,10 @@
 // Заявка «вручную»: администратор копирует текст из Telegram (или любого чата), поля раскладываются сами.
 // Работает с любым текстом: с метками («Имя: …», «Телефон: …»), без меток, с шапкой пересланного сообщения.
-import { UNKNOWN_SERVICE, detectServiceInText, serviceByLabel, serviceLabel } from '../catalog'
-import type { Repo } from '../repo'
-import { ingestLead, upsertClientFromLead } from './ingest'
-import { cleanInterests, type InterestKey } from './interests'
-import { normalizeClientKind, normalizePhone, normalizeTelegram, parseLead, type ParsedLead } from './parse'
+import { UNKNOWN_SERVICE, detectServiceInText, serviceByLabel, serviceLabel } from '../catalog.js'
+import type { Repo } from '../repo.js'
+import { ingestLead, upsertClientFromLead } from './ingest.js'
+import { cleanInterests, type InterestKey } from './interests.js'
+import { normalizeClientKind, normalizePhone, normalizeTelegram, parseLead, type ParsedLead } from './parse.js'
 
 export type LeadFields = {
   service_key: string

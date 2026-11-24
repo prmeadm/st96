@@ -1,8 +1,8 @@
 import type { Api } from 'grammy'
-import type { Repo } from '../repo'
-import type { AgentDeps } from './engine'
-import { LlmError, openAiCompatible, type Llm } from './llm'
-import { CUSTOM_PREFIX, CUSTOM_SETTING, modelChain, parseCustom } from './models'
+import type { Repo } from '../repo.js'
+import type { AgentDeps } from './engine.js'
+import { LlmError, openAiCompatible, type Llm } from './llm.js'
+import { CUSTOM_PREFIX, CUSTOM_SETTING, modelChain, parseCustom } from './models.js'
 
 export const MODEL_SETTING = 'llm_model'
 

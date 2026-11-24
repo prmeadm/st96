@@ -1,8 +1,10 @@
+/// <reference types="node" />
 import { Api } from 'grammy'
-import { requireAdmin, json } from '../server/adminAuth'
-import { agentDeps } from '../server/agent/deps'
-import { approveTask, confirmStep, createTask, deleteTask, rejectTask, reviseTask } from '../server/agent/engine'
-import { supabaseRepo } from '../server/repo'
+import { requireAdmin, json } from '../server/adminAuth.js'
+import { agentDeps } from '../server/agent/deps.js'
+import { approveTask, confirmStep, createTask, deleteTask, rejectTask, reviseTask } from '../server/agent/engine.js'
+import { supabaseRepo } from '../server/repo.js'
+import { isErr } from '../server/result.js'
 
 export const config = { runtime: 'edge' }
 
@@ -34,5 +36,6 @@ export default async function handler(req: Request) {
     : b.action === 'delete' ? await deleteTask(deps, id)
     : null
   if (!r) return json({ error: 'Unknown action' }, 400)
-  return r.ok ? json({ ok: true, id: r.task.id, status: r.task.status }) : json({ error: r.error }, r.status)
+  if (isErr(r)) return json({ error: r.error }, r.status)
+  return json({ ok: true, id: r.task.id, status: r.task.status })
 }

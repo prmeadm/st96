@@ -1,6 +1,7 @@
-import { requireAdmin, json } from '../server/adminAuth'
-import { CUSTOM_SETTING, parseCustom } from '../server/agent/models'
-import { supabaseRepo } from '../server/repo'
+/// <reference types="node" />
+import { requireAdmin, json } from '../server/adminAuth.js'
+import { CUSTOM_SETTING, parseCustom } from '../server/agent/models.js'
+import { supabaseRepo } from '../server/repo.js'
 
 export const config = { runtime: 'edge' }
 

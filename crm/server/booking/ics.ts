@@ -1,6 +1,6 @@
-import { serviceLabel } from '../catalog'
-import { FORMAT_LABEL } from './schedule'
-import type { BookingRow } from './types'
+import { serviceLabel } from '../catalog.js'
+import { FORMAT_LABEL } from './schedule.js'
+import type { BookingRow } from './types.js'
 
 const esc = (t: string) => t.replace(/\\/g, '\\\\').replace(/([,;])/g, '\\$1').replace(/\r?\n/g, '\\n')
 const utc = (d: Date) => d.toISOString().replace(/[-:]/g, '').slice(0, 15) + 'Z'
