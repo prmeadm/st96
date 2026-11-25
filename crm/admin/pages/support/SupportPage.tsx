@@ -33,7 +33,12 @@ const SCENARIO_TEMPLATE = `Роль: агент поддержки проект�
 
 // Базовая папка клиентских проектов на сервере + помощники для имени новой папки
 const WORKSPACE_BASE = '/home/dsh/work/KLIENTS/'
-const slugify = (s: string) => s.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-_]/g, '').replace(/-+/g, '-')
+const TRANSLIT: Record<string, string> = {
+  а: 'a', б: 'b', в: 'v', г: 'g', д: 'd', е: 'e', ё: 'e', ж: 'zh', з: 'z', и: 'i', й: 'y',
+  к: 'k', л: 'l', м: 'm', н: 'n', о: 'o', п: 'p', р: 'r', с: 's', т: 't', у: 'u', ф: 'f',
+  х: 'h', ц: 'ts', ч: 'ch', ш: 'sh', щ: 'sch', ъ: '', ы: 'y', ь: '', э: 'e', ю: 'yu', я: 'ya',
+}
+const slugify = (s: string) => s.toLowerCase().trim().split('').map((ch) => TRANSLIT[ch] ?? ch).join('').replace(/\s+/g, '-').replace(/[^a-z0-9-_]/g, '').replace(/-+/g, '-').replace(/^-+|-+$/g, '')
 const slugFromPath = (p: string) => p.replace(WORKSPACE_BASE, '').replace(/\/+$/, '')
 
 // ─── Клиенты и проекты ───
@@ -75,6 +80,8 @@ function ProjectsTab() {
   const save = async () => {
     if (!editing) return
     if (!editing.client_id) return setMsg('Выберите клиента')
+    // Выбрали «новую папку», но имя не ввели (осталась базовая папка) — не сохраняем битый путь
+    if (editing.workspace_path?.trim() && slugFromPath(editing.workspace_path.trim()) === '') return setMsg('Введите имя новой папки (латиницей)')
     const base = {
       client_id: editing.client_id,
       package_id: editing.package_id ?? null,
@@ -151,7 +158,12 @@ function ProjectsTab() {
                       <option value="__new__">+ Создать новую папку</option>
                       {existingWorkspaces.map((w) => <option key={w} value={w}>{w}</option>)}
                     </select>
-                    {workspaceIsNew && <input value={slugFromPath(editing.workspace_path ?? '')} onChange={(e) => setEditing({ ...editing, workspace_path: WORKSPACE_BASE + slugify(e.target.value) + '/' })} placeholder="имя папки (например gf-leasing)" />}
+                    {workspaceIsNew && (
+                      <>
+                        <input value={slugFromPath(editing.workspace_path ?? '')} onChange={(e) => setEditing({ ...editing, workspace_path: WORKSPACE_BASE + slugify(e.target.value) + '/' })} placeholder="имя папки латиницей (например gf-leasing)" />
+                        <span className="hint">Папка на сервере: {editing.workspace_path?.trim() && editing.workspace_path.trim() !== WORKSPACE_BASE ? editing.workspace_path : WORKSPACE_BASE + '…'}</span>
+                      </>
+                    )}
                   </div>
                 <div className="fld lx-wide"><label>Репозиторий</label><input value={editing.repo_url ?? ''} onChange={(e) => setEditing({ ...editing, repo_url: e.target.value })} placeholder="https://github.com/…" /></div>
                 <div className="fld lx-wide"><label>Деплой-таргет / команда</label><input value={editing.deploy_cmd ?? ''} onChange={(e) => setEditing({ ...editing, deploy_cmd: e.target.value })} placeholder="vercel --prod / npm run deploy" /></div>

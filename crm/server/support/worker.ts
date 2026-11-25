@@ -438,9 +438,18 @@ async function processJob(repo: SupportRepo, job: SupportJobRow) {
   await notifyClient(repo, job.client_id, status, reason, { voice: wasVoice, answer })
 }
 
-async function poll() {
-  if (!dbUrl) throw new Error('SUPABASE_DB_URL не задан')
-  const repo = pgRepo(dbUrl)
+/** Папки активных проектов на сервере: mkdir -p. Нужно, чтобы «Создать новую папку» в админке реально создавало
+ *  каталог, а не только записывало путь в БД (worker и так делает mkdir перед запуском агента — здесь делаем это заранее). */
+async function ensureWorkspaceDirs(repo: SupportRepo): Promise<void> {
+  try {
+    for (const p of (await repo.listProjects()).filter((x) => x.status === 'active')) {
+      if (!p.workspace_path) continue
+      try { mkdirSync(p.workspace_path.trim(), { recursive: true }) } catch (e) { console.error('mkdir workspace failed', p.workspace_path, e instanceof Error ? e.message : e) }
+    }
+  } catch (e) { console.error('ensureWorkspaceDirs failed', e instanceof Error ? e.message : e) }
+}
+
+async function poll(repo: SupportRepo) {
   const jobs = await repo.listQueuedSupportJobs()
   for (const j of jobs) {
     const claimed = await repo.claimSupportJob(j.id)
@@ -454,6 +463,16 @@ async function poll() {
 }
 
 if (process.argv[1]?.endsWith('worker.ts')) {
-  const loop = async () => { for (;;) { try { await poll() } catch (e) { console.error('poll failed', e) } await new Promise((r) => setTimeout(r, 15_000)) } }
+  if (!dbUrl) { console.error('SUPABASE_DB_URL не задан'); process.exit(1) }
+  const repo = pgRepo(dbUrl)
+  const loop = async () => {
+    let ticks = 0
+    for (;;) {
+      try { await poll(repo) } catch (e) { console.error('poll failed', e) }
+      // на старте и раз в ~5 минут: папки активных проектов должны существовать
+      if (ticks++ % 20 === 0) await ensureWorkspaceDirs(repo)
+      await new Promise((r) => setTimeout(r, 15_000))
+    }
+  }
   loop()
 }
