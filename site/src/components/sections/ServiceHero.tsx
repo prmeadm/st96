@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion'
 import { ArrowDown, ArrowUpRight } from 'lucide-react'
-import type { Service } from '../../../../crm/shared/data/services'
+import { services as allServices, type Service } from '../../../../crm/shared/data/services'
 import Aurora from '../ui/Aurora'
 import RevealText from '../ui/RevealText'
 import KeywordOrbit from '../ui/KeywordOrbit'
@@ -10,6 +10,7 @@ import { useUi } from '../../lib/i18n'
 
 export default function ServiceHero({ service }: { service: Service }) {
   const t = useUi()
+  const total = String(allServices.length).padStart(2, '0')
   const video = service.heroVideo
   const wide = Boolean(video && !video.portrait)
   return (
@@ -28,7 +29,7 @@ export default function ServiceHero({ service }: { service: Service }) {
               className="h-1.5 w-1.5 rounded-full"
               style={{ background: service.accent.solid }}
             />
-            {service.kicker} · {service.index}/04
+            {service.kicker} · {service.index}/{total}
           </motion.div>
 
           <RevealText

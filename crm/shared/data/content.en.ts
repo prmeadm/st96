@@ -20,6 +20,8 @@ type ServiceText = Pick<
   | 'quote'
   | 'ctaTitle'
   | 'ctaText'
+  | 'aiBlock'
+  | 'pricing'
 >
 
 export const servicesEn: Record<string, ServiceText> = {
@@ -347,6 +349,162 @@ export const servicesEn: Record<string, ServiceText> = {
     },
     ctaTitle: 'Have a process worth automating?',
     ctaText: "Describe the task — we'll run a free AI audit and show where the effect is hidden.",
+  },
+  support: {
+    navLabel: 'Support',
+    kicker: 'AI-powered support',
+    title: ['Support that', 'makes edits', 'in minutes'],
+    tagline:
+      'We launched an automated AI-powered support system. Your website, catalog, online store or landing page gets updated from a single request — in minutes, with no contractors and no waiting.',
+    heroNote: 'Edits from a single request — in minutes',
+    keywords: ['Edits', 'Updates', 'AI support', 'Website', 'Store', 'Speed', 'Automation'],
+    pricing: {
+      title: 'Support plans',
+      lead: 'Connect your project and make edits from a single request. Annual billing — save 20%.',
+      plans: [
+        {
+          key: 'support-basic',
+          name: 'Basic',
+          tagline: 'For landing pages and small sites',
+          price: 320,
+          features: [
+            { label: 'Projects', value: '1' },
+            { label: 'Content edits per month', value: '10' },
+            { label: 'New features per month', value: '—' },
+            { label: 'Specialist consultations', value: '3' },
+          ],
+          models: ['deepseek'],
+        },
+        {
+          key: 'support-standard',
+          name: 'Standard',
+          tagline: 'For catalogs and online stores',
+          price: 560,
+          features: [
+            { label: 'Projects', value: '1' },
+            { label: 'Content edits per month', value: '20' },
+            { label: 'New features per month', value: '5' },
+            { label: 'Specialist consultations', value: '5' },
+          ],
+          models: ['deepseek'],
+        },
+        {
+          key: 'support-professional',
+          name: 'Professional',
+          tagline: 'For growing projects',
+          price: 720,
+          featured: true,
+          features: [
+            { label: 'Projects', value: '2' },
+            { label: 'Content edits per month', value: '30' },
+            { label: 'New features per month', value: '10' },
+            { label: 'Specialist consultations', value: '10' },
+          ],
+          models: ['deepseek', 'chatgpt', 'claude'],
+        },
+        {
+          key: 'support-ultimate',
+          name: 'Ultimate',
+          tagline: 'For platforms and complex products',
+          price: 1025,
+          features: [
+            { label: 'Projects', value: '3' },
+            { label: 'Content edits per month', value: '60' },
+            { label: 'New features per month', value: '15' },
+            { label: 'Specialist consultations', value: '∞' },
+          ],
+          models: ['deepseek', 'chatgpt', 'claude'],
+        },
+      ],
+    },
+    advantagesLead: 'Support is not "finding an available developer" — it is a system that makes edits immediately.',
+    advantages: [
+      {
+        title: 'Edits of any level — in minutes',
+        text: 'Edits and improvements of any complexity are made from a single request, with no queues and no waiting for weeks.',
+      },
+      {
+        title: 'Affordable plan pricing',
+        text: 'Transparent plans at a fair price — cheaper than an in-house developer and one-off contractors.',
+      },
+      {
+        title: 'No routine, no searching for specialists',
+        text: 'No need to find a contractor, assign tasks or dive into development — the system and AI take the routine off your hands.',
+      },
+      {
+        title: 'No long briefs and approvals',
+        text: 'One request instead of a multi-page spec: describe the task in plain words and get a finished result.',
+      },
+      {
+        title: 'Budget savings on growth',
+        text: 'You optimize spending on the development, growth and maintenance of your digital tools.',
+      },
+      {
+        title: 'Precision and quality',
+        text: 'The highest precision of execution and quality control at every stage.',
+      },
+    ],
+    processLead: 'How support works',
+    process: [
+      {
+        step: '01',
+        title: 'We connect the system',
+        text: 'We audit your website or product and set up the AI support system for your platform.',
+        points: ['Platform audit', 'AI system setup', 'Access and workflow'],
+      },
+      {
+        step: '02',
+        title: 'One request',
+        text: 'You describe the task in plain words — no brief, no spec and no long approval chain.',
+        points: ['A free-form request', 'No technical description', 'No approval chain'],
+      },
+      {
+        step: '03',
+        title: 'AI makes the edit',
+        text: 'The system makes the edit within minutes, with quality control at every stage.',
+        points: ['Done in minutes', 'Quality control', 'Checked on every device'],
+      },
+      {
+        step: '04',
+        title: 'Result and growth',
+        text: 'You get the finished edit, then continuous maintenance and growth without downtime.',
+        points: ['A finished edit', '24/7 maintenance', 'A product growth plan'],
+      },
+    ],
+    stats: [
+      { value: '5', suffix: ' min', label: 'average time for an edit' },
+      { value: '24', suffix: '/7', label: 'support system always on' },
+      { value: '70', suffix: '%', label: 'average savings on maintenance' },
+    ],
+    quote: {
+      text: 'Every edit used to take days and back-and-forth with a contractor. Now it is one request, and it is done in a couple of minutes.',
+      author: 'Online store owner',
+    },
+    ctaTitle: 'Need support that keeps up?',
+    ctaText: 'We will connect the support system and make your first edit the same day you reach out.',
+    aiBlock: {
+      kicker: 'AI implementation',
+      title: 'Take your business to the next level',
+      lead: 'Support is just the start. We will take AI deeper: into customer service, sales, management and project management.',
+      points: [
+        {
+          title: 'We will build a strategy',
+          text: 'An AI strategy for your business goals: where AI gives a measurable effect and how to get it.',
+        },
+        {
+          title: 'We will adapt your existing resources',
+          text: 'Website, catalog, online store and internal systems — we will embed AI where you already work.',
+        },
+        {
+          title: 'We will rework the technical side',
+          text: 'Integrations, process automation and infrastructure — we will prepare the foundation for AI.',
+        },
+        {
+          title: 'We will build management and analytics',
+          text: 'A convenient management system and transparent dashboards to see results in numbers.',
+        },
+      ],
+    },
   },
 }
 

@@ -5,8 +5,10 @@ import { useSeo } from '../hooks/useSeo'
 import ServiceHero from '../components/sections/ServiceHero'
 import AiServices from '../components/sections/AiServices'
 import ProducingGallery from '../components/sections/ProducingGallery'
+import Pricing from '../components/sections/Pricing'
 import Advantages from '../components/sections/Advantages'
 import ProcessTabs from '../components/sections/ProcessTabs'
+import AiImplementation from '../components/sections/AiImplementation'
 import Results from '../components/sections/Results'
 import LeadCapture from '../components/sections/LeadCapture'
 
@@ -28,8 +30,10 @@ export default function ServicePage() {
       <ServiceHero service={service} />
       {service.slug === 'ai' && <AiServices />}
       {service.offers && service.offers.length > 0 && <ProducingGallery service={service} />}
+      {service.pricing && <Pricing service={service} />}
       <Advantages service={service} />
       <ProcessTabs service={service} />
+      {service.aiBlock && <AiImplementation service={service} />}
       <Results service={service} />
       <LeadCapture service={service} />
     </>

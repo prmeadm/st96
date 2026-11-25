@@ -15,8 +15,11 @@ export default function ServicesGrid() {
         <SectionHeading kicker={t.servicesKicker} title={t.whatWeDo} className="mb-14" />
 
         <StaggerGroup className="grid grid-cols-1 gap-px overflow-hidden rounded-2xl border border-ink-line bg-ink-line sm:grid-cols-2">
-          {services.map((s) => (
-            <StaggerItem key={s.slug}>
+          {services.map((s, i) => (
+            <StaggerItem
+              key={s.slug}
+              className={i === services.length - 1 && services.length % 2 === 1 ? 'sm:col-span-2' : undefined}
+            >
               <Link to={localePath(lang, `/${s.slug}`)} data-cursor-hover className="group relative block h-full bg-ink p-8 sm:p-10">
                 <div
                   className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-500 group-hover:opacity-100"

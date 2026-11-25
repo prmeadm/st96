@@ -42,6 +42,14 @@ export const SERVICE_OPTIONS: Record<string, ServiceOption[]> = {
     { ru: 'Промо', en: 'Promo' },
     { ru: 'Арбитраж', en: 'Traffic arbitrage' },
   ],
+  support: [
+    { ru: 'Поддержка сайта', en: 'Website support' },
+    { ru: 'Поддержка интернет-магазина', en: 'Online store support' },
+    { ru: 'Поддержка каталога', en: 'Catalog support' },
+    { ru: 'Поддержка лендинга', en: 'Landing page support' },
+    { ru: 'Поддержка платформы / продукта', en: 'Platform / product support' },
+    { ru: 'Внедрение AI', en: 'AI implementation' },
+  ],
 }
 
 /** Оставляет только допустимые для услуги пункты (русские названия), без повторов */

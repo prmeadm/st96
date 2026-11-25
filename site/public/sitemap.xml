@@ -81,6 +81,22 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://st96.by/support</loc>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://st96.by/support"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://st96.by/en/support"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://st96.by/support"/>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://st96.by/en/support</loc>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://st96.by/support"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://st96.by/en/support"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://st96.by/support"/>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://st96.by/privacy</loc>
     <xhtml:link rel="alternate" hreflang="ru" href="https://st96.by/privacy"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://st96.by/en/privacy"/>
