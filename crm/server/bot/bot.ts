@@ -278,7 +278,11 @@ export function createBot(token: string, repo: Repo, opts: { groupChatId: number
       const activeProjects = (await repo.listProjectsByClient(client.id)).filter((p) => p.status === 'active')
       const reqText = m.text ?? m.caption ?? ''
       const voiceFileId = m.voice?.file_id ?? null
-      const projectId = activeProjects.length === 1 ? activeProjects[0].id : null
+      // Проект: один активный — его; несколько — запомненный клиентом выбор, иначе null (worker уточнит).
+      let projectId = activeProjects.length === 1 ? activeProjects[0].id : null
+      if (projectId == null && client.selected_project_id && activeProjects.some((p) => p.id === client.selected_project_id)) {
+        projectId = client.selected_project_id
+      }
       // Вложения клиента (фото/документ/музыка) — материал для правок.
       const attachments: { kind: 'photo' | 'document' | 'audio'; file_id: string; file_name?: string | null; mime_type?: string | null; caption?: string | null }[] = []
       if (m.photo && m.photo.length) attachments.push({ kind: 'photo', file_id: m.photo[m.photo.length - 1].file_id, caption: m.caption ?? null })

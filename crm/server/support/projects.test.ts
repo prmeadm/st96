@@ -26,11 +26,23 @@ test('pickProject: находит по названию и слагу', () => {
   assert.equal(pickProject('просто правка', list), null)
 })
 
+test('pickProject: выбирает проект по номеру (цифре)', () => {
+  const list = [proj({ workspace_path: '/home/dsh/work/GF-leasing/' }), proj({ id: 'p2', workspace_path: '/home/dsh/work/music-loto/' }), proj({ id: 'p3', workspace_path: '/home/dsh/work/shop/' })]
+  assert.equal(pickProject('1', list)?.id, 'p1')
+  assert.equal(pickProject('2', list)?.id, 'p2')
+  assert.equal(pickProject('3', list)?.id, 'p3')
+  assert.equal(pickProject('первый', list)?.id, 'p1')
+  assert.equal(pickProject('второй', list)?.id, 'p2')
+  assert.equal(pickProject('99', list), null)
+  assert.equal(pickProject('0', list), null)
+  assert.equal(pickProject('поменяй заголовок', list), null)
+})
+
 test('projectsListText: перечисляет проекты и спрашивает, в какой', () => {
   const list = [proj({ workspace_path: '/home/dsh/work/GF-leasing/' }), proj({ id: 'p2', workspace_path: '/home/dsh/work/music-loto/' })]
   const s = projectsListText(list)
   assert.match(s, /несколько проектов/)
   assert.match(s, /GF leasing/)
   assert.match(s, /music loto/)
-  assert.match(s, /В какой проект вносим правку/)
+  assert.match(s, /В какой проект вносим правку\? Напиши номер или название/)
 })

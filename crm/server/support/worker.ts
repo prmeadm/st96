@@ -306,7 +306,17 @@ async function processJob(repo: SupportRepo, job: SupportJobRow) {
   if (activeProjects.length === 1) {
     project = activeProjects[0]
   } else if (activeProjects.length > 1) {
-    project = pickProject(requestText, activeProjects) ?? activeProjects.find((p) => p.id === job.project_id) ?? null
+    // Явный выбор в этом сообщении (номер или название) — переключаемся и запоминаем для следующих сообщений.
+    const chosen = pickProject(requestText, activeProjects)
+    if (chosen) {
+      project = chosen
+      await repo.updateClient(job.client_id, { selected_project_id: chosen.id })
+    } else {
+      // Запомненный ранее выбор (если проект всё ещё активен), иначе project_id из вебхука.
+      const client = await repo.findClientById(job.client_id)
+      const persisted = client?.selected_project_id ? activeProjects.find((p) => p.id === client.selected_project_id) ?? null : null
+      project = persisted ?? activeProjects.find((p) => p.id === job.project_id) ?? null
+    }
     if (!project) {
       await repo.updateSupportJob(job.id, { status: 'clarify', result_json: { reason: 'several_projects', projects: activeProjects.map(projectLabel) }, finished_at: new Date().toISOString() })
       await repo.insertAudit({ actor: 'ai', action: 'clarify', client_id: job.client_id, project_id: null, job_id: job.id, payload: { reason: 'several_projects' } })

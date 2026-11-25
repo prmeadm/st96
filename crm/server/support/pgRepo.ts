@@ -7,7 +7,7 @@ import type { AgentScenarioRow, ClientProjectRow, InvoiceRow, PackagePeriodRow, 
 // Методы, которые нужны worker-у и period.ts. memoryRepo/supabaseRepo их тоже удовлетворяют (Pick из Repo).
 export type SupportRepo = Pick<Repo,
   | 'findProject' | 'listProjectsByClient' | 'getScenario' | 'findClientById' | 'currentPeriod' | 'getPeriod' | 'listPeriods' | 'insertPeriod' | 'updatePeriod'
-  | 'getInvoice' | 'updateInvoice' | 'insertAudit' | 'updateSupportJob' | 'listQueuedSupportJobs' | 'claimSupportJob' | 'findAwaitingConfirmationJob' | 'findWaitingMaterialJob'
+  | 'getInvoice' | 'updateInvoice' | 'insertAudit' | 'updateSupportJob' | 'listQueuedSupportJobs' | 'claimSupportJob' | 'findAwaitingConfirmationJob' | 'findWaitingMaterialJob' | 'updateClient'
 >
 
 // timestamptz/timestamp/date → строки (совпадает с типами строк support/types.ts)
@@ -39,6 +39,7 @@ export function pgRepo(connectionString: string): SupportRepo {
     async listProjectsByClient(clientId) { return many<ClientProjectRow>('select * from crm.client_projects where client_id = $1 order by created_at', [clientId]) },
     async getScenario(id) { return one<AgentScenarioRow>('select * from crm.agent_scenarios where id = $1', [id]) },
     async findClientById(id) { return one<ClientRow>('select * from crm.clients where id = $1', [id]) },
+    async updateClient(id, patch) { await update('clients', id, patch as Record<string, unknown>) },
     async getPeriod(id) { return one<PackagePeriodRow>('select * from crm.package_periods where id = $1', [id]) },
     async currentPeriod(projectId) {
       const active = await one<PackagePeriodRow>("select * from crm.package_periods where project_id = $1 and status = 'active' order by period_start desc limit 1", [projectId])

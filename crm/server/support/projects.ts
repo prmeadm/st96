@@ -26,10 +26,23 @@ export function isProjectsQuestion(text: string): boolean {
   return /(какие|сколько|какой|мои|моих|у меня|видишь|видно|знаешь|список|перечисли|покажи|проект[а-я]*)/.test(t)
 }
 
-/** Находит проект по названию в тексте (по label или слагу workspace). null — не нашёл. */
+/** Русские порядковые числительные → номер (1-based) для выбора проекта. */
+const ORDINALS: Record<string, number> = {
+  'первый': 1, 'второй': 2, 'третий': 3, 'четвёртый': 4, 'пятый': 5,
+  'первая': 1, 'вторая': 2, 'третья': 3, 'четвёртая': 4, 'пятая': 5,
+}
+
+/** Находит проект по номеру («1», «2», «первый», «второй»…) или названию (label/слаг). null — не нашёл. */
 export function pickProject(text: string, projects: ClientProjectRow[]): ClientProjectRow | null {
-  const t = norm(text)
-  if (!t) return null
+  const raw = (text ?? '').trim()
+  if (!raw) return null
+  // Выбор по номеру: клиент отвечает на список просто цифрой (или словом «первый» и т.п.).
+  const n = /^\d{1,2}$/.test(raw) ? parseInt(raw, 10) : ORDINALS[raw.toLowerCase()]
+  if (typeof n === 'number') {
+    const idx = n - 1
+    return idx >= 0 && idx < projects.length ? projects[idx] : null
+  }
+  const t = norm(raw)
   for (const p of projects) {
     const label = norm(projectLabel(p))
     const slug = norm((p.workspace_path ?? '').replace(/\/$/, '').split('/').filter(Boolean).pop() ?? '')
@@ -41,5 +54,5 @@ export function pickProject(text: string, projects: ClientProjectRow[]): ClientP
 /** Текст со списком проектов + вопрос, в какой вносить правку. */
 export function projectsListText(projects: ClientProjectRow[]): string {
   const lines = projects.map((p, i) => (i + 1) + '. ' + projectLabel(p))
-  return 'У тебя несколько проектов:\n' + lines.join('\n') + '\n\nВ какой проект вносим правку? Напиши название.'
+  return 'У тебя несколько проектов:\n' + lines.join('\n') + '\n\nВ какой проект вносим правку? Напиши номер или название.'
 }

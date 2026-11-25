@@ -57,7 +57,7 @@ export function memoryRepo(): MemoryRepo {
     async insertClient(c) {
       const row: ClientRow = {
         id: id('c'), tg_user_id: null, tg_username: null, name: null, phone: null, email: null, company: null,
-        language: 'ru', source: null, consent_at: null, opted_out_at: null, last_seen_at: null, admin_topic_id: null, dialog_closed_at: null, human_until: null, client_kind: null, legal_name: null, unp: null, legal_address: null, bank_details: null, ...c,
+        language: 'ru', source: null, consent_at: null, opted_out_at: null, last_seen_at: null, admin_topic_id: null, dialog_closed_at: null, human_until: null, selected_project_id: null, client_kind: null, legal_name: null, unp: null, legal_address: null, bank_details: null, ...c,
       }
       r.clients.push(row)
       return row

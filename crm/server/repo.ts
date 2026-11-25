@@ -26,6 +26,7 @@ export type ClientRow = {
   admin_topic_id: number | null
   dialog_closed_at: string | null
   human_until: string | null
+  selected_project_id: string | null
   client_kind: 'individual' | 'legal' | null
   legal_name: string | null
   unp: string | null
