@@ -416,6 +416,20 @@ export const servicesEn: Record<string, ServiceText> = {
           models: ['deepseek', 'chatgpt', 'claude'],
         },
       ],
+      enterprise: {
+        title: 'Enterprise',
+        tagline: 'For companies with complex products and multiple projects',
+        features: ['Unlimited projects', 'Dedicated agent and priority', 'Custom SLA and security', 'Custom credit volume'],
+      },
+      topups: {
+        title: 'Buy extra credits',
+        lead: 'Ran out of your monthly allowance? Top up your credit balance without changing plans.',
+        bundles: [
+          { credits: 500, price: 100 },
+          { credits: 1000, price: 190 },
+          { credits: 2500, price: 450 },
+        ],
+      },
     },
     advantagesLead: 'Support is not "finding an available developer" — it is a system that makes edits immediately.',
     advantages: [

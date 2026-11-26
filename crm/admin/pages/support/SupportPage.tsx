@@ -4,14 +4,17 @@ import { Icon } from '../../ui/Icon'
 import { useAuth } from '../../auth'
 import type { Client } from '../../types'
 import type { ClientProjectRow, InvoiceRow, PackagePeriodRow, PackageRow, SupportJobRow } from '../../../server/support/types'
-import { WORKSPACE_FOLDERS_KEY, type WorkspaceFolderIndex } from '../../../server/support/types'
+import { CREDIT_PRICES_KEY, CREDIT_PRICE_LABELS, WORKSPACE_FOLDERS_KEY, parseCreditPrices, type CreditPrices, type WorkspaceFolderIndex } from '../../../server/support/types'
+import { DEFAULT_PRICES, PRICE_SETTING, parsePrices, type Price } from '../../../server/usage'
 import { INVOICE_KINDS, INVOICE_STATUSES, JOB_STATUSES, PERIOD_STATUSES, PROJECT_STATUSES, fmtDate, limitLabel, money, num, useTable } from './shared'
 
-type Tab = 'projects' | 'periods' | 'packages' | 'jobs' | 'invoices' | 'settings'
+type Tab = 'projects' | 'periods' | 'packages' | 'credits' | 'analytics' | 'jobs' | 'invoices' | 'settings'
 const TABS: { id: Tab; label: string }[] = [
   { id: 'projects', label: 'Клиенты и проекты' },
   { id: 'periods', label: 'Периоды' },
   { id: 'packages', label: 'Пакеты' },
+  { id: 'credits', label: 'Кредиты' },
+  { id: 'analytics', label: 'Аналитика' },
   { id: 'jobs', label: 'Обращения' },
   { id: 'invoices', label: 'Счета' },
   { id: 'settings', label: 'Настройки' },
@@ -568,6 +571,98 @@ function SettingsTab() {
   )
 }
 
+// ─── Кредиты ───
+function CreditsTab() {
+  const [form, setForm] = useState<Record<keyof CreditPrices, string>>({ request: '', edit: '', feature: '' })
+  const [custom, setCustom] = useState<Record<string, Price>>({})
+  const [msg, setMsg] = useState('')
+  const load = () => {
+    supabase.from('app_settings').select('key, value').in('key', [CREDIT_PRICES_KEY, PRICE_SETTING]).then(({ data }) => {
+      const raw = (k: string) => (data ?? []).find((r: { key: string; value: unknown }) => r.key === k)?.value
+      const p = parseCreditPrices(raw(CREDIT_PRICES_KEY))
+      setForm({ request: String(p.request), edit: String(p.edit), feature: String(p.feature) })
+      setCustom(parsePrices(typeof raw(PRICE_SETTING) === 'string' ? raw(PRICE_SETTING) as string : null))
+    })
+  }
+  useEffect(load, [])
+  const save = async () => {
+    const request = num(form.request); const edit = num(form.edit); const feature = num(form.feature)
+    if (request == null || edit == null || feature == null) return setMsg('Укажите число кредитов для каждого типа работы')
+    const value: CreditPrices = { request, edit, feature }
+    const { error } = await supabase.from('app_settings').upsert({ key: CREDIT_PRICES_KEY, value }, { onConflict: 'key' })
+    if (error) return setMsg('Не удалось сохранить')
+    setMsg('Сохранено')
+  }
+  const priceRows = Object.entries({ ...DEFAULT_PRICES, ...custom })
+  return (
+    <div className="card">
+      <h3>Кредиты</h3>
+      <p className="hint" style={{ margin: '4px 0 12px', maxWidth: 720 }}>Внутренняя валюта ST. Клиент видит расход в кредитах: за каждый тип работы списывается фиксированное число кредитов. «Расходные кредиты» (сколько реально сгорело на провайдере) — это токены обращения, их себестоимость в USD считается по ценам моделей ниже.</p>
+      {msg && <div className="hint" role="status">{msg}</div>}
+      <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
+        {(Object.keys(CREDIT_PRICE_LABELS) as (keyof CreditPrices)[]).map((k) => (
+          <div key={k} className="fld" style={{ minWidth: 150 }}>
+            <label>{CREDIT_PRICE_LABELS[k]}, кредитов</label>
+            <input value={form[k]} inputMode="numeric" onChange={(e) => setForm({ ...form, [k]: e.target.value })} />
+          </div>
+        ))}
+      </div>
+      <div className="row" style={{ marginTop: 10 }}><button className="btn primary" onClick={save}>Сохранить прайс</button></div>
+      <h4 style={{ margin: '18px 0 8px' }}>Цены моделей ($ за 1 млн токенов)</h4>
+      <div className="hint" style={{ marginBottom: 8 }}>Себестоимость расходных кредитов. Свои цены моделей задаются в разделе «Аналитика» (верхнее меню).</div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        {priceRows.map(([m, p]) => (
+          <div key={m} className="row"><span style={{ minWidth: 200 }}>{m}</span><span className="hint">вход {p.in} · выход {p.out}{p.estimate ? ' · оценка' : ''}</span></div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ─── Аналитика поддержки ───
+type JobAnalyticsRow = SupportJobRow & { clients: { name: string | null; tg_username: string | null } | null; client_projects: { workspace_path: string | null } | null }
+function SupportAnalyticsTab() {
+  const [rows, setRows] = useState<JobAnalyticsRow[] | null>(null)
+  const [open, setOpen] = useState<string | null>(null)
+  const [error, setError] = useState('')
+  useEffect(() => {
+    supabase.from('support_jobs').select('*, clients(name, tg_username), client_projects(workspace_path)').order('created_at', { ascending: false }).limit(500)
+      .then(({ data, error: e }) => {
+        if (e) return setError('Не удалось загрузить')
+        setRows(((data ?? []) as JobAnalyticsRow[]).map((r) => ({ ...r, st_credits: Number(r.st_credits ?? 0), tokens_used: Number(r.tokens_used ?? 0), usd_cost: Number(r.usd_cost ?? 0) })))
+      })
+  }, [])
+  const tot = (rows ?? []).reduce((a, r) => ({ st: a.st + r.st_credits, tok: a.tok + r.tokens_used, usd: a.usd + r.usd_cost }), { st: 0, tok: 0, usd: 0 })
+  const cname = (r: JobAnalyticsRow) => r.clients?.name ?? (r.clients?.tg_username ? '@' + r.clients.tg_username : 'Без имени')
+  return (
+    <div className="card">
+      <h3>Аналитика поддержки</h3>
+      {error && <div className="hint">{error}</div>}
+      <div className="row" style={{ gap: 18, margin: '8px 0 12px', flexWrap: 'wrap' }}>
+        <div><span className="hint">Кредиты ST</span><div style={{ fontWeight: 700 }}>{tot.st}</div></div>
+        <div><span className="hint">Токены (расход)</span><div style={{ fontWeight: 700 }}>{tot.tok}</div></div>
+        <div><span className="hint">Себестоимость USD</span><div style={{ fontWeight: 700 }}>≈ ${tot.usd.toFixed(4)}</div></div>
+      </div>
+      {rows === null ? <div className="hint">Загрузка…</div> : rows.length === 0 ? <div className="hint" style={{ marginTop: 10 }}>Обращений нет.</div> : (
+        <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {rows.map((r) => (
+            <div key={r.id} className="item" style={{ boxShadow: 'none' }}>
+              <button type="button" className="row" style={{ width: '100%', background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left' }} onClick={() => setOpen(open === r.id ? null : r.id)} aria-expanded={open === r.id}>
+                <b>{cname(r)}</b><span className="chip">{JOB_STATUSES[r.status] ?? r.status}</span>
+                <span className="sp" />
+                <span className="hint">{r.st_credits} ST · {r.tokens_used} ток · ${r.usd_cost.toFixed(4)}</span>
+              </button>
+              {r.client_projects?.workspace_path && <div className="hint" style={{ marginTop: 2 }}>{r.client_projects.workspace_path}</div>}
+              <div className="hint" style={{ marginTop: 2 }}>{r.request_text.slice(0, 120)}{r.request_text.length > 120 ? '…' : ''}</div>
+              {open === r.id && <div className="note" style={{ marginTop: 6, whiteSpace: 'pre-wrap' }}>{JSON.stringify(r.edits_json, null, 2)}</div>}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function SupportPage() {
   const { email } = useAuth()
   const [tab, setTab] = useState<Tab>('projects')
@@ -582,6 +677,8 @@ export default function SupportPage() {
       {tab === 'projects' && <ProjectsTab />}
       {tab === 'periods' && <PeriodsTab />}
       {tab === 'packages' && <PackagesTab />}
+      {tab === 'credits' && <CreditsTab />}
+      {tab === 'analytics' && <SupportAnalyticsTab />}
       {tab === 'jobs' && <JobsTab />}
       {tab === 'invoices' && <InvoicesTab />}
       {tab === 'settings' && <SettingsTab />}

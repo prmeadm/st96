@@ -63,11 +63,17 @@ export type PricingPlan = {
   models: ModelId[]
 }
 
+export type PricingTopup = { credits: number; price: number }
+
 /** Блок пакетов/тарифов на странице услуги (услуга «Поддержка») */
 export type PricingBlock = {
   title: string
   lead: string
   plans: PricingPlan[]
+  /** Индивидуальный тариф «Интерпрайс» */
+  enterprise?: { title: string; tagline: string; features: string[] }
+  /** Докупка кредитов сверх пакета */
+  topups?: { title: string; lead: string; bundles: PricingTopup[] }
 }
 
 export type Service = {
@@ -546,6 +552,20 @@ export const services: Service[] = [
           models: ['deepseek', 'chatgpt', 'claude'],
         },
       ],
+      enterprise: {
+        title: 'Интерпрайс',
+        tagline: 'Для компаний со сложными продуктами и несколькими проектами',
+        features: ['Безлимит проектов', 'Выделенный агент и приоритет', 'Свои SLA и безопасность', 'Индивидуальный объём кредитов'],
+      },
+      topups: {
+        title: 'Докупить кредиты',
+        lead: 'Не хватило месячного лимита? Пополните баланс кредитами без смены пакета.',
+        bundles: [
+          { credits: 500, price: 100 },
+          { credits: 1000, price: 190 },
+          { credits: 2500, price: 450 },
+        ],
+      },
     },
     accent: accents.support,
     advantagesLead:
