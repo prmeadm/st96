@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { ArrowUpRight, Check, Info } from 'lucide-react'
 import clsx from 'clsx'
 import type { Service } from '../../../../crm/shared/data/services'
 import SectionHeading from '../ui/SectionHeading'
 import { StaggerGroup, StaggerItem } from '../ui/Reveal'
 import MagneticButton from '../ui/MagneticButton'
-import { useLang } from '../../lib/i18n'
+import { localePath, useLang } from '../../lib/i18n'
 
 const copy = {
   ru: {
@@ -66,7 +67,14 @@ const PLAN_VISUALS: Record<string, { bg: string; glow: string }> = {
 /** Блок пакетов: кредиты (из базы) + цена, переключатель месяц/год, докупка кредитов и «Интерпрайс». */
 export default function Pricing({ service }: { service: Service }) {
   const lang = useLang()
+  const navigate = useNavigate()
   const t = copy[lang]
+  const cartHref = (kind: 'package' | 'topup', value: string | number) =>
+    localePath(lang, '/cabinet') + '?add=' + kind + ':' + value
+  const goCart = (href: string) => (e: React.MouseEvent) => {
+    e.preventDefault()
+    navigate(href)
+  }
   const block = service.pricing
   const accent = service.accent
   const [yearly, setYearly] = useState(false)
@@ -226,11 +234,12 @@ export default function Pricing({ service }: { service: Service }) {
                   <div className="relative mt-6">
                     <MagneticButton
                       as="a"
-                      href="#lead"
-                      className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-white py-3.5 font-display text-sm font-semibold text-black"
+                      href={cartHref('package', dbCode(plan.key))}
+                      onClick={goCart(cartHref('package', dbCode(plan.key)))}
+                      className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-white py-3.5 font-display text-sm font-semibold text-black transition-colors hover:bg-acid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
                     >
                       {t.cta}
-                      <ArrowUpRight className="h-4 w-4" />
+                      <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
                     </MagneticButton>
                   </div>
                 </article>
@@ -332,8 +341,9 @@ export default function Pricing({ service }: { service: Service }) {
                     <span className="text-xs text-paper-dim">{fmt(per100Of(customPrice, customCredits))} {t.currency} {t.per100}</span>
                     <MagneticButton
                       as="a"
-                      href="#lead"
-                      className="mt-1 rounded-full px-5 py-2.5 text-sm font-semibold"
+                      href={cartHref('topup', customCredits)}
+                      onClick={goCart(cartHref('topup', customCredits))}
+                      className="mt-1 rounded-full px-5 py-2.5 text-sm font-semibold transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acid"
                       style={{ background: 'var(--color-paper)', color: 'var(--color-ink)' }}
                     >
                       {t.topupCta}
@@ -368,8 +378,9 @@ export default function Pricing({ service }: { service: Service }) {
                         </div>
                         <MagneticButton
                           as="a"
-                          href="#lead"
-                          className="shrink-0 rounded-full px-5 py-2.5 text-sm font-semibold transition-colors"
+                          href={cartHref('topup', b.credits)}
+                          onClick={goCart(cartHref('topup', b.credits))}
+                          className="shrink-0 rounded-full px-5 py-2.5 text-sm font-semibold transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acid"
                           style={{ background: 'var(--color-paper)', color: 'var(--color-ink)' }}
                         >
                           {t.topupCta}

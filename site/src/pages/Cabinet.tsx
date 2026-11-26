@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { LayoutDashboard, ListChecks, FolderKanban, ReceiptText, FileText, UserRound, LogOut } from 'lucide-react'
 import type { Session } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
 import type { CabinetBootstrap, CabinetSummary } from '../../../crm/shared/cabinet'
@@ -54,6 +55,7 @@ const T = {
     client: 'Клиент',
     signOut: 'Выйти',
     tabs: { overview: 'Обзор', tasks: 'Задачи', projects: 'Проекты', orders: 'Заявки', documents: 'Документы', profile: 'Профиль' },
+    tabsLabel: 'Разделы кабинета',
     pendingAddTitle: 'К какому проекту добавить?',
     pendingAddText: 'Кредиты и пакет будут привязаны к выбранному проекту.',
     project: 'Проект',
@@ -162,6 +164,7 @@ const T = {
     client: 'Client',
     signOut: 'Sign out',
     tabs: { overview: 'Overview', tasks: 'Tasks', projects: 'Projects', orders: 'Requests', documents: 'Documents', profile: 'Profile' },
+    tabsLabel: 'Cabinet sections',
     pendingAddTitle: 'Which project to add to?',
     pendingAddText: 'Credits and the package will be linked to the selected project.',
     project: 'Project',
@@ -385,6 +388,15 @@ export default function Cabinet({ lang = 'ru' }: { lang?: Lang }) {
     await supabase?.auth.signOut()
   }
 
+  const displayName = summary?.profile.name || boot?.profile.full_name || summary?.profile.email || ''
+  const initials =
+    displayName
+      .split(/[\s@]+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((word) => word[0]?.toUpperCase() || '')
+      .join('') || 'ST'
+
   const openTab = async (next: Tab) => {
     setTab(next)
     setError(null)
@@ -560,7 +572,7 @@ export default function Cabinet({ lang = 'ru' }: { lang?: Lang }) {
         <button
           type="button"
           onClick={() => void signIn()}
-          className="mt-8 inline-flex items-center gap-3 rounded-full bg-acid px-6 py-3 font-display text-sm font-semibold text-ink transition hover:bg-acid/90"
+          className="mt-8 inline-flex min-h-11 items-center gap-3 rounded-full bg-acid px-6 font-display text-sm font-semibold text-ink transition-colors hover:bg-acid/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acid"
         >
           {t.signInGoogle}
         </button>
@@ -571,51 +583,79 @@ export default function Cabinet({ lang = 'ru' }: { lang?: Lang }) {
 
   return (
     <main className="mx-auto min-h-screen max-w-6xl px-5 pt-32 pb-20 sm:px-8">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <span className="mb-3 inline-flex items-center gap-2 font-display text-xs font-semibold tracking-[0.2em] text-paper-dim uppercase">
-            <span className="h-1.5 w-1.5 rounded-full bg-acid" />
-            {t.cabinetKicker}
-          </span>
-          <h1 className="font-display text-3xl font-semibold sm:text-4xl">
-            {summary?.profile.name || boot?.profile.full_name || summary?.profile.email || t.client}
-          </h1>
-          <p className="mt-1 text-sm text-paper-dim">{summary?.profile.email}</p>
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex min-w-0 items-center gap-4">
+          <div
+            aria-hidden="true"
+            className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl border border-ink-line bg-ink-soft font-display text-base font-semibold text-acid"
+          >
+            {initials}
+          </div>
+          <div className="min-w-0">
+            <span className="mb-2 inline-flex items-center gap-2 font-display text-xs font-semibold tracking-[0.2em] text-paper-dim uppercase">
+              <span className="h-1.5 w-1.5 rounded-full bg-acid" />
+              {t.cabinetKicker}
+            </span>
+            <h1 className="truncate font-display text-2xl font-semibold sm:text-4xl">
+              {summary?.profile.name || boot?.profile.full_name || summary?.profile.email || t.client}
+            </h1>
+            <p className="mt-1 truncate text-sm text-paper-dim">{summary?.profile.email}</p>
+          </div>
         </div>
         <button
           type="button"
           onClick={() => void signOut()}
-          className="rounded-full border border-ink-line px-4 py-2 text-sm text-paper-dim transition hover:text-paper"
+          className="inline-flex min-h-11 items-center gap-2 rounded-full border border-ink-line px-4 text-sm text-paper-dim transition-colors hover:border-paper-dim/40 hover:text-paper focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acid"
         >
+          <LogOut className="h-4 w-4" aria-hidden="true" />
           {t.signOut}
         </button>
       </div>
 
+      {busy && <p className="mt-8 text-sm text-paper-dim">{t.loading}</p>}
+      {error && <p className="mt-8 text-sm text-[#ff8a3d]">{t.loadError}: {error}</p>}
 
       {summary && (
-        <nav className="mt-8 flex flex-wrap gap-2">
-          {([
-            ['overview', t.tabs.overview],
-            ['tasks', t.tabs.tasks],
-            ['projects', t.tabs.projects],
-            ['orders', t.tabs.orders],
-            ['documents', t.tabs.documents],
-            ['profile', t.tabs.profile],
-          ] as const).map(([key, label]) => (
-            <button
-              key={key}
-              type="button"
-              onClick={() => void openTab(key)}
-              className={'rounded-full border px-4 py-2 text-sm transition ' + (tab === key ? 'border-acid bg-acid/10 text-paper' : 'border-ink-line text-paper-dim hover:text-paper')}
-            >
-              {label}
-            </button>
-          ))}
-        </nav>
-      )}
+        <div className="mt-8 lg:grid lg:grid-cols-[216px_minmax(0,1fr)] lg:items-start lg:gap-10">
+          <nav
+            aria-label={t.tabsLabel}
+            className="-mx-5 overflow-x-auto px-5 pb-1 lg:sticky lg:top-24 lg:mx-0 lg:overflow-visible lg:px-0 lg:pb-0"
+          >
+            <ul className="flex gap-1.5 lg:flex-col lg:gap-1">
+              {([
+                ['overview', t.tabs.overview, LayoutDashboard],
+                ['tasks', t.tabs.tasks, ListChecks],
+                ['projects', t.tabs.projects, FolderKanban],
+                ['orders', t.tabs.orders, ReceiptText],
+                ['documents', t.tabs.documents, FileText],
+                ['profile', t.tabs.profile, UserRound],
+              ] as const).map(([key, label, Icon]) => {
+                const active = tab === key
+                return (
+                  <li key={key} className="shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => void openTab(key)}
+                      aria-current={active ? 'page' : undefined}
+                      className={
+                        'inline-flex min-h-11 w-full items-center gap-2.5 whitespace-nowrap rounded-xl border px-3.5 text-sm transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acid ' +
+                        (active
+                          ? 'border-acid/60 bg-acid/10 text-paper'
+                          : 'border-ink-line text-paper-dim hover:border-paper-dim/40 hover:text-paper')
+                      }
+                    >
+                      <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+                      {label}
+                    </button>
+                  </li>
+                )
+              })}
+            </ul>
+          </nav>
+          <div className="min-w-0">
 
 
-      {summary && pendingAdd && (
+      {pendingAdd && (
         <section className="mt-6 rounded-3xl border border-acid/40 bg-acid/5 p-5">
           <p className="font-display text-sm font-semibold text-paper">{t.pendingAddTitle}</p>
           <p className="mt-1 text-sm text-paper-dim">{t.pendingAddText}</p>
@@ -643,8 +683,6 @@ export default function Cabinet({ lang = 'ru' }: { lang?: Lang }) {
         </section>
       )}
 
-      {busy && <p className="mt-8 text-sm text-paper-dim">{t.loading}</p>}
-      {error && <p className="mt-8 text-sm text-[#ff8a3d]">{t.loadError}: {error}</p>}
 
       {summary && tab === 'overview' && (
         <>
@@ -777,7 +815,7 @@ export default function Cabinet({ lang = 'ru' }: { lang?: Lang }) {
                     type="button"
                     onClick={() => void checkout()}
                     disabled={checkoutBusy || summary.profile.onboarding_status !== 'complete' || !accepted}
-                    className="rounded-full bg-acid px-6 py-3 font-display text-sm font-semibold text-ink transition hover:bg-acid/90 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="inline-flex min-h-11 items-center justify-center rounded-full bg-acid px-6 font-display text-sm font-semibold text-ink transition-colors hover:bg-acid/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acid disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {checkoutBusy ? t.checkingOut : t.submitRequest}
                   </button>
@@ -1025,6 +1063,9 @@ export default function Cabinet({ lang = 'ru' }: { lang?: Lang }) {
           </div>
           <p className="mt-3 text-xs text-paper-dim">{t.profileNote}</p>
         </section>
+      )}
+          </div>
+        </div>
       )}
 
     </main>

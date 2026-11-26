@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Menu, X, ArrowUpRight } from 'lucide-react'
+import { Menu, X, ArrowUpRight, UserRound } from 'lucide-react'
 import { getServices } from '../../data/content'
 import { localePath, stripLang, useLang, useUi } from '../../lib/i18n'
 import { trackLanguageSwitch } from '../../lib/analytics'
@@ -18,9 +18,8 @@ export default function Header() {
   const navItems = [
     { label: t.home, to: localePath(lang, '/') },
     ...getServices(lang).map((s) => ({ label: s.navLabel, to: localePath(lang, `/${s.slug}`) })),
-    { label: lang === 'ru' ? 'Поддержка' : 'Support', to: localePath(lang, '/support') },
-    { label: lang === 'ru' ? 'Кабинет' : 'Cabinet', to: localePath(lang, '/cabinet') },
   ]
+  const cabinetPath = localePath(lang, '/cabinet')
   const isHome = stripLang(location.pathname) === '/'
   const switchTo = `${localePath(otherLang, stripLang(location.pathname))}${location.hash}`
   const onSwitch = () => {
@@ -103,6 +102,16 @@ export default function Header() {
             <span className="text-paper-dim">/</span>
             <span className="text-paper-dim">{t.langOtherShort}</span>
           </Link>
+          <Link
+            to={cabinetPath}
+            aria-label={t.signIn}
+            title={t.signIn}
+            data-cursor-hover
+            className="inline-flex h-10 items-center gap-2 rounded-full border border-ink-line px-3 text-sm font-medium text-paper-dim transition-colors hover:border-acid/60 hover:text-paper focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acid"
+          >
+            <UserRound className="h-4 w-4" aria-hidden="true" />
+            <span className="hidden sm:inline">{t.signIn}</span>
+          </Link>
           <MagneticButton
             as="a"
             onClick={goToLead}
@@ -150,12 +159,27 @@ export default function Header() {
                   </Link>
                 </motion.div>
               ))}
+              <motion.div
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: navItems.length * 0.05, duration: 0.4 }}
+                className="mt-6"
+              >
+                <Link
+                  to={cabinetPath}
+                  onClick={() => setOpen(false)}
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-ink-line px-6 py-3.5 text-center font-semibold text-paper transition-colors hover:border-acid/60"
+                >
+                  <UserRound className="h-4 w-4" aria-hidden="true" />
+                  {t.signIn}
+                </Link>
+              </motion.div>
               <motion.a
                 href="#lead"
                 onClick={goToLead}
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: navItems.length * 0.05, duration: 0.4 }}
+                transition={{ delay: (navItems.length + 1) * 0.05, duration: 0.4 }}
                 className="mt-6 inline-flex items-center justify-center gap-1.5 rounded-full bg-acid-solid px-6 py-3.5 text-center font-semibold text-on-solid"
               >
                 {t.discuss}

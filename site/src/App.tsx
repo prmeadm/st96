@@ -8,7 +8,6 @@ import Home from './pages/Home'
 import ServicePage from './pages/ServicePage'
 import PrivacyRoute from './pages/PrivacyRoute'
 import Cabinet from './pages/Cabinet'
-import Support from './pages/Support'
 import Offer from './pages/Offer'
 import OfferEn from './pages/OfferEn'
 import CookieBanner from './components/ui/CookieBanner'
@@ -32,8 +31,6 @@ function App() {
           <Route path="/en/privacy" element={<PrivacyRoute />} />
           <Route path="/offer" element={<Offer />} />
           <Route path="/en/offer" element={<OfferEn />} />
-          <Route path="/support" element={<Support />} />
-          <Route path="/en/support" element={<Support lang="en" />} />
           <Route path="/cabinet" element={<Cabinet />} />
           <Route path="/en/cabinet" element={<Cabinet lang="en" />} />
           <Route path="/en/:slug" element={<ServicePage />} />
