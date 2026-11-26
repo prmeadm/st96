@@ -131,3 +131,39 @@ export type AgentAuditRow = {
 }
 
 export type AuditInsert = Pick<AgentAuditRow, 'actor' | 'action'> & Partial<Pick<AgentAuditRow, 'client_id' | 'project_id' | 'job_id' | 'payload'>>
+
+// ───────── Индекс workspace-папок на сервере ─────────
+// Worker поддержки (единственный, кто видит файловую систему сервера) раз в тик сверяет реальные
+// папки с этим индексом и пишет его в crm.app_settings[WORKSPACE_FOLDERS_KEY]; админка читает
+// индекс оттуда и показывает в выпадающем списке «Workspace» модалки проекта.
+// Константа и типы лежат здесь (файл без зависимостей от node:fs), чтобы их мог импортировать и
+// серверный worker, и клиентская админка.
+export const WORKSPACE_FOLDERS_KEY = 'support.workspace_folders'
+
+export type WorkspaceFolder = {
+  /** Имя папки без пути */
+  name: string
+  /** Абсолютный путь с завершающим слэшем */
+  path: string
+  /** В папке есть .git (похоже на репозиторий проекта) */
+  has_git: boolean
+  /** mtime папки в ISO; только для подсказки, в подписи индекса не участвует */
+  modified_at: string
+}
+
+export type WorkspaceRoot = {
+  /** Корень, в котором искали папки (без завершающего слэша) */
+  root: string
+  /** false — корня нет на этом сервере */
+  exists: boolean
+  folders: WorkspaceFolder[]
+}
+
+export type WorkspaceFolderIndex = {
+  /** Когда worker последний раз смотрел на диск */
+  scanned_at: string
+  roots: WorkspaceRoot[]
+  /** Папки проектов вне корней индекса (например, легаси-путь /home/dsh/work/music-loto):
+   *  воркер проверяет их по client_projects.workspace_path и добавляет, только если папка есть. */
+  extra?: WorkspaceFolder[]
+}

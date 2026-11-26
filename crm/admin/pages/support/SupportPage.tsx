@@ -4,6 +4,7 @@ import { Icon } from '../../ui/Icon'
 import { useAuth } from '../../auth'
 import type { Client } from '../../types'
 import type { ClientProjectRow, InvoiceRow, PackagePeriodRow, PackageRow, SupportJobRow } from '../../../server/support/types'
+import { WORKSPACE_FOLDERS_KEY, type WorkspaceFolderIndex } from '../../../server/support/types'
 import { INVOICE_KINDS, INVOICE_STATUSES, JOB_STATUSES, PERIOD_STATUSES, PROJECT_STATUSES, fmtDate, limitLabel, money, num, useTable } from './shared'
 
 type Tab = 'projects' | 'periods' | 'packages' | 'jobs' | 'invoices' | 'settings'
@@ -44,6 +45,17 @@ const slugFromPath = (p: string) => p.replace(WORKSPACE_BASE, '').replace(/\/+$/
 // ─── Клиенты и проекты ───
 type ProjectJoined = ClientProjectRow & { clients: { name: string | null; tg_username: string | null } | null; packages: { title: string } | null }
 
+/** Индекс реальных папок на сервере: его пишет worker поддержки в app_settings (ключ WORKSPACE_FOLDERS_KEY).
+ *  Админка на Vercel файловой системы сервера не видит, поэтому список папок приходит только так. */
+async function fetchWorkspaceFolders(): Promise<WorkspaceFolderIndex | null> {
+  const { data } = await supabase.from('app_settings').select('value').eq('key', WORKSPACE_FOLDERS_KEY).maybeSingle()
+  const raw = data?.value as unknown
+  let parsed: unknown = raw
+  if (typeof raw === 'string') { try { parsed = JSON.parse(raw) } catch { parsed = null } }
+  const idx = parsed as WorkspaceFolderIndex | null
+  return idx && Array.isArray(idx.roots) ? idx : null
+}
+
 function ProjectsTab() {
   const [projects, setProjects] = useState<ProjectJoined[] | null>(null)
   const [ptick, setPtick] = useState(0)
@@ -57,6 +69,12 @@ function ProjectsTab() {
   const { rows: periods } = useTable<PackagePeriodRow>('package_periods')
   const [editing, setEditing] = useState<Partial<ClientProjectRow> & { client_id: string; system_prompt: string } | null>(null)
   const [msg, setMsg] = useState('')
+  // Реальные папки на сервере. Админка живёт на Vercel и диск сервера не видит, поэтому индекс
+  // сканирует worker поддержки (crm/server/support/workspaceFolders.ts) и кладёт в app_settings.
+  const [folders, setFolders] = useState<WorkspaceFolderIndex | null>(null)
+  const applyFolders = (idx: WorkspaceFolderIndex | null) => { if (idx) setFolders(idx) }
+  const loadFolders = async () => applyFolders(await fetchWorkspaceFolders())
+  useEffect(() => { fetchWorkspaceFolders().then(applyFolders).catch(() => {}) }, [ptick])
 
   const clientName = (c: ProjectJoined) => c.clients?.name ?? (c.clients?.tg_username ? '@' + c.clients.tg_username : 'Без имени')
   const openPeriod = (projectId: string) => (periods ?? []).filter((p) => p.project_id === projectId && (p.status === 'pending_payment' || p.status === 'active')).sort((a, b) => Date.parse(b.period_start) - Date.parse(a.period_start))[0]
@@ -64,11 +82,34 @@ function ProjectsTab() {
     const c = p.corrections_limit == null ? null : p.corrections_limit - p.corrections_used
     return c == null ? '∞' : String(c)
   }
-  // Существующие папки проектов (для выбора) + режим «новая папка»
-  const existingWorkspaces = [...new Set((projects ?? []).map((p) => p.workspace_path).filter((w): w is string => !!w))]
-  const workspaceIsNew = !existingWorkspaces.includes(editing?.workspace_path ?? '')
+  // Список «Workspace»: реальные папки с сервера (индекс воркера) + пути из проектов, которых на сервере
+  // нет (чтобы можно было открыть старый проект и не потерять его путь при сохранении).
+  const normPath = (p: string) => p.trim().replace(/\/+$/, '')
+  const usedBy = new Map<string, { name: string; projectId: string }>()
+  for (const p of projects ?? []) if (p.workspace_path) usedBy.set(normPath(p.workspace_path), { name: clientName(p), projectId: p.id })
+  const serverFolders = [...(folders?.roots ?? []).flatMap((r) => r.folders), ...(folders?.extra ?? [])]
+  const serverOptions = serverFolders.map((f) => {
+    const owner = usedBy.get(normPath(f.path))
+    return { value: f.path, label: owner ? `${f.path} · занята: ${owner.name}` : f.path }
+  })
+  const serverPaths = new Set(serverOptions.map((o) => normPath(o.value)))
+  const projectPaths: string[] = []
+  const seenPaths = new Set<string>()
+  for (const p of projects ?? []) {
+    const path = p.workspace_path?.trim()
+    if (!path || seenPaths.has(normPath(path))) continue
+    seenPaths.add(normPath(path))
+    projectPaths.push(path)
+  }
+  const otherOptions = projectPaths.filter((p) => !serverPaths.has(normPath(p))).map((p) => ({ value: p, label: `${p} · нет на сервере` }))
+  const workspaceOptions = [...serverOptions, ...otherOptions]
+  const currentWorkspace = workspaceOptions.find((o) => normPath(o.value) === normPath(editing?.workspace_path ?? ''))
+  const workspaceIsNew = !currentWorkspace
+  const currentOwner = editing?.workspace_path ? usedBy.get(normPath(editing.workspace_path)) : undefined
+  const foldersStamp = folders ? new Date(folders.scanned_at).toLocaleString('ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : ''
 
   const openEdit = async (p: ProjectJoined) => {
+    void loadFolders()
     let prompt = ''
     if (p.agent_scenario_id) {
       const { data } = await supabase.from('agent_scenarios').select('system_prompt').eq('id', p.agent_scenario_id).maybeSingle()
@@ -116,7 +157,7 @@ function ProjectsTab() {
 
   return (
     <div className="card">
-      <div className="row"><h3 style={{ margin: 0 }}>Клиенты и проекты</h3><span className="sp" /><button className="btn primary" onClick={() => setEditing({ client_id: '', system_prompt: SCENARIO_TEMPLATE })}><Icon name="plus" size={18} />Проект</button></div>
+      <div className="row"><h3 style={{ margin: 0 }}>Клиенты и проекты</h3><span className="sp" /><button className="btn primary" onClick={() => { void loadFolders(); setEditing({ client_id: '', system_prompt: SCENARIO_TEMPLATE }) }}><Icon name="plus" size={18} />Проект</button></div>
       {msg && <div className="hint" role="status" style={{ marginTop: 6 }}>{msg}</div>}
       {projects === null ? <div className="hint">Загрузка…</div> : projects.length === 0 ? <div className="hint" style={{ marginTop: 10 }}>Проектов нет. Привяжите клиента к workspace-папке.</div> : (
         <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -154,10 +195,13 @@ function ProjectsTab() {
                   </select></div>
                 <div className="fld"><label>Ветка по умолчанию</label><input value={editing.default_branch ?? 'main'} onChange={(e) => setEditing({ ...editing, default_branch: e.target.value })} /></div>
                 <div className="fld lx-wide"><label>Workspace (папка проекта на сервере)</label>
-                    <select value={workspaceIsNew ? '__new__' : (editing.workspace_path ?? '')} onChange={(e) => setEditing({ ...editing, workspace_path: e.target.value === '__new__' ? WORKSPACE_BASE : e.target.value })}>
+                    <select value={currentWorkspace ? currentWorkspace.value : '__new__'} onChange={(e) => setEditing({ ...editing, workspace_path: e.target.value === '__new__' ? WORKSPACE_BASE : e.target.value })}>
                       <option value="__new__">+ Создать новую папку</option>
-                      {existingWorkspaces.map((w) => <option key={w} value={w}>{w}</option>)}
+                      {serverOptions.length > 0 && <optgroup label="Папки на сервере">{serverOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}</optgroup>}
+                      {otherOptions.length > 0 && <optgroup label="Пути из проектов (папки на сервере нет)">{otherOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}</optgroup>}
                     </select>
+                    <span className="hint">{folders ? `Папок на сервере: ${serverOptions.length} · обновлено ${foldersStamp}` : 'Список папок с сервера ещё не получен — показаны только пути из проектов'}</span>
+                    {currentOwner && currentOwner.projectId !== editing?.id && <span className="hint">Эта папка уже привязана к проекту клиента {currentOwner.name}.</span>}
                     {workspaceIsNew && (
                       <>
                         <input value={slugFromPath(editing.workspace_path ?? '')} onChange={(e) => setEditing({ ...editing, workspace_path: WORKSPACE_BASE + slugify(e.target.value) + '/' })} placeholder="имя папки латиницей (например gf-leasing)" />

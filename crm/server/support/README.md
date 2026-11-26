@@ -25,6 +25,20 @@ RestartSec=15
 [Install]
 WantedBy=multi-user.target
 
+## Индекс workspace-папок для админки
+
+Админка `/admin/support` работает в браузере (Vercel) и файловой системы сервера не видит, поэтому
+выпадающий список «Workspace» в модалке проекта берёт список папок из `crm.app_settings[WORKSPACE_FOLDERS_KEY]`
+(`support.workspace_folders`). Индекс пишет только worker:
+
+- `crm/server/support/workspaceFolders.ts` — `scanWorkspaceFolders()` (чистое сканирование корней),
+  `withProjectFolders()` (добавляет существующие папки проектов вне корней), `saveWorkspaceFolderIndex()`;
+- корни — `SUPPORT_WORKSPACE_ROOTS` (через запитано, по умолчанию `/home/dsh/work/KLIENTS`); второй корень
+  добавляйте осознанно: в `/home/dsh/work` лежат служебные каталоги платформы;
+- `worker.ts` → `syncWorkspaceFolders(repo)` вызывается на каждом тике (15 с); запись в БД — только если
+  изменился набор папок или прошло 5 минут (обновляется `scanned_at`);
+- админка только читает (policy `admins read` на `app_settings`), писать из браузера нельзя.
+
 ## Изоляция
 
 - Агент запускается с cwd = workspace проекта (client_projects.workspace_path) и видит только его.

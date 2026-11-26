@@ -20,6 +20,7 @@ import { CREATOR_ANSWER, isCreatorQuestion } from './creator.js'
 import { hasAudioAttachment, musicReplyText } from './music.js'
 import { attachmentFileName, effectiveRequestText, materialAskText, needsMaterial } from './material.js'
 import { resultLink } from './link.js'
+import { indexSignature, saveWorkspaceFolderIndex, scanWorkspaceFolders, withProjectFolders } from './workspaceFolders.js'
 import type { Llm } from '../agent/llm.js'
 
 const dbUrl = process.env.SUPABASE_DB_URL ?? ''
@@ -449,6 +450,25 @@ async function ensureWorkspaceDirs(repo: SupportRepo): Promise<void> {
   } catch (e) { console.error('ensureWorkspaceDirs failed', e instanceof Error ? e.message : e) }
 }
 
+/** Индекс реальных папок на сервере для выпадающего списка «Workspace» в админке.
+ *  Админка на Vercel диск не видит, поэтому список берёт из crm.app_settings (ключ WORKSPACE_FOLDERS_KEY).
+ *  Сверяем на каждом тике (15 с), пишем только при изменении набора папок или раз в 5 минут (обновить «обновлено»). */
+let foldersSignature = ''
+let foldersSavedAt = 0
+async function syncWorkspaceFolders(repo: SupportRepo): Promise<void> {
+  if (!dbUrl) return
+  try {
+    const projects = await repo.listProjects()
+    const index = withProjectFolders(scanWorkspaceFolders(), projects.map((p) => p.workspace_path ?? ''))
+    const signature = indexSignature(index)
+    const due = Date.now() - foldersSavedAt > 5 * 60_000
+    if (signature === foldersSignature && !due) return
+    await saveWorkspaceFolderIndex(dbUrl, index)
+    foldersSignature = signature
+    foldersSavedAt = Date.now()
+  } catch (e) { console.error('syncWorkspaceFolders failed', e instanceof Error ? e.message : e) }
+}
+
 async function poll(repo: SupportRepo) {
   const jobs = await repo.listQueuedSupportJobs()
   for (const j of jobs) {
@@ -471,6 +491,8 @@ if (process.argv[1]?.endsWith('worker.ts')) {
       try { await poll(repo) } catch (e) { console.error('poll failed', e) }
       // на старте и раз в ~5 минут: папки активных проектов должны существовать
       if (ticks++ % 20 === 0) await ensureWorkspaceDirs(repo)
+      // индекс реальных папок для выпадающего списка «Workspace» в админке (сверка на каждом тике)
+      await syncWorkspaceFolders(repo)
       await new Promise((r) => setTimeout(r, 15_000))
     }
   }
