@@ -43,7 +43,8 @@ const textFor = (template: string, payload: Record<string, unknown>) => {
 
 export default async function handler(req: Request) {
   if (req.method !== 'GET' && req.method !== 'POST') return json({ error: 'Method not allowed' }, 405)
-  const secret = process.env.MAIL_WORKER_SECRET
+  // Vercel Cron авто-передаёт Authorization: Bearer <CRON_SECRET>; вручную можно слать MAIL_WORKER_SECRET.
+  const secret = process.env.MAIL_WORKER_SECRET || process.env.CRON_SECRET
   if (!secret) return json({ error: 'Mail worker is not configured' }, 503)
   const auth = (req.headers.get('authorization') || '').replace(/^Bearer\s+/i, '')
   if (auth !== secret) return json({ error: 'Unauthorized' }, 401)
