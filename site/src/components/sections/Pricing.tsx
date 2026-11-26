@@ -71,7 +71,7 @@ export default function Pricing({ service }: { service: Service }) {
   const accent = service.accent
   const [yearly, setYearly] = useState(false)
   const [credits, setCredits] = useState<Record<string, number | null>>({})
-  const [stopIdx, setStopIdx] = useState(0)
+  const [stopIdx, setStopIdx] = useState(5)
   useEffect(() => {
     fetch('/api/packages', { cache: 'no-store' })
       .then((r) => r.json())
@@ -92,14 +92,25 @@ export default function Pricing({ service }: { service: Service }) {
   const LIST_RATE = 0.4
   const TOPUP_RATE = 0.3
   const per100Of = (price: number, credits: number) => Math.round((price / credits) * 100)
-  const makeLabel = (c: number) =>
-    lang === 'ru'
-      ? `≈ ${fmt(Math.floor(c / 20))} правок или ${fmt(Math.floor(c / 100))} функций`
-      : `≈ ${fmt(Math.floor(c / 20))} edits or ${fmt(Math.floor(c / 100))} features`
-  // Шкала ползунка — как в референсе: частые ступени до 25k, затем 100k.
-  const TOPUP_STOPS = [5000, 7000, 9000, 11000, 13000, 15000, 17000, 19000, 21000, 23000, 25000, 100000]
+  const plural = (n: number, one: string, few: string, many: string) => {
+    const m10 = n % 10
+    const m100 = n % 100
+    if (m10 === 1 && m100 !== 11) return one
+    if (m10 >= 2 && m10 <= 4 && (m100 < 10 || m100 >= 20)) return few
+    return many
+  }
+  const makeLabel = (c: number) => {
+    const edits = Math.floor(c / 20)
+    const features = Math.floor(c / 100)
+    return lang === 'ru'
+      ? `≈ ${fmt(edits)} ${plural(edits, 'правка', 'правки', 'правок')} или ${fmt(features)} ${plural(features, 'функция', 'функции', 'функций')}`
+      : `≈ ${fmt(edits)} ${edits === 1 ? 'edit' : 'edits'} or ${fmt(features)} ${features === 1 ? 'feature' : 'features'}`
+  }
+  // Шкала ползунка — как в референсе: частые ступени внизу, редкие вверху (100…10 000).
+  const TOPUP_STOPS = [100, 200, 300, 500, 700, 1000, 1500, 2000, 3000, 5000, 7000, 10000]
   const customCredits = TOPUP_STOPS[stopIdx]
-  const fmtStop = (c: number) => `${Math.round(c / 1000)}k`
+  const fmtStop = (c: number) =>
+    c < 1000 ? String(c) : c % 1000 === 0 ? `${c / 1000}k` : `${(c / 1000).toFixed(1).replace(/\.0$/, '')}k`
   const customPrice = Math.round(customCredits * TOPUP_RATE)
   const customOld = Math.round(customCredits * LIST_RATE)
   const customDisc = Math.round((1 - customPrice / customOld) * 100)
