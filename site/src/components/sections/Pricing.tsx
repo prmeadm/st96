@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react'
-import { ArrowUpRight } from 'lucide-react'
+import { ArrowUpRight, Check } from 'lucide-react'
 import clsx from 'clsx'
 import type { Service } from '../../../../crm/shared/data/services'
 import SectionHeading from '../ui/SectionHeading'
 import { StaggerGroup, StaggerItem } from '../ui/Reveal'
 import MagneticButton from '../ui/MagneticButton'
-import { ModelIcon } from '../ui/ModelIcon'
 import { useLang } from '../../lib/i18n'
 
 const copy = {
@@ -18,12 +17,13 @@ const copy = {
     billedYearly: 'при оплате за год',
     popular: 'Популярный',
     cta: 'Подключить',
-    models: 'AI-модели',
     currency: 'BYN',
     creditsPerMonth: 'кредитов / мес',
     creditsLabel: 'кредитов',
-    enterpriseCta: 'Обсудить условия',
+    perCredit: 'за кредит',
+    topupKicker: 'Пополнение',
     topupCta: 'Докупить',
+    enterpriseCta: 'Обсудить условия',
   },
   en: {
     kicker: 'Pricing',
@@ -34,19 +34,20 @@ const copy = {
     billedYearly: 'billed annually',
     popular: 'Most popular',
     cta: 'Get started',
-    models: 'AI models',
     currency: 'BYN',
     creditsPerMonth: 'credits / month',
     creditsLabel: 'credits',
-    enterpriseCta: 'Talk to us',
+    perCredit: 'per credit',
+    topupKicker: 'Top-up',
     topupCta: 'Top up',
+    enterpriseCta: 'Talk to us',
   },
 } as const
 
 /** Код пакета в базе (packages.code) — единый ключ между админкой и сайтом. */
 const dbCode = (key: string) => (key.startsWith('support-') ? key.slice('support-'.length) : key)
 
-/** Блок пакетов: кредиты (из базы) + цена, переключатель месяц/год, «Интерпрайс» и докупка кредитов. */
+/** Блок пакетов: кредиты (из базы) + цена, переключатель месяц/год, докупка кредитов и «Интерпрайс». */
 export default function Pricing({ service }: { service: Service }) {
   const lang = useLang()
   const t = copy[lang]
@@ -67,7 +68,9 @@ export default function Pricing({ service }: { service: Service }) {
   if (!block) return null
 
   const discount = (p: number) => Math.round(p * 0.8)
-  const fmt = (n: number) => n.toLocaleString(lang === 'ru' ? 'ru-RU' : 'en-US')
+  const locale = lang === 'ru' ? 'ru-RU' : 'en-US'
+  const fmt = (n: number) => n.toLocaleString(locale)
+  const fmtRate = (n: number) => n.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
   return (
     <section id="pricing" className="relative border-t border-ink-line py-20 sm:py-28">
@@ -184,15 +187,6 @@ export default function Pricing({ service }: { service: Service }) {
                     })}
                   </ul>
 
-                  <div className="relative mt-6 border-t border-ink-line pt-5">
-                    <span className="text-xs tracking-wide text-paper-dim uppercase">{t.models}</span>
-                    <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2">
-                      {plan.models.map((m) => (
-                        <ModelIcon key={m} id={m} />
-                      ))}
-                    </div>
-                  </div>
-
                   <div className="relative mt-7">
                     <MagneticButton
                       as="a"
@@ -214,51 +208,26 @@ export default function Pricing({ service }: { service: Service }) {
           })}
         </StaggerGroup>
 
-        {block.enterprise && (
-          <div className="mt-5 overflow-hidden rounded-2xl border border-ink-line bg-ink-soft p-8 sm:p-10">
-            <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-              <div className="max-w-2xl">
-                <h3 className="font-display text-2xl font-semibold">{block.enterprise.title}</h3>
-                <p className="mt-2 text-paper-dim">{block.enterprise.tagline}</p>
-                <ul className="mt-5 grid grid-cols-1 gap-x-8 gap-y-2.5 sm:grid-cols-2">
-                  {block.enterprise.features.map((f) => (
-                    <li key={f} className="flex items-center gap-2.5 text-sm text-paper-dim">
-                      <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: accent.solid }} />
-                      {f}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <MagneticButton
-                as="a"
-                href="#lead"
-                className="inline-flex shrink-0 items-center justify-center gap-2 rounded-full px-7 py-3.5 font-display text-sm font-semibold"
-                style={{ background: accent.btn, color: 'var(--color-on-solid)' }}
-              >
-                {t.enterpriseCta}
-                <ArrowUpRight className="h-4 w-4" />
-              </MagneticButton>
-            </div>
-          </div>
-        )}
-
         {block.topups && (
-          <div className="mt-16">
-            <h3 className="font-display text-2xl font-semibold sm:text-3xl">{block.topups.title}</h3>
-            <p className="mt-2 max-w-xl text-paper-dim">{block.topups.lead}</p>
-            <div className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-3">
+          <div className="mt-16 sm:mt-20">
+            <SectionHeading kicker={t.topupKicker} title={block.topups.title} accent={accent.solid} />
+            <p className="mt-3 max-w-xl text-paper-dim">{block.topups.lead}</p>
+            <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-3">
               {block.topups.bundles.map((b) => (
-                <div key={b.credits} className="flex flex-col rounded-2xl border border-ink-line bg-ink-soft p-6">
-                  <span className="font-display text-3xl font-bold">{fmt(b.credits)}</span>
+                <div key={b.credits} className="flex flex-col rounded-2xl border border-ink-line bg-ink-soft p-7">
+                  <span className="font-display text-4xl font-bold">{fmt(b.credits)}</span>
                   <span className="mt-1 text-sm text-paper-dim">{t.creditsLabel}</span>
-                  <div className="mt-4 flex items-baseline gap-1.5 border-t border-ink-line pt-4">
-                    <span className="text-lg font-semibold">{b.price}</span>
+                  <div className="mt-5 flex items-baseline gap-1.5 border-t border-ink-line pt-5">
+                    <span className="text-2xl font-semibold">{fmt(b.price)}</span>
                     <span className="text-sm text-paper-dim">{t.currency}</span>
                   </div>
+                  <span className="mt-1 text-xs text-paper-dim">
+                    ≈ {fmtRate(b.price / b.credits)} {t.currency} {t.perCredit}
+                  </span>
                   <MagneticButton
                     as="a"
                     href="#lead"
-                    className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full py-3 font-display text-sm font-semibold"
+                    className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full py-3 font-display text-sm font-semibold"
                     style={{ border: '1px solid var(--color-ink-line)', color: accent.solid }}
                   >
                     {t.topupCta}
@@ -266,6 +235,45 @@ export default function Pricing({ service }: { service: Service }) {
                   </MagneticButton>
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+
+        {block.enterprise && (
+          <div className="mt-16 sm:mt-20">
+            <div className="relative overflow-hidden rounded-3xl border border-ink-line bg-ink-soft p-8 sm:p-12">
+              <span
+                className="pointer-events-none absolute -top-24 -right-24 h-72 w-72 rounded-full opacity-15 blur-[100px]"
+                style={{ background: accent.solid }}
+              />
+              <div className="relative flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
+                <div className="max-w-2xl">
+                  <h3 className="font-display text-3xl font-semibold">{block.enterprise.title}</h3>
+                  <p className="mt-3 text-paper-dim">{block.enterprise.tagline}</p>
+                  <ul className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    {block.enterprise.features.map((f) => (
+                      <li key={f} className="flex items-center gap-2.5 text-sm text-paper-dim">
+                        <span
+                          className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full"
+                          style={{ background: accent.soft, color: accent.solid }}
+                        >
+                          <Check className="h-3 w-3" />
+                        </span>
+                        {f}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <MagneticButton
+                  as="a"
+                  href="#lead"
+                  className="inline-flex shrink-0 items-center justify-center gap-2 rounded-full px-8 py-4 font-display text-sm font-semibold"
+                  style={{ background: accent.btn, color: 'var(--color-on-solid)' }}
+                >
+                  {t.enterpriseCta}
+                  <ArrowUpRight className="h-4 w-4" />
+                </MagneticButton>
+              </div>
             </div>
           </div>
         )}
