@@ -373,7 +373,6 @@ export const servicesEn: Record<string, ServiceText> = {
             { label: 'New features per month', value: '—' },
             { label: 'Specialist consultations', value: '3' },
           ],
-          models: ['deepseek'],
         },
         {
           key: 'support-standard',
@@ -386,7 +385,6 @@ export const servicesEn: Record<string, ServiceText> = {
             { label: 'New features per month', value: '5' },
             { label: 'Specialist consultations', value: '5' },
           ],
-          models: ['deepseek'],
         },
         {
           key: 'support-professional',
@@ -400,7 +398,6 @@ export const servicesEn: Record<string, ServiceText> = {
             { label: 'New features per month', value: '10' },
             { label: 'Specialist consultations', value: '10' },
           ],
-          models: ['deepseek', 'chatgpt', 'claude'],
         },
         {
           key: 'support-ultimate',
@@ -413,7 +410,6 @@ export const servicesEn: Record<string, ServiceText> = {
             { label: 'New features per month', value: '15' },
             { label: 'Specialist consultations', value: '∞' },
           ],
-          models: ['deepseek', 'chatgpt', 'claude'],
         },
       ],
       enterprise: {

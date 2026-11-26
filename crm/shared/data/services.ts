@@ -60,7 +60,6 @@ export type PricingPlan = {
   /** подсветка «Популярный» */
   featured?: boolean
   features: PricingFeature[]
-  models: ModelId[]
 }
 
 export type PricingTopup = { credits: number; price: number }
@@ -509,7 +508,6 @@ export const services: Service[] = [
             { label: 'Новые функции в месяц', value: '—' },
             { label: 'Консультации специалиста', value: '3' },
           ],
-          models: ['deepseek'],
         },
         {
           key: 'support-standard',
@@ -522,7 +520,6 @@ export const services: Service[] = [
             { label: 'Новые функции в месяц', value: '5' },
             { label: 'Консультации специалиста', value: '5' },
           ],
-          models: ['deepseek'],
         },
         {
           key: 'support-professional',
@@ -536,7 +533,6 @@ export const services: Service[] = [
             { label: 'Новые функции в месяц', value: '10' },
             { label: 'Консультации специалиста', value: '10' },
           ],
-          models: ['deepseek', 'chatgpt', 'claude'],
         },
         {
           key: 'support-ultimate',
@@ -549,7 +545,6 @@ export const services: Service[] = [
             { label: 'Новые функции в месяц', value: '15' },
             { label: 'Консультации специалиста', value: '∞' },
           ],
-          models: ['deepseek', 'chatgpt', 'claude'],
         },
       ],
       enterprise: {
