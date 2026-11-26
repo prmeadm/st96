@@ -12,7 +12,7 @@
 import { existsSync, readdirSync, statSync } from 'node:fs'
 import { basename, join } from 'node:path'
 import pg from 'pg'
-import { WORKSPACE_FOLDERS_KEY, type WorkspaceFolder, type WorkspaceFolderIndex, type WorkspaceRoot } from './types.js'
+import { HIDDEN_WORKSPACE_FOLDER_NAMES, WORKSPACE_FOLDERS_KEY, type WorkspaceFolder, type WorkspaceFolderIndex, type WorkspaceRoot } from './types.js'
 
 /** Корни по умолчанию: только клиентские проекты KLIENTS. Второй корень (/home/dsh/work) не сканируем
  *  по умолчанию: там лежат служебные каталоги платформы (ST96, st96-site) и привязать клиента к ним
@@ -21,6 +21,8 @@ export const DEFAULT_WORKSPACE_ROOTS = ['/home/dsh/work/KLIENTS']
 
 /** Служебные папки внутри корня, которые не являются проектами. */
 const SKIP_DIRS = new Set(['node_modules', 'graphify-out', '.git', '.dsh', '__pycache__', 'dist', 'var'])
+/** Скрытые имена (шаблоны и пр.): в индекс не попадают, в списке админки не предлагаются. */
+const HIDDEN_NAMES = new Set(HIDDEN_WORKSPACE_FOLDER_NAMES.map((n) => n.toLowerCase()))
 
 /** Корни из окружения (параметр нужен тестам). */
 export function workspaceRoots(env: NodeJS.ProcessEnv = process.env): string[] {
@@ -49,6 +51,7 @@ export function scanWorkspaceFolders(roots: string[] = workspaceRoots(), now: Da
       if (!e.isDir) continue
       if (e.name.startsWith('.')) continue
       if (SKIP_DIRS.has(e.name)) continue
+      if (HIDDEN_NAMES.has(e.name.toLowerCase())) continue
       const full = join(root, e.name)
       // Не показываем контейнеры, которые сами являются корнями (KLIENTS внутри /home/dsh/work).
       if (normRoots.includes(normalizeRoot(full))) continue
@@ -73,6 +76,7 @@ export function withProjectFolders(index: WorkspaceFolderIndex, paths: string[])
     let stat
     try { stat = statSync(path) } catch { continue } // папки нет — в индекс не попадает
     if (!stat.isDirectory() || known.has(path)) continue
+    if (HIDDEN_NAMES.has(basename(path).toLowerCase())) continue
     known.add(path)
     extra.push({ name: basename(path), path: path + '/', has_git: existsSync(join(path, '.git')), modified_at: stat.mtime.toISOString() })
   }

@@ -33,6 +33,7 @@ WantedBy=multi-user.target
 
 - `crm/server/support/workspaceFolders.ts` — `scanWorkspaceFolders()` (чистое сканирование корней),
   `withProjectFolders()` (добавляет существующие папки проектов вне корней), `saveWorkspaceFolderIndex()`;
+- служебные папки (`_template` — шаблон нового проекта) в индекс не попадают: `HIDDEN_WORKSPACE_FOLDER_NAMES`;
 - корни — `SUPPORT_WORKSPACE_ROOTS` (переменная окружения воркера, по умолчанию `/home/dsh/work/KLIENTS`); второй корень
   добавляйте осознанно: в `/home/dsh/work` лежат служебные каталоги платформы;
 - `worker.ts` → `syncWorkspaceFolders(repo)` вызывается на каждом тике (15 с); запись в БД — только если

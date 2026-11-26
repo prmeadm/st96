@@ -26,7 +26,8 @@ test('scan: только реальные папки, без скрытых и �
     const root = index.roots[0]!
     assert.equal(root.exists, true)
     const names = root.folders.map((f) => f.name)
-    assert.deepEqual(names, ['_template', 'a1c', 'a1c.by', 'file-is-not-a-folder', 'GF-leasing', 'nested-root'])
+    assert.deepEqual(names, ['a1c', 'a1c.by', 'file-is-not-a-folder', 'GF-leasing', 'nested-root'])
+    assert.ok(!names.includes('_template'), 'служебная папка _template в списке не нужна')
     assert.ok(root.folders.every((f) => f.path.endsWith('/')))
     assert.equal(root.folders.find((f) => f.name === 'a1c.by')!.has_git, true)
     assert.equal(root.folders.find((f) => f.name === 'a1c')!.has_git, false)
@@ -62,6 +63,15 @@ test('indexSignature: набор папок без mtime; изменения н�
     mkdirSync(join(base, 'new-client'))
     const c = indexSignature(scanWorkspaceFolders([base]))
     assert.notEqual(a, c, 'новая папка должна менять подпись')
+  } finally { rmSync(base, { recursive: true, force: true }) }
+})
+
+test('withProjectFolders: скрытые папки (_template) не возвращаются в список даже как путь проекта', () => {
+  const base = makeTree()
+  try {
+    const index = scanWorkspaceFolders([base])
+    const withProjects = withProjectFolders(index, [join(base, '_template')])
+    assert.equal(withProjects.extra?.length ?? 0, 0)
   } finally { rmSync(base, { recursive: true, force: true }) }
 })
 

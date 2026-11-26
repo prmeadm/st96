@@ -159,6 +159,10 @@ export function parseCreditPrices(raw: unknown): CreditPrices {
 // серверный worker, и клиентская админка.
 export const WORKSPACE_FOLDERS_KEY = 'support.workspace_folders'
 
+/** Папки внутри корней, которые не являются workspace клиента и не предлагаются в списке.
+ *  `_template` — шаблон нового проекта: в индексе и в выпадающем списке админки не нужен. */
+export const HIDDEN_WORKSPACE_FOLDER_NAMES = ['_template']
+
 export type WorkspaceFolder = {
   /** Имя папки без пути */
   name: string
