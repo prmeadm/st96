@@ -1,10 +1,4 @@
 {
-  "crons": [
-    {
-      "path": "/api/mail",
-      "schedule": "*/5 * * * *"
-    }
-  ],
   "rewrites": [
     {
       "source": "/book",
