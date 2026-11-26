@@ -17,8 +17,9 @@ export function monthRange(startIso: string): { start: string; end: string } {
 export async function startPeriod(repo: SupportRepo, projectId: string, pkg: PackageRow, startIso = new Date().toISOString()) {
   const { start, end } = monthRange(startIso)
   return repo.insertPeriod({
-    project_id: projectId, period_start: start, period_end: end, status: 'pending_payment',
+    project_id: projectId, package_id: pkg.id, period_start: start, period_end: end, status: 'pending_payment',
     corrections_limit: pkg.corrections_limit, features_limit: pkg.features_limit, requests_limit: pkg.requests_limit,
+    credits_limit: pkg.credits,
   })
 }
 

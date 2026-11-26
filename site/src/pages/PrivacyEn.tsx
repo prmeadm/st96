@@ -184,6 +184,32 @@ export default function PrivacyEn() {
             {OPERATOR.site}/en/privacy; the date of the version is shown at the top of the page.
           </p>
         </Section>
+
+        <Section n={12} title="Personal cabinet">
+          <p>When you register and use the personal cabinet, the following are additionally processed:</p>
+          <List items={[
+            'Google account data — email, name, avatar and identifier (Google sign-in is used);',
+            'Telegram data — numeric identifier, username and the linking date;',
+            'purchase data — orders, items, amounts, payment statuses and payer type (individual or legal entity);',
+            'legal entity details — name, tax ID, address and bank details;',
+            'documents — invoices, service completion acts and e-receipts, plus their download history;',
+            'technical data — IP address, user-agent, session cookies and localStorage, error logs.',
+          ]} />
+          <p>
+            Purposes: operation of the cabinet, placing and paying for orders, generating documents,
+            status notifications (via Telegram and email), support and abuse protection.
+            Processors: Supabase (database, file storage, sign-in), Vercel (hosting), Google (sign-in),
+            Telegram (bot), email service — to the extent necessary to provide the service.
+          </p>
+          <p>
+            Retention: account data — while the cabinet is active; documents — for the period required by
+            accounting law; orders — 3 years; logs — 12 months.
+          </p>
+          <p>
+            Account deletion — on request to {OPERATOR.email}. Account data, the client record and related
+            orders are deleted; documents and accounting data are kept for the period required by law.
+          </p>
+        </Section>
       </div>
     </div>
   )

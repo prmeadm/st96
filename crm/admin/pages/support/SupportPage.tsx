@@ -8,7 +8,7 @@ import { CREDIT_PRICES_KEY, CREDIT_PRICE_LABELS, WORKSPACE_FOLDERS_KEY, parseCre
 import { DEFAULT_PRICES, PRICE_SETTING, parsePrices, type Price } from '../../../server/usage'
 import { INVOICE_KINDS, INVOICE_STATUSES, JOB_STATUSES, PERIOD_STATUSES, PROJECT_STATUSES, fmtDate, limitLabel, money, num, useTable } from './shared'
 
-type Tab = 'projects' | 'periods' | 'packages' | 'credits' | 'analytics' | 'jobs' | 'invoices' | 'settings'
+type Tab = 'projects' | 'periods' | 'packages' | 'credits' | 'analytics' | 'jobs' | 'invoices' | 'orders' | 'settings'
 const TABS: { id: Tab; label: string }[] = [
   { id: 'projects', label: 'Клиенты и проекты' },
   { id: 'periods', label: 'Периоды' },
@@ -17,6 +17,7 @@ const TABS: { id: Tab; label: string }[] = [
   { id: 'analytics', label: 'Аналитика' },
   { id: 'jobs', label: 'Обращения' },
   { id: 'invoices', label: 'Счета' },
+  { id: 'orders', label: 'Заказы' },
   { id: 'settings', label: 'Настройки' },
 ]
 
@@ -663,6 +664,150 @@ function SupportAnalyticsTab() {
   )
 }
 
+
+// ─── Заказы кабинета ───
+type AdminOrder = {
+  id: string
+  number: string
+  client_id: string
+  project_id: string | null
+  kind: string
+  payer_type: string
+  status: string
+  amount: number
+  currency: string
+  created_at: string
+  expires_at: string
+  clients: { name: string | null; email: string | null; company: string | null } | null
+  client_projects: { title: string | null; domain: string | null } | null
+}
+
+const ORDER_STATUSES: Record<string, string> = {
+  pending_payment: 'Ждёт оплаты',
+  paid: 'Оплачен',
+  fulfilled: 'Выполнен',
+  cancelled: 'Отменён',
+  expired: 'Истёк',
+}
+
+function OrdersTab() {
+  const [rows, setRows] = useState<AdminOrder[] | null>(null)
+  const [projects, setProjects] = useState<{ id: string; client_id: string; title: string | null; domain: string | null }[]>([])
+  const [msg, setMsg] = useState('')
+  const [busy, setBusy] = useState(false)
+
+  const token = async () => {
+    const { data } = await supabase.auth.getSession()
+    return data.session?.access_token ?? ''
+  }
+  const load = async () => {
+    const jwt = await token()
+    const [ordersRes, projectsRes] = await Promise.all([
+      fetch('/api/cabinet-admin?action=orders', { headers: { Authorization: 'Bearer ' + jwt } }).then((r) => r.json()),
+      supabase.from('client_projects').select('id, client_id, title, domain').order('created_at'),
+    ])
+    setRows((ordersRes.items ?? []) as AdminOrder[])
+    setProjects((projectsRes.data ?? []) as typeof projects)
+  }
+  useEffect(() => { void load() }, [])
+
+  const call = async (action: string, body: Record<string, unknown>) => {
+    setBusy(true)
+    setMsg('')
+    try {
+      const jwt = await token()
+      const res = await fetch('/api/cabinet-admin?action=' + action, {
+        method: 'POST',
+        headers: { Authorization: 'Bearer ' + jwt, 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+      const data = (await res.json().catch(() => ({}))) as { error?: string }
+      if (!res.ok) throw new Error(data.error || 'request_failed')
+      setMsg('Сохранено')
+      await load()
+    } catch (e) {
+      setMsg(e instanceof Error ? e.message : 'Ошибка')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div>
+      <p className="hint">Заказы из кабинета: подтверждение оплаты, привязка проекта, аннулирование.</p>
+      {msg && <div className="hint" style={{ margin: '8px 0' }}>{msg}</div>}
+      {rows === null ? <div className="hint">Загрузка…</div> : rows.length === 0 ? <div className="hint">Заказов нет.</div> : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 10 }}>
+          {rows.map((o) => {
+            const clientProjects = projects.filter((p) => p.client_id === o.client_id)
+            return (
+              <div key={o.id} className="item" style={{ boxShadow: 'none' }}>
+                <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
+                  <b>{o.number}</b>
+                  <span className="chip">{ORDER_STATUSES[o.status] ?? o.status}</span>
+                  <span>{o.clients?.name || o.clients?.company || o.clients?.email || '—'}</span>
+                  <span className="sp" />
+                  <span style={{ fontWeight: 700 }}>{money(o.amount)}</span>
+                </div>
+                <div className="hint" style={{ marginTop: 3 }}>
+                  {o.kind} · {o.payer_type === 'legal' ? 'юрлицо' : 'физлицо'} · создан {fmtDate(o.created_at)} · до {fmtDate(o.expires_at)}
+                  {o.client_projects ? ' · проект: ' + (o.client_projects.title || o.client_projects.domain || '—') : ''}
+                </div>
+                <div className="row" style={{ gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
+                  {(o.status === 'pending_payment' || o.status === 'paid') && (
+                    <button
+                      type="button"
+                      className="btn primary"
+                      disabled={busy}
+                      onClick={() => { if (window.confirm('Подтвердить оплату ' + o.number + '? Будет активирован пакет/кредиты и создан акт для юрлица.')) void call('confirm_payment', { order_id: o.id }) }}
+                    >
+                      {o.status === 'paid' ? 'Повторить подтверждение' : 'Подтвердить оплату'}
+                    </button>
+                  )}
+                  {(o.status === 'pending_payment' || o.status === 'paid') && !o.project_id && clientProjects.length === 0 && (
+                    <button
+                      type="button"
+                      className="btn"
+                      disabled={busy}
+                      onClick={() => {
+                        const title = window.prompt('Название нового проекта клиента')
+                        if (title && title.trim()) void call('attach_project', { order_id: o.id, project_title: title.trim() })
+                      }}
+                    >
+                      Создать проект и привязать
+                    </button>
+                  )}
+                  {(o.status === 'pending_payment' || o.status === 'paid') && !o.project_id && clientProjects.length > 0 && (
+                    <select
+                      className="input"
+                      defaultValue=""
+                      disabled={busy}
+                      onChange={(e) => { if (e.target.value) void call('attach_project', { order_id: o.id, project_id: e.target.value }) }}
+                    >
+                      <option value="">Привязать проект…</option>
+                      {clientProjects.map((p) => <option key={p.id} value={p.id}>{p.title || p.domain || p.id}</option>)}
+                    </select>
+                  )}
+                  {(o.status === 'pending_payment' || o.status === 'paid') && (
+                    <button
+                      type="button"
+                      className="btn"
+                      disabled={busy}
+                      onClick={() => { if (window.confirm('Аннулировать заказ ' + o.number + '?')) void call('void_order', { order_id: o.id }) }}
+                    >
+                      Аннулировать
+                    </button>
+                  )}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function SupportPage() {
   const { email } = useAuth()
   const [tab, setTab] = useState<Tab>('projects')
@@ -681,6 +826,7 @@ export default function SupportPage() {
       {tab === 'analytics' && <SupportAnalyticsTab />}
       {tab === 'jobs' && <JobsTab />}
       {tab === 'invoices' && <InvoicesTab />}
+      {tab === 'orders' && <OrdersTab />}
       {tab === 'settings' && <SettingsTab />}
     </div>
   )

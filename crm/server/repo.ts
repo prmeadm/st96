@@ -90,6 +90,10 @@ export interface Repo {
   countLeads(clientId: string): Promise<number>
   saveTgLink(token: string, v: { tg_user_id: number; username: string | null; first_name: string | null }): Promise<void>
   getTgLink(token: string): Promise<{ username: string | null; first_name: string | null } | null>
+  /** Одноразовый токен из кабинета (cab_): погасить и вернуть аккаунт. */
+  useCabinetLink(token: string): Promise<{ user_id: string; client_id: string } | null>
+  /** Привязать Telegram к аккаунту кабинета; null — не удалось (например, Telegram уже у другого клиента). */
+  linkCabinetTelegram(userId: string, tgId: number, username: string | null): Promise<{ client_id: string } | null>
   /** Контакты из последних заявок клиента: для случаев, когда в карточке чего-то не хватает */
   leadContacts(clientId: string): Promise<{ name: string | null; phone: string | null; telegram: string | null; company: string | null }[]>
   getLead(id: string): Promise<(LeadInsert & { id: string }) | null>
@@ -270,6 +274,60 @@ export function supabaseRepo(url: string, key: string): Repo {
     },
     async getTgLink(token) {
       return ok(await db.from('tg_links').select('username, first_name').eq('token', token).gte('created_at', new Date(Date.now() - 3_600_000).toISOString()).maybeSingle(), 'getTgLink') as { username: string | null; first_name: string | null } | null
+    },
+    async useCabinetLink(token) {
+      const now = new Date().toISOString()
+      const r = await db
+        .from('client_link_tokens')
+        .update({ used_at: now })
+        .eq('token', token)
+        .is('used_at', null)
+        .gt('expires_at', now)
+        .select('user_id, client_id')
+        .maybeSingle()
+      if (r.error || !r.data) return null
+      return r.data as { user_id: string; client_id: string }
+    },
+    async linkCabinetTelegram(userId, tgId, username) {
+      const now = new Date().toISOString()
+      const { data: accRow } = await db.from('client_accounts').select('client_id').eq('user_id', userId).maybeSingle()
+      if (!accRow) return null
+      const clientId = (accRow as { client_id: string }).client_id
+
+      // Telegram уже привязан к другой карточке — не перетираем и не создаём дубль.
+      const { data: byTg } = await db.from('clients').select('id').eq('tg_user_id', tgId).maybeSingle()
+      if (byTg && (byTg as { id: string }).id !== clientId) return null
+      if (username) {
+        const pattern = username.replace(/[\\%_]/g, '\\$&')
+        const { data: byName } = await db.from('clients').select('id').ilike('tg_username', pattern)
+        for (const row of (byName ?? []) as { id: string }[]) {
+          if (row.id !== clientId) return null
+        }
+      }
+
+      const acc = await db
+        .from('client_accounts')
+        .update({
+          telegram_user_id: tgId,
+          telegram_username: username,
+          telegram_linked_at: now,
+          onboarding_status: 'complete',
+        })
+        .eq('user_id', userId)
+        .select('client_id')
+        .maybeSingle()
+      if (acc.error || !acc.data) return null
+
+      const clientRes = await db.from('clients').update({ tg_user_id: tgId, tg_username: username }).eq('id', clientId)
+      if (clientRes.error) {
+        // Откат: аккаунт не должен выглядеть привязанным, если карточку обновить не удалось.
+        await db
+          .from('client_accounts')
+          .update({ telegram_user_id: null, telegram_username: null, telegram_linked_at: null, onboarding_status: 'telegram_required' })
+          .eq('user_id', userId)
+        return null
+      }
+      return { client_id: clientId }
     },
     async countLeads(clientId) {
       return (await db.from('leads').select('id', { count: 'exact', head: true }).eq('client_id', clientId)).count ?? 0

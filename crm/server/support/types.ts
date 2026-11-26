@@ -58,6 +58,7 @@ export type ScenarioInsert = Pick<AgentScenarioRow, 'client_id'> & Partial<Omit<
 export type PackagePeriodRow = {
   id: string
   project_id: string
+  package_id: string | null
   period_start: string
   period_end: string
   status: 'pending_payment' | 'active' | 'expired' | 'blocked'

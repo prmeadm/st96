@@ -22,7 +22,7 @@
 - Типы: `npx tsc -b` и `npx tsc -p tsconfig.node.json --noEmit`.
 - Тесты серверной логики: 117 проходят. Общий `npm run test:server` может зависнуть, надёжнее по файлам: `npx tsx --test crm/server/booking/booking.test.ts` и так далее (`agent`, `bot`, `funnels/engine`, `leads/*`, `broadcasts`, `translate`, `usage`).
 - Деплой: пуш в `main` = прод на Vercel (`prmeadm/st96`). Каждый пуш согласовывался с владельцем отдельно.
-- Миграции Supabase (ref `ljatihrxiuouukakbdtb`) `0001`–`0011` применены; новые применяются вручную в SQL-редакторе (владелец сам входит в Supabase во встроенном браузере).
+- Миграции Supabase (ref `ljatihrxiuouukakbdtb`) применены по `0024` включительно (2026-11-26, agent через pooler `aws-0-eu-west-1.pooler.supabase.com`, креды `~/.dsh/supabase.env`). `0022` исправлен (`to_jsonb(…::text)`). Кабинет: таблицы, функции `cabinet_confirm_payment`/`cabinet_void_order`/`create_renewal_orders`/`expire_cabinet_orders`/`activate_pending_periods`, cron `st96-*`.
 - Граф кода: перед вопросом по коду `graphify query "<вопрос>"`, после правок `graphify update .`.
 
 ## Секреты (только в Vercel, в код и чат не попадают)

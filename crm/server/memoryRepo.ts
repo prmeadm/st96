@@ -21,6 +21,8 @@ export type MemoryRepo = Repo & {
   templates: TemplateRow[]
   templateEvents: { template_id: string; kind: string }[]
   tgLinks: Map<string, { username: string | null; first_name: string | null }>
+  cabinetLinks: Map<string, { user_id: string; client_id: string; expires_at: string; used_at: string | null }>
+  cabinetAccounts: Map<string, string>
   llmUsage: { model: string; feature: string; prompt_tokens: number; completion_tokens: number; total_tokens: number; estimated: boolean }[]
   broadcasts: BroadcastRow[]
   agentTasks: (AgentTask & { locked: boolean })[]
@@ -44,7 +46,7 @@ export function memoryRepo(): MemoryRepo {
   const id = (p: string) => `${p}${++seq}`
   const seen = new Set<number>()
   const r: MemoryRepo = {
-    clients: [], leads: [], notes: [], messages: [], funnels: [], runs: [], events: [], tags: new Map(), templates: [], templateEvents: [], tgLinks: new Map(), llmUsage: [], broadcasts: [], agentTasks: [], settings: new Map(), bookings: [], packages: [], clientProjects: [], scenarios: [], periods: [], supportJobs: [], invoices: [], audit: [], clock: () => new Date(), recipients: [], jobs: [], runStartedAt: new Map(),
+    clients: [], leads: [], notes: [], messages: [], funnels: [], runs: [], events: [], tags: new Map(), templates: [], templateEvents: [], tgLinks: new Map(), cabinetLinks: new Map(), cabinetAccounts: new Map(), llmUsage: [], broadcasts: [], agentTasks: [], settings: new Map(), bookings: [], packages: [], clientProjects: [], scenarios: [], periods: [], supportJobs: [], invoices: [], audit: [], clock: () => new Date(), recipients: [], jobs: [], runStartedAt: new Map(),
     async claimUpdate(u) { if (seen.has(u)) return false; seen.add(u); return true },
     async findClient({ tgUserId, phone, username, topicId }) {
       if (topicId) return r.clients.find((c) => c.admin_topic_id === topicId) ?? null
@@ -75,6 +77,22 @@ export function memoryRepo(): MemoryRepo {
     async leadContacts(cid) { return r.leads.filter((l) => l.client_id === cid).reverse().map((l) => ({ name: l.name, phone: l.phone, telegram: l.telegram, company: l.company })) },
     async saveTgLink(token, v) { r.tgLinks.set(token, { username: v.username, first_name: v.first_name }) },
     async getTgLink(token) { return r.tgLinks.get(token) ?? null },
+    async useCabinetLink(token) {
+      const link = r.cabinetLinks.get(token)
+      if (!link || link.used_at || Date.parse(link.expires_at) <= Date.now()) return null
+      link.used_at = new Date().toISOString()
+      return { user_id: link.user_id, client_id: link.client_id }
+    },
+    async linkCabinetTelegram(userId, tgId, username) {
+      const clientId = r.cabinetAccounts.get(userId)
+      if (!clientId) return null
+      const client = r.clients.find((c) => c.id === clientId)
+      if (client) {
+        client.tg_user_id = tgId
+        client.tg_username = username
+      }
+      return { client_id: clientId }
+    },
     async countLeads(cid) { return r.leads.filter((l) => l.client_id === cid).length },
     async getLead(lid) { return r.leads.find((l) => l.id === lid) ?? null },
     async updateLead(lid, patch) { Object.assign(r.leads.find((l) => l.id === lid)!, patch) },
@@ -257,7 +275,7 @@ export function memoryRepo(): MemoryRepo {
     },
     async listPeriods(projectId) { return r.periods.filter((p) => p.project_id === projectId).sort((a, b) => Date.parse(b.period_start) - Date.parse(a.period_start)) },
     async insertPeriod(p) {
-      const row: PackagePeriodRow = { id: id('per'), status: 'pending_payment', payment_id: null, corrections_limit: null, features_limit: null, requests_limit: null, credits_limit: null, credits_used: 0, corrections_used: 0, features_used: 0, requests_used: 0, created_at: '', ...p }
+      const row: PackagePeriodRow = { id: id('per'), package_id: null, status: 'pending_payment', payment_id: null, corrections_limit: null, features_limit: null, requests_limit: null, credits_limit: null, credits_used: 0, corrections_used: 0, features_used: 0, requests_used: 0, created_at: '', ...p }
       r.periods.push(row)
       return row
     },

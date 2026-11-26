@@ -18,6 +18,8 @@ export default function Header() {
   const navItems = [
     { label: t.home, to: localePath(lang, '/') },
     ...getServices(lang).map((s) => ({ label: s.navLabel, to: localePath(lang, `/${s.slug}`) })),
+    { label: lang === 'ru' ? 'Поддержка' : 'Support', to: localePath(lang, '/support') },
+    { label: lang === 'ru' ? 'Кабинет' : 'Cabinet', to: localePath(lang, '/cabinet') },
   ]
   const isHome = stripLang(location.pathname) === '/'
   const switchTo = `${localePath(otherLang, stripLang(location.pathname))}${location.hash}`

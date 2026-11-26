@@ -151,6 +151,27 @@ export function createBot(token: string, repo: Repo, opts: { groupChatId: number
         : (en ? 'You have no public Telegram username. Set one in Telegram: Settings → Username, then tap the button on the booking page again. Or enter your phone number.' : 'У вас в Telegram нет публичного ника. Задайте его в Telegram: Настройки → Имя пользователя, затем снова нажмите кнопку на странице записи. Или укажите телефон.'))
       return
     }
+    // cab_<токен>: привязка Telegram к аккаунту кабинета (Google-вход в /cabinet). Токен одноразовый, 15 минут.
+    const cab = rawPayload?.match(/^cab_([A-Za-z0-9_-]{16,64})$/)?.[1]
+    if (cab) {
+      const en = langOf(ctx.from) === 'en'
+      const consumed = await repo.useCabinetLink(cab)
+      if (!consumed) {
+        await ctx.reply(en
+          ? 'The link has expired or was already used. Open the client portal and request a new Telegram link.'
+          : 'Ссылка истекла или уже использована. Откройте личный кабинет и получите новую ссылку для Telegram.')
+        return
+      }
+      const linked = await repo.linkCabinetTelegram(consumed.user_id, ctx.from.id, ctx.from.username ?? null)
+      await ctx.reply(linked
+        ? (en
+          ? '✅ Telegram linked to your client portal. You can go back to the portal — purchases are now available.'
+          : '✅ Telegram привязан к личному кабинету. Вернитесь в кабинет — покупки теперь доступны.')
+        : (en
+          ? 'Could not link Telegram: this account is already linked to another client. Contact support.'
+          : 'Не удалось привязать Telegram: этот аккаунт уже привязан к другому клиенту. Напишите в поддержку.'))
+      return
+    }
     // site_<токен>: токен выдаётся только заявке, создавшей карточку. Битый, просроченный или старый с голым id:
     // воронка сайта запускается, но без привязки к карточке
     const siteRef = rawPayload?.match(/^site_([A-Za-z0-9_-]{1,59})$/)?.[1]

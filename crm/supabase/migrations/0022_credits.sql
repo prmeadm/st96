@@ -23,7 +23,7 @@ alter table crm.support_jobs add column if not exists usd_cost numeric(16,6) not
 
 -- ───────── внутренний прайс в кредитах ST (правится во вкладке «Кредиты») ─────────
 insert into crm.app_settings (key, value) values
-  ('support.credit_prices', to_jsonb('{"request":5,"edit":20,"feature":100}'))
+  ('support.credit_prices', to_jsonb('{"request":5,"edit":20,"feature":100}'::text))
 on conflict (key) do nothing;
 
 -- ───────── админы могут писать в настройки (прайс кредитов) ─────────

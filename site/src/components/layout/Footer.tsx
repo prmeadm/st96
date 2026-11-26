@@ -148,6 +148,9 @@ export default function Footer() {
             <Link to={localePath(lang, '/privacy')} className="transition-colors hover:text-paper" data-cursor-hover>
               {t.privacyLink}
             </Link>
+            <Link to={localePath(lang, '/offer')} className="transition-colors hover:text-paper" data-cursor-hover>
+              {t.offerLink}
+            </Link>
             <button
               type="button"
               onClick={() => window.dispatchEvent(new Event(OPEN_EVENT))}
