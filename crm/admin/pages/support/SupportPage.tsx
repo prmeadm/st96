@@ -223,8 +223,8 @@ function ProjectsTab() {
 }
 
 // ─── Пакеты ───
-type PkgForm = { code: string; title: string; description: string; price: string; corrections_limit: string; features_limit: string; requests_limit: string; features_allowed: string; sla_note: string; sort_order: string; is_active: boolean }
-const blankPkg: PkgForm = { code: '', title: '', description: '', price: '', corrections_limit: '', features_limit: '', requests_limit: '', features_allowed: '', sla_note: '', sort_order: '0', is_active: true }
+type PkgForm = { code: string; title: string; description: string; price: string; credits: string; corrections_limit: string; features_limit: string; requests_limit: string; features_allowed: string; sla_note: string; sort_order: string; is_active: boolean }
+const blankPkg: PkgForm = { code: '', title: '', description: '', price: '', credits: '', corrections_limit: '', features_limit: '', requests_limit: '', features_allowed: '', sla_note: '', sort_order: '0', is_active: true }
 
 function PackagesTab() {
   const { rows, reload } = useTable<PackageRow>('packages', 'sort_order')
@@ -233,16 +233,16 @@ function PackagesTab() {
   const [form, setForm] = useState<PkgForm>(blankPkg)
   const [msg, setMsg] = useState('')
 
-  const openEdit = (p: PackageRow) => { setEditing(p); setCreating(false); setForm({ code: p.code, title: p.title, description: p.description ?? '', price: p.price == null ? '' : String(p.price), corrections_limit: p.corrections_limit == null ? '' : String(p.corrections_limit), features_limit: p.features_limit == null ? '' : String(p.features_limit), requests_limit: p.requests_limit == null ? '' : String(p.requests_limit), features_allowed: p.features_allowed ?? '', sla_note: p.sla_note ?? '', sort_order: String(p.sort_order), is_active: p.is_active }) }
+  const openEdit = (p: PackageRow) => { setEditing(p); setCreating(false); setForm({ code: p.code, title: p.title, description: p.description ?? '', price: p.price == null ? '' : String(p.price), credits: p.credits == null ? '' : String(p.credits), corrections_limit: p.corrections_limit == null ? '' : String(p.corrections_limit), features_limit: p.features_limit == null ? '' : String(p.features_limit), requests_limit: p.requests_limit == null ? '' : String(p.requests_limit), features_allowed: p.features_allowed ?? '', sla_note: p.sla_note ?? '', sort_order: String(p.sort_order), is_active: p.is_active }) }
   const save = async () => {
     if (!form.code.trim() || !form.title.trim()) return setMsg('Укажите код и название')
-    const row = { code: form.code.trim(), title: form.title.trim(), description: form.description.trim() || null, price: num(form.price), corrections_limit: num(form.corrections_limit), features_limit: num(form.features_limit), requests_limit: num(form.requests_limit), features_allowed: form.features_allowed.trim() || null, sla_note: form.sla_note.trim() || null, sort_order: Number(form.sort_order) || 0, is_active: form.is_active }
+    const row = { code: form.code.trim(), title: form.title.trim(), description: form.description.trim() || null, price: num(form.price), credits: num(form.credits), corrections_limit: num(form.corrections_limit), features_limit: num(form.features_limit), requests_limit: num(form.requests_limit), features_allowed: form.features_allowed.trim() || null, sla_note: form.sla_note.trim() || null, sort_order: Number(form.sort_order) || 0, is_active: form.is_active }
     const { error } = editing ? await supabase.from('packages').update(row).eq('id', editing.id) : await supabase.from('packages').insert(row)
     if (error) return setMsg(error.code === '23505' ? 'Такой код уже есть' : 'Не удалось сохранить')
     setEditing(null); setCreating(false); setMsg('Сохранено'); reload()
   }
   const toggle = async (p: PackageRow) => { await supabase.from('packages').update({ is_active: !p.is_active }).eq('id', p.id); reload() }
-  const copy = async (p: PackageRow) => { await supabase.from('packages').insert({ code: p.code + '-copy', title: p.title + ' (копия)', description: p.description, price: p.price, corrections_limit: p.corrections_limit, features_limit: p.features_limit, requests_limit: p.requests_limit, features_allowed: p.features_allowed, sla_note: p.sla_note, sort_order: p.sort_order, is_active: false }); reload() }
+  const copy = async (p: PackageRow) => { await supabase.from('packages').insert({ code: p.code + '-copy', title: p.title + ' (копия)', description: p.description, price: p.price, credits: p.credits, corrections_limit: p.corrections_limit, features_limit: p.features_limit, requests_limit: p.requests_limit, features_allowed: p.features_allowed, sla_note: p.sla_note, sort_order: p.sort_order, is_active: false }); reload() }
 
   return (
     <div className="card">
@@ -253,7 +253,7 @@ function PackagesTab() {
           {rows.map((p) => (
             <div key={p.id} className="item" style={{ boxShadow: 'none' }}>
               <div className="row"><b>{p.title}</b><span className="hint">· {p.code}</span>{!p.is_active && <span className="chip red">выключен</span>}<span className="sp" />
-                <span className="hint">{money(p.price)} · правки {limitLabel(p.corrections_limit)} · функции {limitLabel(p.features_limit)} · обращения {limitLabel(p.requests_limit)}</span>
+                <span className="hint">кредиты {p.credits == null ? '—' : String(p.credits)}/мес · {money(p.price)} · правки {limitLabel(p.corrections_limit)} · функции {limitLabel(p.features_limit)} · обращения {limitLabel(p.requests_limit)}</span>
                 <button className="ibtn" title={p.is_active ? 'Выключить' : 'Включить'} onClick={() => toggle(p)}><Icon name={p.is_active ? 'stop' : 'play'} size={18} /></button>
                 <button className="ibtn" title="Копировать" onClick={() => copy(p)}><Icon name="file" size={18} /></button>
                 <button className="ibtn" title="Редактировать" onClick={() => openEdit(p)}><Icon name="edit" size={18} /></button>
@@ -271,6 +271,7 @@ function PackagesTab() {
                 <div className="fld"><label>Код</label><input value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} placeholder="standard" /></div>
                 <div className="fld"><label>Название</label><input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Стандартный" /></div>
                 <div className="fld"><label>Цена, BYN</label><input value={form.price} inputMode="decimal" onChange={(e) => setForm({ ...form, price: e.target.value })} /></div>
+                <div className="fld"><label>Кредиты / мес</label><input value={form.credits} inputMode="numeric" onChange={(e) => setForm({ ...form, credits: e.target.value })} placeholder="напр. 3000" /></div>
                 <div className="fld"><label>Порядок</label><input value={form.sort_order} inputMode="numeric" onChange={(e) => setForm({ ...form, sort_order: e.target.value })} /></div>
                 <div className="fld"><label>Лимит правок</label><input value={form.corrections_limit} inputMode="numeric" onChange={(e) => setForm({ ...form, corrections_limit: e.target.value })} placeholder="пусто = ∞" /></div>
                 <div className="fld"><label>Лимит функций</label><input value={form.features_limit} inputMode="numeric" onChange={(e) => setForm({ ...form, features_limit: e.target.value })} placeholder="пусто = ∞" /></div>

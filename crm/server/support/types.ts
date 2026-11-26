@@ -9,6 +9,7 @@ export type PackageRow = {
   price: number | null
   currency: string
   period: 'month'
+  credits: number | null
   corrections_limit: number | null
   features_limit: number | null
   requests_limit: number | null
@@ -64,6 +65,8 @@ export type PackagePeriodRow = {
   corrections_limit: number | null
   features_limit: number | null
   requests_limit: number | null
+  credits_limit: number | null
+  credits_used: number
   corrections_used: number
   features_used: number
   requests_used: number
@@ -94,6 +97,8 @@ export type SupportJobRow = {
   edits_count: number
   result_json: Record<string, unknown> | null
   tokens_used: number
+  st_credits: number
+  usd_cost: number
   started_at: string | null
   finished_at: string | null
   created_at: string
@@ -131,6 +136,20 @@ export type AgentAuditRow = {
 }
 
 export type AuditInsert = Pick<AgentAuditRow, 'actor' | 'action'> & Partial<Pick<AgentAuditRow, 'client_id' | 'project_id' | 'job_id' | 'payload'>>
+
+// ───────── Кредиты ST: внутренний прайс «тип работы → кредиты» ─────────
+// Правится во вкладке «Кредиты» (админка) и хранится в crm.app_settings[key].
+// «расходные кредиты» (сколько сгорело на провайдере) = support_jobs.tokens_used,
+// их стоимость в USD считает crm/server/usage.ts (цены моделей из llm_prices).
+export const CREDIT_PRICES_KEY = 'support.credit_prices'
+export type CreditPrices = { request: number; edit: number; feature: number }
+export const CREDIT_PRICE_LABELS: Record<keyof CreditPrices, string> = { request: 'Обращение', edit: 'Правка', feature: 'Новая функция' }
+export const DEFAULT_CREDIT_PRICES: CreditPrices = { request: 5, edit: 20, feature: 100 }
+export function parseCreditPrices(raw: unknown): CreditPrices {
+  const v = (typeof raw === 'string' ? (() => { try { return JSON.parse(raw) } catch { return null } })() : raw) as Partial<CreditPrices> | null
+  const n = (x: unknown) => (typeof x === 'number' && Number.isFinite(x) && x >= 0 ? Math.round(x) : NaN)
+  return { request: n(v?.request) || DEFAULT_CREDIT_PRICES.request, edit: n(v?.edit) || DEFAULT_CREDIT_PRICES.edit, feature: n(v?.feature) || DEFAULT_CREDIT_PRICES.feature }
+}
 
 // ───────── Индекс workspace-папок на сервере ─────────
 // Worker поддержки (единственный, кто видит файловую систему сервера) раз в тик сверяет реальные

@@ -227,7 +227,7 @@ export function memoryRepo(): MemoryRepo {
     async listPackages() { return [...r.packages].sort((a, b) => a.sort_order - b.sort_order) },
     async getPackage(pid) { return r.packages.find((p) => p.id === pid) ?? null },
     async insertPackage(p) {
-      const row: PackageRow = { id: id('pkg'), description: null, price: null, currency: 'BYN', period: 'month', corrections_limit: null, features_limit: null, requests_limit: null, features_allowed: null, sla_note: null, is_active: true, sort_order: 0, created_at: '', updated_at: '', ...p }
+      const row: PackageRow = { id: id('pkg'), description: null, price: null, currency: 'BYN', period: 'month', credits: null, corrections_limit: null, features_limit: null, requests_limit: null, features_allowed: null, sla_note: null, is_active: true, sort_order: 0, created_at: '', updated_at: '', ...p }
       r.packages.push(row)
       return row
     },
@@ -257,13 +257,13 @@ export function memoryRepo(): MemoryRepo {
     },
     async listPeriods(projectId) { return r.periods.filter((p) => p.project_id === projectId).sort((a, b) => Date.parse(b.period_start) - Date.parse(a.period_start)) },
     async insertPeriod(p) {
-      const row: PackagePeriodRow = { id: id('per'), status: 'pending_payment', payment_id: null, corrections_limit: null, features_limit: null, requests_limit: null, corrections_used: 0, features_used: 0, requests_used: 0, created_at: '', ...p }
+      const row: PackagePeriodRow = { id: id('per'), status: 'pending_payment', payment_id: null, corrections_limit: null, features_limit: null, requests_limit: null, credits_limit: null, credits_used: 0, corrections_used: 0, features_used: 0, requests_used: 0, created_at: '', ...p }
       r.periods.push(row)
       return row
     },
     async updatePeriod(pid, patch) { Object.assign(r.periods.find((p) => p.id === pid)!, patch) },
     async insertSupportJob(j) {
-      const row: SupportJobRow = { id: id('sj'), project_id: null, message_id: null, status: 'queued', edits_json: [], edits_count: 0, result_json: null, tokens_used: 0, started_at: null, finished_at: null, created_at: '', ...j, voice_file_id: j.voice_file_id ?? null, attachments_json: j.attachments_json ?? null }
+      const row: SupportJobRow = { id: id('sj'), project_id: null, message_id: null, status: 'queued', edits_json: [], edits_count: 0, result_json: null, tokens_used: 0, st_credits: 0, usd_cost: 0, started_at: null, finished_at: null, created_at: '', ...j, voice_file_id: j.voice_file_id ?? null, attachments_json: j.attachments_json ?? null }
       r.supportJobs.push(row)
       return row
     },

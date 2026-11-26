@@ -8,6 +8,14 @@ export const DEFAULT_PRICES: Record<string, Price> = {
   'gemini-3.6-flash': { in: 0.75, out: 3.75 },
   'gemini-3.5-flash-lite': { in: 0.3, out: 2.5 },
   'gemini-3.1-flash-lite': { in: 0.3, out: 2.5, estimate: true },
+  // Сторонние провайдеры (подключаются как свои модели через OpenRouter/Groq/свой сервер).
+  // Оценки на 2026 год — сверяйте с прайсом провайдера; точную цену можно задать в «Аналитике».
+  'deepseek-chat': { in: 0.27, out: 1.1, estimate: true },
+  'deepseek-reasoner': { in: 0.55, out: 2.19, estimate: true },
+  'gpt-4o': { in: 2.5, out: 10, estimate: true },
+  'gpt-4o-mini': { in: 0.15, out: 0.6, estimate: true },
+  'claude-3-5-sonnet': { in: 3, out: 15, estimate: true },
+  'claude-3-5-haiku': { in: 0.8, out: 4, estimate: true },
 }
 
 export function parsePrices(raw: string | null | undefined): Record<string, Price> {
