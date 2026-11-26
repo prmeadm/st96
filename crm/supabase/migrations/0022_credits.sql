@@ -32,11 +32,11 @@ create policy "admins write" on crm.app_settings for insert to authenticated wit
 create policy "admins update" on crm.app_settings for update to authenticated using (crm.is_admin()) with check (crm.is_admin());
 
 -- ───────── стартовые кредиты пакетов (правится в «Пакетах», тянется на сайт) ─────────
-update crm.packages set title = 'Базовый', credits = 1000 where code = 'basic';
-update crm.packages set title = 'Стандартный', credits = 3000 where code = 'standard';
-update crm.packages set code = 'professional', title = 'Профессиональный', credits = 5000 where code = 'premium';
+update crm.packages set title = 'Базовый', credits = 1070 where code = 'basic';
+update crm.packages set title = 'Стандартный', credits = 2240 where code = 'standard';
+update crm.packages set code = 'professional', title = 'Профессиональный', credits = 3600 where code = 'premium';
 insert into crm.packages (code, title, description, credits, sort_order) values
-  ('ultimate', 'Ультимейт', 'Максимальная поддержка', 6000, 4)
+  ('ultimate', 'Ультимейт', 'Максимальная поддержка', 6830, 4)
 on conflict (code) do nothing;
 
 commit;

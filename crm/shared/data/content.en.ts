@@ -425,9 +425,9 @@ export const servicesEn: Record<string, ServiceText> = {
         title: 'Buy extra credits',
         lead: 'Ran out of your monthly allowance? Top up your credit balance without changing plans.',
         bundles: [
-          { credits: 500, price: 160 },
-          { credits: 1000, price: 320 },
-          { credits: 2500, price: 800 },
+          { credits: 500, price: 150 },
+          { credits: 1000, price: 300 },
+          { credits: 2500, price: 750 },
         ],
       },
     },
