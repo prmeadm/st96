@@ -23,6 +23,8 @@ const copy = {
     perCredit: 'за кредит',
     topupHint: 'Кредиты докупаются разово и не сгорают',
     bestValue: 'Выгодно',
+    topupCustom: 'Свой объём',
+    per100: 'за 100 кредитов',
     topupCta: 'Докупить',
     enterpriseCta: 'Обсудить условия',
   },
@@ -41,6 +43,8 @@ const copy = {
     perCredit: 'per credit',
     topupHint: 'One-time packs, added to your balance right away',
     bestValue: 'Best value',
+    topupCustom: 'Custom volume',
+    per100: 'per 100 credits',
     topupCta: 'Purchase',
     enterpriseCta: 'Talk to us',
   },
@@ -67,6 +71,7 @@ export default function Pricing({ service }: { service: Service }) {
   const accent = service.accent
   const [yearly, setYearly] = useState(false)
   const [credits, setCredits] = useState<Record<string, number | null>>({})
+  const [customCredits, setCustomCredits] = useState(5000)
   useEffect(() => {
     fetch('/api/packages', { cache: 'no-store' })
       .then((r) => r.json())
@@ -82,7 +87,18 @@ export default function Pricing({ service }: { service: Service }) {
   const discount = (p: number) => Math.round(p * 0.8)
   const locale = lang === 'ru' ? 'ru-RU' : 'en-US'
   const fmt = (n: number) => n.toLocaleString(locale)
-  const fmtRate = (n: number) => n.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  const topups = block.topups
+  // Докупка: «было/стало», курс за 100 кредитов и ползунок объёма — как в референсе.
+  const LIST_RATE = 0.4
+  const TOPUP_RATE = 0.3
+  const per100Of = (price: number, credits: number) => Math.round((price / credits) * 100)
+  const makeLabel = (c: number) =>
+    lang === 'ru'
+      ? `≈ ${fmt(Math.floor(c / 20))} правок или ${fmt(Math.floor(c / 100))} функций`
+      : `≈ ${fmt(Math.floor(c / 20))} edits or ${fmt(Math.floor(c / 100))} features`
+  const customPrice = Math.round(customCredits * TOPUP_RATE)
+  const customOld = Math.round(customCredits * LIST_RATE)
+  const customDisc = Math.round((1 - customPrice / customOld) * 100)
 
   return (
     <section id="pricing" className="relative overflow-hidden border-t border-ink-line py-20 sm:py-28">
@@ -208,12 +224,12 @@ export default function Pricing({ service }: { service: Service }) {
           })}
         </StaggerGroup>
 
-        {block.topups && (
+        {topups && (
           <div className="mt-20 sm:mt-28">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
               <div>
-                <h3 className="font-display text-4xl font-bold tracking-tight sm:text-5xl">{block.topups.title}</h3>
-                <p className="mt-3 max-w-xl text-paper-dim">{block.topups.lead}</p>
+                <h3 className="font-display text-4xl font-bold tracking-tight sm:text-5xl">{topups.title}</h3>
+                <p className="mt-3 max-w-xl text-paper-dim">{topups.lead}</p>
               </div>
               <p className="flex items-center gap-2 text-sm text-paper-dim">
                 <Info className="h-4 w-4 shrink-0" />
@@ -221,55 +237,100 @@ export default function Pricing({ service }: { service: Service }) {
               </p>
             </div>
 
-            <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
-              {block.topups.bundles.map((b, i) => {
-                const best = i === block.topups!.bundles.length - 1
-                return (
-                  <div
-                    key={b.credits}
-                    className={clsx(
-                      'relative flex flex-col overflow-hidden rounded-2xl border p-6',
-                      best ? '' : 'border-ink-line bg-ink-soft',
-                    )}
-                    style={
-                      best
-                        ? {
-                            borderColor: 'var(--color-acid)',
-                            background: 'linear-gradient(160deg, rgba(216,255,63,0.12) 0%, rgba(216,255,63,0.02) 100%)',
-                          }
-                        : undefined
-                    }
-                  >
+            <div className="mt-8 space-y-4">
+              <div
+                className="relative overflow-hidden rounded-2xl border p-6 sm:p-7"
+                style={{
+                  borderColor: 'var(--color-acid)',
+                  background: 'linear-gradient(160deg, rgba(216,255,63,0.10) 0%, rgba(216,255,63,0.02) 100%)',
+                }}
+              >
+                <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+                  <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-display text-2xl font-bold">{fmt(b.credits)} {t.creditsLabel}</span>
-                      {best && (
-                        <span className="rounded-full px-2 py-0.5 text-[11px] font-bold" style={lime}>
-                          {t.bestValue}
-                        </span>
-                      )}
-                    </div>
-                    <p className="mt-2 text-sm text-paper-dim">
-                      ≈ {fmtRate(b.price / b.credits)} {t.currency} {t.perCredit}
-                    </p>
-                    <div className="mt-auto flex items-end justify-between gap-3 pt-8">
-                      <div>
-                        <div className="font-display text-3xl font-bold">
-                          {fmt(b.price)}
-                          <span className="ml-1 text-sm font-normal text-paper-dim">{t.currency}</span>
-                        </div>
-                      </div>
-                      <MagneticButton
-                        as="a"
-                        href="#lead"
-                        className="shrink-0 rounded-full px-5 py-2.5 text-sm font-semibold transition-colors"
-                        style={{ background: 'var(--color-paper)', color: 'var(--color-ink)' }}
+                      <span className="font-display text-2xl font-bold">{fmt(customCredits)} {t.creditsLabel}</span>
+                      <span
+                        className="rounded-full border px-2 py-0.5 text-[11px] font-semibold"
+                        style={{ borderColor: 'var(--color-ink-line)', color: 'var(--color-paper-dim)' }}
                       >
-                        {t.topupCta}
-                      </MagneticButton>
+                        {t.topupCustom}
+                      </span>
+                      <span className="rounded-full px-2 py-0.5 text-[11px] font-bold" style={lime}>
+                        −{customDisc}%
+                      </span>
+                    </div>
+                    <p className="mt-2 text-sm text-paper-dim">{makeLabel(customCredits)}</p>
+                    <input
+                      type="range"
+                      min={5000}
+                      max={100000}
+                      step={5000}
+                      value={customCredits}
+                      onChange={(e) => setCustomCredits(Number(e.target.value))}
+                      aria-label={t.topupCustom}
+                      className="mt-5 w-full cursor-pointer"
+                      style={{ accentColor: 'var(--color-acid-solid)' }}
+                    />
+                    <div className="mt-1 flex justify-between text-xs text-paper-dim">
+                      <span>{fmt(5000)}</span>
+                      <span>{fmt(100000)}</span>
                     </div>
                   </div>
-                )
-              })}
+                  <div className="flex shrink-0 flex-col items-start gap-2 lg:items-end">
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-sm text-paper-dim line-through">{fmt(customOld)} {t.currency}</span>
+                      <span className="font-display text-3xl font-bold">{fmt(customPrice)} {t.currency}</span>
+                    </div>
+                    <span className="text-xs text-paper-dim">{fmt(per100Of(customPrice, customCredits))} {t.currency} {t.per100}</span>
+                    <MagneticButton
+                      as="a"
+                      href="#lead"
+                      className="mt-1 rounded-full px-5 py-2.5 text-sm font-semibold"
+                      style={{ background: 'var(--color-paper)', color: 'var(--color-ink)' }}
+                    >
+                      {t.topupCta}
+                    </MagneticButton>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                {topups.bundles.map((b) => {
+                  const oldPrice = Math.round(b.credits * LIST_RATE)
+                  const discount = Math.round((1 - b.price / oldPrice) * 100)
+                  return (
+                    <div key={b.credits} className="flex flex-col rounded-2xl border border-ink-line bg-ink-soft p-6">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="font-display text-2xl font-bold">{fmt(b.credits)} {t.creditsLabel}</span>
+                        <span className="rounded-full px-2 py-0.5 text-[11px] font-bold" style={lime}>
+                          −{discount}%
+                        </span>
+                      </div>
+                      <p className="mt-2 text-sm text-paper-dim">{makeLabel(b.credits)}</p>
+                      <div className="mt-auto flex items-end justify-between gap-3 pt-8">
+                        <div>
+                          <span className="text-sm text-paper-dim line-through">{fmt(oldPrice)} {t.currency}</span>
+                          <div className="font-display text-3xl font-bold">
+                            {fmt(b.price)}
+                            <span className="ml-1 text-sm font-normal text-paper-dim">{t.currency}</span>
+                          </div>
+                          <span className="mt-1 block text-xs text-paper-dim">
+                            {fmt(per100Of(b.price, b.credits))} {t.currency} {t.per100}
+                          </span>
+                        </div>
+                        <MagneticButton
+                          as="a"
+                          href="#lead"
+                          className="shrink-0 rounded-full px-5 py-2.5 text-sm font-semibold transition-colors"
+                          style={{ background: 'var(--color-paper)', color: 'var(--color-ink)' }}
+                        >
+                          {t.topupCta}
+                        </MagneticButton>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
             </div>
           </div>
         )}

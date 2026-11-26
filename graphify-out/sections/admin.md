@@ -20,8 +20,8 @@
 - `crm/admin/pages/FilterBar.tsx` — 5 узл.
 - `crm/admin/AdminApp.tsx` — 5 узл.
 - `crm/admin/ui/Icon.tsx` — 4 узл.
-- `crm/admin/supabase.ts` — 3 узл.
 - `crm/admin/ui/SaveButton.tsx` — 3 узл.
+- `crm/admin/supabase.ts` — 3 узл.
 - `crm/admin/highlight.tsx` — 3 узл.
 - `crm/admin/ui/RowActions.tsx` — 2 узл.
 - `crm/admin/api.ts` — 2 узл.
@@ -32,8 +32,8 @@
 ## Главные узлы (больше всего связей)
 
 - `Icon()` (crm/admin/ui/Icon.tsx:L45)
-- `supabase` (crm/admin/supabase.ts:L6)
 - `fmtDate()` (crm/admin/types.ts:L68)
+- `supabase` (crm/admin/supabase.ts:L6)
 - `Shell()` (crm/admin/AdminApp.tsx:L47)
 - `callApi()` (crm/admin/api.ts:L4)
 - `RowActions()` (crm/admin/ui/RowActions.tsx:L5)
@@ -41,8 +41,8 @@
 - `BackLink()` (crm/admin/ui/BackLink.tsx:L6)
 - `FilterBar()` (crm/admin/pages/FilterBar.tsx:L12)
 - `Seg()` (crm/admin/ui/Seg.tsx:L6)
-- `SERVICES` (crm/admin/types.ts:L55)
 - `pickKind()` (crm/admin/ui/Seg.tsx:L31)
+- `SERVICES` (crm/admin/types.ts:L55)
 
 ## От чего зависит (вызовы в другие разделы)
 
