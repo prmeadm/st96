@@ -51,3 +51,10 @@ export async function spendFeatures(repo: SupportRepo, projectId: string, count 
   if (!period || period.status !== 'active') throw new Error('нет активного оплаченного периода')
   await repo.updatePeriod(period.id, { features_used: period.features_used + count })
 }
+
+/** Списание кредитов ST после успешного деплоя (итог creditCost). Требует активного периода. */
+export async function spendCredits(repo: SupportRepo, projectId: string, count: number): Promise<void> {
+  const period = await repo.currentPeriod(projectId)
+  if (!period || period.status !== 'active') throw new Error('нет активного оплаченного периода')
+  await repo.updatePeriod(period.id, { credits_used: period.credits_used + count })
+}

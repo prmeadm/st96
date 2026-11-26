@@ -589,7 +589,7 @@ function CreditsTab() {
     const request = num(form.request); const edit = num(form.edit); const feature = num(form.feature)
     if (request == null || edit == null || feature == null) return setMsg('Укажите число кредитов для каждого типа работы')
     const value: CreditPrices = { request, edit, feature }
-    const { error } = await supabase.from('app_settings').upsert({ key: CREDIT_PRICES_KEY, value }, { onConflict: 'key' })
+    const { error } = await supabase.from('app_settings').upsert({ key: CREDIT_PRICES_KEY, value: JSON.stringify(value) }, { onConflict: 'key' })
     if (error) return setMsg('Не удалось сохранить')
     setMsg('Сохранено')
   }

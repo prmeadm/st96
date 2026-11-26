@@ -151,6 +151,11 @@ export function parseCreditPrices(raw: unknown): CreditPrices {
   return { request: n(v?.request) || DEFAULT_CREDIT_PRICES.request, edit: n(v?.edit) || DEFAULT_CREDIT_PRICES.edit, feature: n(v?.feature) || DEFAULT_CREDIT_PRICES.feature }
 }
 
+/** Сколько кредитов ST списывается за обращение: база «обращение» + правки×edit или функции×feature. */
+export function creditCost(editsCount: number, isFeature: boolean, prices: CreditPrices): number {
+  return prices.request + editsCount * (isFeature ? prices.feature : prices.edit)
+}
+
 // ───────── Индекс workspace-папок на сервере ─────────
 // Worker поддержки (единственный, кто видит файловую систему сервера) раз в тик сверяет реальные
 // папки с этим индексом и пишет его в crm.app_settings[WORKSPACE_FOLDERS_KEY]; админка читает

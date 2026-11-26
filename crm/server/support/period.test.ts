@@ -1,7 +1,8 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { memoryRepo } from '../memoryRepo'
-import { activatePeriod, confirmInvoice, monthRange, spendCorrections, spendFeatures, startPeriod } from './period'
+import { activatePeriod, confirmInvoice, monthRange, spendCorrections, spendCredits, spendFeatures, startPeriod } from './period'
+import { creditCost, DEFAULT_CREDIT_PRICES } from './types'
 import { calcUpgrade } from './upgrade'
 
 test('monthRange: период ровно месяц от даты подтверждения', () => {
@@ -69,6 +70,27 @@ test('spendFeatures: списывает функции', async () => {
   await activatePeriod(repo, period.id)
   await spendFeatures(repo, pr.id, 1)
   assert.equal((await repo.getPeriod(period.id))!.features_used, 1)
+})
+
+test('creditCost: база «обращение» + правки×edit / функции×feature', () => {
+  const p = DEFAULT_CREDIT_PRICES // request 5, edit 20, feature 100
+  assert.equal(creditCost(1, false, p), 25) // 5 + 1×20
+  assert.equal(creditCost(3, false, p), 65) // 5 + 3×20
+  assert.equal(creditCost(1, true, p), 105) // 5 + 1×100
+  assert.equal(creditCost(2, true, p), 205) // 5 + 2×100
+})
+
+test('spendCredits: списывает кредиты ST и требует активного периода', async () => {
+  const repo = memoryRepo()
+  const cl = await repo.insertClient({ name: 'Мария' })
+  const pr = await repo.insertProject({ client_id: cl.id })
+  const pkg = await repo.insertPackage({ code: 'standard', title: 'Стандарт' })
+  const period = await startPeriod(repo, pr.id, pkg)
+  await activatePeriod(repo, period.id)
+  await spendCredits(repo, pr.id, 65)
+  assert.equal((await repo.getPeriod(period.id))!.credits_used, 65)
+  const pr2 = await repo.insertProject({ client_id: cl.id })
+  await assert.rejects(spendCredits(repo, pr2.id, 1), /активного/)
 })
 
 test('monthRange: день клампится в целевом месяце (31.01 → 28.02)', () => {

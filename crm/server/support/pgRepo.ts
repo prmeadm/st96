@@ -7,7 +7,7 @@ import type { AgentScenarioRow, ClientProjectRow, InvoiceRow, PackagePeriodRow, 
 // Методы, которые нужны worker-у и period.ts. memoryRepo/supabaseRepo их тоже удовлетворяют (Pick из Repo).
 export type SupportRepo = Pick<Repo,
   | 'findProject' | 'listProjects' | 'listProjectsByClient' | 'getScenario' | 'findClientById' | 'currentPeriod' | 'getPeriod' | 'listPeriods' | 'insertPeriod' | 'updatePeriod'
-  | 'getInvoice' | 'updateInvoice' | 'insertAudit' | 'updateSupportJob' | 'listQueuedSupportJobs' | 'claimSupportJob' | 'findAwaitingConfirmationJob' | 'findWaitingMaterialJob' | 'updateClient'
+  | 'getInvoice' | 'updateInvoice' | 'insertAudit' | 'updateSupportJob' | 'listQueuedSupportJobs' | 'claimSupportJob' | 'findAwaitingConfirmationJob' | 'findWaitingMaterialJob' | 'updateClient' | 'getSetting'
 >
 
 // timestamptz/timestamp/date → строки (совпадает с типами строк support/types.ts)
@@ -35,6 +35,10 @@ export function pgRepo(connectionString: string): SupportRepo {
   }
 
   return {
+    async getSetting(key) {
+      const row = await one<{ value: unknown }>('select value from crm.app_settings where key = $1', [key])
+      return typeof row?.value === 'string' ? row.value : null
+    },
     async findProject(id) { return one<ClientProjectRow>('select * from crm.client_projects where id = $1', [id]) },
     async listProjects() { return many<ClientProjectRow>('select * from crm.client_projects order by created_at') },
     async listProjectsByClient(clientId) { return many<ClientProjectRow>('select * from crm.client_projects where client_id = $1 order by created_at', [clientId]) },

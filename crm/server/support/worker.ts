@@ -9,8 +9,8 @@ import { mkdir, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { pgRepo, type SupportRepo } from './pgRepo.js'
 import { buildPrompt, decide, type AgentInput, type Classification, type Classify } from './agent.js'
-import { spendCorrections, spendFeatures } from './period.js'
-import type { SupportAttachment, SupportJobRow } from './types.js'
+import { spendCorrections, spendCredits, spendFeatures } from './period.js'
+import { CREDIT_PRICES_KEY, creditCost, parseCreditPrices, type SupportAttachment, type SupportJobRow } from './types.js'
 import { downloadTelegramFile, downloadTelegramVoice, sendTelegramVoice, synthesizeVoice, transcribeAudio } from './voice.js'
 import { consultAnswer } from './consult.js'
 import { replySupport } from './reply.js'
@@ -210,6 +210,7 @@ async function executePlan(repo: SupportRepo, plan: SupportJobRow, confirmJob: S
   const r = project.workspace_path ? await runInWorkspace(project.workspace_path, execPrompt) : { ok: false, output: 'не указан workspace_path', tokens: 0 }
   const status: 'deployed' | 'failed' = r.ok ? 'deployed' : 'failed'
   let spent = 0
+  let stCredits = 0
   if (r.ok) {
     try {
       if (data.plan?.is_feature) await spendFeatures(repo, project.id, plan.edits_count)
@@ -218,9 +219,19 @@ async function executePlan(repo: SupportRepo, plan: SupportJobRow, confirmJob: S
     } catch (e) {
       console.error('spend counters failed', e)
     }
+    // Кредиты ST по внутреннему прайсу: база «обращение» + правки×edit / функции×feature.
+    try {
+      const prices = parseCreditPrices(await repo.getSetting(CREDIT_PRICES_KEY))
+      stCredits = creditCost(plan.edits_count, Boolean(data.plan?.is_feature), prices)
+    } catch (e) {
+      console.error('credit price read failed', e)
+    }
+    if (stCredits > 0) {
+      try { await spendCredits(repo, project.id, stCredits) } catch (e) { console.error('spend credits failed', e) }
+    }
   }
   const finished = new Date().toISOString()
-  await repo.updateSupportJob(plan.id, { status, tokens_used: r.tokens, result_json: { ...(plan.result_json ?? {}), output: r.output, confirmed_at: finished }, finished_at: finished })
+  await repo.updateSupportJob(plan.id, { status, tokens_used: r.tokens, st_credits: stCredits, result_json: { ...(plan.result_json ?? {}), output: r.output, confirmed_at: finished }, finished_at: finished })
   await repo.updateSupportJob(confirmJob.id, { status, result_json: { confirmed_job: plan.id }, finished_at: finished })
   await repo.insertAudit({ actor: 'ai', action: status, client_id: plan.client_id, project_id: plan.project_id, job_id: plan.id, payload: { edits_count: plan.edits_count } })
   const after = await repo.currentPeriod(project.id)
