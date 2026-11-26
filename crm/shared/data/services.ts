@@ -560,10 +560,11 @@ export const services: Service[] = [
       topups: {
         title: 'Докупить кредиты',
         lead: 'Не хватило месячного лимита? Пополните баланс кредитами без смены пакета.',
+        // 1 кредит = 0.32 BYN (розничный курс базового пакета): 500→160, 1000→320, 2500→800
         bundles: [
-          { credits: 500, price: 100 },
-          { credits: 1000, price: 190 },
-          { credits: 2500, price: 450 },
+          { credits: 500, price: 160 },
+          { credits: 1000, price: 320 },
+          { credits: 2500, price: 800 },
         ],
       },
     },
