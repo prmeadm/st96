@@ -29,10 +29,10 @@
 - `crm/admin/builder/Preview.tsx` — 4 узл.
 - `crm/admin/pages/FunnelsPage.tsx` — 4 узл.
 - `crm/server/funnels/triggers.ts` — 4 узл.
-- `crm/admin/builder/Edges.tsx` — 3 узл.
 - `crm/server/bot/videonote.test.ts` — 3 узл.
-- `crm/server/funnels/demo.ts` — 3 узл.
+- `crm/admin/builder/Edges.tsx` — 3 узл.
 - `crm/server/funnels/validate.ts` — 3 узл.
+- `crm/server/funnels/demo.ts` — 3 узл.
 - `crm/server/bot/keyboard.test.ts` — 2 узл.
 - `crm/server/media.test.ts` — 2 узл.
 
@@ -43,11 +43,11 @@
 - `Ic()` (crm/admin/builder/Nodes.tsx:L21)
 - `Editor()` (crm/admin/builder/Editor.tsx:L119)
 - `Inner()` (crm/admin/builder/Builder.tsx:L23)
-- `str()` (crm/server/funnels/types.ts:L36)
 - `Funnel` (crm/server/funnels/types.ts:L12)
 - `Shell()` (crm/admin/builder/Nodes.tsx:L25)
-- `handleClick()` (crm/server/funnels/engine.ts:L113)
+- `str()` (crm/server/funnels/types.ts:L36)
 - `startFunnel()` (crm/server/funnels/engine.ts:L93)
+- `handleClick()` (crm/server/funnels/engine.ts:L113)
 - `Graph` (crm/server/funnels/types.ts:L10)
 - `VideoNoteField()` (crm/admin/ui/VideoNoteField.tsx:L70)
 

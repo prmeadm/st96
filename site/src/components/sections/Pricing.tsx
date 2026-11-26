@@ -71,7 +71,7 @@ export default function Pricing({ service }: { service: Service }) {
   const accent = service.accent
   const [yearly, setYearly] = useState(false)
   const [credits, setCredits] = useState<Record<string, number | null>>({})
-  const [customCredits, setCustomCredits] = useState(5000)
+  const [stopIdx, setStopIdx] = useState(0)
   useEffect(() => {
     fetch('/api/packages', { cache: 'no-store' })
       .then((r) => r.json())
@@ -96,6 +96,10 @@ export default function Pricing({ service }: { service: Service }) {
     lang === 'ru'
       ? `≈ ${fmt(Math.floor(c / 20))} правок или ${fmt(Math.floor(c / 100))} функций`
       : `≈ ${fmt(Math.floor(c / 20))} edits or ${fmt(Math.floor(c / 100))} features`
+  // Шкала ползунка — как в референсе: частые ступени до 25k, затем 100k.
+  const TOPUP_STOPS = [5000, 7000, 9000, 11000, 13000, 15000, 17000, 19000, 21000, 23000, 25000, 100000]
+  const customCredits = TOPUP_STOPS[stopIdx]
+  const fmtStop = (c: number) => `${Math.round(c / 1000)}k`
   const customPrice = Math.round(customCredits * TOPUP_RATE)
   const customOld = Math.round(customCredits * LIST_RATE)
   const customDisc = Math.round((1 - customPrice / customOld) * 100)
@@ -260,20 +264,53 @@ export default function Pricing({ service }: { service: Service }) {
                       </span>
                     </div>
                     <p className="mt-2 text-sm text-paper-dim">{makeLabel(customCredits)}</p>
-                    <input
-                      type="range"
-                      min={5000}
-                      max={100000}
-                      step={5000}
-                      value={customCredits}
-                      onChange={(e) => setCustomCredits(Number(e.target.value))}
-                      aria-label={t.topupCustom}
-                      className="mt-5 w-full cursor-pointer"
-                      style={{ accentColor: 'var(--color-acid-solid)' }}
-                    />
-                    <div className="mt-1 flex justify-between text-xs text-paper-dim">
-                      <span>{fmt(5000)}</span>
-                      <span>{fmt(100000)}</span>
+                    <div className="mt-6">
+                      <div className="relative h-3 text-[10px] leading-none text-paper-dim sm:text-[11px]">
+                        {TOPUP_STOPS.map((s, i) => (
+                          <span
+                            key={s}
+                            className={clsx(
+                              'absolute top-0 whitespace-nowrap tabular-nums',
+                              i === 0 ? '' : i === TOPUP_STOPS.length - 1 ? '-translate-x-full' : '-translate-x-1/2',
+                            )}
+                            style={{
+                              left: `${(i / (TOPUP_STOPS.length - 1)) * 100}%`,
+                              ...(i === stopIdx ? { color: 'var(--color-paper)', fontWeight: 600 } : {}),
+                            }}
+                          >
+                            {fmtStop(s)}
+                          </span>
+                        ))}
+                      </div>
+                      <div className="relative mt-2 h-6">
+                        <span className="pointer-events-none absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-ink-line" />
+                        {TOPUP_STOPS.map((s, i) => (
+                          <span
+                            key={s}
+                            className="pointer-events-none absolute top-1/2 h-1 w-1 -translate-x-1/2 -translate-y-1/2 rounded-full"
+                            style={{
+                              left: `${(i / (TOPUP_STOPS.length - 1)) * 100}%`,
+                              background: i <= stopIdx ? 'var(--color-acid)' : 'var(--color-paper-dim)',
+                              opacity: i <= stopIdx ? 1 : 0.45,
+                            }}
+                          />
+                        ))}
+                        <span
+                          className="pointer-events-none absolute top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full bg-paper shadow-md"
+                          style={{ left: `${(stopIdx / (TOPUP_STOPS.length - 1)) * 100}%` }}
+                        />
+                        <input
+                          type="range"
+                          min={0}
+                          max={TOPUP_STOPS.length - 1}
+                          step={1}
+                          value={stopIdx}
+                          onChange={(e) => setStopIdx(Number(e.target.value))}
+                          aria-label={t.topupCustom}
+                          aria-valuetext={`${fmt(customCredits)} ${t.creditsLabel}`}
+                          className="absolute inset-0 w-full cursor-pointer opacity-0"
+                        />
+                      </div>
                     </div>
                   </div>
                   <div className="flex shrink-0 flex-col items-start gap-2 lg:items-end">
