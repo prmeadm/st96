@@ -38,7 +38,9 @@ WantedBy=multi-user.target
   добавляйте осознанно: в `/home/dsh/work` лежат служебные каталоги платформы;
 - `worker.ts` → `syncWorkspaceFolders(repo)` вызывается на каждом тике (15 с); запись в БД — только если
   изменился набор папок или прошло 5 минут (обновляется `scanned_at`);
-- админка только читает (policy `admins read` на `app_settings`), писать из браузера нельзя.
+- админский код только читает индекс. RLS `app_settings` разрешает администраторам SELECT по всем ключам
+  и INSERT/UPDATE только ключей `support.%` (миграция `0023_app_settings_support_write.sql`):
+  `support.workspace_folders` по-прежнему пишет только воркер.
 
 ## Изоляция
 
