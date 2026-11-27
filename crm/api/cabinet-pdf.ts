@@ -5,6 +5,13 @@ import { renderPdf, type PdfKind } from '../server/cabinet/pdf.js'
 
 export const config = { runtime: 'nodejs' }
 
+// Vercel Node-runtime функции не поддерживают web-сигнатуру Request/Response:
+// обработчик должен быть классическим (req, res).
+type NodeReq = { method?: string; url?: string; headers: Record<string, string | string[] | undefined> }
+type NodeRes = { status: (code: number) => { json: (body: unknown) => void } }
+
+const send = (res: NodeRes, status: number, body: unknown) => res.status(status).json(body)
+
 const PKG_EN: Record<string, string> = { 'Базовый': 'Basic', 'Стандартный': 'Standard', 'Профессиональный': 'Professional', 'Ультимейт': 'Ultimate' }
 const localizeTitle = (title: string, lang: string) => {
   if (lang === 'en') {
@@ -18,29 +25,33 @@ const localizeTitle = (title: string, lang: string) => {
   return title
 }
 
-const json = (d: unknown, s = 200) => new Response(JSON.stringify(d), { status: s, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } })
-
-export default async function handler(req: Request) {
-  if (req.method !== 'GET' && req.method !== 'POST') return json({ error: 'Method not allowed' }, 405)
+export default async function handler(req: NodeReq, res: NodeRes) {
+  if (req.method !== 'GET' && req.method !== 'POST') return send(res, 405, { error: 'Method not allowed' })
   const url = process.env.SUPABASE_URL
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY
-  const anon = process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_PUBLISHABLE_KEY
-  if (!url || !key || !anon) return json({ error: 'Server not configured' }, 503)
-  const auth = (req.headers.get('authorization') || '').replace(/^Bearer\s+/i, '')
-  if (!auth) return json({ error: 'Unauthorized' }, 401)
+  const anon =
+    process.env.SUPABASE_ANON_KEY ||
+    process.env.SUPABASE_PUBLISHABLE_KEY ||
+    process.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
+    process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!url || !key || !anon) return send(res, 503, { error: 'Server not configured' })
+  const rawAuth = req.headers['authorization']
+  const authHeader = Array.isArray(rawAuth) ? rawAuth[0] : rawAuth || ''
+  const auth = authHeader.replace(/^Bearer\s+/i, '')
+  if (!auth) return send(res, 401, { error: 'Unauthorized' })
 
   const userClient = createClient(url, anon, { auth: { persistSession: false, autoRefreshToken: false } })
   const { data: userData } = await userClient.auth.getUser(auth)
-  if (!userData.user) return json({ error: 'Unauthorized' }, 401)
+  if (!userData.user) return send(res, 401, { error: 'Unauthorized' })
 
   const db = createClient(url, key, { db: { schema: dbSchema() }, auth: { persistSession: false, autoRefreshToken: false } })
-  const reqUrl = new URL(req.url)
+  const reqUrl = new URL(req.url || '', 'https://st96.by')
   const id = reqUrl.searchParams.get('id') || ''
   const queryLang = reqUrl.searchParams.get('lang')
-  if (!id) return json({ error: 'id is required' }, 400)
+  if (!id) return send(res, 400, { error: 'id is required' })
 
   const { data: acc } = await db.from('client_accounts').select('client_id').eq('user_id', userData.user.id).maybeSingle()
-  if (!acc) return json({ error: 'Not registered' }, 403)
+  if (!acc) return send(res, 403, { error: 'Not registered' })
   const clientId = (acc as { client_id: string }).client_id
 
   const { data: docRaw } = await db
@@ -50,14 +61,14 @@ export default async function handler(req: Request) {
     .eq('client_id', clientId)
     .maybeSingle()
   const doc = docRaw as { id: string; kind: PdfKind; number: string; status: string; amount: number; currency: string; file_path: string | null; order_id: string | null; issued_at: string | null } | null
-  if (!doc) return json({ error: 'Not found' }, 404)
-  if (doc.status === 'void') return json({ error: 'Document is void' }, 409)
+  if (!doc) return send(res, 404, { error: 'Not found' })
+  if (doc.status === 'void') return send(res, 409, { error: 'Document is void' })
 
   const bucket = 'documents'
   // Явный ?lang= требует перерисовки в нужном языке: не отдаём кэш, если язык задан.
   if (doc.file_path && doc.status === 'issued' && !queryLang) {
     const { data: signed } = await db.storage.from(bucket).createSignedUrl(doc.file_path, 60)
-    if (signed) return json({ url: signed.signedUrl, expires_in: 60 })
+    if (signed) return send(res, 200, { url: signed.signedUrl, expires_in: 60 })
   }
 
   const [{ data: orderRaw }, { data: clientRaw }] = await Promise.all([
@@ -93,7 +104,7 @@ export default async function handler(req: Request) {
     : [{ title: language === 'en' ? 'ST96 support services' : 'Услуги поддержки ST96', quantity: 1, amount: Number(doc.amount) }]
   const items = rawItems.map((i) => ({ ...i, title: localizeTitle(i.title, language) }))
 
-  if (items.length > 10) return json({ error: 'too_many_items', message: 'Document supports at most 10 items' }, 409)
+  if (items.length > 10) return send(res, 409, { error: 'too_many_items', message: 'Document supports at most 10 items' })
 
   const bytes = await renderPdf({
     kind: doc.kind,
@@ -112,12 +123,11 @@ export default async function handler(req: Request) {
 
   const path = 'clients/' + clientId + '/' + new Date().getFullYear() + '/' + doc.kind + '-' + doc.id + '.pdf'
   const { error: uploadError } = await db.storage.from(bucket).upload(path, bytes, { contentType: 'application/pdf', upsert: true })
-  if (uploadError) return json({ error: 'Could not store PDF' }, 500)
+  if (uploadError) return send(res, 500, { error: 'Could not store PDF' })
   await db
     .from('billing_documents')
     .update({ status: 'issued', file_path: path, issued_at: doc.issued_at || new Date().toISOString() })
     .eq('id', doc.id)
-
   const { data: signed } = await db.storage.from(bucket).createSignedUrl(path, 60)
-  return json({ url: signed?.signedUrl || null, expires_in: 60, number: doc.number })
+  return send(res, 200, { url: signed?.signedUrl || null, expires_in: 60, number: doc.number })
 }

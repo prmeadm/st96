@@ -6,7 +6,12 @@ import { dbSchema } from '../server/env.js'
 
 export const config = { runtime: 'nodejs' }
 
-const json = (d: unknown, s = 200) => new Response(JSON.stringify(d), { status: s, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } })
+// Vercel Node-runtime функции не поддерживают web-сигнатуру Request/Response:
+// обработчик должен быть классическим (req, res).
+type NodeReq = { method?: string; headers: Record<string, string | string[] | undefined> }
+type NodeRes = { status: (code: number) => { json: (body: unknown) => void } }
+
+const send = (res: NodeRes, status: number, body: unknown) => res.status(status).json(body)
 
 type OutboxRow = {
   id: number
@@ -41,19 +46,21 @@ const textFor = (template: string, payload: Record<string, unknown>) => {
   return 'Откройте личный кабинет ST96: /cabinet'
 }
 
-export default async function handler(req: Request) {
-  if (req.method !== 'GET' && req.method !== 'POST') return json({ error: 'Method not allowed' }, 405)
-  // Vercel Cron авто-передаёт Authorization: Bearer <CRON_SECRET>; вручную можно слать MAIL_WORKER_SECRET.
+export default async function handler(req: NodeReq, res: NodeRes) {
+  if (req.method !== 'GET' && req.method !== 'POST') return send(res, 405, { error: 'Method not allowed' })
+  // Vercel Cron передаёт Authorization: Bearer <CRON_SECRET>; вручную можно слать MAIL_WORKER_SECRET.
   const secret = process.env.MAIL_WORKER_SECRET || process.env.CRON_SECRET
-  if (!secret) return json({ error: 'Mail worker is not configured' }, 503)
-  const auth = (req.headers.get('authorization') || '').replace(/^Bearer\s+/i, '')
-  if (auth !== secret) return json({ error: 'Unauthorized' }, 401)
+  if (!secret) return send(res, 503, { error: 'Mail worker is not configured' })
+  const rawAuth = req.headers['authorization']
+  const authHeader = Array.isArray(rawAuth) ? rawAuth[0] : rawAuth || ''
+  const auth = authHeader.replace(/^Bearer\s+/i, '')
+  if (auth !== secret) return send(res, 401, { error: 'Unauthorized' })
 
   const url = process.env.SUPABASE_URL
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY
   const user = process.env.MAILRU_SMTP_USER
   const pass = process.env.MAILRU_SMTP_PASSWORD
-  if (!url || !key || !user || !pass) return json({ error: 'Mail is not configured' }, 503)
+  if (!url || !key || !user || !pass) return send(res, 503, { error: 'Mail is not configured' })
 
   const db = createClient(url, key, { db: { schema: dbSchema() }, auth: { persistSession: false, autoRefreshToken: false } })
   const { data: rows } = await db
@@ -130,6 +137,5 @@ export default async function handler(req: Request) {
       }
     }
   }
-
-  return json({ sent, failed, tg_sent: tgSent, tg_failed: tgFailed })
+  return send(res, 200, { sent, failed, tg_sent: tgSent, tg_failed: tgFailed })
 }
