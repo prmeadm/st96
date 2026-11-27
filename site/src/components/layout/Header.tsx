@@ -8,9 +8,14 @@ import { trackLanguageSwitch } from '../../lib/analytics'
 import MagneticButton from '../ui/MagneticButton'
 
 export default function Header() {
-  const [open, setOpen] = useState(false)
-  const [scrolled, setScrolled] = useState(false)
   const location = useLocation()
+  const [scrolled, setScrolled] = useState(false)
+  // Шторка привязана к маршруту: любая навигация (ссылка, «назад», смена языка)
+  // закрывает её сама — без эффекта, синхронизирующего состояние.
+  const locationKey = `${location.pathname}${location.hash}`
+  const [menu, setMenu] = useState({ open: false, key: locationKey })
+  const open = menu.open && menu.key === locationKey
+  const setOpen = (next: boolean) => setMenu({ open: next, key: locationKey })
   const navigate = useNavigate()
   const lang = useLang()
   const t = useUi()
@@ -22,6 +27,8 @@ export default function Header() {
   const cabinetPath = localePath(lang, '/cabinet')
   const isHome = stripLang(location.pathname) === '/'
   const switchTo = `${localePath(otherLang, stripLang(location.pathname))}${location.hash}`
+  const navLabel = lang === 'ru' ? 'Основная навигация' : 'Main navigation'
+  const isActive = (to: string) => stripLang(location.pathname) === stripLang(to)
   const onSwitch = () => {
     trackLanguageSwitch(lang, otherLang)
     setOpen(false)
@@ -41,6 +48,15 @@ export default function Header() {
     }
   }, [open])
 
+  useEffect(() => {
+    if (!open) return
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMenu((m) => ({ ...m, open: false }))
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [open])
+
   const goToLead = (e: React.MouseEvent) => {
     e.preventDefault()
     setOpen(false)
@@ -51,44 +67,51 @@ export default function Header() {
     }
   }
 
+  const leadHref = `${isHome ? '' : localePath(lang, '/')}#lead`
+
   return (
     <header
       className={`fixed inset-x-0 top-0 z-50 transition-colors duration-300 ${
         scrolled || open ? 'bg-ink/85 backdrop-blur-md border-b border-ink-line' : 'bg-transparent'
       }`}
     >
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-5 sm:h-20 sm:px-8">
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-6 px-5 sm:h-20 sm:px-8">
         <Link
           to={localePath(lang, '/')}
           onClick={() => setOpen(false)}
-          className="font-display text-xl font-bold tracking-tight"
+          className="-mx-2 -my-2 shrink-0 rounded-full px-2 py-2 font-display text-xl font-bold tracking-tight focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acid"
           data-cursor-hover
         >
           ST<span className="text-acid">96</span>
         </Link>
 
-        <nav className="hidden items-center gap-8 lg:flex">
-          {navItems.map((item) => (
-            <Link
-              key={item.to}
-              to={item.to}
-              data-cursor-hover
-              className={`relative text-sm font-medium transition-colors hover:text-paper ${
-                location.pathname === item.to ? 'text-paper' : 'text-paper-dim'
-              }`}
-            >
-              {item.label}
-              {location.pathname === item.to && (
-                <motion.span
-                  layoutId="nav-dot"
-                  className="absolute -bottom-1.5 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-acid"
-                />
-              )}
-            </Link>
-          ))}
+        <nav aria-label={navLabel} className="hidden items-center gap-5 xl:flex">
+          {navItems.map((item) => {
+            const active = isActive(item.to)
+            return (
+              <Link
+                key={item.to}
+                to={item.to}
+                data-cursor-hover
+                aria-current={active ? 'page' : undefined}
+                className={`relative whitespace-nowrap text-sm font-medium transition-colors hover:text-paper focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-acid ${
+                  active ? 'text-paper' : 'text-paper-dim'
+                }`}
+              >
+                {item.label}
+                {active && (
+                  <motion.span
+                    layoutId="nav-dot"
+                    aria-hidden="true"
+                    className="absolute -bottom-1.5 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-acid"
+                  />
+                )}
+              </Link>
+            )
+          })}
         </nav>
 
-        <div className="flex items-center gap-3">
+        <div className="flex shrink-0 items-center gap-3">
           <Link
             to={switchTo}
             onClick={onSwitch}
@@ -96,7 +119,7 @@ export default function Header() {
             aria-label={t.switchTo}
             title={t.switchTo}
             data-cursor-hover
-            className="inline-flex h-10 items-center gap-1 rounded-full border border-ink-line px-3 font-display text-xs font-semibold tracking-wider transition-colors hover:border-paper-dim"
+            className="inline-flex h-10 items-center gap-1 whitespace-nowrap rounded-full border border-ink-line px-3 font-display text-xs font-semibold tracking-wider transition-colors hover:border-paper-dim focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acid"
           >
             <span className="text-acid">{t.langShort}</span>
             <span className="text-paper-dim">/</span>
@@ -107,24 +130,28 @@ export default function Header() {
             aria-label={t.signIn}
             title={t.signIn}
             data-cursor-hover
-            className="inline-flex h-10 items-center gap-2 rounded-full border border-ink-line px-3 text-sm font-medium text-paper-dim transition-colors hover:border-acid/60 hover:text-paper focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acid"
+            className="inline-flex h-10 items-center gap-2 whitespace-nowrap rounded-full border border-ink-line px-3 text-sm font-medium text-paper-dim transition-colors hover:border-acid/60 hover:text-paper focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acid"
           >
             <UserRound className="h-4 w-4" aria-hidden="true" />
             <span className="hidden sm:inline">{t.signIn}</span>
           </Link>
           <MagneticButton
             as="a"
+            href={leadHref}
             onClick={goToLead}
-            className="hidden items-center gap-1.5 rounded-full bg-paper px-5 py-2.5 text-sm font-semibold text-ink transition-colors hover:bg-acid sm:inline-flex"
+            className="hidden shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full bg-paper px-5 py-2.5 text-sm font-semibold text-ink transition-colors hover:bg-acid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acid sm:inline-flex"
           >
             {t.discuss}
             <ArrowUpRight className="h-4 w-4" />
           </MagneticButton>
 
           <button
-            onClick={() => setOpen((v) => !v)}
-            className="grid h-10 w-10 place-items-center rounded-full border border-ink-line lg:hidden"
+            type="button"
+            onClick={() => setOpen(!open)}
+            className="grid h-10 w-10 place-items-center rounded-full border border-ink-line focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acid xl:hidden"
             aria-label={t.menu}
+            aria-expanded={open}
+            aria-controls="mobile-nav"
             data-cursor-hover
           >
             {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -135,30 +162,37 @@ export default function Header() {
       <AnimatePresence>
         {open && (
           <motion.div
+            id="mobile-nav"
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-            className="overflow-hidden border-t border-ink-line bg-ink lg:hidden"
+            className="max-h-[calc(100dvh-4rem)] overflow-y-auto overscroll-contain border-t border-ink-line bg-ink sm:max-h-[calc(100dvh-5rem)] xl:hidden"
           >
-            <nav className="flex flex-col gap-1 px-5 py-6">
-              {navItems.map((item, i) => (
-                <motion.div
-                  key={item.to}
-                  initial={{ opacity: 0, x: -16 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: i * 0.05, duration: 0.4 }}
-                >
-                  <Link
-                    to={item.to}
-                    onClick={() => setOpen(false)}
-                    className="flex items-center justify-between border-b border-ink-line/60 py-4 font-display text-2xl font-medium"
+            <nav aria-label={navLabel} className="flex flex-col gap-1 px-5 py-6">
+              {navItems.map((item, i) => {
+                const active = isActive(item.to)
+                return (
+                  <motion.div
+                    key={item.to}
+                    initial={{ opacity: 0, x: -16 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.05, duration: 0.4 }}
                   >
-                    {item.label}
-                    <ArrowUpRight className="h-5 w-5 text-paper-dim" />
-                  </Link>
-                </motion.div>
-              ))}
+                    <Link
+                      to={item.to}
+                      onClick={() => setOpen(false)}
+                      aria-current={active ? 'page' : undefined}
+                      className={`flex items-center justify-between border-b border-ink-line/60 py-4 font-display text-2xl font-medium ${
+                        active ? 'text-acid' : 'text-paper'
+                      }`}
+                    >
+                      {item.label}
+                      <ArrowUpRight className="h-5 w-5 text-paper-dim" />
+                    </Link>
+                  </motion.div>
+                )
+              })}
               <motion.div
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -175,7 +209,7 @@ export default function Header() {
                 </Link>
               </motion.div>
               <motion.a
-                href="#lead"
+                href={leadHref}
                 onClick={goToLead}
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
