@@ -22,8 +22,8 @@
 - `crm/booking/MonthGrid.tsx` — 6 узл.
 - `crm/server/booking/types.ts` — 5 узл.
 - `crm/book/index.html` — 5 узл.
-- `crm/shared/data/serviceOptions.ts` — 4 узл.
 - `crm/server/booking/ics.ts` — 4 узл.
+- `crm/shared/data/serviceOptions.ts` — 4 узл.
 - `crm/shared/data/bookingGoals.ts` — 2 узл.
 - `api/booking-admin.ts` — 2 узл.
 - `api/booking.ts` — 2 узл.
@@ -32,6 +32,7 @@
 ## Главные узлы (больше всего связей)
 
 - `createBooking()` (crm/server/booking/service.ts:L98)
+- `bookingUrl()` (crm/server/booking/schedule.ts:L179)
 - `ScheduleTab()` (crm/admin/pages/BookingPage.tsx:L146)
 - `dayInfo()` (crm/server/booking/schedule.ts:L114)
 - `normalizeSchedule()` (crm/server/booking/schedule.ts:L72)
@@ -39,15 +40,14 @@
 - `BookingRow` (crm/server/booking/types.ts:L4)
 - `addDays()` (crm/server/booking/schedule.ts:L44)
 - `decideBooking()` (crm/server/booking/service.ts:L174)
-- `bookingUrl()` (crm/server/booking/schedule.ts:L179)
 - `whenLabel()` (crm/server/booking/schedule.ts:L171)
 - `minskNow()` (crm/server/booking/schedule.ts:L52)
-- `buildIcs()` (crm/server/booking/ics.ts:L9)
+- `BookingPage()` (crm/admin/pages/BookingPage.tsx:L30)
 
 ## От чего зависит (вызовы в другие разделы)
 
 - **Данные и инфраструктура** (51): `.countRecentBookings()`, `.enqueueJob()`, `.findClient()`, `.findClientById()`, `.getBooking()`, `.getSetting()`
-- **Оболочка админки** (17): `Icon()`, `Icon.tsx`, `Seg()`, `Seg.tsx`, `admin/types.ts`, `api.ts`
+- **Оболочка админки** (17): `Icon()`, `Icon.tsx`, `Seg()`, `Seg.tsx`, `admin/supabase.ts`, `admin/types.ts`
 - **Заявки и клиенты** (11): `ContactLinks()`, `ContactLinks.tsx`, `clickablePhone()`, `normalizePhone()`, `normalizeTelegram()`, `parse.ts`
 - **Сайт st96.by** (8): `POLICY_PATH`, `PhoneField()`, `PhoneField.tsx`, `privacy.ts`
 - **Бот и диалоги** (2): `bot.ts`, `createBot()`

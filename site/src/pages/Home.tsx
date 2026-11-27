@@ -1,6 +1,7 @@
 import { useSeo } from '../hooks/useSeo'
 import HomeHero from '../components/sections/HomeHero'
 import ServicesGrid from '../components/sections/ServicesGrid'
+import CatalogSection from '../components/sections/CatalogSection'
 import Advantages from '../components/sections/Advantages'
 import ProcessTabs from '../components/sections/ProcessTabs'
 import Results from '../components/sections/Results'
@@ -19,6 +20,7 @@ export default function Home() {
     <>
       <HomeHero />
       <ServicesGrid />
+      <CatalogSection page="home" />
       <Advantages service={{ accent: home.accent, advantagesLead: home.advantagesLead, advantages: home.advantages }} />
       <ProcessTabs service={{ accent: home.accent, processLead: home.processLead, process: home.process }} />
       <Results service={{ accent: home.accent, stats: home.stats, quote: home.quote }} />

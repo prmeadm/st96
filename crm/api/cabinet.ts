@@ -416,8 +416,9 @@ async function summary(db: Db, profile: CabinetProfile): Promise<CabinetSummary>
 
 type CartRow = {
   id: string
-  kind: 'package' | 'topup'
+  kind: 'package' | 'topup' | 'service'
   package_id: string | null
+  catalog_item_id: string | null
   credits: number | null
   project_id: string | null
   title: string
@@ -435,7 +436,7 @@ type CartView = {
 async function cartView(db: Db, clientId: string): Promise<CartView> {
   const { data } = await db
     .from('cart_items')
-    .select('id, kind, package_id, credits, project_id, title, unit_price, currency, quantity')
+    .select('id, kind, package_id, catalog_item_id, credits, project_id, title, unit_price, currency, quantity')
     .eq('client_id', clientId)
     .order('created_at', { ascending: true })
   const rows = (data ?? []) as CartRow[]
@@ -465,6 +466,10 @@ async function syncCartPrices(db: Db, clientId: string): Promise<CartView> {
       if (Number.isFinite(price)) expected = price
     } else if (item.kind === 'topup' && item.credits) {
       expected = Math.round(Number(item.credits) * rate * 100) / 100
+    } else if (item.kind === 'service' && item.catalog_item_id) {
+      const { data: cat } = await db.from('catalog_items').select('price').eq('id', item.catalog_item_id).maybeSingle()
+      const price = Number((cat as { price?: number | null } | null)?.price)
+      if (Number.isFinite(price)) expected = price
     }
     if (expected !== item.unit_price) {
       await db.from('cart_items').update({ unit_price: expected }).eq('id', item.id)
@@ -737,8 +742,8 @@ export default async function handler(req: Request) {
       }
 
       // cart_add
-      const kind = body.kind === 'topup' ? 'topup' : body.kind === 'package' ? 'package' : null
-      if (!kind) return json({ error: { code: 'bad_request', message: 'kind must be package or topup' } }, 400)
+      const kind = body.kind === 'topup' ? 'topup' : body.kind === 'package' ? 'package' : body.kind === 'service' ? 'service' : null
+      if (!kind) return json({ error: { code: 'bad_request', message: 'kind must be package, topup or service' } }, 400)
       const projectId = typeof body.project_id === 'string' && body.project_id ? body.project_id : null
       if (projectId && !(await assertProject(db, clientId, projectId))) {
         return json({ error: { code: 'project_forbidden', message: 'Project does not belong to the client' } }, 403)
@@ -770,6 +775,46 @@ export default async function handler(req: Request) {
           quantity: 1,
         })
         if (error) return json({ error: { code: 'cart_failed', message: 'Could not add package' } }, 500)
+        return json(await cartView(db, clientId))
+      }
+
+      if (kind === 'service') {
+        const slug = typeof body.slug === 'string' ? body.slug.trim().slice(0, 100) : ''
+        const fallbackTitle = typeof body.title === 'string' ? body.title.trim().slice(0, 200) : ''
+        let title = fallbackTitle
+        let price = 0
+        let catalogItemId: string | null = null
+        if (slug) {
+          const { data: cat } = await db
+            .from('catalog_items')
+            .select('id, title, price, currency')
+            .eq('slug', slug)
+            .eq('active', true)
+            .maybeSingle()
+          if (cat) {
+            const c = cat as { id: string; title: string | null; price: number | null; currency: string | null }
+            catalogItemId = c.id
+            title = c.title || fallbackTitle
+            price = c.price == null ? 0 : Number(c.price)
+          }
+        }
+        if (!title) return json({ error: { code: 'bad_request', message: 'slug or title is required' } }, 400)
+        if (catalogItemId) {
+          await db.from('cart_items').delete().eq('client_id', clientId).eq('kind', 'service').eq('catalog_item_id', catalogItemId)
+        } else {
+          await db.from('cart_items').delete().eq('client_id', clientId).eq('kind', 'service').eq('title', title).is('catalog_item_id', null)
+        }
+        const { error } = await db.from('cart_items').insert({
+          client_id: clientId,
+          kind: 'service',
+          catalog_item_id: catalogItemId,
+          project_id: null,
+          title,
+          unit_price: price,
+          currency: 'BYN',
+          quantity: 1,
+        })
+        if (error) return json({ error: { code: 'cart_failed', message: 'Could not add service' } }, 500)
         return json(await cartView(db, clientId))
       }
 
@@ -821,6 +866,7 @@ export default async function handler(req: Request) {
 
       const packageItem = cart.items.find((i) => i.kind === 'package')
       const topupItems = cart.items.filter((i) => i.kind === 'topup')
+      const serviceItems = cart.items.filter((i) => i.kind === 'service')
       const projectId = packageItem?.project_id || (typeof body.project_id === 'string' ? body.project_id : null)
 
       if (projectId && !(await assertProject(db, profile.client_id, projectId))) {
@@ -845,6 +891,10 @@ export default async function handler(req: Request) {
           if (Number.isFinite(price) && price !== item.unit_price) expected = price
         } else if (item.kind === 'topup' && item.credits) {
           expected = Math.round(Number(item.credits) * (await topupRate(db)) * 100) / 100
+        } else if (item.kind === 'service' && item.catalog_item_id) {
+          const { data: cat } = await db.from('catalog_items').select('price').eq('id', item.catalog_item_id).maybeSingle()
+          const price = Number((cat as { price?: number | null } | null)?.price)
+          if (Number.isFinite(price) && price !== item.unit_price) expected = price
         }
         if (expected !== item.unit_price) {
           priceChanges.push({ title: item.title, old_price: item.unit_price, new_price: expected })
@@ -895,7 +945,7 @@ export default async function handler(req: Request) {
         if (legalRes.error) return json({ error: { code: 'profile_save_failed', message: 'Could not save legal requisites' } }, 500)
       }
 
-      const kind = packageItem && topupItems.length ? 'mixed' : packageItem ? 'package' : 'topup'
+      const kind = packageItem && (topupItems.length || serviceItems.length) ? 'mixed' : packageItem ? 'package' : topupItems.length && serviceItems.length ? 'mixed' : topupItems.length ? 'topup' : 'service'
       const idempotencyKey = rawKey || crypto.randomUUID()
       const { data: deadlineRaw } = await db.from('app_settings').select('value').eq('key', 'support.payment_deadline_days').maybeSingle()
       const deadlineValue = Number(String((deadlineRaw as { value?: unknown } | null)?.value || '5').replace(/"/g, ''))
@@ -970,6 +1020,7 @@ export default async function handler(req: Request) {
             order_id: order.id,
             kind: i.kind,
             package_id: i.package_id,
+            catalog_item_id: i.catalog_item_id,
             credits: i.credits,
             title: i.title,
             unit_price: i.unit_price,
@@ -1024,7 +1075,7 @@ export default async function handler(req: Request) {
           .insert({
             client_id: profile.client_id,
             source: 'cabinet',
-            title: kind === 'package' ? 'Покупка пакета' : kind === 'topup' ? 'Докупка кредитов' : 'Покупка пакета и кредитов',
+            title: kind === 'service' ? 'Заказ услуги' : kind === 'mixed' && serviceItems.length ? 'Заказ услуг и кредитов' : kind === 'package' ? 'Покупка пакета' : kind === 'topup' ? 'Докупка кредитов' : 'Покупка пакета и кредитов',
             status: 'new',
             name: profile.name,
             phone: profile.phone,

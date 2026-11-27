@@ -14,43 +14,43 @@
 ## Файлы
 
 - `crm/server/agent/engine.ts` — 22 узл.
-- `crm/server/usage.ts` — 15 узл.
 - `crm/server/agent/groupImport.ts` — 15 узл.
+- `crm/server/usage.ts` — 15 узл.
 - `crm/server/agent/models.ts` — 14 узл.
 - `crm/server/agent/tools.ts` — 13 узл.
 - `crm/admin/pages/AnalyticsPage.tsx` — 12 узл.
-- `crm/server/agent/types.ts` — 10 узл.
 - `crm/server/agent/llm.ts` — 10 узл.
+- `crm/server/agent/types.ts` — 10 узл.
 - `crm/server/agent/agent.test.ts` — 8 узл.
-- `crm/server/translate.ts` — 6 узл.
 - `crm/admin/pages/AgentPage.tsx` — 6 узл.
+- `crm/server/translate.ts` — 6 узл.
 - `crm/server/agent/deps.ts` — 5 узл.
 - `crm/admin/pages/SettingsPage.tsx` — 4 узл.
 - `crm/admin/pages/ModelPicker.tsx` — 3 узл.
-- `api/status.ts` — 2 узл.
-- `crm/server/usage.test.ts` — 2 узл.
-- `crm/admin/ui/TranslateButton.tsx` — 2 узл.
-- `api/translate.ts` — 2 узл.
+- `crm/server/translate.test.ts` — 2 узл.
 - `api/agent.ts` — 2 узл.
 - `api/agent-model.ts` — 2 узл.
+- `api/translate.ts` — 2 узл.
 - `api/analytics-admin.ts` — 2 узл.
-- `crm/server/translate.test.ts` — 2 узл.
+- `crm/admin/ui/TranslateButton.tsx` — 2 узл.
+- `api/status.ts` — 2 узл.
+- `crm/server/usage.test.ts` — 2 узл.
 - `crm/server/agent/llm.test.ts` — 1 узл.
 
 ## Главные узлы (больше всего связей)
 
 - `AnalyticsPage()` (crm/admin/pages/AnalyticsPage.tsx:L22)
+- `parseJson()` (crm/server/agent/llm.ts:L68)
 - `LlmError` (crm/server/agent/llm.ts:L11)
+- `Llm` (crm/server/agent/llm.ts:L4)
 - `AgentTask` (crm/server/agent/types.ts:L7)
 - `makePlan()` (crm/server/agent/engine.ts:L58)
-- `resolveLlm()` (crm/server/agent/deps.ts:L12)
-- `parseCustom()` (crm/server/agent/models.ts:L72)
-- `agentDeps()` (crm/server/agent/deps.ts:L26)
-- `openAiCompatible()` (crm/server/agent/llm.ts:L27)
 - `importSlice()` (crm/server/agent/groupImport.ts:L66)
 - `reload()` (crm/server/agent/engine.ts:L15)
-- `parseJson()` (crm/server/agent/llm.ts:L68)
-- `TranslateButton()` (crm/admin/ui/TranslateButton.tsx:L6)
+- `agentDeps()` (crm/server/agent/deps.ts:L26)
+- `parseCustom()` (crm/server/agent/models.ts:L72)
+- `openAiCompatible()` (crm/server/agent/llm.ts:L27)
+- `resolveLlm()` (crm/server/agent/deps.ts:L12)
 
 ## От чего зависит (вызовы в другие разделы)
 
@@ -62,8 +62,8 @@
 
 ## Кто зависит от раздела (менять осторожно)
 
+- **Оболочка админки** (15): `AgentPage()`, `AgentPage.tsx`, `AnalyticsPage()`, `AnalyticsPage.tsx`, `DEFAULT_PRICES`, `PRICE_SETTING`
 - **Данные и инфраструктура** (12): `AgentStats`, `AgentTask`, `agent/types.ts`
-- **Оболочка админки** (9): `AgentPage()`, `AgentPage.tsx`, `AnalyticsPage()`, `AnalyticsPage.tsx`, `SettingsPage()`, `SettingsPage.tsx`
 - **Шаблоны и медиа** (9): `TemplateStat`, `TranslateButton()`, `TranslateButton.tsx`, `popularityScore()`, `ratings()`, `usage.ts`
 - **Воронки** (3): `TranslateButton()`, `TranslateButton.tsx`
 - **Рассылки** (3): `TranslateButton()`, `TranslateButton.tsx`

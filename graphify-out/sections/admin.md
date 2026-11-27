@@ -2,7 +2,7 @@
 
 Каркас /admin: вход, навигация, общие UI-компоненты, стили, уведомление о новой версии.
 
-Граф раздела: `graphify-out/sections/admin/graph.json` (61 узлов, 92 внутренних связей).
+Граф раздела: `graphify-out/sections/admin/graph.json` (113 узлов, 219 внутренних связей).
 
 ## С чего начать сессию
 
@@ -13,45 +13,48 @@
 
 ## Файлы
 
-- `crm/admin/types.ts` — 11 узл.
+- `crm/admin/pages/support/SupportPage.tsx` — 28 узл.
+- `crm/admin/types.ts` — 12 узл.
+- `crm/admin/pages/CatalogPage.tsx` — 12 узл.
+- `crm/admin/pages/support/shared.ts` — 11 узл.
 - `crm/admin/auth.tsx` — 7 узл.
 - `crm/admin/ui/QuickNav.tsx` — 6 узл.
 - `crm/admin/ui/Seg.tsx` — 6 узл.
-- `crm/admin/AdminApp.tsx` — 5 узл.
 - `crm/admin/pages/FilterBar.tsx` — 5 узл.
+- `crm/admin/AdminApp.tsx` — 5 узл.
 - `crm/admin/ui/Icon.tsx` — 4 узл.
-- `crm/admin/supabase.ts` — 3 узл.
 - `crm/admin/ui/SaveButton.tsx` — 3 узл.
+- `crm/admin/supabase.ts` — 3 узл.
 - `crm/admin/highlight.tsx` — 3 узл.
-- `crm/admin/api.ts` — 2 узл.
 - `crm/admin/ui/BackLink.tsx` — 2 узл.
 - `crm/admin/ui/RowActions.tsx` — 2 узл.
+- `crm/admin/api.ts` — 2 узл.
 - `crm/admin/main.tsx` — 1 узл.
 - `crm/admin/index.html` — 1 узл.
 
 ## Главные узлы (больше всего связей)
 
-- `Icon()` (crm/admin/ui/Icon.tsx:L45)
-- `fmtDate()` (crm/admin/types.ts:L68)
+- `Icon()` (crm/admin/ui/Icon.tsx:L47)
 - `supabase` (crm/admin/supabase.ts:L6)
-- `Shell()` (crm/admin/AdminApp.tsx:L47)
+- `fmtDate()` (crm/admin/types.ts:L75)
+- `Shell()` (crm/admin/AdminApp.tsx:L49)
 - `callApi()` (crm/admin/api.ts:L4)
+- `SupportPage()` (crm/admin/pages/support/SupportPage.tsx:L811)
 - `RowActions()` (crm/admin/ui/RowActions.tsx:L5)
-- `clientTitle()` (crm/admin/types.ts:L71)
+- `clientTitle()` (crm/admin/types.ts:L78)
 - `BackLink()` (crm/admin/ui/BackLink.tsx:L6)
 - `FilterBar()` (crm/admin/pages/FilterBar.tsx:L12)
-- `Seg()` (crm/admin/ui/Seg.tsx:L6)
-- `SERVICES` (crm/admin/types.ts:L55)
-- `pickKind()` (crm/admin/ui/Seg.tsx:L31)
+- `ProjectsTab()` (crm/admin/pages/support/SupportPage.tsx:L63)
+- `CatalogPage()` (crm/admin/pages/CatalogPage.tsx:L71)
 
 ## От чего зависит (вызовы в другие разделы)
 
 - **Заявки и клиенты** (28): `ClientPage()`, `ClientPage.tsx`, `ClientsPage()`, `ClientsPage.tsx`, `Cond`, `CondValue`
-- **Агент, ИИ и аналитика** (9): `AgentPage()`, `AgentPage.tsx`, `AnalyticsPage()`, `AnalyticsPage.tsx`, `SettingsPage()`, `SettingsPage.tsx`
+- **Агент, ИИ и аналитика** (15): `AgentPage()`, `AgentPage.tsx`, `AnalyticsPage()`, `AnalyticsPage.tsx`, `DEFAULT_PRICES`, `PRICE_SETTING`
 - **Воронки** (6): `FunnelPage()`, `FunnelPage.tsx`, `FunnelsPage()`, `FunnelsPage.tsx`
 - **Рассылки** (6): `BroadcastPage()`, `BroadcastPage.tsx`, `BroadcastsPage()`, `BroadcastsPage.tsx`
+- **Шаблоны и медиа** (6): `MediaField()`, `MediaField.tsx`, `TemplatesPage()`, `TemplatesPage.tsx`
 - **Запись на встречу** (3): `BookingPage()`, `BookingPage.tsx`
-- **Шаблоны и медиа** (3): `TemplatesPage()`, `TemplatesPage.tsx`
 - **Данные и инфраструктура** (3): `SITE_OFFERS`, `SITE_SERVICES`, `server/catalog.ts`
 - **Сайт st96.by** (2): `services`, `services.ts`
 
@@ -62,7 +65,7 @@
 - **Воронки** (32): `BackLink()`, `BackLink.tsx`, `Icon()`, `Icon.tsx`, `RowActions()`, `RowActions.tsx`
 - **Рассылки** (31): `BackLink()`, `BackLink.tsx`, `Icon()`, `Icon.tsx`, `PICK_KINDS`, `RowActions()`
 - **Шаблоны и медиа** (26): `Icon()`, `Icon.tsx`, `IconName`, `KIND_OPTIONS`, `PICK_KINDS`, `Seg()`
-- **Запись на встречу** (17): `Icon()`, `Icon.tsx`, `Seg()`, `Seg.tsx`, `admin/types.ts`, `api.ts`
+- **Запись на встречу** (17): `Icon()`, `Icon.tsx`, `Seg()`, `Seg.tsx`, `admin/supabase.ts`, `admin/types.ts`
 
 ## Типичные задачи этого раздела
 

@@ -2,7 +2,7 @@
 
 Вебхук Telegram, /start и /stop, темы клиентов в группе «Лиды ST96», команды сотрудников (/shablon, /book, //заметка, /close), пересылка диалога человеку.
 
-Граф раздела: `graphify-out/sections/bot/graph.json` (50 узлов, 88 внутренних связей).
+Граф раздела: `graphify-out/sections/bot/graph.json` (55 узлов, 97 внутренних связей).
 
 ## С чего начать сессию
 
@@ -14,31 +14,32 @@
 ## Файлы
 
 - `crm/server/bot/dialog.ts` — 13 узл.
-- `crm/server/bot/siteRef.ts` — 11 узл.
 - `crm/server/bot/bot.ts` — 11 узл.
+- `crm/server/bot/siteRef.ts` — 11 узл.
 - `crm/server/bot/bot.test.ts` — 10 узл.
+- `crm/server/bot/support.ts` — 5 узл.
 - `crm/server/bot/texts.ts` — 3 узл.
 - `api/telegram.ts` — 2 узл.
 
 ## Главные узлы (больше всего связей)
 
-- `createBot()` (crm/server/bot/bot.ts:L100)
-- `sendContent()` (crm/server/bot/dialog.ts:L167)
-- `beginStart()` (crm/server/bot/bot.ts:L67)
-- `sendTemplate()` (crm/server/bot/dialog.ts:L233)
-- `handleTopicMessage()` (crm/server/bot/dialog.ts:L79)
-- `ensureClient()` (crm/server/bot/bot.ts:L33)
+- `createBot()` (crm/server/bot/bot.ts:L101)
+- `beginStart()` (crm/server/bot/bot.ts:L68)
+- `sendContent()` (crm/server/bot/dialog.ts:L176)
+- `handleTopicMessage()` (crm/server/bot/dialog.ts:L80)
+- `sendTemplate()` (crm/server/bot/dialog.ts:L242)
+- `ensureClient()` (crm/server/bot/bot.ts:L34)
+- `resumeAi()` (crm/server/bot/support.ts:L14)
+- `ensureTopic()` (crm/server/bot/dialog.ts:L38)
 - `verifySiteRef()` (crm/server/bot/siteRef.ts:L41)
-- `relayToAdmins()` (crm/server/bot/dialog.ts:L51)
-- `ensureTopic()` (crm/server/bot/dialog.ts:L37)
-- `linkLeadClient()` (crm/server/bot/bot.ts:L24)
+- `relayToAdmins()` (crm/server/bot/dialog.ts:L52)
+- `cardText()` (crm/server/bot/dialog.ts:L23)
 - `issueSiteRef()` (crm/server/bot/siteRef.ts:L60)
-- `cardText()` (crm/server/bot/dialog.ts:L22)
 
 ## От чего зависит (вызовы в другие разделы)
 
-- **Данные и инфраструктура** (47): `.bumpTemplateUsed()`, `.claimUpdate()`, `.findActiveRun()`, `.findClient()`, `.findClientById()`, `.getRun()`
-- **Воронки** (39): `CAPTION_LIMIT`, `Env`, `NOT_A_FILE_ERROR`, `TRIGGER`, `canonicalVideoUrl()`, `demo.ts`
+- **Данные и инфраструктура** (59): `.bumpTemplateUsed()`, `.claimUpdate()`, `.findActiveRun()`, `.findClient()`, `.findClientById()`, `.findProjectByClient()`
+- **Воронки** (35): `CAPTION_LIMIT`, `Env`, `NOT_A_FILE_ERROR`, `TRIGGER`, `canonicalVideoUrl()`, `demo.ts`
 - **Запись на встречу** (13): `bookingUrl()`, `createBooking()`, `decideBooking()`, `loadDirectAdmins()`, `notify.ts`, `notifyClientDecision()`
 - **Заявки и клиенты** (10): `clickablePhone()`, `ingestGroupMessage()`, `ingestLead()`, `leads/ingest.ts`, `parse.ts`, `parseLead()`
 - **Шаблоны и медиа** (6): `TPL_KINDS`, `TemplateKind`, `TemplateRow`, `fillTemplate()`, `templates.ts`

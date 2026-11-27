@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useReducedMotion } from 'framer-motion'
 import { ArrowLeft, ArrowRight, ArrowUpRight } from 'lucide-react'
 import type { Service } from '../../../../crm/shared/data/services'
 import { SolutionSceneCard } from '../ui/SolutionScene'
-import { useLang } from '../../lib/i18n'
+import { localePath, useLang } from '../../lib/i18n'
 import { reachGoal } from '../../lib/analytics'
 import MagneticButton from '../ui/MagneticButton'
 import Reveal from '../ui/Reveal'
@@ -28,6 +29,7 @@ const copy = {
 /** Галерея направлений услуги: карточки с короткой анимацией сверху, описанием и кнопкой «Заказать». */
 export default function ProducingGallery({ service }: { service: Service }) {
   const lang = useLang()
+  const navigate = useNavigate()
   const t = copy[lang]
   const offers = service.offers ?? []
   const accent = service.accent
@@ -87,8 +89,7 @@ export default function ProducingGallery({ service }: { service: Service }) {
 
   const order = (key: string, title: string) => {
     reachGoal('producing_order_click', { direction: key })
-    window.dispatchEvent(new CustomEvent('st96:lead-prefill', { detail: { message: `${t.prefill}${title}` } }))
-    document.getElementById('lead')?.scrollIntoView({ behavior: 'smooth' })
+    navigate(localePath(lang, '/cabinet') + '?add=service:' + encodeURIComponent(key) + '&title=' + encodeURIComponent(title))
   }
 
   const total = offers.length

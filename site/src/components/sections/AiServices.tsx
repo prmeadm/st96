@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useReducedMotion } from 'framer-motion'
 import { ArrowLeft, ArrowRight, ArrowUpRight } from 'lucide-react'
 import { accents } from '../../../../crm/shared/data/services'
 import { aiServiceItems, aiServicesIntro } from '../../data/aiServices'
-import { useLang } from '../../lib/i18n'
+import { localePath, useLang } from '../../lib/i18n'
 import { SolutionSceneCard } from '../ui/SolutionScene'
 import { reachGoal } from '../../lib/analytics'
 import { AgentSceneCard } from '../ui/AgentScene'
@@ -12,6 +13,7 @@ import Reveal from '../ui/Reveal'
 
 export default function AiServices() {
   const lang = useLang()
+  const navigate = useNavigate()
   const t = aiServicesIntro[lang]
   const accent = accents.ai
   const track = useRef<HTMLDivElement>(null)
@@ -71,8 +73,7 @@ export default function AiServices() {
 
   const order = (slug: string, title: string) => {
     reachGoal('ai_order_click', { solution: slug })
-    window.dispatchEvent(new CustomEvent('st96:lead-prefill', { detail: { message: `${t.prefill}${title}` } }))
-    document.getElementById('lead')?.scrollIntoView({ behavior: 'smooth' })
+    navigate(localePath(lang, '/cabinet') + '?add=service:' + encodeURIComponent(slug) + '&title=' + encodeURIComponent(title))
   }
 
   const total = aiServiceItems.length

@@ -27,12 +27,12 @@
 - `TemplateKind` (crm/server/templates.ts:L4)
 - `fillTemplate()` (crm/server/templates.ts:L29)
 - `Editor()` (crm/admin/pages/TemplatesPage.tsx:L150)
-- `TPL_KINDS` (crm/server/templates.ts:L20)
 - `CameraCapture()` (crm/admin/ui/CameraCapture.tsx:L12)
-- `toVoiceFile()` (crm/admin/ui/MediaField.tsx:L28)
-- `TPL_GOALS` (crm/server/templates.ts:L22)
+- `TPL_KINDS` (crm/server/templates.ts:L20)
+- `preview()` (crm/admin/pages/TemplatesPage.tsx:L13)
 - `TPL_TASKS` (crm/server/templates.ts:L21)
-- `TPL_SERVICES` (crm/server/templates.ts:L25)
+- `TPL_VARS` (crm/server/templates.ts:L26)
+- `toVoiceFile()` (crm/admin/ui/MediaField.tsx:L28)
 
 ## От чего зависит (вызовы в другие разделы)
 
@@ -47,9 +47,9 @@
 - **Рассылки** (11): `MediaField()`, `MediaField.tsx`, `TPL_VARS`, `TemplateKind`, `TemplateRow`, `fillTemplate()`
 - **Данные и инфраструктура** (8): `TemplateKind`, `TemplateRow`, `templates.ts`
 - **Воронки** (6): `MediaField()`, `MediaField.tsx`, `TPL_KINDS`, `TemplateRow`, `templates.ts`
+- **Оболочка админки** (6): `MediaField()`, `MediaField.tsx`, `TemplatesPage()`, `TemplatesPage.tsx`
 - **Бот и диалоги** (6): `TPL_KINDS`, `TemplateKind`, `TemplateRow`, `fillTemplate()`, `templates.ts`
 - **Заявки и клиенты** (5): `TPL_KINDS`, `TemplateRow`, `fillTemplate()`, `templates.ts`
-- **Оболочка админки** (3): `TemplatesPage()`, `TemplatesPage.tsx`
 
 ## Типичные задачи этого раздела
 

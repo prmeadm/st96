@@ -1,0 +1,22 @@
+/* Раздел «Каталог»: сетка позиций и модальный редактор (переиспользует переменные и базовые классы admin.css). */
+.cat { max-width: 1240px; }
+.cat .tbar { display: flex; gap: 8px; flex-wrap: wrap; }
+.cat .tbar input { flex: 1; min-width: 220px; }
+.cat .tbar select { width: auto; min-width: 150px; }
+.cat .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+.cat .card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 12px; display: flex; flex-direction: column; gap: 8px; box-shadow: var(--shadow); }
+.cat .card:hover { border-color: var(--blue); }
+.cat .card > b { font-size: var(--fs-lg); line-height: 1.25; }
+.cat .thumb { width: 100%; max-height: 140px; object-fit: cover; border-radius: 10px; border: 1px solid var(--line); }
+.cat .tex { font-size: var(--fs-sm); color: var(--mute); line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.cat .star.on { background: var(--accent-soft); color: var(--ink); }
+
+.cat .ov { position: fixed; inset: 0; background: var(--overlay); z-index: 100; display: grid; place-items: center; padding: 12px; }
+.cat .modal { background: var(--card); border-radius: 18px; width: min(560px, 100%); max-height: calc(100dvh - 24px); display: flex; flex-direction: column; box-shadow: var(--shadow); }
+.cat .mh, .cat .mf { display: flex; align-items: center; gap: 8px; padding: 12px 16px; }
+.cat .mh { border-bottom: 1px solid var(--line); font-size: var(--fs-lg); }
+.cat .mf { border-top: 1px solid var(--line); }
+.cat .mb { padding: 16px; overflow: auto; display: flex; flex-direction: column; gap: 14px; }
+.cat .mb > * { flex-shrink: 0; }
+.cat .mb textarea { min-height: 110px; }
+.cat .row input, .cat .row select { width: auto; min-width: 0; }

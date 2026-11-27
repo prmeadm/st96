@@ -39,6 +39,7 @@ const PATHS = {
   menu: 'M4 7h16M4 12h16M4 17h16',
   logout: 'M9.5 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h3.5M14 8l4 4-4 4M18 12H9.5',
   support: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 17a5 5 0 1 0 0-10 5 5 0 0 0 0 10zM4.9 4.9l4.2 4.2M14.9 14.9l4.2 4.2M19.1 4.9l-4.2 4.2M9.1 14.9l-4.2 4.2',
+  catalog: 'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z',
 } as const
 
 export type IconName = keyof typeof PATHS

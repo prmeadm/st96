@@ -5,15 +5,15 @@
 | Раздел | Что внутри | Узлов | Файлов | Справка |
 |---|---|---|---|---|
 | Воронки | Движок воронок | 189 | 22 | [`funnels.md`](funnels.md) |
-| Бот и диалоги | Вебхук Telegram | 50 | 6 | [`bot.md`](bot.md) |
-| Заявки и клиенты | Приём заявок | 121 | 19 | [`leads.md`](leads.md) |
+| Бот и диалоги | Вебхук Telegram | 55 | 7 | [`bot.md`](bot.md) |
+| Заявки и клиенты | Приём заявок | 122 | 19 | [`leads.md`](leads.md) |
 | Запись на встречу | Расписание и слоты | 141 | 15 | [`booking.md`](booking.md) |
 | Рассылки | Массовые рассылки по сегментам | 30 | 5 | [`broadcasts.md`](broadcasts.md) |
 | Шаблоны и медиа | Библиотека шаблонов | 33 | 5 | [`templates.md`](templates.md) |
 | Агент, ИИ и аналитика | Задания агента | 160 | 23 | [`agent.md`](agent.md) |
-| Данные и инфраструктура | Доступ к базе | 192 | 22 | [`core.md`](core.md) |
-| Оболочка админки | Каркас /admin: вход | 61 | 15 | [`admin.md`](admin.md) |
-| Сайт st96.by | Публичный сайт | 245 | 80 | [`site.md`](site.md) |
+| Данные и инфраструктура | Доступ к базе | 297 | 32 | [`core.md`](core.md) |
+| Оболочка админки | Каркас /admin: вход | 113 | 18 | [`admin.md`](admin.md) |
+| Сайт st96.by | Публичный сайт | 308 | 89 | [`site.md`](site.md) |
 
 ## Как начать сессию по разделу
 
@@ -28,25 +28,25 @@
 - `docs/PLATFORM.md`
 - `package.json`
 - ``
+- `docs/cabinet/screens-flows.md`
 - `docs/TOOLING.md`
+- `crm/server/support/types.ts`
+- `docs/SUPPORT-SPEC.md`
+- `crm/api/cabinet.ts`
+- `docs/CABINET-SPEC.md`
+- `docs/cabinet/data-api.md`
 - `HANDOFF.md`
 - `docs/VISUAL-GUIDE.md`
 - `tsconfig.app.json`
 - `tsconfig.node.json`
-- `README.md`
 - `docs/DATABASE.md`
+- `crm/server/support/voice.ts`
+- `README.md`
+- `crm/server/support/agent.ts`
+- `crm/server/support/worker.ts`
 - `docs/AUDIT-2026-10-31.md`
+- `crm/server/support/workspaceFolders.ts`
 - `crm/docs/design-is-2026-10-20/05-redesign-plan.md`
 - `crm/VISUAL-GUIDE.md`
 - `crm/api/lead.ts`
 - `site/VISUAL-GUIDE.md`
-- `CLAUDE.md`
-- `crm/server/workingHours.ts`
-- `crm/docs/design-is-2026-10-20/01-evidence.md`
-- `.dsh/HANDOFF.auto.md`
-- `vite.config.ts`
-- `crm/.dsh/HANDOFF.auto.md`
-- `.oxlintrc.json`
-- `scripts/funnel-live-run.ts`
-- `docs/STRUCTURE.md`
-- `crm/api/ingest.ts`

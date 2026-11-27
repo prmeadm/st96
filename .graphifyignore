@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.venv/
+venv/
+var/
+models/
+.git/
+.dsh/
+graphify-out/
+.client-materials/
+.env
+*.log

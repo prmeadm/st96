@@ -21,14 +21,14 @@
 - `crm/admin/builder/Editor.tsx` — 12 узл.
 - `crm/server/bot/telegramOut.ts` — 10 узл.
 - `crm/server/funnels/realFunnel.test.ts` — 9 узл.
-- `crm/admin/ui/VideoNoteField.tsx` — 8 узл.
 - `crm/server/funnels/engine.test.ts` — 8 узл.
-- `crm/server/funnels/retry.ts` — 6 узл.
+- `crm/admin/ui/VideoNoteField.tsx` — 8 узл.
 - `crm/admin/builder/Builder.tsx` — 6 узл.
-- `crm/admin/pages/FunnelPage.tsx` — 4 узл.
-- `crm/admin/pages/FunnelsPage.tsx` — 4 узл.
+- `crm/server/funnels/retry.ts` — 6 узл.
 - `crm/admin/builder/Preview.tsx` — 4 узл.
+- `crm/admin/pages/FunnelPage.tsx` — 4 узл.
 - `crm/server/funnels/triggers.ts` — 4 узл.
+- `crm/admin/pages/FunnelsPage.tsx` — 4 узл.
 - `crm/server/bot/videonote.test.ts` — 3 узл.
 - `crm/server/funnels/demo.ts` — 3 узл.
 - `crm/admin/builder/Edges.tsx` — 3 узл.
@@ -44,11 +44,11 @@
 - `Editor()` (crm/admin/builder/Editor.tsx:L119)
 - `Inner()` (crm/admin/builder/Builder.tsx:L23)
 - `str()` (crm/server/funnels/types.ts:L36)
-- `Shell()` (crm/admin/builder/Nodes.tsx:L25)
 - `Funnel` (crm/server/funnels/types.ts:L12)
+- `Shell()` (crm/admin/builder/Nodes.tsx:L25)
 - `handleClick()` (crm/server/funnels/engine.ts:L113)
-- `startFunnel()` (crm/server/funnels/engine.ts:L93)
 - `VideoNoteField()` (crm/admin/ui/VideoNoteField.tsx:L70)
+- `startFunnel()` (crm/server/funnels/engine.ts:L93)
 - `Graph` (crm/server/funnels/types.ts:L10)
 
 ## От чего зависит (вызовы в другие разделы)
@@ -62,7 +62,7 @@
 
 ## Кто зависит от раздела (менять осторожно)
 
-- **Бот и диалоги** (39): `CAPTION_LIMIT`, `Env`, `NOT_A_FILE_ERROR`, `TRIGGER`, `canonicalVideoUrl()`, `demo.ts`
+- **Бот и диалоги** (35): `CAPTION_LIMIT`, `Env`, `NOT_A_FILE_ERROR`, `TRIGGER`, `canonicalVideoUrl()`, `demo.ts`
 - **Данные и инфраструктура** (15): `Funnel`, `JobRow`, `RunRow`, `funnels/types.ts`
 - **Оболочка админки** (6): `FunnelPage()`, `FunnelPage.tsx`, `FunnelsPage()`, `FunnelsPage.tsx`
 

@@ -11,6 +11,7 @@ import ProcessTabs from '../components/sections/ProcessTabs'
 import AiImplementation from '../components/sections/AiImplementation'
 import Results from '../components/sections/Results'
 import LeadCapture from '../components/sections/LeadCapture'
+import CatalogSection from '../components/sections/CatalogSection'
 
 export default function ServicePage() {
   const { slug } = useParams()
@@ -35,6 +36,7 @@ export default function ServicePage() {
       <ProcessTabs service={service} />
       {service.aiBlock && <AiImplementation service={service} />}
       <Results service={service} />
+      <CatalogSection page={service.slug} />
       <LeadCapture service={service} />
     </>
   )

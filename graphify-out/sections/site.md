@@ -2,7 +2,7 @@
 
 Публичный сайт (RU/EN): страницы услуг, форма заявки, аналитика и согласие на cookie.
 
-Граф раздела: `graphify-out/sections/site/graph.json` (245 узлов, 655 внутренних связей).
+Граф раздела: `graphify-out/sections/site/graph.json` (308 узлов, 822 внутренних связей).
 
 ## С чего начать сессию
 
@@ -13,9 +13,11 @@
 
 ## Файлы
 
+- `site/src/pages/Cabinet.tsx` — 21 узл.
+- `crm/shared/data/services.ts` — 17 узл.
 - `site/src/components/ui/AgentScene.tsx` — 16 узл.
 - `site/src/components/ui/SolutionScene.tsx` — 14 узл.
-- `crm/shared/data/services.ts` — 10 узл.
+- `crm/shared/cabinet.ts` — 10 узл.
 - `site/src/lib/attribution.ts` — 9 узл.
 - `site/src/lib/consent.ts` — 8 узл.
 - `site/src/lib/i18n.ts` — 8 узл.
@@ -23,91 +25,98 @@
 - `site/src/lib/analytics.ts` — 7 узл.
 - `crm/shared/ui/PhoneField.tsx` — 7 узл.
 - `site/src/data/solutionScenes.ts` — 6 узл.
+- `site/src/components/sections/Pricing.tsx` — 6 узл.
 - `crm/shared/data/privacy.ts` — 6 узл.
-- `site/src/lib/theme.ts` — 5 узл.
 - `site/src/hooks/useSeo.ts` — 5 узл.
+- `site/src/lib/theme.ts` — 5 узл.
 - `site/src/components/ui/Reveal.tsx` — 5 узл.
+- `site/src/components/sections/CatalogSection.tsx` — 5 узл.
 - `crm/shared/data/content.en.ts` — 4 узл.
+- `site/src/lib/supabase.ts` — 4 узл.
+- `site/public/yt.html` — 4 узл.
+- `site/src/data/aiServices.ts` — 4 узл.
 - `site/src/data/content.ts` — 4 узл.
 - `site/src/pages/Privacy.tsx` — 4 узл.
-- `site/src/data/aiServices.ts` — 4 узл.
 - `site/src/components/sections/LeadCapture.tsx` — 4 узл.
+- `site/src/components/ui/ModelIcon.tsx` — 4 узл.
 - `site/src/components/ui/MagneticButton.tsx` — 4 узл.
-- `site/public/yt.html` — 4 узл.
-- `site/src/components/ui/Marquee.tsx` — 3 узл.
-- `site/src/data/ui.ts` — 3 узл.
-- `site/src/components/ui/CookieBanner.tsx` — 3 узл.
-- `site/src/components/sections/Advantages.tsx` — 3 узл.
 - `site/src/lib/internal.ts` — 3 узл.
+- `site/src/components/ui/Marquee.tsx` — 3 узл.
+- `site/src/components/ui/CookieBanner.tsx` — 3 узл.
+- `site/src/components/ui/KeywordOrbit.tsx` — 3 узл.
 - `site/src/components/sections/ProducingGallery.tsx` — 3 узл.
-- `site/src/components/layout/Footer.tsx` — 3 узл.
-- `site/index.html` — 3 узл.
 - `site/src/components/sections/ProcessTabs.tsx` — 3 узл.
 - `site/src/components/ui/AnimatedCounter.tsx` — 3 узл.
-- `site/src/components/ui/RevealText.tsx` — 3 узл.
-- `site/src/components/ui/SectionHeading.tsx` — 3 узл.
-- `site/src/components/ui/KeywordOrbit.tsx` — 3 узл.
+- `site/src/components/layout/Footer.tsx` — 3 узл.
+- `site/index.html` — 3 узл.
 - `site/src/components/sections/Results.tsx` — 3 узл.
 - `site/src/components/ui/HeroVideo.tsx` — 3 узл.
-- `site/src/pages/Home.tsx` — 2 узл.
+- `site/src/components/sections/Advantages.tsx` — 3 узл.
+- `site/src/data/ui.ts` — 3 узл.
+- `site/src/components/ui/SectionHeading.tsx` — 3 узл.
+- `site/src/components/ui/RevealText.tsx` — 3 узл.
 - `site/src/components/ui/CustomCursor.tsx` — 2 узл.
-- `site/src/components/ui/ThemeToggle.tsx` — 2 узл.
-- `site/src/components/sections/HomeHero.tsx` — 2 узл.
-- `site/src/pages/PrivacyEn.tsx` — 2 узл.
-- `site/src/components/layout/Layout.tsx` — 2 узл.
+- `site/src/pages/Offer.tsx` — 2 узл.
+- `site/src/pages/Home.tsx` — 2 узл.
 - `site/src/components/sections/ServiceHero.tsx` — 2 узл.
-- `site/src/components/sections/ServicesGrid.tsx` — 2 узл.
-- `site/src/components/layout/Header.tsx` — 2 узл.
+- `site/src/components/sections/AiImplementation.tsx` — 2 узл.
 - `site/src/pages/PrivacyRoute.tsx` — 2 узл.
-- `site/src/pages/ServicePage.tsx` — 2 узл.
+- `site/src/components/sections/HomeHero.tsx` — 2 узл.
 - `site/src/App.tsx` — 2 узл.
-- `site/src/components/sections/AiServices.tsx` — 2 узл.
+- `site/src/components/layout/Header.tsx` — 2 узл.
+- `site/src/pages/PrivacyEn.tsx` — 2 узл.
 - `site/src/components/ui/Aurora.tsx` — 2 узл.
-- `site/public/video/ai-services/ai-shops-en.jpg` — 1 узл.
-- `site/src/main.tsx` — 1 узл.
-- `site/public/video/production-hero-poster.jpg` — 1 узл.
-- `site/public/video/ai-services/telegram-mini-app-ru.jpg` — 1 узл.
-- `site/public/video/ai-hero-poster.jpg` — 1 узл.
-- `site/public/video/ai-services/web-apps-en.jpg` — 1 узл.
+- `site/src/components/sections/AiServices.tsx` — 2 узл.
+- `site/src/components/ui/ThemeToggle.tsx` — 2 узл.
+- `site/src/components/sections/ServicesGrid.tsx` — 2 узл.
+- `site/src/pages/ServicePage.tsx` — 2 узл.
+- `site/src/components/layout/Layout.tsx` — 2 узл.
+- `site/src/pages/OfferEn.tsx` — 2 узл.
+- `site/public/video/ai-services/ai-websites-en.jpg` — 1 узл.
+- `site/public/video/ai-services/plugins-en.jpg` — 1 узл.
+- `site/public/video/ai-services/dashboards-en.jpg` — 1 узл.
 - `site/public/video/ai-services/ai-agents-ru.jpg` — 1 узл.
-- `site/public/video/ai-services/telegram-mini-app-en.jpg` — 1 узл.
+- `site/public/video/ai-services/ai-assistants-ru.jpg` — 1 узл.
+- `site/public/video/ai-services/ai-servers-en.jpg` — 1 узл.
+- `site/public/video/ai-services/plugins-ru.jpg` — 1 узл.
+- `site/public/video/ai-services/ai-servers-ru.jpg` — 1 узл.
+- `site/public/video/ai-services/web-apps-ru.jpg` — 1 узл.
+- `site/public/video/ai-services/ai-websites-ru.jpg` — 1 узл.
 - `site/public/video/ai-services/ai-shops-ru.jpg` — 1 узл.
 - `site/public/video/ai-services/custom-solutions-en.jpg` — 1 узл.
-- `site/public/video/ai-services/ai-assistants-ru.jpg` — 1 узл.
-- `site/public/video/ai-services/saas-ru.jpg` — 1 узл.
-- `site/public/video/ai-services/plugins-en.jpg` — 1 узл.
-- `site/public/video/ai-services/ai-websites-en.jpg` — 1 узл.
-- `site/public/video/ai-services/ai-assistants-en.jpg` — 1 узл.
-- `site/public/og-image.png` — 1 узл.
 - `site/public/video/ai-services/dashboards-ru.jpg` — 1 узл.
-- `site/public/video/ai-services/dashboards-en.jpg` — 1 узл.
 - `site/public/video/ai-services/ai-agents-en.jpg` — 1 узл.
-- `site/public/video/ai-services/automation-en.jpg` — 1 узл.
-- `site/public/video/ai-services/ai-servers-ru.jpg` — 1 узл.
-- `site/public/favicon.svg` — 1 узл.
-- `site/public/video/ai-services/plugins-ru.jpg` — 1 узл.
-- `site/public/video/ai-services/custom-solutions-ru.jpg` — 1 узл.
-- `site/public/robots.txt` — 1 узл.
-- `site/public/video/ai-services/web-apps-ru.jpg` — 1 узл.
+- `site/public/video/production-hero-poster.jpg` — 1 узл.
 - `site/public/video/ai-services/automation-ru.jpg` — 1 узл.
+- `site/public/robots.txt` — 1 узл.
+- `site/public/favicon.svg` — 1 узл.
+- `site/public/video/ai-services/telegram-mini-app-en.jpg` — 1 узл.
+- `site/public/video/ai-services/web-apps-en.jpg` — 1 узл.
 - `site/public/video/ai-services/saas-en.jpg` — 1 узл.
-- `site/public/video/ai-services/ai-servers-en.jpg` — 1 узл.
-- `site/public/video/ai-services/ai-websites-ru.jpg` — 1 узл.
+- `site/public/video/ai-services/automation-en.jpg` — 1 узл.
+- `site/src/main.tsx` — 1 узл.
+- `site/public/video/ai-services/ai-assistants-en.jpg` — 1 узл.
+- `site/public/video/ai-services/saas-ru.jpg` — 1 узл.
+- `site/public/video/ai-services/telegram-mini-app-ru.jpg` — 1 узл.
+- `site/public/video/ai-services/custom-solutions-ru.jpg` — 1 узл.
+- `site/public/og-image.png` — 1 узл.
+- `site/public/video/ai-hero-poster.jpg` — 1 узл.
+- `site/public/video/ai-services/ai-shops-en.jpg` — 1 узл.
 
 ## Главные узлы (больше всего связей)
 
 - `useLang()` (site/src/lib/i18n.ts:L24)
 - `useUi()` (site/src/lib/i18n.ts:L28)
-- `Reveal()` (site/src/components/ui/Reveal.tsx:L13)
-- `LeadCapture()` (site/src/components/sections/LeadCapture.tsx:L26)
 - `localePath()` (site/src/lib/i18n.ts:L19)
-- `reachGoal()` (site/src/lib/analytics.ts:L11)
+- `Reveal()` (site/src/components/ui/Reveal.tsx:L13)
 - `MagneticButton()` (site/src/components/ui/MagneticButton.tsx:L18)
-- `PhoneField()` (crm/shared/ui/PhoneField.tsx:L27)
-- `ServicePage()` (site/src/pages/ServicePage.tsx:L13)
+- `LeadCapture()` (site/src/components/sections/LeadCapture.tsx:L26)
 - `useSeo()` (site/src/hooks/useSeo.ts:L28)
-- `Home()` (site/src/pages/Home.tsx:L11)
-- `getServices()` (site/src/data/content.ts:L14)
+- `ServicePage()` (site/src/pages/ServicePage.tsx:L16)
+- `reachGoal()` (site/src/lib/analytics.ts:L11)
+- `Home()` (site/src/pages/Home.tsx:L12)
+- `PhoneField()` (crm/shared/ui/PhoneField.tsx:L27)
+- `SectionHeading()` (site/src/components/ui/SectionHeading.tsx:L12)
 
 ## Кто зависит от раздела (менять осторожно)
 

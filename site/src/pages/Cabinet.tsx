@@ -9,9 +9,10 @@ type Lang = 'ru' | 'en'
 
 type CartItem = {
   id: string
-  kind: 'package' | 'topup'
+  kind: 'package' | 'topup' | 'service'
   title: string
   credits: number | null
+  catalog_item_id: string | null
   amount: number
   quantity: number
   project_title: string | null
@@ -74,6 +75,8 @@ const T = {
     cart: 'Корзина',
     packageMonthly: 'Пакет на месяц',
     creditTopup: 'Докупка кредитов',
+    serviceLabel: 'Услуга',
+    byRequest: 'по запросу',
     withoutProject: 'без проекта',
     remove: 'Удалить',
     payer: 'Плательщик',
@@ -183,6 +186,8 @@ const T = {
     cart: 'Cart',
     packageMonthly: 'Monthly package',
     creditTopup: 'Credit top-up',
+    serviceLabel: 'Service',
+    byRequest: 'by request',
     withoutProject: 'without a project',
     remove: 'Remove',
     payer: 'Payer',
@@ -331,7 +336,12 @@ export default function Cabinet({ lang = 'ru' }: { lang?: Lang }) {
         addRef.current = true
         const [kind, value] = add.split(':')
         window.history.replaceState({}, '', window.location.pathname)
-        if (sum.projects.length > 1) {
+        if (kind === 'service' && value) {
+          await api('cart_add', s.access_token, {
+            method: 'POST',
+            body: JSON.stringify({ kind: 'service', slug: value, title: params.get('title') || undefined }),
+          })
+        } else if (sum.projects.length > 1) {
           if (kind === 'package' || kind === 'topup') setPendingAdd({ kind, value })
         } else {
           const projectId = sum.projects[0]?.id || null
@@ -731,12 +741,12 @@ export default function Cabinet({ lang = 'ru' }: { lang?: Lang }) {
                     <div>
                       <p className="text-sm text-paper">{localizeTitle(item.title, lang) ?? item.title}</p>
                       <p className="mt-1 text-xs text-paper-dim">
-                        {item.kind === 'package' ? t.packageMonthly : t.creditTopup}
+                        {item.kind === 'package' ? t.packageMonthly : item.kind === 'service' ? t.serviceLabel : t.creditTopup}
                         {item.project_title ? ' · ' + item.project_title : ' · ' + t.withoutProject}
                       </p>
                     </div>
                     <div className="flex items-center gap-4">
-                      <span className="text-sm font-semibold">{money(item.amount)}</span>
+                      <span className="text-sm font-semibold">{item.kind === 'service' && item.amount === 0 ? t.byRequest : money(item.amount)}</span>
                       <button
                         type="button"
                         onClick={() => void removeCartItem(item.id)}

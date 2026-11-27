@@ -2,7 +2,7 @@
 
 Приём заявок (форма сайта, стенд, группа, вручную), разбор полей, клиенты, заметки сотрудников, страницы «Клиенты», «Заявки», «Заметки» в админке.
 
-Граф раздела: `graphify-out/sections/leads/graph.json` (121 узлов, 237 внутренних связей).
+Граф раздела: `graphify-out/sections/leads/graph.json` (122 узлов, 242 внутренних связей).
 
 ## С чего начать сессию
 
@@ -14,7 +14,7 @@
 ## Файлы
 
 - `crm/server/leads/filter.ts` — 32 узл.
-- `crm/server/leads/parse.ts` — 15 узл.
+- `crm/server/leads/parse.ts` — 16 узл.
 - `crm/server/leads/manual.ts` — 11 узл.
 - `crm/server/leads/ingest.ts` — 10 узл.
 - `crm/admin/pages/ClientsPage.tsx` — 8 узл.
@@ -23,30 +23,30 @@
 - `crm/server/leads/filter.test.ts` — 5 узл.
 - `crm/admin/pages/NotesPage.tsx` — 4 узл.
 - `crm/server/leads/interests.ts` — 4 узл.
-- `crm/server/leads/ingest.test.ts` — 3 узл.
 - `crm/admin/ui/ContactLinks.tsx` — 3 узл.
+- `crm/server/leads/ingest.test.ts` — 3 узл.
 - `crm/admin/pages/ClientPage.tsx` — 3 узл.
-- `api/lead.ts` — 2 узл.
-- `api/lead-admin.ts` — 2 узл.
-- `api/ingest.ts` — 2 узл.
 - `crm/admin/clientDelete.ts` — 2 узл.
 - `crm/server/leads/parse.test.ts` — 2 узл.
+- `api/lead-admin.ts` — 2 узл.
+- `api/ingest.ts` — 2 узл.
+- `api/lead.ts` — 2 узл.
 - `crm/server/leads/manual.test.ts` — 1 узл.
 
 ## Главные узлы (больше всего связей)
 
-- `parseLead()` (crm/server/leads/parse.ts:L86)
-- `ingestLead()` (crm/server/leads/ingest.ts:L55)
+- `parseLead()` (crm/server/leads/parse.ts:L102)
+- `ingestLead()` (crm/server/leads/ingest.ts:L61)
 - `ClientsPage()` (crm/admin/pages/ClientsPage.tsx:L56)
-- `LeadsPage()` (crm/admin/pages/LeadsPage.tsx:L54)
 - `ClientPage()` (crm/admin/pages/ClientPage.tsx:L78)
-- `ingestGroupMessage()` (crm/server/leads/ingest.ts:L87)
-- `updateManualLead()` (crm/server/leads/manual.ts:L151)
-- `normalizePhone()` (crm/server/leads/parse.ts:L51)
-- `parseManualText()` (crm/server/leads/manual.ts:L39)
-- `createManualLead()` (crm/server/leads/manual.ts:L139)
+- `LeadsPage()` (crm/admin/pages/LeadsPage.tsx:L54)
+- `updateManualLead()` (crm/server/leads/manual.ts:L157)
+- `ingestGroupMessage()` (crm/server/leads/ingest.ts:L93)
+- `parseManualText()` (crm/server/leads/manual.ts:L43)
+- `normalizePhone()` (crm/server/leads/parse.ts:L58)
+- `createManualLead()` (crm/server/leads/manual.ts:L145)
 - `inferFields()` (crm/server/leads/filter.ts:L42)
-- `clickablePhone()` (crm/server/leads/parse.ts:L64)
+- `ContactLinks()` (crm/admin/ui/ContactLinks.tsx:L7)
 
 ## От чего зависит (вызовы в другие разделы)
 
